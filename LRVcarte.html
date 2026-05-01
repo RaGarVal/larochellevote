@@ -3792,19 +3792,21 @@ function writeURLState() {
       candidates.sort((a, b) => a.d - b.d);
     }
 
-    // 3) Pour chaque candidat : calculer position label + bbox finale ; rejeter si collision
-    //    avec un déjà accepté ou si maxLabels atteint.
-    const limit = (typeof maxLabels === 'number') ? maxLabels : Infinity;
-    const accepted = [];
-    for (const c of candidates) {
-      if (accepted.length >= limit) break;
+    // 3) Pour chaque candidat : essayer le layout par défaut (label au-dessus, ▼).
+    //    En cas de débordement vertical du cadre OU de collision avec un déjà accepté,
+    //    on retente avec le layout flipped (label en dessous, ▲). Si les deux échouent,
+    //    on ignore ce repère. La limite maxLabels reste appliquée.
+    function tryLayout(c, flipped) {
       const tw = ctx.measureText(c.p.n).width;
       let tx = c.px;
-      let ty = c.py - TRI_H - GAP;
+      let ty = flipped ? (c.py + TRI_H + GAP) : (c.py - TRI_H - GAP);
       let align = 'center';
-      let baseline = 'alphabetic';
+      const baseline = flipped ? 'top' : 'alphabetic';
       if (frame) {
-        if (ty - FONT_PX < frame.y + PAD) { ty = c.py + GAP; baseline = 'top'; }
+        // Validation verticale : le label doit tenir entièrement dans le cadre
+        if (!flipped && ty - FONT_PX < frame.y + PAD) return null;
+        if (flipped  && ty + FONT_PX + 2 > frame.y + frame.h - PAD) return null;
+        // Horizontal : ajustement gauche/droite (le triangle ne bouge jamais)
         const halfW = tw / 2;
         if (c.px - halfW < frame.x + PAD)                  { align = 'left';  tx = c.px - TRI_W / 2; }
         else if (c.px + halfW > frame.x + frame.w - PAD)   { align = 'right'; tx = c.px + TRI_W / 2; }
@@ -3814,28 +3816,52 @@ function writeURLState() {
       if (align === 'center')      { lx1 = tx - tw / 2; lx2 = tx + tw / 2; }
       else if (align === 'left')   { lx1 = tx;          lx2 = tx + tw; }
       else                         { lx1 = tx - tw;     lx2 = tx; }
-      const ly1 = (baseline === 'top') ? ty                : ty - FONT_PX;
-      const ly2 = (baseline === 'top') ? ty + FONT_PX + 2  : ty + 2;
-      // Bbox combinée (triangle + label) avec petite marge anti-chevauchement
+      const ly1 = (baseline === 'top') ? ty               : ty - FONT_PX;
+      const ly2 = (baseline === 'top') ? ty + FONT_PX + 2 : ty + 2;
+      const triTop = flipped ? c.py : c.py - TRI_H;
+      const triBot = flipped ? c.py + TRI_H : c.py;
       const box = {
         x1: Math.min(lx1, c.px - TRI_W / 2) - 1,
-        y1: Math.min(ly1, c.py - TRI_H) - 1,
+        y1: Math.min(ly1, triTop) - 1,
         x2: Math.max(lx2, c.px + TRI_W / 2) + 1,
-        y2: Math.max(ly2, c.py) + 1
+        y2: Math.max(ly2, triBot) + 1
       };
-      const overlap = accepted.some(a => !(box.x2 < a.box.x1 || box.x1 > a.box.x2
-                                        || box.y2 < a.box.y1 || box.y1 > a.box.y2));
-      if (overlap) continue;
-      accepted.push({ c: c, tx: tx, ty: ty, align: align, baseline: baseline, box: box });
+      return { tx: tx, ty: ty, align: align, baseline: baseline, flipped: flipped, box: box };
+    }
+    const limit = (typeof maxLabels === 'number') ? maxLabels : Infinity;
+    const accepted = [];
+    function collidesWithAccepted(b) {
+      return accepted.some(a => !(b.x2 < a.box.x1 || b.x1 > a.box.x2
+                              || b.y2 < a.box.y1 || b.y1 > a.box.y2));
+    }
+    for (const c of candidates) {
+      if (accepted.length >= limit) break;
+      // Essai 1 : layout normal (label au-dessus)
+      let layout = tryLayout(c, false);
+      if (!layout || collidesWithAccepted(layout.box)) {
+        // Essai 2 : layout inversé (label en dessous)
+        layout = tryLayout(c, true);
+        if (!layout || collidesWithAccepted(layout.box)) continue;
+      }
+      accepted.push(Object.assign({ c: c }, layout));
     }
 
     // 4) Dessiner triangles puis labels
     accepted.forEach(a => {
-      const { c, tx, ty, align, baseline } = a;
+      const { c, tx, ty, align, baseline, flipped } = a;
+      // Triangle ▼ (label au-dessus) ou ▲ (label en dessous) — la pointe reste sur (c.px, c.py)
       ctx.beginPath();
-      ctx.moveTo(c.px - TRI_W / 2, c.py - TRI_H);
-      ctx.lineTo(c.px + TRI_W / 2, c.py - TRI_H);
-      ctx.lineTo(c.px, c.py);
+      if (flipped) {
+        // ▲ : base en bas, pointe en haut (sur la coord)
+        ctx.moveTo(c.px - TRI_W / 2, c.py + TRI_H);
+        ctx.lineTo(c.px + TRI_W / 2, c.py + TRI_H);
+        ctx.lineTo(c.px, c.py);
+      } else {
+        // ▼ : base en haut, pointe en bas (sur la coord)
+        ctx.moveTo(c.px - TRI_W / 2, c.py - TRI_H);
+        ctx.lineTo(c.px + TRI_W / 2, c.py - TRI_H);
+        ctx.lineTo(c.px, c.py);
+      }
       ctx.closePath();
       ctx.fillStyle = '#1A1A1A';
       ctx.strokeStyle = '#FFFFFF';
