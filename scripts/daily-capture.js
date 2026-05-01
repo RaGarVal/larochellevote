@@ -242,6 +242,12 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
   });
 
   const page = await browser.newPage();
+
+  // Supprimer la visite guidée sur toutes les navigations (doit être avant le premier goto)
+  await page.evaluateOnNewDocument(() => {
+    localStorage.setItem('lrvote_tour_carte_v2_seen', '1');
+  });
+
   await page.setViewport({ width: 1280, height: 800, deviceScaleFactor: 2 });
 
   // ── 1. Charger le site pour accéder aux données JS ────────────────────────
@@ -511,17 +517,15 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
   const targetUrl = BASE_URL + 'LRVcarte.html#' + params.toString();
   console.log(`\n🌐 → ${targetUrl}`);
 
-  // Supprimer la visite guidée avant chargement
-  await page.evaluateOnNewDocument(() => {
-    localStorage.setItem('lrvote_tour_carte_v2_seen', '1');
-  });
+  // Passer par about:blank pour forcer un vrai rechargement (pas une simple navigation hash)
+  await page.goto('about:blank');
 
   try {
     await page.goto(targetUrl, { waitUntil: 'networkidle0', timeout: 60000 });
   } catch { /* timeout toléré */ }
 
   // Attendre que les données soient rechargées après la navigation
-  console.log('⏳ Attente des données après navigation…');
+  console.log('⏳ Attente des données après navigation vers la cible…');
   try {
     await page.waitForFunction(
       () => typeof ELECTIONS !== 'undefined' && Object.keys(ELECTIONS).length > 0,
