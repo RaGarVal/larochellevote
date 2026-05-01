@@ -521,22 +521,47 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
   } catch { /* timeout toléré */ }
   await new Promise(r => setTimeout(r, 8000)); // attendre le rendu complet de la carte
 
-  // ── 9. Capture ────────────────────────────────────────────────────────────
+  // ── 9. Capture via l'export natif du site ────────────────────────────────
   let screenshotBuffer;
-  const selector = niveau === 'carte' ? '#main' : '#overlay';
 
+  console.log('🖼️  Déclenchement de l\'export natif…');
   try {
-    const el  = await page.$(selector);
-    const box = el && await el.boundingBox();
-    if (box && box.width > 10) {
-      screenshotBuffer = await el.screenshot({ type: 'png' });
-      console.log(`✅ Screenshot : ${selector}`);
-    }
-  } catch { /* ignore */ }
+    // Attendre que la fonction d'export soit disponible
+    await page.waitForFunction(
+      () => typeof window.exportShareImage === 'function',
+      { timeout: 10000 }
+    );
 
-  if (!screenshotBuffer) {
-    console.warn('⚠️  Fallback : capture du viewport');
-    screenshotBuffer = await page.screenshot({ type: 'png', clip: { x: 0, y: 0, width: 1280, height: 720 } });
+    // Intercepter downloadCanvas pour récupérer le PNG au lieu de le télécharger
+    const imageDataUrl = await page.evaluate(async () => {
+      return new Promise((resolve, reject) => {
+        window.downloadCanvas = function(canvas) {
+          resolve(canvas.toDataURL('image/png'));
+          return Promise.resolve(true);
+        };
+        window.exportShareImage().catch(reject);
+        setTimeout(() => reject(new Error('timeout export')), 25000);
+      });
+    });
+
+    const base64 = imageDataUrl.replace(/^data:image\/png;base64,/, '');
+    screenshotBuffer = Buffer.from(base64, 'base64');
+    console.log('✅ Export natif réussi (1200×675 px)');
+
+  } catch (err) {
+    console.warn(`⚠️  Export natif échoué (${err.message}) — fallback screenshot`);
+    const selector = niveau === 'carte' ? '#main' : '#overlay';
+    try {
+      const el  = await page.$(selector);
+      const box = el && await el.boundingBox();
+      if (box && box.width > 10) {
+        screenshotBuffer = await el.screenshot({ type: 'png' });
+        console.log(`✅ Screenshot fallback : ${selector}`);
+      }
+    } catch { /* ignore */ }
+    if (!screenshotBuffer) {
+      screenshotBuffer = await page.screenshot({ type: 'png', clip: { x: 0, y: 0, width: 1280, height: 720 } });
+    }
   }
 
   await browser.close();
