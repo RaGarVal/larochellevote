@@ -61,7 +61,7 @@ Les résultats de ce scrutin, bureau par bureau, sur ${SITE_URL}`,
 
   bureau_presidentielle:
 `${CHAPEAU}
-{emoji} Le {date_election}, pour la {election} {tour}, {prenom_nom} ({parti}) est arrivé·e en tête avec {score} % dans le bureau n°{bureau_num} · {denomination} à {quartier}.
+{emoji} Le {date_election}, pour la {election} {tour}, {prenom_nom} ({parti}) arrive en tête avec {score} % dans le bureau n°{bureau_num} · {denomination} à {quartier}.
 Les résultats de ce bureau, et tous les autres, sur ${SITE_URL}`,
 
   bureau_referendum:
@@ -71,7 +71,7 @@ Les résultats de ce bureau, et tous les autres, sur ${SITE_URL}`,
 
   bureau_autres:
 `${CHAPEAU}
-{emoji} Le {date_election}, pour les {election} {tour}, {prenom_nom} ({parti}) est arrivé·e en tête avec {score} % dans le bureau n°{bureau_num} · {denomination} à {quartier}.
+{emoji} Le {date_election}, pour les {election} {tour}, {prenom_nom} ({parti}) arrive en tête avec {score} % dans le bureau n°{bureau_num} · {denomination} à {quartier}.
 Les résultats de ce bureau, et tous les autres, sur ${SITE_URL}`,
 
   // ── FICHE QUARTIER ─────────────────────────────────────────────────────────
@@ -79,7 +79,7 @@ Les résultats de ce bureau, et tous les autres, sur ${SITE_URL}`,
 
   quartier_presidentielle:
 `${CHAPEAU}
-{emoji} Le {date_election}, pour la {election} {tour}, {prenom_nom} ({parti}) est arrivé·e en tête avec {score} % dans le quartier de {quartier}.
+{emoji} Le {date_election}, pour la {election} {tour}, {prenom_nom} ({parti}) arrive en tête avec {score} % dans le quartier de {quartier}.
 Les résultats de ce quartier, et tous les autres, sur ${SITE_URL}`,
 
   quartier_referendum:
@@ -89,7 +89,7 @@ Les résultats de ce quartier, et tous les autres, sur ${SITE_URL}`,
 
   quartier_autres:
 `${CHAPEAU}
-{emoji} Le {date_election}, pour les {election} {tour}, {prenom_nom} ({parti}) est arrivé·e en tête avec {score} % dans le quartier de {quartier}.
+{emoji} Le {date_election}, pour les {election} {tour}, {prenom_nom} ({parti}) arrive en tête avec {score} % dans le quartier de {quartier}.
 Les résultats de ce quartier, et tous les autres, sur ${SITE_URL}`,
 
   // ── FICHE GLOBAL ───────────────────────────────────────────────────────────
@@ -97,7 +97,7 @@ Les résultats de ce quartier, et tous les autres, sur ${SITE_URL}`,
 
   global_presidentielle:
 `${CHAPEAU}
-{emoji} Le {date_election}, pour la {election} {tour}, {prenom_nom} ({parti}) est arrivé·e en tête avec {score} % à La Rochelle.
+{emoji} Le {date_election}, pour la {election} {tour}, {prenom_nom} ({parti}) arrive en tête avec {score} % à La Rochelle.
 Les résultats de ce scrutin, et tous les autres, sur ${SITE_URL}`,
 
   global_referendum:
@@ -107,7 +107,7 @@ Les résultats de ce scrutin, et tous les autres, sur ${SITE_URL}`,
 
   global_autres:
 `${CHAPEAU}
-{emoji} Le {date_election}, pour les {election} {tour}, {prenom_nom} ({parti}) est arrivé·e en tête avec {score} % à La Rochelle.
+{emoji} Le {date_election}, pour les {election} {tour}, {prenom_nom} ({parti}) arrive en tête avec {score} % à La Rochelle.
 Les résultats de ce scrutin, et tous les autres, sur ${SITE_URL}`,
 };
 
@@ -481,7 +481,7 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
       reponse:    isRef ? winner?.cand : '',
     };
 
-    return fillCaneva(tpl, vars).replace(/\s*\(\s*\)/g, '').trim();
+    return fillCaneva(tpl, vars).replace(/\s*\(\s*\)/g, '').replace(/\s+,/g, ',').trim();
   }
 
   let tweetText = null;
@@ -547,24 +547,18 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
       { timeout: 10000 }
     );
 
-    // Intercepter downloadCanvas pour récupérer le PNG au lieu de le télécharger
-    // + patcher document.fonts.ready qui bloque infiniment en mode headless
-    const imageDataUrl = await page.evaluate(async () => {
-      // Patch : forcer fonts.ready à se résoudre au bout de 3s max
+    // Patcher FontFaceSet.prototype.ready pour ne pas bloquer en mode headless
+    await page.evaluate(() => {
       try {
-        const fontsObj = document.fonts;
-        if (fontsObj && fontsObj.ready) {
-          const patchedReady = Promise.race([
-            fontsObj.ready,
-            new Promise(r => setTimeout(r, 3000))
-          ]);
-          Object.defineProperty(document, 'fonts', {
-            get: () => ({ ...fontsObj, ready: patchedReady }),
-            configurable: true,
-          });
-        }
-      } catch(e) { /* ignore si non configurable */ }
+        Object.defineProperty(FontFaceSet.prototype, 'ready', {
+          get: () => Promise.resolve(),
+          configurable: true,
+        });
+      } catch(e) { /* ignore */ }
+    });
 
+    // Intercepter downloadCanvas pour récupérer le PNG au lieu de le télécharger
+    const imageDataUrl = await page.evaluate(async () => {
       return new Promise((resolve, reject) => {
         window.downloadCanvas = function(canvas) {
           resolve(canvas.toDataURL('image/png'));
