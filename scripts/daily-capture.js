@@ -243,27 +243,26 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
 
   const page = await browser.newPage();
 
-  // Supprimer la visite guidée + neutraliser document.fonts.ready (bloque en headless)
+  // Injecter avant chaque chargement de page :
+  // 1. Supprimer la visite guidée
+  // 2. Intercepter canvas.toDataURL() pour capturer l'image d'export quelle que soit l'implémentation du site
   await page.evaluateOnNewDocument(() => {
     localStorage.setItem('lrvote_tour_carte_v2_seen', '1');
 
-    // Remplacer document.fonts par un mock qui ne bloque jamais
-    Object.defineProperty(document, 'fonts', {
-      get: () => ({
-        ready:   Promise.resolve(),
-        status:  'loaded',
-        check:   () => true,
-        load:    () => Promise.resolve([]),
-        forEach: () => {},
-        add:     () => {},
-        delete:  () => false,
-        clear:   () => {},
-        has:     () => false,
-        size:    0,
-        [Symbol.iterator]: function*() {},
-      }),
-      configurable: true,
-    });
+    // Intercepter HTMLCanvasElement.prototype.toDataURL
+    // → capture automatiquement la première grande image produite en mode export (≥ 800×400)
+    // → fonctionne que downloadCanvas soit local ou global dans le site
+    // → ne s'active que si _exportMode=true (posé par le site quand #mode=export est dans le hash)
+    const _origToDataURL = HTMLCanvasElement.prototype.toDataURL;
+    HTMLCanvasElement.prototype.toDataURL = function(type, quality) {
+      const result = _origToDataURL.apply(this, arguments);
+      if (window._exportMode && this.width >= 800 && this.height >= 400 && !window._exportDataUrl) {
+        window._exportDataUrl = result;
+        window._exportDone    = true;
+        console.log('[Puppeteer] canvas.toDataURL intercepté — ' + this.width + '×' + this.height);
+      }
+      return result;
+    };
   });
 
   await page.setViewport({ width: 1280, height: 800, deviceScaleFactor: 2 });
@@ -545,17 +544,56 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
 
   // ── 9. Attendre que l'API export du site ait fini ─────────────────────────
   let screenshotBuffer;
-  console.log('🖼️  Attente de l\'export natif…');
+
+  // Diagnostic à 3 secondes pour voir l'état de la page en headless
+  await new Promise(r => setTimeout(r, 3000));
+  const diag = await page.evaluate(() => ({
+    exportMode:     window._exportMode,
+    exportDone:     window._exportDone,
+    exportError:    window._exportError,
+    hasExportFn:    typeof window.exportShareImage === 'function',
+    hasDownloadFn:  typeof window.downloadCanvas === 'function',
+    electionsOk:    (typeof ELECTIONS !== 'undefined') && Object.keys(ELECTIONS).length > 0,
+    hash:           window.location.hash.slice(0, 80),
+  }));
+  console.log(`📊 Diag 3s | _exportMode=${diag.exportMode} | _exportDone=${diag.exportDone} | _exportError=${diag.exportError || '–'}`);
+  console.log(`   exportShareImage=${diag.hasExportFn} | downloadCanvas=${diag.hasDownloadFn} | elections=${diag.electionsOk}`);
+  console.log(`   hash: ${diag.hash}`);
+
+  console.log('🖼️  Attente de l\'export natif (max 75 s)…');
   try {
     await page.waitForFunction(
       () => window._exportDone === true,
-      { timeout: 45000 }
+      { timeout: 75000 }
     );
+
+    // _exportDone est true — récupérer l'image
+    const diagFinal = await page.evaluate(() => ({
+      hasDataUrl: !!window._exportDataUrl,
+      exportError: window._exportError,
+    }));
+    console.log(`📊 Export done | dataUrl=${diagFinal.hasDataUrl} | error=${diagFinal.exportError || '–'}`);
+
     const dataUrl = await page.evaluate(() => window._exportDataUrl);
-    if (!dataUrl) throw new Error('_exportDataUrl vide');
-    const base64 = dataUrl.replace(/^data:image\/png;base64,/, '');
-    screenshotBuffer = Buffer.from(base64, 'base64');
-    console.log('✅ Export natif réussi (1200×675 px)');
+    if (dataUrl) {
+      const base64 = dataUrl.replace(/^data:image\/png;base64,/, '');
+      screenshotBuffer = Buffer.from(base64, 'base64');
+      console.log('✅ Export natif réussi (1200×675 px)');
+    } else {
+      // _exportDone=true mais pas de dataUrl : exportShareImage() a fini sans passer par downloadCanvas
+      // → on tente de récupérer le canvas directement depuis le DOM
+      console.warn('⚠️  _exportDone=true mais _exportDataUrl vide — tentative canvas DOM');
+      const canvasB64 = await page.evaluate(() => {
+        const c = document.querySelector('canvas');
+        return c ? c.toDataURL('image/png').replace(/^data:image\/png;base64,/, '') : null;
+      });
+      if (canvasB64) {
+        screenshotBuffer = Buffer.from(canvasB64, 'base64');
+        console.log('✅ Canvas DOM récupéré');
+      } else {
+        throw new Error('canvas DOM introuvable');
+      }
+    }
   } catch (err) {
     console.warn(`⚠️  Export natif échoué (${err.message}) — fallback screenshot`);
     const selector = niveau === 'carte' ? '#main' : '#overlay';
