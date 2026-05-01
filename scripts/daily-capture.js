@@ -249,7 +249,18 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
   try {
     await page.goto(BASE_URL + 'LRVcarte.html', { waitUntil: 'networkidle0', timeout: 40000 });
   } catch { /* timeout toléré */ }
-  await new Promise(r => setTimeout(r, 3000));
+
+  // Attendre que les données JS soient réellement disponibles (donnees.js peut être long à parser)
+  console.log('⏳ Attente des données JS…');
+  try {
+    await page.waitForFunction(
+      () => window.ELECTIONS && Object.keys(window.ELECTIONS).length > 0,
+      { timeout: 30000 }
+    );
+  } catch {
+    console.error('❌ Les données ELECTIONS ne sont pas disponibles après 30s. Abandon.');
+    await browser.close(); process.exit(0);
+  }
 
   // ── 2. Extraire la liste des élections, bureaux et quartiers ──────────────
   const siteData = await page.evaluate(() => {
