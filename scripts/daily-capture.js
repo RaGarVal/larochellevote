@@ -511,10 +511,15 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
   const targetUrl = BASE_URL + 'LRVcarte.html#' + params.toString();
   console.log(`\n🌐 → ${targetUrl}`);
 
+  // Supprimer la visite guidée et forcer le thème clair avant chargement
+  await page.evaluateOnNewDocument(() => {
+    localStorage.setItem('lrvote_tour_carte_v2_seen', '1');
+  });
+
   try {
     await page.goto(targetUrl, { waitUntil: 'networkidle0', timeout: 40000 });
   } catch { /* timeout toléré */ }
-  await new Promise(r => setTimeout(r, 5000));
+  await new Promise(r => setTimeout(r, 8000)); // attendre le rendu complet de la carte
 
   // ── 9. Capture ────────────────────────────────────────────────────────────
   let screenshotBuffer;
