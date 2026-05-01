@@ -511,15 +511,26 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
   const targetUrl = BASE_URL + 'LRVcarte.html#' + params.toString();
   console.log(`\n🌐 → ${targetUrl}`);
 
-  // Supprimer la visite guidée et forcer le thème clair avant chargement
+  // Supprimer la visite guidée avant chargement
   await page.evaluateOnNewDocument(() => {
     localStorage.setItem('lrvote_tour_carte_v2_seen', '1');
   });
 
   try {
-    await page.goto(targetUrl, { waitUntil: 'networkidle0', timeout: 40000 });
+    await page.goto(targetUrl, { waitUntil: 'networkidle0', timeout: 60000 });
   } catch { /* timeout toléré */ }
-  await new Promise(r => setTimeout(r, 8000)); // attendre le rendu complet de la carte
+
+  // Attendre que les données soient rechargées après la navigation
+  console.log('⏳ Attente des données après navigation…');
+  try {
+    await page.waitForFunction(
+      () => typeof ELECTIONS !== 'undefined' && Object.keys(ELECTIONS).length > 0,
+      { timeout: 30000 }
+    );
+  } catch { console.warn('⚠️  ELECTIONS non détecté après navigation'); }
+
+  // Attendre le rendu complet de la carte et de l'élection sélectionnée
+  await new Promise(r => setTimeout(r, 10000));
 
   // ── 9. Capture via l'export natif du site ────────────────────────────────
   let screenshotBuffer;

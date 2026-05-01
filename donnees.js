@@ -74,6 +74,7 @@ const REDECOUPAGES = {
   "0013|1993": { type: "creation", text: "Création du nouveau bureau 13 (Grandes-Guiardes). Frontières précédentes incertaines." },
   "0014|1993": { type: "creation", text: "Création du nouveau bureau 14 (Parc Kennedy). Frontières précédentes incertaines." },
   "quartier:Mireuil|1993": null,
+  "quartier:Mireuil|2022": null,
   "0015|2022": { type: "mineur", text: "Gain de la partie située au sud de l'avenue de Tirana sur le bureau 16 (Luxembourg–Jules-Cheret)." },
   "0016|2022": { type: "mineur", text: "Perte de la partie située au sud de l'avenue de Tirana qui bascule vers le bureau 15 (Grandes-Varennes–Le Parco)." },
   "0018|2015": { type: "majeur", text: "Gain de la partie située au sud de la rue Braille, de la rue du Docteur-Roux et de la rue de Bel-Air sur l'ancien bureau 19 (Bel-Air)." },
