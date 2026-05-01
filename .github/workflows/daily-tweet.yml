@@ -18,7 +18,7 @@ on:
   workflow_dispatch:
     inputs:
       date:
-        description: 'Date à tweeter (YYYY-MM-DD) — laisser vide pour aujourd'hui'
+        description: "Date à tweeter (YYYY-MM-DD) — laisser vide pour aujourd'hui"
         required: false
         default: ''
 
