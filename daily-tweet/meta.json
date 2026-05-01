@@ -1,10 +1,10 @@
 {
   "date": "2026-05-01",
-  "niveau": "carte",
-  "election": "Régionales 1998",
+  "niveau": "global",
+  "election": "Européennes 2014",
   "tour": "TU",
   "bureau": null,
   "quartier": null,
-  "chars": 273,
-  "generated_at": "2026-05-01T20:01:07.272Z"
+  "chars": 221,
+  "generated_at": "2026-05-01T20:05:23.331Z"
 }
