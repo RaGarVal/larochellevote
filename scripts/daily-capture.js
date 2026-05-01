@@ -243,9 +243,27 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
 
   const page = await browser.newPage();
 
-  // Supprimer la visite guidée sur toutes les navigations (doit être avant le premier goto)
+  // Supprimer la visite guidée + neutraliser document.fonts.ready (bloque en headless)
   await page.evaluateOnNewDocument(() => {
     localStorage.setItem('lrvote_tour_carte_v2_seen', '1');
+
+    // Remplacer document.fonts par un mock qui ne bloque jamais
+    Object.defineProperty(document, 'fonts', {
+      get: () => ({
+        ready:   Promise.resolve(),
+        status:  'loaded',
+        check:   () => true,
+        load:    () => Promise.resolve([]),
+        forEach: () => {},
+        add:     () => {},
+        delete:  () => false,
+        clear:   () => {},
+        has:     () => false,
+        size:    0,
+        [Symbol.iterator]: function*() {},
+      }),
+      configurable: true,
+    });
   });
 
   await page.setViewport({ width: 1280, height: 800, deviceScaleFactor: 2 });
@@ -546,16 +564,6 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
       () => typeof window.exportShareImage === 'function',
       { timeout: 10000 }
     );
-
-    // Patcher FontFaceSet.prototype.ready pour ne pas bloquer en mode headless
-    await page.evaluate(() => {
-      try {
-        Object.defineProperty(FontFaceSet.prototype, 'ready', {
-          get: () => Promise.resolve(),
-          configurable: true,
-        });
-      } catch(e) { /* ignore */ }
-    });
 
     // Intercepter les requêtes de tuiles cartographiques (elles bloquent en headless)
     await page.setRequestInterception(true);
