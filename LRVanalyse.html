@@ -13,6 +13,18 @@
       if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
     } catch(e) {}
   })();
+  /* Admin bootstrap : ?admin=1 active les outils éditeurs (annotation, références…) ;
+     ?admin=0 les désactive. L'état est persisté en localStorage sur la machine. */
+  (function(){
+    try {
+      var p = new URLSearchParams(location.search);
+      if (p.get('admin') === '1')      localStorage.setItem('lrvote_admin', '1');
+      else if (p.get('admin') === '0') localStorage.removeItem('lrvote_admin');
+      if (localStorage.getItem('lrvote_admin') === '1') {
+        document.documentElement.setAttribute('data-admin', '1');
+      }
+    } catch(e) {}
+  })();
 </script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link rel="stylesheet" href="shared.css"/>
@@ -357,7 +369,11 @@ td.winner{font-weight:600;color:var(--text-modal)}
 #redecoupage-code{font-family:monospace;font-size:0.85rem;color:var(--text-modal);margin:0 0 10px 0;white-space:pre-wrap;word-break:break-all}
 .rd-copy-btn{padding:5px 12px;border-radius:6px;border:1.5px solid #E8A020;background:var(--bg-modal);color:#E8A020;font-size:0.83rem;font-weight:600;cursor:pointer;transition:all .12s}
 .rd-copy-btn:hover{background:#E8A020;color:#fff}
-.rd-add-btn{width:100%;margin-top:6px;padding:6px 10px;border:1.5px dashed #E8A020;border-radius:6px;background:transparent;color:#E8A020;font-size:0.8rem;font-weight:600;cursor:pointer;text-align:left;transition:all .12s}
+/* Outils admin (annotation redécoupage, vérification correspondances, références) :
+   masqués pour les visiteurs publics. Pour activer sur ta machine : ouvrir la page avec
+   ?admin=1 dans l'URL (l'état est persisté en localStorage). Pour désactiver : ?admin=0. */
+.rd-add-btn{display:none;width:100%;margin-top:6px;padding:6px 10px;border:1.5px dashed #E8A020;border-radius:6px;background:transparent;color:#E8A020;font-size:0.8rem;font-weight:600;cursor:pointer;text-align:left;transition:all .12s}
+html[data-admin="1"] .rd-add-btn{display:block}
 .rd-add-btn:hover{background:rgba(232,160,32,0.08)}
 /* ─── Modal références ──────────────────────────────────── */
 #ref-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:1000}

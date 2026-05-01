@@ -4077,7 +4077,7 @@ function writeURLState() {
   }
 
   async function compose() {
-    if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch(_) {} }
+    if (!window._exportMode && document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch(_) {} }
     const canvas = document.createElement('canvas');
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext('2d');
@@ -4708,7 +4708,7 @@ function writeURLState() {
   }
 
   async function composeFiche(fctx) {
-    if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch(_) {} }
+    if (!window._exportMode && document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch(_) {} }
     const canvas = document.createElement('canvas');
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext('2d');
@@ -5261,6 +5261,38 @@ setupAppMenu({ tourFn: 'startCarteTour' });
     setTimeout(tick, nextDelay);
   }
   tick();
+})();
+</script>
+
+<script>
+/* ── API export Puppeteer (?mode=export dans le hash) ── */
+(function() {
+  const hash = new URLSearchParams(window.location.hash.slice(1));
+  if (hash.get('mode') !== 'export') return;
+
+  window._exportMode = true;
+
+  function tryExport() {
+    if (typeof window.exportShareImage !== 'function' ||
+        typeof ELECTIONS === 'undefined' ||
+        Object.keys(ELECTIONS).length === 0) {
+      return setTimeout(tryExport, 300);
+    }
+    setTimeout(async function() {
+      try {
+        window.downloadCanvas = function(canvas) {
+          window._exportDataUrl = canvas.toDataURL('image/png');
+          window._exportDone = true;
+          return Promise.resolve(true);
+        };
+        await window.exportShareImage();
+      } catch(e) {
+        window._exportError = String(e);
+        window._exportDone = true;
+      }
+    }, 2000);
+  }
+  tryExport();
 })();
 </script>
 </div><!-- /main -->

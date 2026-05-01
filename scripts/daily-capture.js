@@ -525,80 +525,37 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
   console.log(tweetText);
   console.log('─'.repeat(60));
 
-  // ── 8. Naviguer vers la bonne URL ─────────────────────────────────────────
+  // ── 8. Naviguer vers l'URL d'export ──────────────────────────────────────
   const params = new URLSearchParams();
   params.set('election', election);
   if (tour && tour !== 'TU') params.set('tour', tour);
   if (niveau === 'bureau'   && bureau)   params.set('bureau',   bureau);
   if (niveau === 'quartier' && quartier) params.set('quartier', quartier);
+  if (niveau === 'global')               params.set('tab',      'global');
+  params.set('mode', 'export');
 
   const targetUrl = BASE_URL + 'LRVcarte.html#' + params.toString();
   console.log(`\n🌐 → ${targetUrl}`);
 
-  // Passer par about:blank pour forcer un vrai rechargement (pas une simple navigation hash)
+  // about:blank force un vrai rechargement (pas une simple navigation hash)
   await page.goto('about:blank');
-
   try {
     await page.goto(targetUrl, { waitUntil: 'networkidle0', timeout: 60000 });
   } catch { /* timeout toléré */ }
 
-  // Attendre que les données soient rechargées après la navigation
-  console.log('⏳ Attente des données après navigation vers la cible…');
-  try {
-    await page.waitForFunction(
-      () => typeof ELECTIONS !== 'undefined' && Object.keys(ELECTIONS).length > 0,
-      { timeout: 30000 }
-    );
-  } catch { console.warn('⚠️  ELECTIONS non détecté après navigation'); }
-
-  // Attendre le rendu complet de la carte et de l'élection sélectionnée
-  await new Promise(r => setTimeout(r, 10000));
-
-  // ── 9. Capture via l'export natif du site ────────────────────────────────
+  // ── 9. Attendre que l'API export du site ait fini ─────────────────────────
   let screenshotBuffer;
-
-  console.log('🖼️  Déclenchement de l\'export natif…');
+  console.log('🖼️  Attente de l\'export natif…');
   try {
-    // Attendre que la fonction d'export soit disponible
     await page.waitForFunction(
-      () => typeof window.exportShareImage === 'function',
-      { timeout: 10000 }
+      () => window._exportDone === true,
+      { timeout: 45000 }
     );
-
-    // Intercepter les requêtes de tuiles cartographiques (elles bloquent en headless)
-    await page.setRequestInterception(true);
-    const abortTiles = req => {
-      const url = req.url();
-      if (url.includes('cartocdn.com') || url.includes('/tiles/') || url.includes('.tile.')) {
-        req.abort();
-      } else {
-        req.continue();
-      }
-    };
-    page.on('request', abortTiles);
-
-    // Intercepter downloadCanvas pour récupérer le PNG au lieu de le télécharger
-    let imageDataUrl;
-    try {
-      imageDataUrl = await page.evaluate(async () => {
-        return new Promise((resolve, reject) => {
-          window.downloadCanvas = function(canvas) {
-            resolve(canvas.toDataURL('image/png'));
-            return Promise.resolve(true);
-          };
-          window.exportShareImage().catch(reject);
-          setTimeout(() => reject(new Error('timeout export')), 25000);
-        });
-      });
-    } finally {
-      page.off('request', abortTiles);
-      await page.setRequestInterception(false);
-    }
-
-    const base64 = imageDataUrl.replace(/^data:image\/png;base64,/, '');
+    const dataUrl = await page.evaluate(() => window._exportDataUrl);
+    if (!dataUrl) throw new Error('_exportDataUrl vide');
+    const base64 = dataUrl.replace(/^data:image\/png;base64,/, '');
     screenshotBuffer = Buffer.from(base64, 'base64');
     console.log('✅ Export natif réussi (1200×675 px)');
-
   } catch (err) {
     console.warn(`⚠️  Export natif échoué (${err.message}) — fallback screenshot`);
     const selector = niveau === 'carte' ? '#main' : '#overlay';
