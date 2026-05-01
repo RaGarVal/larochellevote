@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La Rochelle Vote — Trente-huit ans de scrutins</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+  /* Theme bootstrap (anti-FOUC) */
+  (function(){
+    try {
+      var t = localStorage.getItem('lrvote_theme');
+      if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+    } catch(e) {}
+  })();
+</script>
+<link rel="stylesheet" href="shared.css"/>
+<style>
+  :root {
+    --bg: #F7F3EE;
+    --ink: #1A1A1A;
+    --ink-soft: #5A5A5A;
+    --rule: #E6DFD5;
+    --case-bg: rgba(0, 0, 0, 0.04);
+    --G:   #CC0100;
+    --C:   #F1C232;
+    --D:   #0F55CC;
+    --EXD: #20124D;
+    --DIV: #A0E1E2;
+
+    /* Alias chrome standardisés cross-pages (mode sombre) */
+    --bg-chrome: var(--bg);
+    --bg-chrome-hover: #FAF6F0;
+    --bg-chrome-accent: #EFE8DD;
+    --text-chrome: var(--ink);
+    --text-chrome-muted: var(--ink-soft);
+    --border-chrome: var(--rule);
+    --bg-modal: #FFFFFF;
+    --border-modal: #E6DFD5;
+    --bg-modal-hover: #FAF6F0;
+    --bg-modal-accent: #EFE8DD;
+    --text-modal: #1A1A1A;
+    --text-modal-muted: #5A5A5A;
+    --bg-tooltip: #1A1A1A;
+    --text-tooltip: #F7F3EE;
+  }
+  [data-theme="dark"] {
+    /* Palette V2 — phase 3 */
+    --bg: #16151A;
+    --ink: #ECE6DD;
+    --ink-soft: #9D968B;
+    --rule: #2D2A30;
+    --case-bg: rgba(255, 255, 255, 0.04);
+    --bg-chrome: var(--bg);
+    --bg-chrome-hover: #2D2A30;
+    --bg-chrome-accent: #383438;
+    --text-chrome: var(--ink);
+    --text-chrome-muted: var(--ink-soft);
+    --border-chrome: var(--rule);
+    --bg-modal: #21202A;
+    --border-modal: #3A3640;
+    --bg-modal-hover: #2D2C36;
+    --bg-modal-accent: #3A3640;
+    --text-modal: #ECE6DD;
+    --text-modal-muted: #9D968B;
+    --bg-tooltip: #ECE6DD;
+    --text-tooltip: #16151A;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--ink); overflow-x: hidden; }
+  body {
+    font-family: 'Space Grotesk', 'Inter', -apple-system, system-ui, sans-serif;
+    font-feature-settings: 'tnum';
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  .page {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 32px 32px 48px;
+  }
+
+  /* ───────── MASTHEAD ───────── */
+  .masthead {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding-bottom: 56px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .logo-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(2px, 0.4vw, 6px);
+    flex-wrap: nowrap;
+  }
+  .logo-word {
+    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+    font-size: clamp(40px, 7.6vw, 92px);
+    letter-spacing: -0.04em;
+    line-height: 0.9;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  .logo-word--light { font-weight: 400; }   /* La Rochelle */
+  .logo-word--bold  { font-weight: 700; }   /* Vote */
+
+  /* Voile carrée — alignée sur la cap-height du V (= hauteur des majuscules) */
+  .sail {
+    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+    font-size: clamp(40px, 7.6vw, 92px);
+    width: 0.72em;        /* fallback : ~cap-height de Space Grotesk */
+    height: 0.72em;
+    width: 1cap;          /* unité CSS = hauteur exacte du V */
+    height: 1cap;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 1px;
+    flex-shrink: 0;
+  }
+  /* Mode sombre : halo clair pour détacher la voile du fond sombre */
+  [data-theme="dark"] .sail { filter: drop-shadow(0 0 3px rgba(236,230,221,0.30)); }
+  /* Mécanique smooth : couleur stable en background, couleur "qui arrive"
+     en pseudo-élément ::after, révélée par clip-path inset depuis la droite */
+  .sail-row {
+    position: relative;
+    width: var(--w);
+    height: calc((100% - 9px) / 10);
+    background-color: var(--c1, #CC0100);
+    overflow: hidden;
+  }
+  .sail-row::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: var(--c2, #F1C232);
+    clip-path: inset(0 0 0 100%);
+    /* ease-out doux : progression visible et continue, pas de "pop" instantané */
+    transition: clip-path 0.55s cubic-bezier(0.33, 0, 0.4, 1);
+  }
+  .sail-row.sliding::after {
+    clip-path: inset(0 0 0 0%);
+  }
+  .sail-row.no-trans::after {
+    transition: none;
+  }
+
+  .tagline {
+    margin-top: 24px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-soft);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  /* ───────── KPI ROTATION ───────── */
+  .kpi-stage {
+    padding: 24px 0;
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+  }
+  .kpi-frame {
+    display: inline-flex;
+    align-items: baseline;
+    gap: clamp(14px, 1.8vw, 26px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+  .kpi-frame.out {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  .kpi-prefix {
+    font-size: clamp(34px, 5.2vw, 72px);
+    font-weight: 500;
+    letter-spacing: -0.025em;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .kpi-prefix:empty { display: none; }
+  .kpi-num {
+    font-size: clamp(56px, 8vw, 104px);
+    font-weight: 700;
+    letter-spacing: -0.05em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    transition: color 0.4s ease;
+    /* Largeur figée par un fantôme invisible ayant la valeur finale.
+       Le chiffre animé est superposé en absolu → aucun décalage de layout. */
+    position: relative;
+    display: inline-block;
+  }
+  .kpi-num-ghost { visibility: hidden; }
+  .kpi-num-active { position: absolute; inset: 0; text-align: right; }
+  .kpi-label {
+    /* label encore un peu plus gros */
+    font-size: clamp(34px, 5.2vw, 72px);
+    font-weight: 500;
+    letter-spacing: -0.025em;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .kpi-label:empty { display: none; }
+
+  /* ───────── HISTOGRAMME — grille de cases ───────── */
+  .viz-section {
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    margin-left: -50vw;
+    padding: 40px clamp(20px, 3vw, 48px);
+    border-bottom: 1px solid var(--rule);
+    background: var(--bg);
+  }
+  .viz-header {
+    max-width: 1500px;
+    margin: 0 auto 4px;
+    text-align: right;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+  .viz-label {
+    font-size: clamp(20px, 2.4vw, 32px);
+    font-weight: 500;
+    letter-spacing: -0.025em;
+    color: var(--ink-soft);
+    transition: opacity 0.4s ease;
+    display: inline-block;
+  }
+  .viz-label.out { opacity: 0; }
+  .viz-toggle {
+    background: transparent;
+    border: 1.5px solid var(--rule);
+    color: var(--ink-soft);
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 11px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    padding: 0;
+    line-height: 1;
+  }
+  .viz-toggle:hover { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .viz-toggle svg { width: 12px; height: 12px; fill: currentColor; }
+  .histo {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    gap: 5px;
+    max-width: 1500px;
+    margin: 0 auto;
+  }
+  .case {
+    aspect-ratio: 1 / 1;
+    background: var(--case-bg);
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    overflow: hidden;
+  }
+  .case:hover {
+    transform: scale(1.06);
+    box-shadow: 0 6px 20px -4px rgba(0,0,0,0.18);
+    z-index: 2;
+  }
+  /* Deux couches superposées : layer-a et layer-b. L'une visible, l'autre cachée.
+     Au tick, on bascule : la visible fade out, l'autre reçoit les nouvelles
+     widths puis fade in (avec un léger décalage = chevauchement). */
+  .case .layer {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: row;
+    opacity: 1;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+  }
+  .case .layer.layer-out {
+    opacity: 0;
+  }
+  .case:hover .layer:not(.layer-out) {
+    filter: brightness(1.12) saturate(1.08);
+  }
+  .seg {
+    height: 100%;
+    transition: width 0.9s cubic-bezier(0.65, 0, 0.35, 1);
+  }
+  .layer.no-trans .seg {
+    transition: none;
+  }
+  /* Numéro du bureau, centré au-dessus des segments. Dans le layer
+     pour qu'il suive le fade out/in de son layer. */
+  .bureau-num {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(20px, 2.8vw, 36px);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    color: rgba(255, 255, 255, 0.7);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+    pointer-events: none;
+    z-index: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tooltip {
+    position: fixed;
+    pointer-events: none;
+    background: var(--ink);
+    color: var(--bg);
+    padding: 14px 22px;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 0;
+    border-radius: 4px;
+    opacity: 0;
+    transform: translate(-50%, -100%);
+    transition: opacity 0.15s ease;
+    white-space: nowrap;
+    z-index: 100;
+  }
+  .tooltip.show { opacity: 1; }
+
+  /* ───────── PORTES ───────── */
+  .doors {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    padding: 32px 0 16px;
+  }
+  .door {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 40px 36px;
+    background: var(--bg-modal);
+    border: 1px solid var(--rule);
+    text-decoration: none;
+    color: var(--ink);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    min-height: 240px;
+    position: relative;
+    overflow: hidden;
+  }
+  .door::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 6px;
+    background: var(--accent);
+  }
+  .door-map      { --accent: var(--D); }
+  .door-analysis { --accent: var(--G); }
+  .door:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px -8px rgba(0,0,0,0.12);
+    border-color: var(--accent);
+  }
+  .door-title {
+    font-size: 48px;
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 1;
+    margin-top: 8px;
+  }
+  .door-desc {
+    font-size: 15px;
+    color: var(--ink-soft);
+    margin-top: 16px;
+    max-width: 360px;
+    line-height: 1.5;
+  }
+  .door-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 32px;
+  }
+  .door-arrow {
+    font-size: 32px;
+    color: var(--accent);
+    transition: transform 0.25s ease;
+    line-height: 1;
+  }
+  .door:hover .door-arrow { transform: translateX(6px); }
+  .door-icon {
+    width: 56px;
+    height: 56px;
+    color: var(--accent);
+    opacity: 0.85;
+  }
+
+  /* ───────── COLOPHON ───────── */
+  .colophon {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 36px 0 0;
+    margin-top: 24px;
+    border-top: 1px solid var(--rule);
+    font-size: 12px;
+    color: var(--ink-soft);
+    letter-spacing: 0.04em;
+  }
+
+  /* ───────── RESPONSIVE ───────── */
+  @media (max-width: 760px) {
+    .page { padding: 36px 18px 56px; }
+    .logo-row { gap: 12px; }
+    .doors { grid-template-columns: 1fr; }
+    .kpi-stage { min-height: 160px; padding: 48px 0; }
+    .histo { grid-template-columns: repeat(auto-fit, minmax(64px, 1fr)); gap: 3px; }
+    .viz-section { padding: 48px 18px; }
+  }
+
+  /* ── Bouton loupe flottant pour Cmd+K ── */
+  .float-search-btn {
+    position: fixed; top: 18px; right: 18px; z-index: 100;
+    background: var(--bg-modal); border: 1px solid var(--border-modal); border-radius: 8px;
+    width: 38px; height: 38px; cursor: pointer; color: var(--text-modal-muted);
+    display: flex; align-items: center; justify-content: center; padding: 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06); transition: all .15s;
+  }
+  .float-search-btn:hover { background: var(--bg-modal-hover); color: var(--text-modal); box-shadow: 0 4px 12px rgba(0,0,0,.1); }
+  .float-search-btn svg { width: 18px; height: 18px; }
+  /* ── Bouton toggle mode sombre (à gauche du bouton recherche) ── */
+  .float-theme-btn {
+    position: fixed; top: 18px; right: 64px; z-index: 100;
+    background: var(--bg-modal); border: 1px solid var(--border-modal); border-radius: 8px;
+    width: 38px; height: 38px; cursor: pointer; color: var(--text-modal-muted);
+    display: flex; align-items: center; justify-content: center; padding: 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06); transition: all .15s;
+    font-family: inherit; font-size: 1rem;
+  }
+  .float-theme-btn:hover { background: var(--bg-modal-hover); color: var(--text-modal); box-shadow: 0 4px 12px rgba(0,0,0,.1); }
+</style>
+</head>
+<body>
+
+<button class="float-theme-btn" id="float-theme-btn" title="Basculer mode clair / sombre" aria-label="Basculer mode clair / sombre">🌙</button>
+<button class="float-search-btn" onclick="if(window.openCmdK)window.openCmdK()" title="Rechercher (⌘K / Ctrl+K)" aria-label="Rechercher">
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg>
+</button>
+<script>
+  /* Toggle mode sombre — homepage */
+  (function(){
+    const btn = document.getElementById('float-theme-btn');
+    if (!btn) return;
+    function isDark(){ return document.documentElement.getAttribute('data-theme') === 'dark'; }
+    function refresh(){ btn.textContent = isDark() ? '☀️' : '🌙'; }
+    refresh();
+    btn.addEventListener('click', () => {
+      const next = isDark() ? 'light' : 'dark';
+      if (next === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+      else document.documentElement.removeAttribute('data-theme');
+      try { localStorage.setItem('lrvote_theme', next); } catch(e) {}
+      refresh();
+    });
+  })();
+</script>
+
+<main class="page">
+
+  <!-- ─────── MASTHEAD ─────── -->
+  <header class="masthead">
+    <div class="logo-row">
+      <h1 class="logo-word logo-word--light">La Rochelle</h1>
+      <div class="sail" id="sail" aria-label="Logo">
+        <div class="sail-row" style="--w: 10%"></div>
+        <div class="sail-row" style="--w: 20%"></div>
+        <div class="sail-row" style="--w: 30%"></div>
+        <div class="sail-row" style="--w: 40%"></div>
+        <div class="sail-row" style="--w: 50%"></div>
+        <div class="sail-row" style="--w: 60%"></div>
+        <div class="sail-row" style="--w: 70%"></div>
+        <div class="sail-row" style="--w: 80%"></div>
+        <div class="sail-row" style="--w: 90%"></div>
+        <div class="sail-row" style="--w: 100%"></div>
+      </div>
+      <h1 class="logo-word logo-word--bold">Vote</h1>
+    </div>
+  </header>
+
+  <!-- ─────── KPI ROTATION ─────── -->
+  <section class="kpi-stage" aria-label="Chiffres clés">
+    <div class="kpi-frame" id="kpi-frame">
+      <span class="kpi-prefix" id="kpi-prefix"></span>
+      <span class="kpi-num" id="kpi-num"><span class="kpi-num-ghost" id="kpi-num-ghost">0</span><span class="kpi-num-active" id="kpi-num-active">0</span></span>
+      <span class="kpi-label" id="kpi-label">—</span>
+    </div>
+  </section>
+
+  <!-- ─────── HISTOGRAMME : grille de cases ─────── -->
+  <section class="viz-section">
+    <div class="viz-header">
+      <span class="viz-label" id="viz-label">—</span>
+      <button class="viz-toggle" id="viz-toggle" type="button" aria-label="Pause">
+        <svg id="viz-toggle-icon" viewBox="0 0 12 12" aria-hidden="true">
+          <rect x="2" y="2" width="3" height="8"/><rect x="7" y="2" width="3" height="8"/>
+        </svg>
+      </button>
+    </div>
+    <div class="histo" id="histo"></div>
+  </section>
+
+  <!-- ─────── PORTES ─────── -->
+  <nav class="doors" aria-label="Sections du site">
+    <a class="door door-map" href="LRVcarte.html">
+      <div>
+        <h2 class="door-title">La carte</h2>
+        <p class="door-desc">Explorer chaque bureau de vote sur le territoire rochelais, élection par élection.</p>
+      </div>
+      <div class="door-foot">
+        <svg class="door-icon" viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round">
+          <path d="M8 14 L20 10 L36 14 L48 10 L48 46 L36 50 L20 46 L8 50 Z"/>
+          <path d="M20 10 L20 46"/>
+          <path d="M36 14 L36 50"/>
+        </svg>
+        <span class="door-arrow">→</span>
+      </div>
+    </a>
+
+    <a class="door door-analysis" href="LRVanalyse.html">
+      <div>
+        <h2 class="door-title">L'analyse</h2>
+        <p class="door-desc">Lire trente-huit ans de scrutins en données, en évolutions et en bascules politiques.</p>
+      </div>
+      <div class="door-foot">
+        <svg class="door-icon" viewBox="0 0 56 56" fill="currentColor">
+          <rect x="6"  y="32" width="8" height="18"/>
+          <rect x="18" y="22" width="8" height="28"/>
+          <rect x="30" y="14" width="8" height="36"/>
+          <rect x="42" y="6"  width="8" height="44"/>
+        </svg>
+        <span class="door-arrow">→</span>
+      </div>
+    </a>
+  </nav>
+
+  <footer class="colophon">
+    <span>Présidentielles · Législatives · Municipales · Régionales · Européennes</span>
+    <span>1988 — 2026</span>
+  </footer>
+
+</main>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script src="donnees.js"></script>
+<script src="geodata.js"></script>
+<script src="shared.js"></script>
+
+<script>
+(function () {
+  // PARTI_COLORS : palette des partis (25 teintes). Définie dans shared.js.
+
+  // ───────────────────────────────────────────────
+  //  MAPPING MODE 4 — strict reprise de la_rochelle_historique
+  // ───────────────────────────────────────────────
+  const BLOC_MODE_4 = [
+    { key: 'G',   color: '#CC0100', src: ['exg', 'grg', 'g', 'eco', 'E'] },
+    { key: 'C',   color: '#F1C232', src: ['c'] },
+    { key: 'D',   color: '#0F55CC', src: ['d', 'ds'] },
+    { key: 'EXD', color: '#20124D', src: ['exd', 'autre'] }
+  ];
+  const DIVERS = { key: '?', color: '#A0E1E2' };
+  const SEG_ORDER = ['G', 'C', 'D', 'EXD', '?'];
+
+  function aggregateBP(rawBP) {
+    if (!rawBP) return null;
+    const out = {};
+    BLOC_MODE_4.forEach(b => {
+      let s = 0;
+      b.src.forEach(k => { if (rawBP[k] > 0) s += rawBP[k]; });
+      if (s > 0) out[b.key] = s;
+    });
+    if ((rawBP['?'] || 0) > 0.05) out['?'] = rawBP['?'];
+    return out;
+  }
+
+  // Construit un bp clé-bk-historique à partir des scores candidats `c` et CAND_DATA.
+  // (Le champ `bd.bp` legacy a été retiré lors de la migration voix→pct.)
+  function bpFromCands(candScores, elecLabel) {
+    if (!candScores) return null;
+    const out = {};
+    Object.entries(candScores).forEach(([cname, pct]) => {
+      const specific = (typeof CAND_DATA !== 'undefined') ? CAND_DATA[cname + '|' + elecLabel] : null;
+      const generic  = (typeof CAND_DATA !== 'undefined') ? CAND_DATA[cname] : null;
+      const bk = (specific && specific.bk) || (generic && generic.bk) || '?';
+      out[bk] = (out[bk] || 0) + pct;
+    });
+    return out;
+  }
+
+  // ───────────────────────────────────────────────
+  //  GRILLE DE CASES — chaque bureau = une case carrée
+  //  contenant un histogramme empilé vertical
+  // ───────────────────────────────────────────────
+  const allBureaux = new Set();
+  Object.values(ELECTIONS).forEach(e => {
+    Object.values(e.sheets).forEach(sheet => {
+      Object.keys(sheet).forEach(num => allBureaux.add(num));
+    });
+  });
+  const bureauxList = [...allBureaux].sort();
+
+  const bureauNoms = {};
+  if (typeof GEOJSON !== 'undefined' && GEOJSON.features) {
+    GEOJSON.features.forEach(f => {
+      const p = f.properties || {};
+      // hover : juste la dénomination (pas le quartier-nom)
+      bureauNoms[p.numero] = p.denomination || p.nom || ('Bureau ' + p.numero);
+    });
+  }
+
+  const histoEl = document.getElementById('histo');
+  const tooltip = document.getElementById('tooltip');
+  const colorOf = k => k === '?' ? DIVERS.color : BLOC_MODE_4.find(b => b.key === k).color;
+
+  function pickSheet(sheets) {
+    return sheets.T1 || sheets.TU || sheets[Object.keys(sheets)[0]];
+  }
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  // Combien de cases ? On compte les colonnes effectives de la grille au runtime,
+  // puis 2 lignes (écran moyen) ou 3 lignes (écran large).
+  function getCaseCount() {
+    const cs = getComputedStyle(histoEl).gridTemplateColumns;
+    const colCount = cs.split(' ').filter(s => s.trim().length > 0).length || 1;
+    const lines = window.innerWidth >= 1400 ? 3 : 2;
+    return Math.min(colCount * lines, bureauxList.length);
+  }
+
+  let cases = [];
+  function buildCases(n) {
+    histoEl.innerHTML = '';
+    cases = [];
+    for (let i = 0; i < n; i++) {
+      const c = document.createElement('div');
+      c.className = 'case';
+      // deux couches : layer-a (visible au départ) et layer-b (cachée)
+      ['a', 'b'].forEach(id => {
+        const layer = document.createElement('div');
+        layer.className = 'layer layer-' + id;
+        if (id === 'b') layer.classList.add('layer-out');
+        SEG_ORDER.forEach(k => {
+          const seg = document.createElement('div');
+          seg.className = 'seg';
+          seg.dataset.bloc = k;
+          seg.style.backgroundColor = colorOf(k);
+          seg.style.width = '0%';
+          layer.appendChild(seg);
+        });
+        // numéro du bureau, par-dessus les segments
+        const numEl = document.createElement('span');
+        numEl.className = 'bureau-num';
+        layer.appendChild(numEl);
+        c.appendChild(layer);
+      });
+      c.dataset.current = 'a';  // quel layer est visible
+      c.addEventListener('mouseenter', () => {
+        if (!c.dataset.num) return;
+        hoveredCase = c;
+        tooltip.textContent = c.dataset.num + ' · ' + c.dataset.nom;
+        tooltip.classList.add('show');
+      });
+      c.addEventListener('mousemove', e => {
+        if (!c.dataset.num) return;
+        tooltip.style.left = e.clientX + 'px';
+        tooltip.style.top  = (e.clientY - 14) + 'px';
+      });
+      c.addEventListener('mouseleave', () => {
+        if (hoveredCase === c) hoveredCase = null;
+        tooltip.classList.remove('show');
+      });
+      // Clic → navigation vers la fiche bureau dans LRVcarte, à l'élection courante
+      c.addEventListener('click', () => {
+        if (!c.dataset.num || !c.dataset.elec) return;
+        const params = new URLSearchParams();
+        params.set('election', c.dataset.elec);
+        params.set('bureau', c.dataset.num);
+        location.href = 'LRVcarte.html#' + params.toString();
+      });
+      histoEl.appendChild(c);
+      cases.push(c);
+    }
+  }
+
+  // Élections shufflées : on les parcourt toutes une fois avant qu'aucune ne se répète.
+  const electionList = Object.keys(ELECTIONS);
+  let electionsShuffled = shuffle(electionList);
+  let elecIdx = 0;
+
+  // Animation en diagonale : chaque case démarre sa transition après un délai
+  // calculé sur sa diagonale. On utilise setTimeout (plus fiable que transition-delay
+  // qui peut être batché avec width et donc ignoré par le navigateur).
+  const DIAG_STEP = 40;  // ms entre cases voisines sur la même diagonale
+
+  const labelEl = document.getElementById('viz-label');
+
+  let hoveredCase = null;  // pour mettre à jour le tooltip quand le bureau change
+
+  // Décalage entre la sortie (layer courant fade out) et l'entrée (layer suivant fade in).
+  // Court → fort chevauchement, presque crossfade. Long → on voit du vide entre.
+  const CROSS_OFFSET = 180;
+
+  function applyCase(c, num, sheet, elecLabel) {
+    const cur = c.dataset.current;             // 'a' ou 'b'
+    const next = cur === 'a' ? 'b' : 'a';
+    const layerCur = c.querySelector('.layer-' + cur);
+    const layerNext = c.querySelector('.layer-' + next);
+
+    // calculer les widths cibles — bp recalculé depuis bd.c (cs en %) via CAND_DATA
+    const widths = {};
+    const bd = num ? sheet[num] : null;
+    const rawBP = bd ? bpFromCands(bd.c, elecLabel) : null;
+    if (rawBP) {
+      const bp = aggregateBP(rawBP);
+      const total = Object.values(bp).reduce((s, v) => s + v, 0);
+      SEG_ORDER.forEach(k => widths[k] = (bp[k] && total > 0) ? (bp[k] / total) * 100 : 0);
+    } else {
+      SEG_ORDER.forEach(k => widths[k] = 0);
+    }
+
+    // 1. Reset le layer next : widths à 0% SANS transition, le rendre visible
+    layerNext.classList.add('no-trans');
+    SEG_ORDER.forEach(k => {
+      layerNext.querySelector('.seg[data-bloc="' + k + '"]').style.width = '0%';
+    });
+    // numéro du bureau dans le layer next (suivra le fade in) — 2 derniers chiffres
+    layerNext.querySelector('.bureau-num').textContent = num ? num.slice(-2) : '';
+    layerNext.classList.remove('layer-out');  // visible (opacity 1) mais segments à 0%, donc rien à voir
+    void layerNext.offsetWidth;                // commit reset
+
+    // 2. Sortie : layer cur fade out
+    layerCur.classList.add('layer-out');
+
+    // 3. Entrée : après CROSS_OFFSET, on réactive la transition et on anime les widths
+    setTimeout(() => {
+      layerNext.classList.remove('no-trans');
+      SEG_ORDER.forEach(k => {
+        layerNext.querySelector('.seg[data-bloc="' + k + '"]').style.width = widths[k] + '%';
+      });
+    }, CROSS_OFFSET);
+
+    // mise à jour des metadata
+    c.dataset.current = next;
+    c.dataset.num = num || '';
+    c.dataset.nom = num ? (bureauNoms[num] || ('Bureau ' + num)) : '';
+    c.dataset.elec = elecLabel || '';
+
+    if (hoveredCase === c && c.dataset.num) {
+      tooltip.textContent = c.dataset.num + ' · ' + c.dataset.nom;
+    }
+  }
+
+  function renderRandom() {
+    if (elecIdx >= electionsShuffled.length) {
+      electionsShuffled = shuffle(electionList);
+      elecIdx = 0;
+    }
+    const electionName = electionsShuffled[elecIdx++];
+    const sheets = ELECTIONS[electionName].sheets;
+    const sheet = pickSheet(sheets);
+    const validBureaux = bureauxList.filter(num => sheet[num] && sheet[num].c && Object.keys(sheet[num].c).length);
+    const sample = shuffle(validBureaux).slice(0, cases.length);
+
+    // mise à jour du label de scrutin avec un petit fade
+    labelEl.classList.add('out');
+    setTimeout(() => {
+      labelEl.textContent = electionName;
+      labelEl.classList.remove('out');
+    }, 380);
+
+    const cs = getComputedStyle(histoEl).gridTemplateColumns;
+    const colCount = cs.split(' ').filter(s => s.trim().length > 0).length || 1;
+
+    cases.forEach((c, i) => {
+      const row = Math.floor(i / colCount);
+      const col = i % colCount;
+      const delay = (row + col) * DIAG_STEP;
+      const num = sample[i];
+      // chaque case démarre sa transition après son délai diagonal
+      setTimeout(() => applyCase(c, num, sheet, electionName), delay);
+    });
+  }
+
+  buildCases(getCaseCount());
+  renderRandom();
+  let vizInterval = null;
+  function startViz() { if (!vizInterval) vizInterval = setInterval(renderRandom, 7000); }
+  function pauseViz() { if (vizInterval) { clearInterval(vizInterval); vizInterval = null; } }
+  startViz();
+
+  // Toggle play/pause
+  const vizToggleBtn  = document.getElementById('viz-toggle');
+  const vizToggleIcon = document.getElementById('viz-toggle-icon');
+  const ICON_PAUSE = '<rect x="2" y="2" width="3" height="8"/><rect x="7" y="2" width="3" height="8"/>';
+  const ICON_PLAY  = '<polygon points="3,2 3,10 10,6"/>';
+  let vizPaused = false;
+  vizToggleBtn.addEventListener('click', () => {
+    vizPaused = !vizPaused;
+    if (vizPaused) {
+      pauseViz();
+      vizToggleIcon.innerHTML = ICON_PLAY;
+      vizToggleBtn.setAttribute('aria-label', 'Lecture');
+    } else {
+      startViz();
+      vizToggleIcon.innerHTML = ICON_PAUSE;
+      vizToggleBtn.setAttribute('aria-label', 'Pause');
+    }
+  });
+
+  // Resize : si le nombre de colonnes change, on rebâtit la grille
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      const n = getCaseCount();
+      if (n !== cases.length) {
+        buildCases(n);
+        renderRandom();
+      }
+    }, 200);
+  });
+
+  // ───────────────────────────────────────────────
+  //  LOGO VOILE — vague smooth, bas → haut, couleurs aléatoires des partis
+  // ───────────────────────────────────────────────
+  // .reverse() → rows[0] = bande du bas (la plus large)
+  const rows = Array.from(document.querySelectorAll('.sail-row')).reverse();
+  // a11y : respect de prefers-reduced-motion → on fixe une couleur unique sans animation.
+  const reduceMotionSail = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduceMotionSail) {
+    const fixedSailColor = PARTI_COLORS[Math.floor(Math.random() * PARTI_COLORS.length)];
+    rows.forEach(r => { r.style.setProperty('--c1', fixedSailColor); r.style.setProperty('--c2', fixedSailColor); });
+  } else {
+  const NB = rows.length;
+  const SLIDE_DUR = 550;     // durée du balayage par bande (= la transition CSS)
+  const STEP      = 200;     // entre deux bandes : chevauchement, ~3 bandes simultanées
+  const PAUSE_END = 4000;    // pause plus longue entre cycles : on respire entre vagues
+
+  function pickSailColor(prev) {
+    let c;
+    do { c = PARTI_COLORS[Math.floor(Math.random() * PARTI_COLORS.length)]; }
+    while (c === prev && PARTI_COLORS.length > 1);
+    return c;
+  }
+
+  let curSailColor = pickSailColor(null);
+  let nextSailColor = pickSailColor(curSailColor);
+  let cursor = 0;
+
+  rows.forEach(r => {
+    r.style.setProperty('--c1', curSailColor);
+    r.style.setProperty('--c2', nextSailColor);
+  });
+
+  function tickSail() {
+    const row = rows[cursor];
+    const target = nextSailColor;  // capture (sinon mauvaise valeur en fin de cycle)
+
+    row.classList.add('sliding');
+
+    setTimeout(() => {
+      row.classList.add('no-trans');
+      row.style.setProperty('--c1', target);  // bg ← couleur cible (caché par overlay)
+      row.classList.remove('sliding');         // overlay caché → on voit bg
+      void row.offsetWidth;
+      // pas besoin de toucher --c2 ici : il est mis à jour globalement en fin de cycle
+      void row.offsetWidth;
+      row.classList.remove('no-trans');
+    }, SLIDE_DUR + 30);
+
+    cursor++;
+    let nextDelay = STEP;
+    if (cursor >= NB) {
+      cursor = 0;
+      // toutes les bandes vont vers `target`. On tire la prochaine cible et
+      // on met à jour --c2 sur toutes les rangées (après que les swaps soient finis).
+      curSailColor = nextSailColor;
+      nextSailColor = pickSailColor(curSailColor);
+      const newC2 = nextSailColor;
+      setTimeout(() => {
+        rows.forEach(r => r.style.setProperty('--c2', newC2));
+      }, SLIDE_DUR + 60);
+      nextDelay = SLIDE_DUR - STEP + PAUSE_END;
+    }
+    setTimeout(tickSail, nextDelay);
+  }
+  tickSail();
+  } // fin else (animation voile : sautée si reduceMotionSail)
+
+  // ───────────────────────────────────────────────
+  //  KPI ROTATION — couleurs aléatoires dans PARTI_COLORS
+  // ───────────────────────────────────────────────
+  // KPIs calculés dynamiquement à partir de donnees.js (toujours à jour).
+  const KPIS = (function buildKPIS(){
+    const E      = (typeof ELECTIONS    !== 'undefined') ? ELECTIONS    : {};
+    const BI_ALL = (typeof BUREAU_INFO  !== 'undefined') ? BUREAU_INFO  : {};
+    const C      = (typeof CAND_DATA    !== 'undefined') ? CAND_DATA    : {};
+    const elecKeys = Object.keys(E);
+
+    let nTours = 0, nVoix = 0;
+    elecKeys.forEach(k => {
+      Object.values(E[k].sheets || {}).forEach(sh => {
+        nTours++;
+        Object.values(sh).forEach(bd => { nVoix += (bd.e || 0); });
+      });
+    });
+
+    // Bureaux de vote : calé sur l'ère la plus récente présente dans BUREAU_INFO
+    // (suit automatiquement les futurs redécoupages).
+    const eraKeys = Object.keys(BI_ALL).filter(k => /^\d{4}$/.test(k)).sort();
+    const latestEra = eraKeys.length ? eraKeys[eraKeys.length - 1] : null;
+    const BI_LATEST = (latestEra && BI_ALL[latestEra]) || {};
+    const nBureaux = Object.values(BI_LATEST).filter(b => b.q !== 'Nul').length;
+
+    // Quartiers : valeurs `q` distinctes sur la carte la plus récente (cohérent
+    // avec la sidebar de la page analyse, qui n'éclate pas les composites comme
+    // « Saint-Maurice/Port-Neuf »).
+    const qSet = new Set();
+    Object.values(BI_LATEST).forEach(b => {
+      if (b.q && b.q !== 'Nul') qSet.add(b.q);
+    });
+
+    // Candidats : couples uniques (prénom + nom) dans CAND_DATA.
+    const candSet = new Set();
+    Object.entries(C).forEach(([k, v]) => {
+      const p = (v.p || '').trim().toLowerCase();
+      let n = (v.n || '').trim();
+      if (!n) n = k.split(/[\s|]/)[0].trim();
+      n = n.toLowerCase();
+      if (p && n) candSet.add(p + '||' + n);
+    });
+
+    // Redécoupages : nombre d'ères de cartes historiques disponibles.
+    const nRedec = eraKeys.length;
+
+    const yearMin = elecKeys.length
+      ? Math.min(...elecKeys.map(k => parseInt(k.match(/\d{4}/)[0])))
+      : 1988;
+
+    return [
+      { num: elecKeys.length, label: 'élections' },
+      { num: nTours,          label: 'tours de scrutin' },
+      { num: nBureaux,        label: 'bureaux de vote' },
+      { num: nRedec,          label: 'redécoupages' },
+      { num: qSet.size,       label: 'quartiers' },
+      { num: candSet.size,    label: 'candidat·es' },
+      { num: nVoix,           label: 'voix exprimées' },
+      { prefix: 'depuis', num: yearMin, label: '', noFormat: true, fromCurrentYear: true }
+    ];
+  })();
+  const kpiFrame      = document.getElementById('kpi-frame');
+  const kpiPrefix     = document.getElementById('kpi-prefix');
+  const kpiNum        = document.getElementById('kpi-num');
+  const kpiNumGhost   = document.getElementById('kpi-num-ghost');
+  const kpiNumActive  = document.getElementById('kpi-num-active');
+  const kpiLabel      = document.getElementById('kpi-label');
+
+  function pickColor(prev) {
+    let c;
+    do { c = PARTI_COLORS[Math.floor(Math.random() * PARTI_COLORS.length)]; }
+    while (c === prev && PARTI_COLORS.length > 1);
+    return c;
+  }
+
+  function animateNum(activeEl, ghostEl, target, dur, format, startVal) {
+    // Le fantôme porte la valeur finale → fige la largeur (et donc celle du parent .kpi-num).
+    // L'élément actif est en position absolue et se met à jour pendant l'animation.
+    // startVal : valeur de départ (0 par défaut). Pour les années, on part de
+    // l'année courante et on descend jusqu'à `target`.
+    const from = (typeof startVal === 'number') ? startVal : 0;
+    const finalStr = format ? target.toLocaleString('fr-FR') : String(target);
+    ghostEl.textContent = finalStr;
+    const t0 = performance.now();
+    function step(t) {
+      const p = Math.min((t - t0) / dur, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      const v = Math.round(from + (target - from) * eased);
+      activeEl.textContent = format ? v.toLocaleString('fr-FR') : String(v);
+      if (p < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  let kpiIdx = 0;
+  let lastColor = null;
+  function showKpi(i, immediate) {
+    const k = KPIS[i];
+    const color = pickColor(lastColor);
+    lastColor = color;
+    const apply = () => {
+      kpiNum.style.color = color;
+      kpiPrefix.textContent = k.prefix || '';
+      kpiLabel.textContent  = k.label  || '';
+      kpiFrame.classList.remove('out');
+      const dur = k.num > 1000 && !k.noFormat ? 1400 : 900;
+      const startVal = k.fromCurrentYear ? new Date().getFullYear() : 0;
+      animateNum(kpiNumActive, kpiNumGhost, k.num, dur, !k.noFormat, startVal);
+    };
+    if (immediate) { apply(); return; }
+    kpiFrame.classList.add('out');
+    setTimeout(apply, 380);
+  }
+  showKpi(0, true);
+  setInterval(() => {
+    kpiIdx = (kpiIdx + 1) % KPIS.length;
+    showKpi(kpiIdx);
+  }, 3400);
+})();
+
+// ─── Cmd+K universal search ──────────────────────────────────────────────
+(function setupCmdK(){
+  function norm(s){ return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
+  let _index = null;
+  function buildIndex(){
+    if (_index) return _index;
+    const items = [];
+    const b2026 = (typeof BUREAU_INFO !== 'undefined' && BUREAU_INFO['2026']) || {};
+    const corr = (typeof BUREAU_CORRESPONDANCES !== 'undefined' && BUREAU_CORRESPONDANCES) || {};
+    const ERAS = ['1988','1993','1996','2004','2007','2010','2012','2015','2022','2026'];
+    Object.entries(b2026).forEach(([id, b]) => {
+      if (!b || b.q === 'Nul') return;
+      const num = parseInt(id);
+      const den = b.den || b.nom || '';
+      const q = b.q || '';
+      const aliasNums = new Set();
+      const aliasNames = new Set();
+      const aliasQs = new Set();
+      const chain = corr[id] || {};
+      ERAS.forEach(era => {
+        const histRef = chain[era];
+        if (!histRef) return;
+        const histIds = Array.isArray(histRef) ? histRef : [histRef];
+        histIds.forEach(hid => {
+          if (!hid) return;
+          const eraInfo = (BUREAU_INFO[era] || {})[hid];
+          if (eraInfo) {
+            if (eraInfo.den && eraInfo.den !== den) aliasNames.add(eraInfo.den);
+            if (eraInfo.nom && eraInfo.nom !== den && eraInfo.nom !== b.nom) aliasNames.add(eraInfo.nom);
+            if (eraInfo.q && eraInfo.q !== q) aliasQs.add(eraInfo.q);
+          }
+          const hNum = parseInt(hid);
+          if (hNum && hNum !== num) aliasNums.add(hNum);
+        });
+      });
+      const searchExtra = [...aliasNums, ...aliasNames, ...aliasQs].join(' ');
+      items.push({ type: 'bureau', icon: '📍', label: 'N°' + num + ' — ' + den, badge: 'Carte 2026', badgeTip: 'Découpage des bureaux de vote actuellement en vigueur.', sub: q ? 'Bureau · ' + q : 'Bureau', key: id, search: norm(num + ' ' + den + ' ' + (b.nom||'') + ' ' + q + ' ' + searchExtra) });
+    });
+    const quartiers = new Set();
+    Object.values(b2026).forEach(b => { if (b && b.q && b.q !== 'Nul') {
+      String(b.q).split('/').map(s => s.trim()).forEach(q => quartiers.add(q));
+    }});
+    [...quartiers].sort().forEach(q => {
+      items.push({ type: 'quartier', icon: '🏘', label: q, sub: 'Quartier', key: q, search: norm(q) });
+    });
+    Object.keys(ELECTIONS || {}).forEach(el => {
+      items.push({ type: 'election', icon: '🗳', label: el, sub: 'Élection', key: el, search: norm(el) });
+    });
+    // Candidat·es : une entrée par (candidat × élection)
+    const candEntries = [];
+    Object.entries(ELECTIONS || {}).forEach(([elLabel, elData]) => {
+      const candsInElec = new Set();
+      Object.values(elData.sheets || {}).forEach(sheet => {
+        Object.values(sheet || {}).forEach(bd => {
+          if (bd && bd.c) Object.keys(bd.c).forEach(c => candsInElec.add(c));
+        });
+      });
+      candsInElec.forEach(cname => {
+        const cd = (typeof CAND_DATA !== 'undefined' && (CAND_DATA[cname + '|' + elLabel] || CAND_DATA[cname])) || {};
+        const nom = cd.n || cname;
+        const prenom = cd.p || '';
+        const pa = cd.pa || '';
+        const label = nom + (prenom ? ' ' + prenom : '') + (pa ? ' (' + pa + ')' : '');
+        candEntries.push({ type: 'candidat', icon: '👤', label: label, sub: elLabel, key: cname, election: elLabel, search: norm(nom + ' ' + prenom + ' ' + pa + ' ' + cname + ' ' + elLabel) });
+      });
+    });
+    candEntries.sort((a, b) => {
+      const c = a.label.localeCompare(b.label, 'fr');
+      return c !== 0 ? c : a.sub.localeCompare(b.sub, 'fr');
+    });
+    items.push(...candEntries);
+    _index = items;
+    return items;
+  }
+  function score(item, tokens){
+    let total = 0;
+    for (const tok of tokens) {
+      const idx = item.search.indexOf(tok);
+      if (idx < 0) return -1;
+      let s = 1;
+      if (idx === 0) s += 4;
+      else if (item.search[idx-1] === ' ') s += 2;
+      s += Math.max(0, 3 - idx*0.05);
+      total += s;
+    }
+    if (item.type === 'bureau') total += 0.3;
+    else if (item.type === 'quartier') total += 0.2;
+    return total;
+  }
+  function filter(query){
+    const q = norm(query).trim();
+    const items = buildIndex();
+    if (!q) {
+      const head = [];
+      ['bureau','quartier','election','candidat'].forEach(t => {
+        head.push(...items.filter(i => i.type === t).slice(0, 5));
+      });
+      return head.slice(0, 50);
+    }
+    const tokens = q.split(/\s+/).filter(Boolean);
+    return items
+      .map(i => ({ i, s: score(i, tokens) }))
+      .filter(o => o.s >= 0)
+      .sort((a,b) => b.s - a.s)
+      .slice(0, 50)
+      .map(o => o.i);
+  }
+  // Action sur sélection (index → on envoie tout vers LRVcarte)
+  function pickItem(item){
+    closeOverlayUI();
+    const params = new URLSearchParams();
+    if (item.type === 'bureau') {
+      params.set('bureau', item.key);
+    } else if (item.type === 'quartier') {
+      params.set('quartier', item.key);
+    } else if (item.type === 'election') {
+      params.set('election', item.key);
+    } else if (item.type === 'candidat') {
+      if (item.election) params.set('election', item.election);
+      params.set('mode', 'candidat');
+      params.set('selection', item.key);
+    }
+    location.href = 'LRVcarte.html#' + params.toString();
+  }
+  let overlayEl = null, inputEl = null, listEl = null, results = [], cursor = 0;
+  function ensureUI(){
+    if (overlayEl) return;
+    const css = '#cmdk-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-start;justify-content:center;padding-top:14vh;z-index:10001;font-family:Space Grotesk,system-ui,sans-serif}'
+      + '#cmdk-card{background:var(--bg-modal);border-radius:12px;width:560px;max-width:92vw;max-height:70vh;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3);display:flex;flex-direction:column}'
+      + '#cmdk-input{padding:14px 18px;border:none;border-bottom:1px solid var(--border-modal);font-size:1rem;font-family:inherit;outline:none;color:var(--text-modal);background:transparent}'
+      + '#cmdk-list{overflow-y:auto;padding:4px 0;flex:1}'
+      + '.cmdk-item{display:flex;align-items:center;gap:10px;padding:8px 16px;cursor:pointer;font-size:.88rem}'
+      + '.cmdk-item.cur{background:var(--bg-modal-hover)}'
+      + '.cmdk-item .ico{font-size:1rem;width:22px;text-align:center;flex-shrink:0}'
+      + '.cmdk-item .lbl{flex:1;min-width:0;color:var(--text-modal);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:8px}'
+      + '.cmdk-item .lbl-text{overflow:hidden;text-overflow:ellipsis;min-width:0}'
+      + '.cmdk-item .badge{font-size:.7rem;font-weight:600;background:var(--bg-modal-accent);color:var(--text-modal-muted);padding:2px 8px;border-radius:4px;white-space:nowrap;flex-shrink:0;cursor:help}'
+      + '.cmdk-item .sub{color:var(--text-modal-muted);font-size:.78rem;flex-shrink:0;max-width:40%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
+      + '#cmdk-tip{position:fixed;background:var(--bg-tooltip);color:var(--text-tooltip);padding:6px 10px;border-radius:4px;font-size:.72rem;font-weight:500;white-space:nowrap;pointer-events:none;z-index:10002;opacity:0;transition:opacity .15s;transform:translateX(-50%)}'
+      + '#cmdk-foot{padding:8px 16px;border-top:1px solid var(--border-modal);font-size:.72rem;color:var(--text-modal-muted);display:flex;gap:14px;justify-content:flex-end;background:var(--bg-modal-hover)}'
+      + '#cmdk-foot kbd{display:inline-block;background:var(--bg-modal);border:1px solid var(--border-modal);border-radius:3px;padding:1px 5px;font:inherit;font-size:.72rem;color:var(--text-modal)}'
+      + '#cmdk-empty{padding:20px 16px;color:var(--text-modal-muted);text-align:center;font-size:.85rem}';
+    const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
+    overlayEl = document.createElement('div'); overlayEl.id = 'cmdk-overlay';
+    overlayEl.innerHTML = '<div id="cmdk-card">'
+      + '<input id="cmdk-input" type="text" placeholder="Rechercher un bureau, un quartier, une élection, un·e candidat·e…" autocomplete="off" spellcheck="false">'
+      + '<div id="cmdk-list"></div>'
+      + '<div id="cmdk-foot"><span><kbd>↑</kbd><kbd>↓</kbd> naviguer</span><span><kbd>Entrée</kbd> sélectionner</span><span><kbd>Échap</kbd> fermer</span></div>'
+      + '</div>';
+    document.body.appendChild(overlayEl);
+    inputEl = overlayEl.querySelector('#cmdk-input');
+    listEl  = overlayEl.querySelector('#cmdk-list');
+    overlayEl.addEventListener('click', e => { if (e.target === overlayEl) closeOverlayUI(); });
+    inputEl.addEventListener('input', () => { runSearch(); });
+    inputEl.addEventListener('keydown', e => {
+      if (e.key === 'ArrowDown') { e.preventDefault(); moveCursor(1); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); moveCursor(-1); }
+      else if (e.key === 'Enter')   { e.preventDefault(); if (results[cursor]) pickItem(results[cursor]); }
+      else if (e.key === 'Escape')  { e.preventDefault(); closeOverlayUI(); }
+    });
+  }
+  function runSearch(){ results = filter(inputEl.value); cursor = 0; render(); }
+  function escapeHTML(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
+  function render(){
+    if (!results.length) { listEl.innerHTML = '<div id="cmdk-empty">Aucun résultat</div>'; return; }
+    listEl.innerHTML = results.map((r, i) =>
+      '<div class="cmdk-item' + (i === cursor ? ' cur' : '') + '" data-i="' + i + '">'
+      + '<span class="ico">' + r.icon + '</span>'
+      + '<span class="lbl"><span class="lbl-text">' + escapeHTML(r.label) + '</span>'
+      + (r.badge ? '<span class="badge" data-tip="' + (r.badgeTip ? escapeHTML(r.badgeTip) : '') + '">' + escapeHTML(r.badge) + '</span>' : '')
+      + '</span>'
+      + '<span class="sub">' + escapeHTML(r.sub) + '</span>'
+      + '</div>').join('');
+    [...listEl.querySelectorAll('.cmdk-item')].forEach(el => {
+      el.addEventListener('click', () => { cursor = parseInt(el.dataset.i); pickItem(results[cursor]); });
+      el.addEventListener('mousemove', () => { const i = parseInt(el.dataset.i); if (i !== cursor) { cursor = i; render(); } });
+    });
+    [...listEl.querySelectorAll('.cmdk-item .badge')].forEach(b => {
+      const tip = b.dataset.tip;
+      if (!tip) return;
+      b.addEventListener('mouseenter', () => {
+        let t = document.getElementById('cmdk-tip');
+        if (!t) { t = document.createElement('div'); t.id = 'cmdk-tip'; document.body.appendChild(t); }
+        t.textContent = tip;
+        const r = b.getBoundingClientRect();
+        t.style.left = (r.left + r.width/2) + 'px';
+        t.style.top  = (r.bottom + 6) + 'px';
+        t.style.opacity = '1';
+      });
+      b.addEventListener('mouseleave', () => {
+        const t = document.getElementById('cmdk-tip');
+        if (t) t.style.opacity = '0';
+      });
+    });
+    const cur = listEl.querySelector('.cmdk-item.cur');
+    if (cur) cur.scrollIntoView({ block: 'nearest' });
+  }
+  function moveCursor(d){ if (!results.length) return; cursor = (cursor + d + results.length) % results.length; render(); }
+  function openOverlayUI(){ ensureUI(); overlayEl.style.display = 'flex'; inputEl.value = ''; runSearch(); setTimeout(() => inputEl.focus(), 0); }
+  function closeOverlayUI(){ if (overlayEl) overlayEl.style.display = 'none'; }
+  document.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+      e.preventDefault();
+      if (overlayEl && overlayEl.style.display === 'flex') closeOverlayUI();
+      else openOverlayUI();
+    }
+  });
+  window.openCmdK = openOverlayUI;
+})();
+</script>
+</body>
+</html>

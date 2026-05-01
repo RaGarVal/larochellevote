@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Méthodologie & sources · La Rochelle Vote</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>
+  /* Theme bootstrap (anti-FOUC) */
+  (function(){
+    try {
+      var t = localStorage.getItem('lrvote_theme');
+      if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+    } catch(e) {}
+  })();
+</script>
+<link rel="stylesheet" href="shared.css"/>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+
+/* ──────────────────────────────────────────────────
+   TOKENS CHROME + CONTENU LECTURE (mode sombre)
+────────────────────────────────────────────────── */
+:root {
+  --bg-chrome: #F7F3EE;
+  --bg-chrome-hover: #FAF6F0;
+  --bg-chrome-accent: #EFE8DD;
+  --text-chrome: #1A1A1A;
+  --text-chrome-muted: #5A5A5A;
+  --border-chrome: #E6DFD5;
+  --bg-page: #F0EAE0;
+  --bg-modal: #FFFFFF;
+  --border-modal: #E6DFD5;
+  --bg-modal-hover: #FAF6F0;
+  --bg-modal-accent: #EFE8DD;
+  --text-modal: #1A1A1A;
+  --text-modal-muted: #5A5A5A;
+  --bg-tooltip: #1A1A1A;
+  --text-tooltip: #F7F3EE;
+  /* Contenu de lecture */
+  --bg-card: #FFFFFF;            /* cards (sommaire) */
+  --bg-code: #F7F3EE;             /* code inline */
+  --bg-blockquote: #FBF7EE;       /* blockquote */
+  --bg-todo: #FFF7E6;             /* todo-note */
+  --text-todo: #8A6A2C;
+  --border-todo: #E6C77E;
+  --text-body: #2A2A2A;           /* paragraphes (légèrement plus doux que texte principal) */
+  --accent-warm: #B49B7E;          /* doré chaleureux (eyebrow, num, accents) */
+}
+[data-theme="dark"] {
+  /* Palette V2 — phase 3 : hovers visibles, hiérarchie chrome/modal claire */
+  --bg-chrome: #16151A;
+  --bg-chrome-hover: #2D2A30;
+  --bg-chrome-accent: #383438;
+  --text-chrome: #ECE6DD;
+  --text-chrome-muted: #9D968B;
+  --border-chrome: #2D2A30;
+  --bg-page: #0F0E13;
+  --bg-modal: #21202A;
+  --border-modal: #3A3640;
+  --bg-modal-hover: #2D2C36;
+  --bg-modal-accent: #3A3640;
+  --text-modal: #ECE6DD;
+  --text-modal-muted: #9D968B;
+  --bg-tooltip: #ECE6DD;
+  --text-tooltip: #16151A;
+  /* Contenu de lecture */
+  --bg-card: #21202A;             /* sommaire */
+  --bg-code: #2D2A30;
+  --bg-blockquote: rgba(180, 155, 126, 0.08);
+  --bg-todo: rgba(180, 155, 126, 0.10);
+  --text-todo: #D4B896;
+  --border-todo: rgba(180, 155, 126, 0.45);
+  --text-body: #D8D2C7;            /* paragraphes : légèrement adouci vs --text-chrome */
+  --accent-warm: #C9A878;          /* doré un peu plus clair pour rester visible */
+}
+
+body {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  background: var(--bg-page);
+  color: var(--text-chrome);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ── Topbar (mêmes styles que LRVcarte) ── */
+#topbar {
+  background: var(--bg-chrome); color: var(--text-chrome);
+  display: flex; align-items: center; gap: 16px;
+  padding: 0 24px; height: 66px; flex-shrink: 0; z-index: 50;
+  border-bottom: 1px solid var(--border-chrome);
+}
+.tb-logo { display: flex; align-items: center; gap: 4px; text-decoration: none; color: inherit; flex-shrink: 0; background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-family: inherit; font-size: 2.1rem; line-height: 1; align-items: baseline; }
+.tb-brand-light, .tb-brand-bold { letter-spacing: -0.02em; white-space: nowrap; }
+.tb-brand-light { font-size: 0.95em; font-weight: 400; }
+.tb-brand-bold { font-weight: 700; }
+.tb-logo:hover .tb-brand-bold,
+.tb-logo:hover .tb-brand-light { opacity: 0.7; }
+.tb-logo-burger { width: 16px; height: 16px; color: var(--text-chrome-muted); margin-right: 6px; align-self: center; transition: color .15s; }
+.tb-logo:hover .tb-logo-burger { color: var(--text-chrome); }
+.tb-logo[aria-expanded="true"] .tb-logo-burger { color: var(--text-chrome); }
+.sail-mini { width: 1cap; height: 1cap; display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex-shrink: 0; align-self: center; }
+/* Mode sombre : léger halo clair autour du logo voile */
+[data-theme="dark"] .sail-mini { filter: drop-shadow(0 0 1.5px rgba(236,230,221,0.35)); }
+.sail-mini .sail-row { width: var(--w); height: calc((100% - 5px) / 6); background-color: #CC0100; }
+
+#tb-page-title { flex: 1; display: flex; align-items: center; justify-content: center; }
+#tb-page-title h1 { font-size: 1.1rem; font-weight: 600; color: var(--text-chrome); letter-spacing: -0.01em; }
+
+.tb-search-btn { background: none; border: 1px solid var(--border-chrome); border-radius: 6px; width: 30px; height: 30px; cursor: pointer; color: var(--text-chrome-muted); transition: all .15s; display: flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0; }
+.tb-search-btn:hover { background: var(--bg-chrome-hover); color: var(--text-chrome); }
+.tb-search-btn svg { width: 15px; height: 15px; }
+
+.tb-nav { display: flex; align-items: center; gap: 22px; flex-shrink: 0; }
+.tb-nav-link { font-size: .86rem; font-weight: 500; color: var(--text-chrome-muted); text-decoration: none; padding: 4px 0; border-bottom: 2px solid transparent; transition: color .15s, border-color .15s; }
+.tb-nav-link:hover { color: var(--text-chrome); }
+
+/* ── Layout de lecture ── */
+main.doc {
+  flex: 1;
+  padding: 60px 24px 80px;
+  display: flex;
+  justify-content: center;
+}
+.doc-wrap {
+  width: 100%;
+  max-width: 760px;
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+/* En-tête */
+header.doc-head {
+  border-bottom: 1px solid var(--border-chrome);
+  padding-bottom: 28px;
+}
+header.doc-head .eyebrow {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent-warm);
+  margin-bottom: 12px;
+}
+header.doc-head h1 {
+  font-size: 2.4rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  margin-bottom: 16px;
+}
+header.doc-head .lead {
+  font-size: 1.05rem;
+  color: var(--text-chrome-muted);
+  line-height: 1.55;
+  max-width: 600px;
+}
+
+/* Sommaire */
+nav.toc {
+  background: var(--bg-card);
+  border: 1px solid var(--border-chrome);
+  border-radius: 10px;
+  padding: 18px 22px;
+}
+nav.toc h2 {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent-warm);
+  margin-bottom: 10px;
+}
+nav.toc ol {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+nav.toc a {
+  color: var(--text-chrome);
+  text-decoration: none;
+  font-size: 0.92rem;
+  font-weight: 500;
+  display: flex;
+  gap: 10px;
+}
+nav.toc a:hover { color: var(--accent-warm); }
+nav.toc .num { font-variant-numeric: tabular-nums; color: var(--accent-warm); min-width: 22px; font-weight: 600; }
+
+/* Sections */
+section.s {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  scroll-margin-top: 84px;
+}
+section.s h2 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  border-bottom: 2px solid var(--text-chrome);
+  padding-bottom: 10px;
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+section.s h2 .num {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--accent-warm);
+  letter-spacing: 0;
+}
+section.s h3 {
+  font-size: 1.08rem;
+  font-weight: 600;
+  margin-top: 14px;
+  margin-bottom: 4px;
+  color: var(--text-chrome);
+}
+section.s p {
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--text-body);
+}
+section.s ul {
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.98rem;
+  line-height: 1.6;
+  color: var(--text-body);
+}
+section.s ul li::marker { color: var(--accent-warm); }
+section.s strong { color: var(--text-chrome); font-weight: 600; }
+section.s em { color: var(--text-chrome-muted); }
+section.s code { background: var(--bg-code); border: 1px solid var(--border-chrome); border-radius: 4px; padding: 1px 6px; font-size: 0.85em; font-family: 'SF Mono', Menlo, monospace; color: var(--text-chrome); }
+section.s blockquote {
+  border-left: 3px solid var(--accent-warm);
+  padding: 12px 18px;
+  background: var(--bg-blockquote);
+  font-size: 0.95rem;
+  color: var(--text-chrome-muted);
+  font-style: italic;
+  border-radius: 0 6px 6px 0;
+}
+section.s a {
+  color: var(--text-chrome);
+  text-decoration: underline;
+  text-decoration-color: var(--accent-warm);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
+}
+section.s a:hover { color: var(--accent-warm); }
+
+/* Tags / chips de bloc politique */
+.bloc-chip {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 4px;
+  font-size: 0.82em;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  margin-right: 4px;
+}
+
+/* Zone "à compléter" pour l'auteur */
+.todo-note {
+  background: var(--bg-todo);
+  border: 1px dashed var(--border-todo);
+  color: var(--text-todo);
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+/* Footer simple */
+footer.doc-foot {
+  margin-top: 30px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-chrome);
+  font-size: 0.85rem;
+  color: var(--text-chrome-muted);
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+footer.doc-foot a {
+  color: var(--text-chrome-muted);
+  text-decoration: none;
+}
+footer.doc-foot a:hover { color: var(--text-chrome); }
+
+/* Responsive */
+@media (max-width: 600px) {
+  #tb-page-title { display: none; }
+  header.doc-head h1 { font-size: 1.7rem; }
+  main.doc { padding: 32px 16px 60px; }
+  section.s h2 { font-size: 1.3rem; }
+}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <button type="button" class="tb-logo" id="tb-logo-btn" aria-label="Menu" aria-haspopup="true" aria-expanded="false">
+    <svg class="tb-logo-burger" viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
+    <span class="tb-brand-light">LR</span>
+    <div class="sail-mini">
+      <div class="sail-row" style="--w:17%"></div>
+      <div class="sail-row" style="--w:33%"></div>
+      <div class="sail-row" style="--w:50%"></div>
+      <div class="sail-row" style="--w:67%"></div>
+      <div class="sail-row" style="--w:83%"></div>
+      <div class="sail-row" style="--w:100%"></div>
+    </div>
+    <span class="tb-brand-bold">Vote</span>
+  </button>
+  <nav class="tb-nav">
+    <a href="LRVcarte.html" class="tb-nav-link">La carte</a>
+    <a href="LRVanalyse.html" class="tb-nav-link">L'analyse</a>
+  </nav>
+  <div id="tb-page-title"><h1>Méthodologie &amp; sources</h1></div>
+  <button class="tb-search-btn" onclick="if(window.openCmdK)window.openCmdK()" title="Rechercher (⌘K / Ctrl+K)" aria-label="Rechercher">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg>
+  </button>
+</div>
+
+<main class="doc">
+  <div class="doc-wrap">
+
+    <header class="doc-head">
+      <div class="eyebrow">Documentation</div>
+      <h1>Méthodologie &amp; sources</h1>
+      <p class="lead">Comment fonctionne La&nbsp;Rochelle&nbsp;Vote, d'où viennent les données, ce qu'il faut savoir pour les lire correctement.</p>
+    </header>
+
+    <nav class="toc" aria-label="Sommaire">
+      <h2>Sommaire</h2>
+      <ol>
+        <li><a href="#sources"><span class="num">1.</span> Sources des données</a></li>
+        <li><a href="#lecture"><span class="num">2.</span> Lecture des données</a></li>
+        <li><a href="#limites"><span class="num">3.</span> Limites connues</a></li>
+      </ol>
+    </nav>
+
+    <!-- ─────────────── §1 SOURCES ─────────────── -->
+    <section class="s" id="sources">
+      <h2><span class="num">1.</span> Sources des données</h2>
+
+      <h3>1.1 Résultats électoraux</h3>
+      <p>
+        Les résultats par bureau de vote sont compilés à partir de plusieurs sources publiques, mais
+        souvent difficilement accessibles. Le plus simple, c'est évidemment les résultats par bureau
+        en ligne sur data.gouv ou sur le site Open data La&nbsp;Rochelle. Mais, au mieux, cela ne
+        remonte qu'à 1999. Pour les résultats plus anciens, il s'agit de demandes personnelles de
+        l'autrice effectuées auprès du service des élections de la ville de La&nbsp;Rochelle, il y a
+        près de vingt ans. Certains résultats sont aussi issus des archives du journal
+        <em>Sud Ouest</em>, qui publie les lendemains d'élections les résultats par bureaux — des
+        archives consultées soit auprès du journal lui-même, soit via les archives départementales
+        de la Charente-Maritime.
+      </p>
+
+      <h3>1.2 Découpage des bureaux &amp; cartes</h3>
+      <p>
+        C'est peut-être la donnée la plus précieuse et la plus difficile à trouver&nbsp;: le
+        découpage des bureaux de vote. Au niveau national, cette donnée a seulement quelques années,
+        et reste bien imprécise. De plus, au niveau local, les redécoupages sont réguliers&nbsp;:
+        30 bureaux de vote à La&nbsp;Rochelle en 1965, 40 en 1988, 61 en 2026&nbsp;! Les données
+        récentes, depuis le redécoupage majeur de 2015, sont issues du site Open data
+        La&nbsp;Rochelle. Avant cette date, il n'existe pas de découpage officiel dans un format
+        praticable et toutes les cartes du site sont donc des réalisations manuelles de l'autrice.
+        À partir de 2007, les références sont des fichiers PDF récupérés auprès du service des
+        élections de la ville de La&nbsp;Rochelle. À partir de 1993, la référence est une carte
+        papier, griffonnée au gré des redécoupages suivants mais tout de même assez précise. Reste
+        le cas de 1988, expliqué plus bas. Pour les années précédentes, c'est encore un
+        chantier… si jamais vous avez des informations, n'hésitez pas à contacter
+        La&nbsp;Rochelle&nbsp;Vote.
+      </p>
+      <p>
+        Concrètement, en l'état actuel des choses, le site distingue plusieurs
+        <strong>« ères »</strong> géographiques&nbsp;: <code>1988</code>, <code>1993</code>,
+        <code>1996</code>, <code>2004</code>, <code>2007</code>, <code>2010</code>,
+        <code>2012</code>, <code>2015</code>, <code>2022</code>, <code>2026</code>. À chaque ère
+        correspond un fond de carte propre et un système de numérotation cohérent à l'intérieur de
+        la période. Les noms des bureaux sont des créations de l'autrice — car les numéros changent
+        souvent — pour que les bureaux soient plus géographiquement évocateurs&nbsp;; le nom
+        officiel de chaque bureau est toujours présent.
+      </p>
+
+      <h3>1.3 Métadonnées des candidat·es</h3>
+      <p>
+        Pour chaque candidat·e ou tête de liste identifié·e, le site stocke un nom, un prénom, un
+        parti politique, un bloc politique large, une ou des famille·s politique·s fine·s, des alliés
+        et une couleur. Ces métadonnées sont saisies manuellement et révisées scrutin par scrutin&nbsp;:
+        un·e même candidat·e peut changer d'étiquette politique entre deux élections, et le site
+        reflète ces évolutions.
+      </p>
+    </section>
+
+    <!-- ─────────────── §2 LECTURE ─────────────── -->
+    <section class="s" id="lecture">
+      <h2><span class="num">2.</span> Lecture des données</h2>
+
+      <h3>2.1 Les blocs politiques</h3>
+      <p>
+        Pour permettre une lecture transversale d'élections très différentes, chaque candidat·e est
+        rangé·e dans <strong>un bloc politique large</strong>. Le découpage par défaut comprend
+        quatre blocs&nbsp;:
+      </p>
+      <ul>
+        <li><span class="bloc-chip" style="background:#CC0100">Gauche</span> — de l'extrême gauche à la gauche modérée</li>
+        <li><span class="bloc-chip" style="background:#F1C232; color:#1A1A1A">Centre</span> — partis du « bloc central » et divers centre</li>
+        <li><span class="bloc-chip" style="background:#0F55CC">Droite</span> — de la droite libérale à la droite conservatrice</li>
+        <li><span class="bloc-chip" style="background:#20124D">Extrême-droite</span> — RN, FN, et proches</li>
+      </ul>
+      <p>
+        Trois autres regroupements (à 2, 3 ou 5 blocs) sont disponibles dans la page d'analyse pour
+        des lectures alternatives.
+      </p>
+      <p><strong>En deux blocs&nbsp;:</strong></p>
+      <ul>
+        <li><span class="bloc-chip" style="background:#CC0100">Gauche</span> — de l'extrême gauche à la gauche modérée</li>
+        <li><span class="bloc-chip" style="background:#0F55CC">Droite</span> — des centristes à l'extrême droite incluse</li>
+      </ul>
+      <p><strong>En trois blocs&nbsp;:</strong></p>
+      <ul>
+        <li><span class="bloc-chip" style="background:#CC0100">Gauche</span> — de l'extrême gauche à la gauche modérée</li>
+        <li><span class="bloc-chip" style="background:#F1C232; color:#1A1A1A">Centre</span> — partis du « bloc central » et divers centre</li>
+        <li><span class="bloc-chip" style="background:#0F55CC">Droite</span> — de la droite libérale à l'extrême droite incluse</li>
+      </ul>
+      <p><strong>En cinq blocs&nbsp;:</strong></p>
+      <ul>
+        <li><span class="bloc-chip" style="background:#980000">Extrême-gauche</span> — LO, LCR, NPA…</li>
+        <li><span class="bloc-chip" style="background:#CC0100">Gauche</span> — de LFI et du PCF à Place publique</li>
+        <li><span class="bloc-chip" style="background:#F1C232; color:#1A1A1A">Centre</span> — partis du « bloc central » et divers centre</li>
+        <li><span class="bloc-chip" style="background:#0F55CC">Droite</span> — de la droite libérale à la droite conservatrice</li>
+        <li><span class="bloc-chip" style="background:#20124D">Extrême-droite</span> — RN, FN, et proches</li>
+      </ul>
+
+      <h3>2.2 Les familles politiques</h3>
+      <p>
+        Outre les blocs, qui permettent des comparaisons sur la longue période, chaque candidat·e
+        ou tête de liste peut être rattaché·e à une ou plusieurs <strong>familles politiques
+        fines</strong> — par exemple « gauche modérée », « gauche radicale », « écologistes »,
+        « droite républicaine », « souverainistes », « chasseurs-ruralistes »…
+      </p>
+      <p>
+        <strong>Important&nbsp;:</strong> un·e même candidat·e ou tête de liste peut appartenir à
+        plusieurs familles à la fois (ex. un·e écologiste peut être à la fois « gauche modérée » et
+        « écologistes »), et les scores des familles ne s'additionnent donc pas mécaniquement,
+        contrairement aux blocs.
+      </p>
+
+      <h3>2.3 Le découpage en ères et les redécoupages</h3>
+      <p>
+        Lorsqu'un redécoupage des bureaux de vote a lieu, plusieurs cas de figure se présentent&nbsp;:
+      </p>
+      <ul>
+        <li><strong>Bureau inchangé</strong>&nbsp;: même numéro, même périmètre territorial.</li>
+        <li><strong>Numéro modifié</strong>&nbsp;: le bureau garde son périmètre mais change de numéro (depuis 2007, les créations de bureaux ont lieu « en fin de liste » et ne décalent plus les numéros des bureaux existants).</li>
+        <li><strong>Redécoupage mineur</strong>&nbsp;: quelques rues changent de bureau — indiqué par un macaron jaune dans la partie analyse.</li>
+        <li><strong>Redécoupage majeur</strong>&nbsp;: un ou plusieurs pâtés de maisons changent de bureau — indiqué par un macaron orange dans la partie analyse.</li>
+        <li><strong>Création de bureau</strong>&nbsp;: un ancien bureau est coupé en deux, ou deux en trois — indiqué par un macaron vert dans la partie analyse.</li>
+      </ul>
+      <p>
+        Le site reconstitue ces filiations dans une table de correspondances bidirectionnelle&nbsp;:
+        à chaque bureau de la <em>carte 2026</em> (la plus récente, prise comme référence) correspond
+        une chaîne d'ancêtres territoriaux dans toutes les ères précédentes. Cette continuité permet
+        de suivre l'évolution politique d'un même territoire sur plus de trente ans, malgré les
+        changements géographiques.
+      </p>
+    </section>
+
+    <!-- ─────────────── §3 LIMITES ─────────────── -->
+    <section class="s" id="limites">
+      <h2><span class="num">3.</span> Limites connues</h2>
+
+      <h3>3.1 Continuité des candidat·es entre élections</h3>
+      <p>
+        Pour les données actuellement sur le site, il n'y a aucune difficulté à identifier chacun·e
+        des candidat·es. Mais les données ont vocation à s'élargir et il n'est pas exclu qu'il soit
+        plus difficile d'identifier un·e « Dupont » en 1973 et un·e « Dupont » en 1985. Cela demande
+        un long travail manuel. Le site applique cette mise en correspondance avec prudence et signale
+        les cas ambigus.
+      </p>
+
+      <h3>3.2 Zones d'incertitude</h3>
+      <p>
+        Pour les ères à partir de 2007, les contours sont toujours rigoureusement exacts. Entre 1993
+        et 2004, les frontières sont dans quelques endroits déduites par l'évidence des contraintes
+        des limites de cantons qui, elles, ne changent que très rarement. Pour l'ère 1988, c'est
+        beaucoup plus compliqué&nbsp;: les déductions sont plus nombreuses ; à Mireuil et
+        Saint-Maurice, les limites sont des propositions hypothétiques et sont présentées comme telles.
+        Pour trois bureaux de La Genette et trois bureaux de Saint-Éloi/Sud de Lafond, il n'y a aucun
+        indice, et les résultats de ces deux zones sont donc présentés en agrégation dans une large
+        zone géographique.
+      </p>
+
+      <h3>3.3 Bureaux redécoupés ou scindés</h3>
+      <p>
+        Quand un bureau historique a été divisé en plusieurs, ses résultats anciens sont attribués à
+        l'ensemble des bureaux héritiers — ce qui fausse en partie les comparaisons fines
+        bureau-à-bureau pour ces ères. Les choix opérés sont néanmoins totalement traçables dans la
+        table de correspondances et indiqués dans la partie analyse.
+      </p>
+
+      <h3>3.4 Données manquantes</h3>
+      <p>
+        Les scrutins d'avant 1988 sont en partie connus, mais sans les cartes correspondantes. Depuis
+        1988, il manque&nbsp;: les cantonales de 1988, le référendum de 1988, les municipales de 1989,
+        les européennes de 1989, les régionales de 1992, les cantonales de 1992, les cantonales de
+        1994, les européennes de 1994 et les cantonales de 1998.
+      </p>
+
+      <blockquote>
+        Si vous repérez une erreur ou une donnée manquante, merci de nous la signaler&nbsp;:
+        chaque correction améliore la base partagée par tou·tes les utilisateur·ices du site.
+      </blockquote>
+    </section>
+
+    <footer class="doc-foot">
+      <span>Dernière mise à jour&nbsp;: <span id="last-update">avril 2026</span></span>
+      <span><a href="apropos.html">À propos &amp; contact →</a></span>
+    </footer>
+
+  </div>
+</main>
+
+<script src="donnees.js"></script>
+<script src="shared.js"></script>
+<script>
+// ─── Modal de partage ────────────────────────────────────────────────────
+(function setupShareModal(){
+  const css = '#share-modal{position:fixed;inset:0;display:none;z-index:10500;font-family:Space Grotesk,system-ui,sans-serif}'
+    + '#share-modal.open{display:block}'
+    + '.sm-overlay{position:absolute;inset:0;background:rgba(0,0,0,.45);opacity:0;transition:opacity .15s}'
+    + '#share-modal.open .sm-overlay{opacity:1}'
+    + '.sm-card{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(.96);background:var(--bg-modal);border-radius:12px;width:480px;max-width:calc(100vw - 32px);max-height:90vh;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.28);opacity:0;transition:opacity .18s,transform .18s}'
+    + '#share-modal.open .sm-card{opacity:1;transform:translate(-50%,-50%) scale(1)}'
+    + '.sm-header{display:flex;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border-modal)}'
+    + '.sm-header h3{flex:1;margin:0;font-size:1rem;font-weight:700;color:var(--text-modal);letter-spacing:-.01em}'
+    + '.sm-close{background:rgba(0,0,0,.06);border:none;width:28px;height:28px;border-radius:6px;font-size:.95rem;color:var(--text-modal-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit}'
+    + '.sm-close:hover{background:rgba(0,0,0,.12);color:var(--text-modal)}'
+    + '.sm-body{padding:18px 20px 22px}'
+    + '.sm-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#B49B7E;margin-bottom:8px}'
+    + '.sm-url{background:var(--bg-modal-hover);border:1px solid var(--border-modal);border-radius:6px;padding:10px 12px;font-family:SF Mono,Menlo,monospace;font-size:.78rem;color:var(--text-modal);word-break:break-all;max-height:90px;overflow-y:auto;margin-bottom:14px;user-select:all;line-height:1.5}'
+    + '.sm-action{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:11px 14px;border-radius:8px;border:none;font-family:inherit;font-size:.92rem;font-weight:600;cursor:pointer;transition:all .15s;margin-bottom:8px}'
+    + '.sm-copy{background:#1A1A1A;color:#fff}'
+    + '.sm-copy:hover{background:#2A2A2A}'
+    + '.sm-copy.copied{background:#27AE60}'
+    + '.sm-native{background:var(--bg-modal-hover);color:var(--text-modal);border:1px solid var(--border-modal)}'
+    + '.sm-native:hover{background:var(--bg-modal-accent)}'
+    + '.sm-hint{margin-top:12px;font-size:.78rem;line-height:1.5;color:var(--text-modal-muted);padding:10px 12px;background:var(--bg-modal-hover);border-radius:6px;border:1px solid var(--border-modal)}';
+  const styleEl = document.createElement('style'); styleEl.textContent = css; document.head.appendChild(styleEl);
+  let modal = null;
+  function ensureModal(){
+    if (modal) return;
+    modal = document.createElement('div');
+    modal.id = 'share-modal';
+    modal.innerHTML = '<div class="sm-overlay"></div><div class="sm-card"><div class="sm-header"><h3>📤 Partager cette page</h3><button class="sm-close" aria-label="Fermer">✕</button></div><div class="sm-body"><div class="sm-label">Lien direct</div><div class="sm-url" id="sm-url"></div><button class="sm-action sm-copy" id="sm-copy">📋 Copier le lien</button><button class="sm-action sm-native" id="sm-native" style="display:none">📱 Partager via…</button><div class="sm-hint">💡 Lien permanent vers cette page. Idéal pour citer la méthodologie ou la documentation du projet.</div></div></div>';
+    document.body.appendChild(modal);
+    modal.querySelector('.sm-close').addEventListener('click', closeModal);
+    modal.querySelector('.sm-overlay').addEventListener('click', closeModal);
+    if (typeof navigator.share === 'function') {
+      const nb = modal.querySelector('#sm-native');
+      nb.style.display = '';
+      nb.addEventListener('click', shareNative);
+    }
+    modal.querySelector('#sm-copy').addEventListener('click', copyLink);
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && modal && modal.classList.contains('open')) closeModal();
+    });
+  }
+  function copyLink(){
+    const url = location.href;
+    const btn = modal.querySelector('#sm-copy');
+    const orig = btn.textContent;
+    function flash(success){
+      btn.textContent = success ? '✓ Lien copié !' : '✗ Échec — sélectionnez le lien manuellement';
+      if (success) btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 1800);
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(url).then(() => flash(true)).catch(() => fallbackCopy(url, flash));
+    } else { fallbackCopy(url, flash); }
+  }
+  function fallbackCopy(text, cb){
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      const ok = document.execCommand('copy'); ta.remove(); cb(ok);
+    } catch(_) { cb(false); }
+  }
+  function shareNative(){
+    if (typeof navigator.share === 'function') {
+      navigator.share({ title: document.title, url: location.href }).catch(() => {});
+    }
+  }
+  function openModal(){ ensureModal(); document.getElementById('sm-url').textContent = location.href; modal.classList.add('open'); }
+  function closeModal(){ if (modal) modal.classList.remove('open'); }
+  window.openShareModal = openModal;
+})();
+
+// ─── Menu logo ──────────────────────────────────────────────────────────
+// Implémenté dans shared.js · setupAppMenu() (tour désactivé sur cette page)
+setupAppMenu();
+
+// ─── Cmd+K universal search ──────────────────────────────────────────────
+(function setupCmdK(){
+  function norm(s){ return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
+  let _index = null;
+  function buildIndex(){
+    if (_index) return _index;
+    const items = [];
+    const b2026 = (typeof BUREAU_INFO !== 'undefined' && BUREAU_INFO['2026']) || {};
+    const corr = (typeof BUREAU_CORRESPONDANCES !== 'undefined' && BUREAU_CORRESPONDANCES) || {};
+    const ERAS = ['1988','1993','1996','2004','2007','2010','2012','2015','2022','2026'];
+    Object.entries(b2026).forEach(([id, b]) => {
+      if (!b || b.q === 'Nul') return;
+      const num = parseInt(id);
+      const den = b.den || b.nom || '';
+      const q = b.q || '';
+      const aliasNums = new Set();
+      const aliasNames = new Set();
+      const aliasQs = new Set();
+      const chain = corr[id] || {};
+      ERAS.forEach(era => {
+        const histRef = chain[era];
+        if (!histRef) return;
+        const histIds = Array.isArray(histRef) ? histRef : [histRef];
+        histIds.forEach(hid => {
+          if (!hid) return;
+          const eraInfo = (BUREAU_INFO[era] || {})[hid];
+          if (eraInfo) {
+            if (eraInfo.den && eraInfo.den !== den) aliasNames.add(eraInfo.den);
+            if (eraInfo.nom && eraInfo.nom !== den && eraInfo.nom !== b.nom) aliasNames.add(eraInfo.nom);
+            if (eraInfo.q && eraInfo.q !== q) aliasQs.add(eraInfo.q);
+          }
+          const hNum = parseInt(hid);
+          if (hNum && hNum !== num) aliasNums.add(hNum);
+        });
+      });
+      const searchExtra = [...aliasNums, ...aliasNames, ...aliasQs].join(' ');
+      items.push({ type: 'bureau', icon: '📍', label: 'N°' + num + ' — ' + den, badge: 'Carte 2026', badgeTip: 'Découpage des bureaux de vote actuellement en vigueur.', sub: q ? 'Bureau · ' + q : 'Bureau', key: id, search: norm(num + ' ' + den + ' ' + (b.nom||'') + ' ' + q + ' ' + searchExtra) });
+    });
+    const quartiers = new Set();
+    Object.values(b2026).forEach(b => { if (b && b.q && b.q !== 'Nul') {
+      String(b.q).split('/').map(s => s.trim()).forEach(q => quartiers.add(q));
+    }});
+    [...quartiers].sort().forEach(q => {
+      items.push({ type: 'quartier', icon: '🏘', label: q, sub: 'Quartier', key: q, search: norm(q) });
+    });
+    Object.keys(ELECTIONS || {}).forEach(el => {
+      items.push({ type: 'election', icon: '🗳', label: el, sub: 'Élection', key: el, search: norm(el) });
+    });
+    const candEntries = [];
+    Object.entries(ELECTIONS || {}).forEach(([elLabel, elData]) => {
+      const candsInElec = new Set();
+      Object.values(elData.sheets || {}).forEach(sheet => {
+        Object.values(sheet || {}).forEach(bd => {
+          if (bd && bd.c) Object.keys(bd.c).forEach(c => candsInElec.add(c));
+        });
+      });
+      candsInElec.forEach(cname => {
+        const cd = (typeof CAND_DATA !== 'undefined' && (CAND_DATA[cname + '|' + elLabel] || CAND_DATA[cname])) || {};
+        const nom = cd.n || cname;
+        const prenom = cd.p || '';
+        const pa = cd.pa || '';
+        const label = nom + (prenom ? ' ' + prenom : '') + (pa ? ' (' + pa + ')' : '');
+        candEntries.push({ type: 'candidat', icon: '👤', label: label, sub: elLabel, key: cname, election: elLabel, search: norm(nom + ' ' + prenom + ' ' + pa + ' ' + cname + ' ' + elLabel) });
+      });
+    });
+    candEntries.sort((a, b) => {
+      const c = a.label.localeCompare(b.label, 'fr');
+      return c !== 0 ? c : a.sub.localeCompare(b.sub, 'fr');
+    });
+    items.push(...candEntries);
+    _index = items;
+    return items;
+  }
+  function score(item, tokens){
+    let total = 0;
+    for (const tok of tokens) {
+      const idx = item.search.indexOf(tok);
+      if (idx < 0) return -1;
+      let s = 1;
+      if (idx === 0) s += 4;
+      else if (item.search[idx-1] === ' ') s += 2;
+      s += Math.max(0, 3 - idx*0.05);
+      total += s;
+    }
+    if (item.type === 'bureau') total += 0.3;
+    else if (item.type === 'quartier') total += 0.2;
+    return total;
+  }
+  function filter(query){
+    const q = norm(query).trim();
+    const items = buildIndex();
+    if (!q) {
+      const head = [];
+      ['bureau','quartier','election','candidat'].forEach(t => {
+        head.push(...items.filter(i => i.type === t).slice(0, 5));
+      });
+      return head.slice(0, 50);
+    }
+    const tokens = q.split(/\s+/).filter(Boolean);
+    return items
+      .map(i => ({ i, s: score(i, tokens) }))
+      .filter(o => o.s >= 0)
+      .sort((a,b) => b.s - a.s)
+      .slice(0, 50)
+      .map(o => o.i);
+  }
+  // Action sur sélection : on envoie tout vers LRVcarte (page hors-app)
+  function pickItem(item){
+    closeOverlayUI();
+    const params = new URLSearchParams();
+    if (item.type === 'bureau') {
+      params.set('bureau', item.key);
+    } else if (item.type === 'quartier') {
+      params.set('quartier', item.key);
+    } else if (item.type === 'election') {
+      params.set('election', item.key);
+    } else if (item.type === 'candidat') {
+      if (item.election) params.set('election', item.election);
+      params.set('mode', 'candidat');
+      params.set('selection', item.key);
+    }
+    location.href = 'LRVcarte.html#' + params.toString();
+  }
+  let overlayEl = null, inputEl = null, listEl = null, results = [], cursor = 0;
+  function ensureUI(){
+    if (overlayEl) return;
+    const css = '#cmdk-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-start;justify-content:center;padding-top:14vh;z-index:10001;font-family:Space Grotesk,system-ui,sans-serif}'
+      + '#cmdk-card{background:var(--bg-modal);border-radius:12px;width:560px;max-width:92vw;max-height:70vh;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3);display:flex;flex-direction:column}'
+      + '#cmdk-input{padding:14px 18px;border:none;border-bottom:1px solid var(--border-modal);font-size:1rem;font-family:inherit;outline:none;color:var(--text-modal);background:transparent}'
+      + '#cmdk-list{overflow-y:auto;padding:4px 0;flex:1}'
+      + '.cmdk-item{display:flex;align-items:center;gap:10px;padding:8px 16px;cursor:pointer;font-size:.88rem}'
+      + '.cmdk-item.cur{background:var(--bg-modal-hover)}'
+      + '.cmdk-item .ico{font-size:1rem;width:22px;text-align:center;flex-shrink:0}'
+      + '.cmdk-item .lbl{flex:1;min-width:0;color:var(--text-modal);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:8px}'
+      + '.cmdk-item .lbl-text{overflow:hidden;text-overflow:ellipsis;min-width:0}'
+      + '.cmdk-item .badge{font-size:.7rem;font-weight:600;background:var(--bg-modal-accent);color:var(--text-modal-muted);padding:2px 8px;border-radius:4px;white-space:nowrap;flex-shrink:0;cursor:help}'
+      + '.cmdk-item .sub{color:var(--text-modal-muted);font-size:.78rem;flex-shrink:0;max-width:40%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
+      + '#cmdk-tip{position:fixed;background:var(--bg-tooltip);color:var(--text-tooltip);padding:6px 10px;border-radius:4px;font-size:.72rem;font-weight:500;white-space:nowrap;pointer-events:none;z-index:10002;opacity:0;transition:opacity .15s;transform:translateX(-50%)}'
+      + '#cmdk-foot{padding:8px 16px;border-top:1px solid var(--border-modal);font-size:.72rem;color:var(--text-modal-muted);display:flex;gap:14px;justify-content:flex-end;background:var(--bg-modal-hover)}'
+      + '#cmdk-foot kbd{display:inline-block;background:var(--bg-modal);border:1px solid var(--border-modal);border-radius:3px;padding:1px 5px;font:inherit;font-size:.72rem;color:var(--text-modal)}'
+      + '#cmdk-empty{padding:20px 16px;color:var(--text-modal-muted);text-align:center;font-size:.85rem}';
+    const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
+    overlayEl = document.createElement('div'); overlayEl.id = 'cmdk-overlay';
+    overlayEl.innerHTML = '<div id="cmdk-card">'
+      + '<input id="cmdk-input" type="text" placeholder="Rechercher un bureau, un quartier, une élection, un·e candidat·e…" autocomplete="off" spellcheck="false">'
+      + '<div id="cmdk-list"></div>'
+      + '<div id="cmdk-foot"><span><kbd>↑</kbd><kbd>↓</kbd> naviguer</span><span><kbd>Entrée</kbd> sélectionner</span><span><kbd>Échap</kbd> fermer</span></div>'
+      + '</div>';
+    document.body.appendChild(overlayEl);
+    inputEl = overlayEl.querySelector('#cmdk-input');
+    listEl  = overlayEl.querySelector('#cmdk-list');
+    overlayEl.addEventListener('click', e => { if (e.target === overlayEl) closeOverlayUI(); });
+    inputEl.addEventListener('input', () => { runSearch(); });
+    inputEl.addEventListener('keydown', e => {
+      if (e.key === 'ArrowDown') { e.preventDefault(); moveCursor(1); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); moveCursor(-1); }
+      else if (e.key === 'Enter')   { e.preventDefault(); if (results[cursor]) pickItem(results[cursor]); }
+      else if (e.key === 'Escape')  { e.preventDefault(); closeOverlayUI(); }
+    });
+  }
+  function runSearch(){ results = filter(inputEl.value); cursor = 0; render(); }
+  function escapeHTML(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
+  function render(){
+    if (!results.length) { listEl.innerHTML = '<div id="cmdk-empty">Aucun résultat</div>'; return; }
+    listEl.innerHTML = results.map((r, i) =>
+      '<div class="cmdk-item' + (i === cursor ? ' cur' : '') + '" data-i="' + i + '">'
+      + '<span class="ico">' + r.icon + '</span>'
+      + '<span class="lbl"><span class="lbl-text">' + escapeHTML(r.label) + '</span>'
+      + (r.badge ? '<span class="badge" data-tip="' + (r.badgeTip ? escapeHTML(r.badgeTip) : '') + '">' + escapeHTML(r.badge) + '</span>' : '')
+      + '</span>'
+      + '<span class="sub">' + escapeHTML(r.sub) + '</span>'
+      + '</div>').join('');
+    [...listEl.querySelectorAll('.cmdk-item')].forEach(el => {
+      el.addEventListener('click', () => { cursor = parseInt(el.dataset.i); pickItem(results[cursor]); });
+      el.addEventListener('mousemove', () => { const i = parseInt(el.dataset.i); if (i !== cursor) { cursor = i; render(); } });
+    });
+    [...listEl.querySelectorAll('.cmdk-item .badge')].forEach(b => {
+      const tip = b.dataset.tip;
+      if (!tip) return;
+      b.addEventListener('mouseenter', () => {
+        let t = document.getElementById('cmdk-tip');
+        if (!t) { t = document.createElement('div'); t.id = 'cmdk-tip'; document.body.appendChild(t); }
+        t.textContent = tip;
+        const r = b.getBoundingClientRect();
+        t.style.left = (r.left + r.width/2) + 'px';
+        t.style.top  = (r.bottom + 6) + 'px';
+        t.style.opacity = '1';
+      });
+      b.addEventListener('mouseleave', () => {
+        const t = document.getElementById('cmdk-tip');
+        if (t) t.style.opacity = '0';
+      });
+    });
+  }
+  function moveCursor(d){ if (!results.length) return; cursor = (cursor + d + results.length) % results.length; render(); }
+  function openOverlayUI(){ ensureUI(); overlayEl.style.display = 'flex'; inputEl.value = ''; runSearch(); setTimeout(() => inputEl.focus(), 0); }
+  function closeOverlayUI(){ if (overlayEl) overlayEl.style.display = 'none'; }
+  document.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+      e.preventDefault();
+      if (overlayEl && overlayEl.style.display === 'flex') closeOverlayUI();
+      else openOverlayUI();
+    }
+  });
+  window.openCmdK = openOverlayUI;
+})();
+
+// ─── Date de dernière mise à jour ────────────────────────────────────────
+(function setupLastUpdate(){
+  if (typeof LAST_UPDATE === 'undefined' || typeof formatLastUpdate !== 'function') return;
+  const el = document.getElementById('last-update');
+  if (el) el.textContent = formatLastUpdate(LAST_UPDATE);
+})();
+</script>
+</body>
+</html>

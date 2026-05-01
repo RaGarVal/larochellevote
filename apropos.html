@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>À propos · La Rochelle Vote</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>
+  /* Theme bootstrap (anti-FOUC) */
+  (function(){
+    try {
+      var t = localStorage.getItem('lrvote_theme');
+      if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+    } catch(e) {}
+  })();
+</script>
+<link rel="stylesheet" href="shared.css"/>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+
+/* ──────────────────────────────────────────────────
+   TOKENS CHROME + CONTENU LECTURE (mode sombre)
+────────────────────────────────────────────────── */
+:root {
+  --bg-chrome: #F7F3EE;
+  --bg-chrome-hover: #FAF6F0;
+  --bg-chrome-accent: #EFE8DD;
+  --text-chrome: #1A1A1A;
+  --text-chrome-muted: #5A5A5A;
+  --border-chrome: #E6DFD5;
+  --bg-page: #F0EAE0;
+  --bg-modal: #FFFFFF;
+  --border-modal: #E6DFD5;
+  --bg-modal-hover: #FAF6F0;
+  --bg-modal-accent: #EFE8DD;
+  --text-modal: #1A1A1A;
+  --text-modal-muted: #5A5A5A;
+  --bg-tooltip: #1A1A1A;
+  --text-tooltip: #F7F3EE;
+  /* Contenu de lecture */
+  --bg-card: #FFFFFF;
+  --bg-code: #F7F3EE;
+  --bg-blockquote: #FBF7EE;
+  --bg-todo: #FFF7E6;
+  --text-todo: #8A6A2C;
+  --border-todo: #E6C77E;
+  --text-body: #2A2A2A;
+  --accent-warm: #B49B7E;
+}
+[data-theme="dark"] {
+  /* Palette V2 — phase 3 : hovers visibles, hiérarchie chrome/modal claire */
+  --bg-chrome: #16151A;
+  --bg-chrome-hover: #2D2A30;
+  --bg-chrome-accent: #383438;
+  --text-chrome: #ECE6DD;
+  --text-chrome-muted: #9D968B;
+  --border-chrome: #2D2A30;
+  --bg-page: #0F0E13;
+  --bg-modal: #21202A;
+  --border-modal: #3A3640;
+  --bg-modal-hover: #2D2C36;
+  --bg-modal-accent: #3A3640;
+  --text-modal: #ECE6DD;
+  --text-modal-muted: #9D968B;
+  --bg-tooltip: #ECE6DD;
+  --text-tooltip: #16151A;
+  /* Contenu de lecture */
+  --bg-card: #21202A;
+  --bg-code: #2D2A30;
+  --bg-blockquote: rgba(180, 155, 126, 0.08);
+  --bg-todo: rgba(180, 155, 126, 0.10);
+  --text-todo: #D4B896;
+  --border-todo: rgba(180, 155, 126, 0.45);
+  --text-body: #D8D2C7;
+  --accent-warm: #C9A878;
+}
+
+body {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  background: var(--bg-page);
+  color: var(--text-chrome);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ── Topbar (même style que les autres pages) ── */
+#topbar {
+  background: var(--bg-chrome); color: var(--text-chrome);
+  display: flex; align-items: center; gap: 16px;
+  padding: 0 24px; height: 66px; flex-shrink: 0; z-index: 50;
+  border-bottom: 1px solid var(--border-chrome);
+}
+.tb-logo { display: flex; align-items: center; gap: 4px; text-decoration: none; color: inherit; flex-shrink: 0; background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-family: inherit; font-size: 2.1rem; line-height: 1; align-items: baseline; }
+.tb-brand-light, .tb-brand-bold { letter-spacing: -0.02em; white-space: nowrap; }
+.tb-brand-light { font-size: 0.95em; font-weight: 400; }
+.tb-brand-bold { font-weight: 700; }
+.tb-logo:hover .tb-brand-bold,
+.tb-logo:hover .tb-brand-light { opacity: 0.7; }
+.tb-logo-burger { width: 16px; height: 16px; color: var(--text-chrome-muted); margin-right: 6px; align-self: center; transition: color .15s; }
+.tb-logo:hover .tb-logo-burger { color: var(--text-chrome); }
+.tb-logo[aria-expanded="true"] .tb-logo-burger { color: var(--text-chrome); }
+.sail-mini { width: 1cap; height: 1cap; display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex-shrink: 0; align-self: center; }
+/* Mode sombre : léger halo clair autour du logo voile */
+[data-theme="dark"] .sail-mini { filter: drop-shadow(0 0 1.5px rgba(236,230,221,0.35)); }
+.sail-mini .sail-row { width: var(--w); height: calc((100% - 5px) / 6); background-color: #CC0100; }
+
+#tb-page-title { flex: 1; display: flex; align-items: center; justify-content: center; }
+#tb-page-title h1 { font-size: 1.1rem; font-weight: 600; color: var(--text-chrome); letter-spacing: -0.01em; }
+
+.tb-search-btn { background: none; border: 1px solid var(--border-chrome); border-radius: 6px; width: 30px; height: 30px; cursor: pointer; color: var(--text-chrome-muted); transition: all .15s; display: flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0; }
+.tb-search-btn:hover { background: var(--bg-chrome-hover); color: var(--text-chrome); }
+.tb-search-btn svg { width: 15px; height: 15px; }
+
+.tb-nav { display: flex; align-items: center; gap: 22px; flex-shrink: 0; }
+.tb-nav-link { font-size: .86rem; font-weight: 500; color: var(--text-chrome-muted); text-decoration: none; padding: 4px 0; border-bottom: 2px solid transparent; transition: color .15s, border-color .15s; }
+.tb-nav-link:hover { color: var(--text-chrome); }
+
+/* ── Layout de lecture ── */
+main.doc {
+  flex: 1;
+  padding: 60px 24px 80px;
+  display: flex;
+  justify-content: center;
+}
+.doc-wrap {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+header.doc-head {
+  border-bottom: 1px solid var(--border-chrome);
+  padding-bottom: 28px;
+}
+header.doc-head .eyebrow {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent-warm);
+  margin-bottom: 12px;
+}
+header.doc-head h1 {
+  font-size: 2.4rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  margin-bottom: 16px;
+}
+header.doc-head .lead {
+  font-size: 1.05rem;
+  color: var(--text-chrome-muted);
+  line-height: 1.55;
+  max-width: 600px;
+}
+
+section.s {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  scroll-margin-top: 84px;
+}
+section.s h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  border-bottom: 2px solid var(--text-chrome);
+  padding-bottom: 10px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+section.s h2 .num {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--accent-warm);
+}
+section.s p {
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--text-body);
+}
+section.s ul {
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.98rem;
+  line-height: 1.6;
+  color: var(--text-body);
+}
+section.s ul li::marker { color: var(--accent-warm); }
+section.s strong { color: var(--text-chrome); font-weight: 600; }
+section.s a {
+  color: var(--text-chrome);
+  text-decoration: underline;
+  text-decoration-color: var(--accent-warm);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
+}
+section.s a:hover { color: var(--accent-warm); }
+
+/* Cartes de crédits / contact */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-top: 6px;
+}
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-chrome);
+  border-radius: 10px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.card .card-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent-warm);
+}
+.card .card-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-chrome);
+}
+.card a { color: inherit; text-decoration: none; }
+.card a:hover { color: var(--accent-warm); }
+
+.todo-note {
+  background: var(--bg-todo);
+  border: 1px dashed var(--border-todo);
+  color: var(--text-todo);
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+footer.doc-foot {
+  margin-top: 30px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-chrome);
+  font-size: 0.85rem;
+  color: var(--text-chrome-muted);
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+footer.doc-foot a { color: var(--text-chrome-muted); text-decoration: none; }
+footer.doc-foot a:hover { color: var(--text-chrome); }
+
+@media (max-width: 600px) {
+  #tb-page-title { display: none; }
+  header.doc-head h1 { font-size: 1.7rem; }
+  main.doc { padding: 32px 16px 60px; }
+  section.s h2 { font-size: 1.15rem; }
+}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <button type="button" class="tb-logo" id="tb-logo-btn" aria-label="Menu" aria-haspopup="true" aria-expanded="false">
+    <svg class="tb-logo-burger" viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
+    <span class="tb-brand-light">LR</span>
+    <div class="sail-mini">
+      <div class="sail-row" style="--w:17%"></div>
+      <div class="sail-row" style="--w:33%"></div>
+      <div class="sail-row" style="--w:50%"></div>
+      <div class="sail-row" style="--w:67%"></div>
+      <div class="sail-row" style="--w:83%"></div>
+      <div class="sail-row" style="--w:100%"></div>
+    </div>
+    <span class="tb-brand-bold">Vote</span>
+  </button>
+  <nav class="tb-nav">
+    <a href="LRVcarte.html" class="tb-nav-link">La carte</a>
+    <a href="LRVanalyse.html" class="tb-nav-link">L'analyse</a>
+  </nav>
+  <div id="tb-page-title"><h1>À propos</h1></div>
+  <button class="tb-search-btn" onclick="if(window.openCmdK)window.openCmdK()" title="Rechercher (⌘K / Ctrl+K)" aria-label="Rechercher">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg>
+  </button>
+</div>
+
+<main class="doc">
+  <div class="doc-wrap">
+
+    <header class="doc-head">
+      <div class="eyebrow">À propos</div>
+      <h1>Le projet La&nbsp;Rochelle&nbsp;Vote</h1>
+      <p class="lead">Le site des archives électorales de La&nbsp;Rochelle, de 1988 à aujourd'hui.</p>
+    </header>
+
+    <section class="s" id="projet">
+      <h2><span class="num">1.</span> Le projet</h2>
+      <p>
+        <strong>La&nbsp;Rochelle&nbsp;Vote</strong> est le vieux rêve d'une geek de politique et de
+        géographie électorale&nbsp;: rassembler au même endroit tous les résultats, toutes les cartes,
+        tous les graphiques des scrutins organisés à La&nbsp;Rochelle depuis… le plus longtemps possible,
+        à la plus fine échelle possible. Au printemps 2026, le site rassemble, structure et donne à lire
+        les résultats de 33 élections et deux référendums organisés à La&nbsp;Rochelle depuis 1988 —
+        bureau par bureau, quartier par quartier, candidat·e par candidat·e.
+      </p>
+      <p>
+        L'objectif&nbsp;: permettre à chacun·e de lire l'histoire politique de sa ville, de son quartier,
+        de sa rue, comprendre les dynamiques locales, suivre l'évolution des familles politiques sur trois
+        décennies, via des données facilement accessibles, analysables et éditorialisées.
+      </p>
+      <p>
+        <strong>La&nbsp;Rochelle&nbsp;Vote</strong> se veut aussi être un modèle&nbsp;: les médias
+        devraient s'emparer du chantier des archives électorales à un niveau fin à l'échelle du territoire
+        entier. C'est un enjeu démocratique. Voilà à quoi cela pourrait ressembler.
+      </p>
+    </section>
+
+    <section class="s" id="auteur">
+      <h2><span class="num">2.</span> L'autrice</h2>
+      <p>
+        La conception, les recherches, le développement et la mise en forme de
+        <strong>La&nbsp;Rochelle&nbsp;Vote</strong> sont le fait de
+        <strong>Rachel Garrat-Valcarcel</strong>, journaliste politique. Longtemps électrice
+        rochelaise au bureau de vote 14 (Parc Kennedy) à Mireuil, désormais simple rochelaise de
+        cœur depuis Paris, elle suit de plus loin la vie politique locale qu'elle a un temps
+        chroniquée sur un blog (LRpol). Rachel Garrat-Valcarcel est néanmoins restée très attentive
+        aux résultats des élections à La&nbsp;Rochelle et réalise avec ce site un vieux rêve.
+      </p>
+    </section>
+
+    <section class="s" id="credits">
+      <h2><span class="num">3.</span> Remerciements</h2>
+      <ul>
+        <li><strong>Le service des élections de la ville de La&nbsp;Rochelle</strong> — pour sa bienveillance, il y a près de vingt ans, quand elle leur a demandé toutes sortes d'archives électorales et surtout les cartes — en format papier&nbsp;!</li>
+        <li><strong>Archives municipales de La&nbsp;Rochelle</strong> — pour l'accès aux procès-verbaux historiques.</li>
+        <li><strong>Archives départementales de Charente-Maritime</strong> — pour la consultation des archives de presse où les résultats sont publiés.</li>
+        <li><strong>Archives du journal <em>Sud Ouest</em></strong> — pour les mêmes raisons.</li>
+        <li><strong>La Rochelle Open data</strong> — pour les données récentes.</li>
+        <li><strong>OpenStreetMap</strong> — pour les fonds de carte de base.</li>
+        <li><strong>Leaflet</strong> — bibliothèque cartographique en JavaScript libre.</li>
+      </ul>
+    </section>
+
+    <section class="s" id="licence">
+      <h2><span class="num">4.</span> Licence &amp; droits</h2>
+      <p>
+        <strong>Données électorales</strong>&nbsp;: les résultats électoraux sont par nature publics
+        et libres de réutilisation, dans le respect des règles de la statistique publique française.
+      </p>
+      <p>
+        <strong>Code source</strong> du site&nbsp;: <em>licence à préciser</em>.
+      </p>
+      <p>
+        <strong>Cartes &amp; visualisations</strong>&nbsp;: réutilisation autorisée avec
+        mention de la source et lien vers le site.
+      </p>
+      <div class="todo-note">
+        ✏️ <strong>À choisir&nbsp;:</strong> licence du code (MIT, GPL, AGPL&nbsp;?), licence des
+        visuels (CC-BY, CC-BY-SA, CC0&nbsp;?), conditions d'usage commercial éventuel.
+      </div>
+    </section>
+
+    <section class="s" id="contact">
+      <h2><span class="num">5.</span> Contact &amp; signalements</h2>
+      <p>
+        Vous avez de nouvelles données, vous avez repéré une <strong>erreur de donnée</strong>,
+        une <strong>imprécision sur un bureau</strong>, un <strong>candidat·e mal classé·e</strong>,
+        ou simplement une <strong>question sur la méthode</strong>&nbsp;? Toute remontée est précieuse
+        pour faire progresser la base. Vous contestez un nom de bureau ou un rattachement à un
+        quartier&nbsp;? Je suis aussi ouverte au débat et aux propositions.
+      </p>
+      <div class="card-grid">
+        <div class="card">
+          <span class="card-label">Email</span>
+          <span class="card-value"><a href="mailto:contact@example.com">contact@example.com</a></span>
+        </div>
+        <div class="card">
+          <span class="card-label">Réseaux</span>
+          <span class="card-value"><a href="https://x.com/LaRochelleVote" target="_blank" rel="noopener">@LaRochelleVote</a></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="s" id="code">
+      <h2><span class="num">6.</span> Code source</h2>
+      <p>
+        Le site est construit en HTML/CSS/JavaScript natif (pas de framework lourd). Les données
+        électorales sont stockées dans des fichiers JavaScript inline pour servir une expérience
+        rapide sans serveur d'application.
+      </p>
+      <p>
+        Le code source&nbsp;: <em>repository à publier</em>.
+      </p>
+      <div class="todo-note">
+        ✏️ <strong>À renseigner&nbsp;:</strong> URL du dépôt GitHub/GitLab (s'il est public),
+        ou mention que le code reste pour l'instant fermé.
+      </div>
+    </section>
+
+    <footer class="doc-foot">
+      <span>Dernière mise à jour&nbsp;: <span id="last-update">avril 2026</span></span>
+      <span><a href="methodologie.html">← Méthodologie &amp; sources</a></span>
+    </footer>
+
+  </div>
+</main>
+
+<script src="donnees.js"></script>
+<script src="shared.js"></script>
+<script>
+// ─── Modal de partage ────────────────────────────────────────────────────
+(function setupShareModal(){
+  const css = '#share-modal{position:fixed;inset:0;display:none;z-index:10500;font-family:Space Grotesk,system-ui,sans-serif}'
+    + '#share-modal.open{display:block}'
+    + '.sm-overlay{position:absolute;inset:0;background:rgba(0,0,0,.45);opacity:0;transition:opacity .15s}'
+    + '#share-modal.open .sm-overlay{opacity:1}'
+    + '.sm-card{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(.96);background:var(--bg-modal);border-radius:12px;width:480px;max-width:calc(100vw - 32px);max-height:90vh;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.28);opacity:0;transition:opacity .18s,transform .18s}'
+    + '#share-modal.open .sm-card{opacity:1;transform:translate(-50%,-50%) scale(1)}'
+    + '.sm-header{display:flex;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border-modal)}'
+    + '.sm-header h3{flex:1;margin:0;font-size:1rem;font-weight:700;color:var(--text-modal);letter-spacing:-.01em}'
+    + '.sm-close{background:rgba(0,0,0,.06);border:none;width:28px;height:28px;border-radius:6px;font-size:.95rem;color:var(--text-modal-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit}'
+    + '.sm-close:hover{background:rgba(0,0,0,.12);color:var(--text-modal)}'
+    + '.sm-body{padding:18px 20px 22px}'
+    + '.sm-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#B49B7E;margin-bottom:8px}'
+    + '.sm-url{background:var(--bg-modal-hover);border:1px solid var(--border-modal);border-radius:6px;padding:10px 12px;font-family:SF Mono,Menlo,monospace;font-size:.78rem;color:var(--text-modal);word-break:break-all;max-height:90px;overflow-y:auto;margin-bottom:14px;user-select:all;line-height:1.5}'
+    + '.sm-action{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:11px 14px;border-radius:8px;border:none;font-family:inherit;font-size:.92rem;font-weight:600;cursor:pointer;transition:all .15s;margin-bottom:8px}'
+    + '.sm-copy{background:#1A1A1A;color:#fff}'
+    + '.sm-copy:hover{background:#2A2A2A}'
+    + '.sm-copy.copied{background:#27AE60}'
+    + '.sm-native{background:var(--bg-modal-hover);color:var(--text-modal);border:1px solid var(--border-modal)}'
+    + '.sm-native:hover{background:var(--bg-modal-accent)}'
+    + '.sm-hint{margin-top:12px;font-size:.78rem;line-height:1.5;color:var(--text-modal-muted);padding:10px 12px;background:var(--bg-modal-hover);border-radius:6px;border:1px solid var(--border-modal)}';
+  const styleEl = document.createElement('style'); styleEl.textContent = css; document.head.appendChild(styleEl);
+  let modal = null;
+  function ensureModal(){
+    if (modal) return;
+    modal = document.createElement('div');
+    modal.id = 'share-modal';
+    modal.innerHTML = '<div class="sm-overlay"></div><div class="sm-card"><div class="sm-header"><h3>📤 Partager cette page</h3><button class="sm-close" aria-label="Fermer">✕</button></div><div class="sm-body"><div class="sm-label">Lien direct</div><div class="sm-url" id="sm-url"></div><button class="sm-action sm-copy" id="sm-copy">📋 Copier le lien</button><button class="sm-action sm-native" id="sm-native" style="display:none">📱 Partager via…</button><div class="sm-hint">💡 Lien permanent vers cette page. Idéal pour citer la méthodologie ou la documentation du projet.</div></div></div>';
+    document.body.appendChild(modal);
+    modal.querySelector('.sm-close').addEventListener('click', closeModal);
+    modal.querySelector('.sm-overlay').addEventListener('click', closeModal);
+    if (typeof navigator.share === 'function') {
+      const nb = modal.querySelector('#sm-native');
+      nb.style.display = '';
+      nb.addEventListener('click', shareNative);
+    }
+    modal.querySelector('#sm-copy').addEventListener('click', copyLink);
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && modal && modal.classList.contains('open')) closeModal();
+    });
+  }
+  function copyLink(){
+    const url = location.href;
+    const btn = modal.querySelector('#sm-copy');
+    const orig = btn.textContent;
+    function flash(success){
+      btn.textContent = success ? '✓ Lien copié !' : '✗ Échec — sélectionnez le lien manuellement';
+      if (success) btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 1800);
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(url).then(() => flash(true)).catch(() => fallbackCopy(url, flash));
+    } else { fallbackCopy(url, flash); }
+  }
+  function fallbackCopy(text, cb){
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      const ok = document.execCommand('copy'); ta.remove(); cb(ok);
+    } catch(_) { cb(false); }
+  }
+  function shareNative(){
+    if (typeof navigator.share === 'function') {
+      navigator.share({ title: document.title, url: location.href }).catch(() => {});
+    }
+  }
+  function openModal(){ ensureModal(); document.getElementById('sm-url').textContent = location.href; modal.classList.add('open'); }
+  function closeModal(){ if (modal) modal.classList.remove('open'); }
+  window.openShareModal = openModal;
+})();
+
+// ─── Menu logo ──────────────────────────────────────────────────────────
+// Implémenté dans shared.js · setupAppMenu() (tour désactivé sur cette page)
+setupAppMenu();
+
+// ─── Cmd+K universal search (même module que les autres pages) ──────────
+(function setupCmdK(){
+  function norm(s){ return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
+  let _index = null;
+  function buildIndex(){
+    if (_index) return _index;
+    const items = [];
+    const b2026 = (typeof BUREAU_INFO !== 'undefined' && BUREAU_INFO['2026']) || {};
+    const corr = (typeof BUREAU_CORRESPONDANCES !== 'undefined' && BUREAU_CORRESPONDANCES) || {};
+    const ERAS = ['1988','1993','1996','2004','2007','2010','2012','2015','2022','2026'];
+    Object.entries(b2026).forEach(([id, b]) => {
+      if (!b || b.q === 'Nul') return;
+      const num = parseInt(id);
+      const den = b.den || b.nom || '';
+      const q = b.q || '';
+      const aliasNums = new Set();
+      const aliasNames = new Set();
+      const aliasQs = new Set();
+      const chain = corr[id] || {};
+      ERAS.forEach(era => {
+        const histRef = chain[era];
+        if (!histRef) return;
+        const histIds = Array.isArray(histRef) ? histRef : [histRef];
+        histIds.forEach(hid => {
+          if (!hid) return;
+          const eraInfo = (BUREAU_INFO[era] || {})[hid];
+          if (eraInfo) {
+            if (eraInfo.den && eraInfo.den !== den) aliasNames.add(eraInfo.den);
+            if (eraInfo.nom && eraInfo.nom !== den && eraInfo.nom !== b.nom) aliasNames.add(eraInfo.nom);
+            if (eraInfo.q && eraInfo.q !== q) aliasQs.add(eraInfo.q);
+          }
+          const hNum = parseInt(hid);
+          if (hNum && hNum !== num) aliasNums.add(hNum);
+        });
+      });
+      const searchExtra = [...aliasNums, ...aliasNames, ...aliasQs].join(' ');
+      items.push({ type: 'bureau', icon: '📍', label: 'N°' + num + ' — ' + den, badge: 'Carte 2026', badgeTip: 'Découpage des bureaux de vote actuellement en vigueur.', sub: q ? 'Bureau · ' + q : 'Bureau', key: id, search: norm(num + ' ' + den + ' ' + (b.nom||'') + ' ' + q + ' ' + searchExtra) });
+    });
+    const quartiers = new Set();
+    Object.values(b2026).forEach(b => { if (b && b.q && b.q !== 'Nul') {
+      String(b.q).split('/').map(s => s.trim()).forEach(q => quartiers.add(q));
+    }});
+    [...quartiers].sort().forEach(q => {
+      items.push({ type: 'quartier', icon: '🏘', label: q, sub: 'Quartier', key: q, search: norm(q) });
+    });
+    Object.keys(ELECTIONS || {}).forEach(el => {
+      items.push({ type: 'election', icon: '🗳', label: el, sub: 'Élection', key: el, search: norm(el) });
+    });
+    const candEntries = [];
+    Object.entries(ELECTIONS || {}).forEach(([elLabel, elData]) => {
+      const candsInElec = new Set();
+      Object.values(elData.sheets || {}).forEach(sheet => {
+        Object.values(sheet || {}).forEach(bd => {
+          if (bd && bd.c) Object.keys(bd.c).forEach(c => candsInElec.add(c));
+        });
+      });
+      candsInElec.forEach(cname => {
+        const cd = (typeof CAND_DATA !== 'undefined' && (CAND_DATA[cname + '|' + elLabel] || CAND_DATA[cname])) || {};
+        const nom = cd.n || cname;
+        const prenom = cd.p || '';
+        const pa = cd.pa || '';
+        const label = nom + (prenom ? ' ' + prenom : '') + (pa ? ' (' + pa + ')' : '');
+        candEntries.push({ type: 'candidat', icon: '👤', label: label, sub: elLabel, key: cname, election: elLabel, search: norm(nom + ' ' + prenom + ' ' + pa + ' ' + cname + ' ' + elLabel) });
+      });
+    });
+    candEntries.sort((a, b) => {
+      const c = a.label.localeCompare(b.label, 'fr');
+      return c !== 0 ? c : a.sub.localeCompare(b.sub, 'fr');
+    });
+    items.push(...candEntries);
+    _index = items;
+    return items;
+  }
+  function score(item, tokens){
+    let total = 0;
+    for (const tok of tokens) {
+      const idx = item.search.indexOf(tok);
+      if (idx < 0) return -1;
+      let s = 1;
+      if (idx === 0) s += 4;
+      else if (item.search[idx-1] === ' ') s += 2;
+      s += Math.max(0, 3 - idx*0.05);
+      total += s;
+    }
+    if (item.type === 'bureau') total += 0.3;
+    else if (item.type === 'quartier') total += 0.2;
+    return total;
+  }
+  function filter(query){
+    const q = norm(query).trim();
+    const items = buildIndex();
+    if (!q) {
+      const head = [];
+      ['bureau','quartier','election','candidat'].forEach(t => {
+        head.push(...items.filter(i => i.type === t).slice(0, 5));
+      });
+      return head.slice(0, 50);
+    }
+    const tokens = q.split(/\s+/).filter(Boolean);
+    return items
+      .map(i => ({ i, s: score(i, tokens) }))
+      .filter(o => o.s >= 0)
+      .sort((a,b) => b.s - a.s)
+      .slice(0, 50)
+      .map(o => o.i);
+  }
+  function pickItem(item){
+    closeOverlayUI();
+    const params = new URLSearchParams();
+    if (item.type === 'bureau') {
+      params.set('bureau', item.key);
+    } else if (item.type === 'quartier') {
+      params.set('quartier', item.key);
+    } else if (item.type === 'election') {
+      params.set('election', item.key);
+    } else if (item.type === 'candidat') {
+      if (item.election) params.set('election', item.election);
+      params.set('mode', 'candidat');
+      params.set('selection', item.key);
+    }
+    location.href = 'LRVcarte.html#' + params.toString();
+  }
+  let overlayEl = null, inputEl = null, listEl = null, results = [], cursor = 0;
+  function ensureUI(){
+    if (overlayEl) return;
+    const css = '#cmdk-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-start;justify-content:center;padding-top:14vh;z-index:10001;font-family:Space Grotesk,system-ui,sans-serif}'
+      + '#cmdk-card{background:var(--bg-modal);border-radius:12px;width:560px;max-width:92vw;max-height:70vh;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3);display:flex;flex-direction:column}'
+      + '#cmdk-input{padding:14px 18px;border:none;border-bottom:1px solid var(--border-modal);font-size:1rem;font-family:inherit;outline:none;color:var(--text-modal);background:transparent}'
+      + '#cmdk-list{overflow-y:auto;padding:4px 0;flex:1}'
+      + '.cmdk-item{display:flex;align-items:center;gap:10px;padding:8px 16px;cursor:pointer;font-size:.88rem}'
+      + '.cmdk-item.cur{background:var(--bg-modal-hover)}'
+      + '.cmdk-item .ico{font-size:1rem;width:22px;text-align:center;flex-shrink:0}'
+      + '.cmdk-item .lbl{flex:1;min-width:0;color:var(--text-modal);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:8px}'
+      + '.cmdk-item .lbl-text{overflow:hidden;text-overflow:ellipsis;min-width:0}'
+      + '.cmdk-item .badge{font-size:.7rem;font-weight:600;background:var(--bg-modal-accent);color:var(--text-modal-muted);padding:2px 8px;border-radius:4px;white-space:nowrap;flex-shrink:0;cursor:help}'
+      + '.cmdk-item .sub{color:var(--text-modal-muted);font-size:.78rem;flex-shrink:0;max-width:40%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
+      + '#cmdk-tip{position:fixed;background:var(--bg-tooltip);color:var(--text-tooltip);padding:6px 10px;border-radius:4px;font-size:.72rem;font-weight:500;white-space:nowrap;pointer-events:none;z-index:10002;opacity:0;transition:opacity .15s;transform:translateX(-50%)}'
+      + '#cmdk-foot{padding:8px 16px;border-top:1px solid var(--border-modal);font-size:.72rem;color:var(--text-modal-muted);display:flex;gap:14px;justify-content:flex-end;background:var(--bg-modal-hover)}'
+      + '#cmdk-foot kbd{display:inline-block;background:var(--bg-modal);border:1px solid var(--border-modal);border-radius:3px;padding:1px 5px;font:inherit;font-size:.72rem;color:var(--text-modal)}'
+      + '#cmdk-empty{padding:20px 16px;color:var(--text-modal-muted);text-align:center;font-size:.85rem}';
+    const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
+    overlayEl = document.createElement('div'); overlayEl.id = 'cmdk-overlay';
+    overlayEl.innerHTML = '<div id="cmdk-card">'
+      + '<input id="cmdk-input" type="text" placeholder="Rechercher un bureau, un quartier, une élection, un·e candidat·e…" autocomplete="off" spellcheck="false">'
+      + '<div id="cmdk-list"></div>'
+      + '<div id="cmdk-foot"><span><kbd>↑</kbd><kbd>↓</kbd> naviguer</span><span><kbd>Entrée</kbd> sélectionner</span><span><kbd>Échap</kbd> fermer</span></div>'
+      + '</div>';
+    document.body.appendChild(overlayEl);
+    inputEl = overlayEl.querySelector('#cmdk-input');
+    listEl  = overlayEl.querySelector('#cmdk-list');
+    overlayEl.addEventListener('click', e => { if (e.target === overlayEl) closeOverlayUI(); });
+    inputEl.addEventListener('input', () => { runSearch(); });
+    inputEl.addEventListener('keydown', e => {
+      if (e.key === 'ArrowDown') { e.preventDefault(); moveCursor(1); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); moveCursor(-1); }
+      else if (e.key === 'Enter')   { e.preventDefault(); if (results[cursor]) pickItem(results[cursor]); }
+      else if (e.key === 'Escape')  { e.preventDefault(); closeOverlayUI(); }
+    });
+  }
+  function runSearch(){ results = filter(inputEl.value); cursor = 0; render(); }
+  function escapeHTML(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
+  function render(){
+    if (!results.length) { listEl.innerHTML = '<div id="cmdk-empty">Aucun résultat</div>'; return; }
+    listEl.innerHTML = results.map((r, i) =>
+      '<div class="cmdk-item' + (i === cursor ? ' cur' : '') + '" data-i="' + i + '">'
+      + '<span class="ico">' + r.icon + '</span>'
+      + '<span class="lbl"><span class="lbl-text">' + escapeHTML(r.label) + '</span>'
+      + (r.badge ? '<span class="badge" data-tip="' + (r.badgeTip ? escapeHTML(r.badgeTip) : '') + '">' + escapeHTML(r.badge) + '</span>' : '')
+      + '</span>'
+      + '<span class="sub">' + escapeHTML(r.sub) + '</span>'
+      + '</div>').join('');
+    [...listEl.querySelectorAll('.cmdk-item')].forEach(el => {
+      el.addEventListener('click', () => { cursor = parseInt(el.dataset.i); pickItem(results[cursor]); });
+      el.addEventListener('mousemove', () => { const i = parseInt(el.dataset.i); if (i !== cursor) { cursor = i; render(); } });
+    });
+    [...listEl.querySelectorAll('.cmdk-item .badge')].forEach(b => {
+      const tip = b.dataset.tip;
+      if (!tip) return;
+      b.addEventListener('mouseenter', () => {
+        let t = document.getElementById('cmdk-tip');
+        if (!t) { t = document.createElement('div'); t.id = 'cmdk-tip'; document.body.appendChild(t); }
+        t.textContent = tip;
+        const r = b.getBoundingClientRect();
+        t.style.left = (r.left + r.width/2) + 'px';
+        t.style.top  = (r.bottom + 6) + 'px';
+        t.style.opacity = '1';
+      });
+      b.addEventListener('mouseleave', () => {
+        const t = document.getElementById('cmdk-tip');
+        if (t) t.style.opacity = '0';
+      });
+    });
+  }
+  function moveCursor(d){ if (!results.length) return; cursor = (cursor + d + results.length) % results.length; render(); }
+  function openOverlayUI(){ ensureUI(); overlayEl.style.display = 'flex'; inputEl.value = ''; runSearch(); setTimeout(() => inputEl.focus(), 0); }
+  function closeOverlayUI(){ if (overlayEl) overlayEl.style.display = 'none'; }
+  document.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+      e.preventDefault();
+      if (overlayEl && overlayEl.style.display === 'flex') closeOverlayUI();
+      else openOverlayUI();
+    }
+  });
+  window.openCmdK = openOverlayUI;
+})();
+
+// ─── Date de dernière mise à jour ────────────────────────────────────────
+(function setupLastUpdate(){
+  if (typeof LAST_UPDATE === 'undefined' || typeof formatLastUpdate !== 'function') return;
+  const el = document.getElementById('last-update');
+  if (el) el.textContent = formatLastUpdate(LAST_UPDATE);
+})();
+</script>
+</body>
+</html>

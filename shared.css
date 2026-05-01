@@ -1,0 +1,43 @@
+/* shared.css — Règles a11y et UI partagées entre les pages LRVote
+   Importé en premier (avant les <style> inline) par :
+   index.html · LRVcarte.html · LRVanalyse.html · apropos.html · methodologie.html
+
+   Règles ciblées : focus visible, respect du reduce-motion, indicateurs minimaux.
+   Tout le reste du CSS (palette, layout, composants) reste inline dans chaque page. */
+
+/* ─── Respect de prefers-reduced-motion (a11y) ───────────────────────────
+   Pour les utilisateurs qui ont activé la réduction des animations dans leur OS,
+   on écrase animation-duration et transition-duration à ~instantané. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ─── Focus visible global pour boutons UI ───────────────────────────────
+   Le navigateur affiche un focus ring natif sur tab, mais il est invisible
+   sur certains thèmes. On force un anneau visible et cohérent UNIQUEMENT
+   en navigation clavier — pour distinguer mouse/keyboard, on s'appuie sur
+   l'attribut data-input posé par shared.js (plus robuste que :focus-visible
+   seul, qui a des comportements navigateur variables). */
+[data-input="keyboard"] button:focus,
+[data-input="keyboard"] a:focus,
+[data-input="keyboard"] [role="button"]:focus,
+[data-input="keyboard"] [role="menuitem"]:focus {
+  outline: 2px solid #E8A020;
+  outline-offset: 2px;
+}
+
+/* En mode souris (par défaut + après clic/touch), on neutralise l'outline natif
+   sur les boutons cliqués, qui sinon persiste après le clic dans certains browsers. */
+[data-input="mouse"] button:focus,
+[data-input="mouse"] a:focus,
+[data-input="mouse"] [role="button"]:focus,
+[data-input="mouse"] [role="menuitem"]:focus {
+  outline: none;
+}
