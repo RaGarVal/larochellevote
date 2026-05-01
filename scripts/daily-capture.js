@@ -548,7 +548,23 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
     );
 
     // Intercepter downloadCanvas pour récupérer le PNG au lieu de le télécharger
+    // + patcher document.fonts.ready qui bloque infiniment en mode headless
     const imageDataUrl = await page.evaluate(async () => {
+      // Patch : forcer fonts.ready à se résoudre au bout de 3s max
+      try {
+        const fontsObj = document.fonts;
+        if (fontsObj && fontsObj.ready) {
+          const patchedReady = Promise.race([
+            fontsObj.ready,
+            new Promise(r => setTimeout(r, 3000))
+          ]);
+          Object.defineProperty(document, 'fonts', {
+            get: () => ({ ...fontsObj, ready: patchedReady }),
+            configurable: true,
+          });
+        }
+      } catch(e) { /* ignore si non configurable */ }
+
       return new Promise((resolve, reject) => {
         window.downloadCanvas = function(canvas) {
           resolve(canvas.toDataURL('image/png'));
