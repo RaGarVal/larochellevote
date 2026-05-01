@@ -1,10 +1,10 @@
 {
   "date": "2026-05-01",
   "niveau": "global",
-  "election": "Européennes 2014",
-  "tour": "TU",
+  "election": "Municipales 2020",
+  "tour": "T1",
   "bureau": null,
   "quartier": null,
-  "chars": 221,
-  "generated_at": "2026-05-01T20:05:23.331Z"
+  "chars": 233,
+  "generated_at": "2026-05-01T20:25:06.166Z"
 }
