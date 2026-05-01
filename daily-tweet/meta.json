@@ -1,10 +1,10 @@
 {
   "date": "2026-05-01",
-  "niveau": "quartier",
-  "election": "Législatives 2007",
-  "tour": "T1",
+  "niveau": "carte",
+  "election": "Européennes 2019",
+  "tour": "TU",
   "bureau": null,
-  "quartier": "Mireuil",
-  "chars": 250,
-  "generated_at": "2026-05-01T19:31:43.361Z"
+  "quartier": null,
+  "chars": 275,
+  "generated_at": "2026-05-01T19:36:32.028Z"
 }
