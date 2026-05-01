@@ -1,10 +1,10 @@
 {
   "date": "2026-05-01",
-  "niveau": "bureau",
-  "election": "Référendum 2005",
-  "tour": "TU",
-  "bureau": "0044",
+  "niveau": "quartier",
+  "election": "Municipales 1995",
+  "tour": "T1",
+  "bureau": "0011",
   "quartier": null,
-  "chars": 231,
-  "generated_at": "2026-05-01T20:56:31.750Z"
+  "chars": 235,
+  "generated_at": "2026-05-01T21:04:51.480Z"
 }
