@@ -557,17 +557,35 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
       } catch(e) { /* ignore */ }
     });
 
+    // Intercepter les requêtes de tuiles cartographiques (elles bloquent en headless)
+    await page.setRequestInterception(true);
+    const abortTiles = req => {
+      const url = req.url();
+      if (url.includes('cartocdn.com') || url.includes('/tiles/') || url.includes('.tile.')) {
+        req.abort();
+      } else {
+        req.continue();
+      }
+    };
+    page.on('request', abortTiles);
+
     // Intercepter downloadCanvas pour récupérer le PNG au lieu de le télécharger
-    const imageDataUrl = await page.evaluate(async () => {
-      return new Promise((resolve, reject) => {
-        window.downloadCanvas = function(canvas) {
-          resolve(canvas.toDataURL('image/png'));
-          return Promise.resolve(true);
-        };
-        window.exportShareImage().catch(reject);
-        setTimeout(() => reject(new Error('timeout export')), 25000);
+    let imageDataUrl;
+    try {
+      imageDataUrl = await page.evaluate(async () => {
+        return new Promise((resolve, reject) => {
+          window.downloadCanvas = function(canvas) {
+            resolve(canvas.toDataURL('image/png'));
+            return Promise.resolve(true);
+          };
+          window.exportShareImage().catch(reject);
+          setTimeout(() => reject(new Error('timeout export')), 25000);
+        });
       });
-    });
+    } finally {
+      page.off('request', abortTiles);
+      await page.setRequestInterception(false);
+    }
 
     const base64 = imageDataUrl.replace(/^data:image\/png;base64,/, '');
     screenshotBuffer = Buffer.from(base64, 'base64');
