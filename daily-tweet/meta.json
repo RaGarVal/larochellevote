@@ -1,10 +1,10 @@
 {
   "date": "2026-05-01",
-  "niveau": "carte",
-  "election": "Européennes 2019",
+  "niveau": "global",
+  "election": "Européennes 2014",
   "tour": "TU",
   "bureau": null,
   "quartier": null,
-  "chars": 275,
-  "generated_at": "2026-05-01T19:36:32.028Z"
+  "chars": 228,
+  "generated_at": "2026-05-01T19:40:54.278Z"
 }
