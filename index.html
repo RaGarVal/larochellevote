@@ -420,6 +420,13 @@
     color: var(--ink-soft);
     letter-spacing: 0.04em;
   }
+  .colo-link {
+    color: var(--ink-soft);
+    text-decoration: none;
+    transition: color .12s;
+  }
+  .colo-link:hover { color: var(--ink); text-decoration: underline; }
+  .colo-sep { margin: 0 8px; opacity: 0.5; }
 
   /* ───────── RESPONSIVE ───────── */
   @media (max-width: 760px) {
@@ -556,7 +563,11 @@
   </nav>
 
   <footer class="colophon">
-    <span>Présidentielles · Législatives · Municipales · Régionales · Européennes</span>
+    <span>
+      <a href="methodologie.html" class="colo-link">Méthodologie &amp; sources</a>
+      <span class="colo-sep">·</span>
+      <a href="apropos.html" class="colo-link">À propos</a>
+    </span>
     <span>1988 — 2026</span>
   </footer>
 
@@ -735,16 +746,33 @@
     const layerCur = c.querySelector('.layer-' + cur);
     const layerNext = c.querySelector('.layer-' + next);
 
-    // calculer les widths cibles — bp recalculé depuis bd.c (cs en %) via CAND_DATA
+    // calculer les widths cibles — bp recalculé depuis bd.c (cs en %) via CAND_DATA.
+    // Cas spécial référendum : 2 segments seulement, Oui (teal) à gauche, Non (pourpre) à droite,
+    // détournés sur les slots G et EXD (qui changent temporairement de couleur).
     const widths = {};
+    const colorOverrides = {}; // key → couleur override (référendum) ; sinon couleur d'origine
     const bd = num ? sheet[num] : null;
-    const rawBP = bd ? bpFromCands(bd.c, elecLabel) : null;
-    if (rawBP) {
-      const bp = aggregateBP(rawBP);
-      const total = Object.values(bp).reduce((s, v) => s + v, 0);
-      SEG_ORDER.forEach(k => widths[k] = (bp[k] && total > 0) ? (bp[k] / total) * 100 : 0);
-    } else {
+    const isRef = elecLabel && elecLabel.indexOf('Référendum') === 0;
+    if (isRef && bd && bd.c) {
+      const ouiPct = bd.c.Oui || 0;
+      const nonPct = bd.c.Non || 0;
+      const totRef = ouiPct + nonPct;
       SEG_ORDER.forEach(k => widths[k] = 0);
+      if (totRef > 0) {
+        widths['G']   = (ouiPct / totRef) * 100;
+        widths['EXD'] = (nonPct / totRef) * 100;
+        colorOverrides['G']   = '#0F8A8A'; // teal Oui
+        colorOverrides['EXD'] = '#8E2C5C'; // pourpre Non
+      }
+    } else {
+      const rawBP = bd ? bpFromCands(bd.c, elecLabel) : null;
+      if (rawBP) {
+        const bp = aggregateBP(rawBP);
+        const total = Object.values(bp).reduce((s, v) => s + v, 0);
+        SEG_ORDER.forEach(k => widths[k] = (bp[k] && total > 0) ? (bp[k] / total) * 100 : 0);
+      } else {
+        SEG_ORDER.forEach(k => widths[k] = 0);
+      }
     }
 
     // 1. Reset le layer next : widths à 0% SANS transition, le rendre visible
@@ -760,11 +788,14 @@
     // 2. Sortie : layer cur fade out
     layerCur.classList.add('layer-out');
 
-    // 3. Entrée : après CROSS_OFFSET, on réactive la transition et on anime les widths
+    // 3. Entrée : après CROSS_OFFSET, on réactive la transition et on anime les widths.
+    //    On (re)pose la couleur de chaque segment : override si référendum, sinon couleur d'origine.
     setTimeout(() => {
       layerNext.classList.remove('no-trans');
       SEG_ORDER.forEach(k => {
-        layerNext.querySelector('.seg[data-bloc="' + k + '"]').style.width = widths[k] + '%';
+        const seg = layerNext.querySelector('.seg[data-bloc="' + k + '"]');
+        seg.style.width = widths[k] + '%';
+        seg.style.backgroundColor = colorOverrides[k] || colorOf(k);
       });
     }, CROSS_OFFSET);
 
@@ -924,10 +955,15 @@
     const E      = (typeof ELECTIONS    !== 'undefined') ? ELECTIONS    : {};
     const BI_ALL = (typeof BUREAU_INFO  !== 'undefined') ? BUREAU_INFO  : {};
     const C      = (typeof CAND_DATA    !== 'undefined') ? CAND_DATA    : {};
-    const elecKeys = Object.keys(E);
+    const allKeys  = Object.keys(E);
+    // Séparer élections et référendums (helper isReferendum dispo via shared.js)
+    const isRef    = (l) => (typeof isReferendum === 'function') ? isReferendum(l) : (l && l.indexOf('Référendum') === 0);
+    const elecKeys     = allKeys.filter(l => !isRef(l));
+    const nReferendums = allKeys.length - elecKeys.length;
 
+    // nTours et nVoix : sur TOUS les scrutins, référendums inclus.
     let nTours = 0, nVoix = 0;
-    elecKeys.forEach(k => {
+    allKeys.forEach(k => {
       Object.values(E[k].sheets || {}).forEach(sh => {
         nTours++;
         Object.values(sh).forEach(bd => { nVoix += (bd.e || 0); });
@@ -968,6 +1004,7 @@
 
     return [
       { num: elecKeys.length, label: 'élections' },
+      { num: nReferendums,    label: 'référendums' },
       { num: nTours,          label: 'tours de scrutin' },
       { num: nBureaux,        label: 'bureaux de vote' },
       { num: nRedec,          label: 'redécoupages' },

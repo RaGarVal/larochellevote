@@ -594,7 +594,7 @@ select#el-select {
     <span class="tb-brand-bold">Vote</span>
   </button>
   <nav class="tb-nav">
-    <a href="LRVcarte.html" class="tb-nav-link active">La carte</a>
+    <a href="LRVcarte.html" class="tb-nav-link active" onclick="event.preventDefault(); if (document.getElementById('overlay').style.display !== 'none') closeOverlay();">La carte</a>
     <a href="LRVanalyse.html" class="tb-nav-link" id="tb-link-analyse">L'analyse</a>
   </nav>
   <div id="tb-center">
@@ -1735,29 +1735,15 @@ function renderBlocTriptych(data, histoKey) {
     const entry = (HISTORIQUE[bureauKey] || []).find(r => r.l === elecLabel);
     return entry ? remapBlocs(entry.b) : null;
   }
-  // Détecte si le bureau a été redécoupé entre l'ère courante et une autre ère.
-  // Critère : l'ID historique change (ou passe d'un string à un array = fusion/scission).
-  function _isRedecoupedBetween(bureauKey, eraA, eraB) {
-    if (eraA === eraB) return false;
-    const corr = (typeof BUREAU_CORRESPONDANCES !== 'undefined' && BUREAU_CORRESPONDANCES[bureauKey]) || {};
-    const refA = corr[eraA];
-    const refB = corr[eraB];
-    if (refA === undefined && refB === undefined) return false;
-    // Sérialisation simple pour comparer (un array est différent d'un string)
-    const sA = JSON.stringify(refA);
-    const sB = JSON.stringify(refB);
-    return sA !== sB;
-  }
   function barSegs(blocs,elec){const tot=Object.values(blocs).reduce((s,v)=>s+v,0)||1;let s='';
     Object.entries(BLOC_CONFIG).forEach(([k,v])=>{const p=blocs[k]||0;if(p<=0)return;
       s+='<div class="btip" data-color="'+v.color+'" data-label="'+v.label+'" data-pct="'+p.toFixed(1)+'\u00a0%" data-elec="'+(elec||'')+'" style="width:'+(p/tot*100).toFixed(2)+'%;background:'+v.color+';cursor:default"></div>';});return s;}
-  function sideBar(blocs, h, label, elec, redecoupe){
+  function sideBar(blocs, h, label, elec){
     const inner = blocs
       ? '<div style="position:relative"><div style="display:flex;height:'+h+'px;width:100%">'+barSegs(blocs, elec)+'</div><div style="position:absolute;top:0;bottom:0;left:50%;width:0;border-left:1.5px dashed rgba(255,255,255,0.65);pointer-events:none;z-index:2"></div></div>'
       : '<div style="height:'+h+'px;background:#f0f0f0;border-radius:4px;border:1.5px dashed #ddd"></div>';
     const clickable = blocs && elec;
-    const fullLabel = label + (redecoupe ? ' <span style="font-weight:500;opacity:.85">(bureau redécoupé)</span>' : '');
-    return '<div style="position:relative;opacity:0.38'+(clickable?';cursor:pointer':'')+'" class="'+(clickable?'sidebar-elec':'')+'" '+(clickable?'onclick="setElection(\''+elec+'\')"':'')+'>'+inner+'<span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:0.58rem;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5);letter-spacing:0.03em;pointer-events:none">'+fullLabel+'</span></div>';
+    return '<div style="position:relative;opacity:0.38'+(clickable?';cursor:pointer':'')+'" class="'+(clickable?'sidebar-elec':'')+'" '+(clickable?'onclick="setElection(\''+elec+'\')"':'')+'>'+inner+'<span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:0.58rem;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5);letter-spacing:0.03em;pointer-events:none">'+label+'</span></div>';
   }
   function mainBar(blocs,elec){return '<div style="position:relative"><div style="display:flex;height:72px;width:100%">'+barSegs(blocs,elec)+'</div><div style="position:absolute;top:0;bottom:0;left:50%;width:0;border-left:1.5px dashed rgba(255,255,255,0.65);pointer-events:none;z-index:2"></div></div>';}
   const curType = elecType(currentElection);
@@ -1768,16 +1754,10 @@ function renderBlocTriptych(data, histoKey) {
   const prevBlocs = prev ? getBlocsForAdj(prev, histoKey) : null;
   const nextBlocs = next ? getBlocsForAdj(next, histoKey) : null;
   const curBlocs  = computeBlocs(data);
-  // Détection du redécoupage entre l'ère courante et celles des scrutins voisins
-  const curEra = String((ELECTIONS[currentElection]||{}).my || '2026');
-  const prevEra = prev ? String((ELECTIONS[prev]||{}).my || '2026') : null;
-  const nextEra = next ? String((ELECTIONS[next]||{}).my || '2026') : null;
-  const prevRedec = prev && _isRedecoupedBetween(histoKey, prevEra, curEra);
-  const nextRedec = next && _isRedecoupedBetween(histoKey, curEra, nextEra);
   let h = '<div style="border-radius:6px;overflow:hidden">';
-  if (next) h += sideBar(nextBlocs, 20, 'Scrutin suivant', next, nextRedec);
+  if (next) h += sideBar(nextBlocs, 20, 'Scrutin suivant', next);
   h += mainBar(curBlocs, currentElection);
-  if (prev) h += sideBar(prevBlocs, 20, 'Scrutin précédent', prev, prevRedec);
+  if (prev) h += sideBar(prevBlocs, 20, 'Scrutin précédent', prev);
   return h + '</div>';
 }
 
@@ -2870,8 +2850,25 @@ function setElection(label){
       newFeature = gj.features.find(f => numStr(f) === prevNumero)
                 || gj.features.find(f => f.properties.b2026 === prevB2026);
     } else if (parseInt(newEra) < parseInt(oldEra)) {
-      // Backward : suivre le bureau 2026 actuel jusqu'à son ancêtre territorial
-      const corr = BUREAU_CORRESPONDANCES[prevB2026] || {};
+      // Backward : suivre le bureau 2026 actuel jusqu'à son ancêtre territorial.
+      // Mais d'abord on cherche la continuité d'IDENTITÉ : un bureau 2026 dont la chaîne
+      // historique contient prevNumero à oldEra. Cette identité prime sur b2026 (territorial),
+      // car certains bureaux 1993 ont un b2026 qui pointe vers un voisin actuel (ex 1993 0023
+      // « Coligny / Genette » a b2026=0027 « Parc Charruyer », alors que la vraie chaîne est
+      // BUREAU_CORRESPONDANCES["0023"] avec 1988=["0017","0018","0019"]).
+      let bestB26 = null;
+      Object.entries(BUREAU_CORRESPONDANCES).forEach(([b26, c]) => {
+        if (!c || typeof c !== 'object') return;
+        const v = c[oldEra];
+        if (v === undefined) return;
+        const ids = Array.isArray(v) ? v.map(r => typeof r==='string'?r:r.id) : [v];
+        if (ids.includes(prevNumero)) {
+          // Préférer un match qui partage l'ID 2026 ou le b2026 territorial déjà trouvé
+          if (!bestB26 || b26 === prevB2026 || b26 === prevNumero) bestB26 = b26;
+        }
+      });
+      const baseB26 = bestB26 || prevB2026;
+      const corr = BUREAU_CORRESPONDANCES[baseB26] || {};
       const ref = corr[newEra];
       const targets = ref === undefined ? [prevNumero]
                     : Array.isArray(ref) ? ref.map(r => typeof r==='string'?r:r.id)
@@ -2882,15 +2879,33 @@ function setElection(label){
         newFeature = gj.features.find(f => numStr(f) === t);
         if (newFeature) break;
       }
+      // Fallback agrégat : certaines ères (ex 1988) ne contiennent pas les bureaux individuels
+      // 0035, 0036, 0037 mais une seule feature agrégée "0035-37". On vérifie si l'une des
+      // cibles est couverte par un tel agrégat dans le GeoJSON.
+      if (!newFeature) {
+        for (const f of gj.features) {
+          const ns = numStr(f);
+          if (typeof isAggNs === 'function' && isAggNs(ns)) {
+            const nums = (typeof aggNumList === 'function' ? aggNumList(ns) : [])
+                          .map(n => String(n).padStart(4, '0'));
+            if (sortedT.some(t => nums.includes(t))) { newFeature = f; break; }
+          }
+        }
+      }
     } else {
       // Forward : recherche inverse — quels 2026 IDs descendent de prevNumero à oldEra ?
+      // Si prevNumero est un agrégat (ex "0035-37" en 1988), on l'éclate en numéros individuels
+      // pour interroger BUREAU_CORRESPONDANCES (qui ne connaît que les numéros individuels).
+      const prevNumList = (typeof isAggNs === 'function' && isAggNs(prevNumero) && typeof aggNumList === 'function')
+        ? aggNumList(prevNumero).map(n => String(n).padStart(4, '0'))
+        : [prevNumero];
       const candidates = [];
       Object.entries(BUREAU_CORRESPONDANCES).forEach(([b26, c]) => {
         if (!c || typeof c !== 'object') return;
         const v = c[oldEra];
         if (v === undefined) return;
         const ids = Array.isArray(v) ? v.map(r => typeof r==='string'?r:r.id) : [v];
-        if (ids.includes(prevNumero)) candidates.push(b26);
+        if (prevNumList.some(p => ids.includes(p))) candidates.push(b26);
       });
       // Préférer le candidat qui partage le numero actuel (continuité d'identité)
       let target = candidates.includes(prevNumero) ? prevNumero : candidates[0];
@@ -3682,6 +3697,162 @@ function writeURLState() {
   function lngToX(lng){ return lng * Math.PI / 180; }
   function latToY(lat){ return Math.log(Math.tan(Math.PI/4 + (lat * Math.PI/180)/2)); }
 
+  // Repères géographiques pour les exports cartes :
+  //  • `points`      : 10 repères principaux pour la carte GLOBALE (vue d'ensemble lisible)
+  //  • `pointsFiche` : 37 repères détaillés pour les MINI-CARTES de fiches (zoom plus serré,
+  //                    plus de repères pour aider au repérage local)
+  // Le filtrage hors-cadre est fait par drawReperesOnCarte via le bbox passé.
+  const LR_REPERES = {
+    points: [
+      { n: 'Stade Deflandre',     lng: -1.17836, lat: 46.15827 },
+      { n: 'Verdun',              lng: -1.15369, lat: 46.16255 },
+      { n: 'Gare',                lng: -1.14546, lat: 46.15268 },
+      { n: 'Marché de La Pallice',lng: -1.20490, lat: 46.16209 },
+      { n: 'Hôpital',             lng: -1.14404, lat: 46.15938 },
+      { n: "Pl. de l'Europe",     lng: -1.17934, lat: 46.16653 },
+      { n: 'Av. du 11-Novembre',  lng: -1.15169, lat: 46.17725 },
+      { n: 'Bd. Sautel',          lng: -1.12479, lat: 46.17065 },
+      { n: 'Cnl. de Rompsay',     lng: -1.12310, lat: 46.16169 },
+      { n: 'Lac de la Sole',      lng: -1.15498, lat: 46.14487 }
+    ],
+    pointsFiche: [
+      { n: 'Stade Deflandre',     lng: -1.17836, lat: 46.15827 },
+      { n: 'Verdun',              lng: -1.15369, lat: 46.16255 },
+      { n: 'Gare',                lng: -1.14546, lat: 46.15268 },
+      { n: 'Marché de La Pallice',lng: -1.20490, lat: 46.16209 },
+      { n: 'Hôpital',             lng: -1.14404, lat: 46.15938 },
+      { n: "Pl. de l'Europe",     lng: -1.17934, lat: 46.16653 },
+      { n: 'Av. du 11-Novembre',  lng: -1.15169, lat: 46.17725 },
+      { n: 'Bd. Sautel',          lng: -1.12479, lat: 46.17065 },
+      { n: 'Cnl. de Rompsay',     lng: -1.12310, lat: 46.16169 },
+      { n: 'Lac de la Sole',      lng: -1.15498, lat: 46.14487 },
+      { n: 'Plage Chef-de-Baie',  lng: -1.21000, lat: 46.14774 },
+      { n: 'Parc de Laleu',       lng: -1.20251, lat: 46.16735 },
+      { n: 'Aéroport',            lng: -1.19694, lat: 46.17619 },
+      { n: 'Le Parco',            lng: -1.17665, lat: 46.17307 },
+      { n: 'Lac',                 lng: -1.18737, lat: 46.15454 },
+      { n: 'Col. Missy',          lng: -1.17183, lat: 46.16189 },
+      { n: 'Le Mail',             lng: -1.16598, lat: 46.15597 },
+      { n: 'Pl. Fromentin',       lng: -1.17584, lat: 46.16461 },
+      { n: 'Ec. Berthelot',       lng: -1.18571, lat: 46.16334 },
+      { n: 'Ec. L.-Guillet',      lng: -1.18540, lat: 46.16995 },
+      { n: 'Parc Delmas',         lng: -1.17247, lat: 46.15618 },
+      { n: 'Piscine',             lng: -1.15277, lat: 46.16916 },
+      { n: 'Esp. des parcs',      lng: -1.15450, lat: 46.16622 },
+      { n: 'Tennis-club',         lng: -1.16336, lat: 46.16609 },
+      { n: 'Ec. Palissy',         lng: -1.16319, lat: 46.17011 },
+      { n: 'Vélodrôme',           lng: -1.13937, lat: 46.17341 },
+      { n: 'Cim. St-Éloi',        lng: -1.13180, lat: 46.16429 },
+      { n: 'Ly. Valin',           lng: -1.13756, lat: 46.15415 },
+      { n: 'Col. Camus',          lng: -1.13997, lat: 46.14491 },
+      { n: 'Médiathèque',         lng: -1.15344, lat: 46.15289 },
+      { n: 'EIGSI',               lng: -1.15448, lat: 46.13956 },
+      { n: 'Pl. du Canton',       lng: -1.14619, lat: 46.14807 },
+      { n: 'Mairie annexe VLS',   lng: -1.12258, lat: 46.15191 },
+      { n: 'Étang Lavoisier',     lng: -1.12553, lat: 46.15470 },
+      { n: 'Commissariat',        lng: -1.14614, lat: 46.16865 },
+      { n: 'Cité admin.',         lng: -1.14481, lat: 46.16313 },
+      { n: 'Préfec.',             lng: -1.15719, lat: 46.15709 }
+    ]
+  };
+
+  // Dessine les repères sur la carte d'export (points triangulaires + labels).
+  // `project` convertit lng/lat → pixel canvas.
+  // `bounds`  = {minLng, maxLng, minLat, maxLat} — filtre les points hors zone visible.
+  // `points`  = liste de repères à utiliser (par défaut LR_REPERES.points).
+  // `frame`   = {x, y, w, h} px — si fourni, le label est repositionné (left/right/below)
+  //             pour ne pas dépasser ce cadre, sans bouger le triangle.
+  // `maxLabels` = nombre max de repères à afficher (priorité aux plus proches du centre).
+  //             Si non fourni, tous les repères qui passent les filtres sont affichés.
+  // Détection de collision : un candidat dont la bbox (triangle + label) chevauche un
+  // déjà placé est sauté ; le suivant dans la liste de priorité est essayé.
+  function drawReperesOnCarte(ctx, project, bounds, points, frame, maxLabels) {
+    const list = points || LR_REPERES.points;
+    function inBounds(lng, lat) {
+      if (!bounds) return true;
+      return lng >= bounds.minLng && lng <= bounds.maxLng
+          && lat >= bounds.minLat && lat <= bounds.maxLat;
+    }
+    const TRI_W = 5, TRI_H = 7, GAP = 2;
+    const FONT_PX = 9.5;
+    const PAD = 2;
+    ctx.save();
+    ctx.font = '600 ' + FONT_PX + 'px "Space Grotesk", system-ui, sans-serif';
+
+    // 1) Filtrer dans le cadre + projeter en pixel
+    let candidates = list
+      .filter(p => inBounds(p.lng, p.lat))
+      .map(p => { const [px, py] = project(p.lng, p.lat); return { p: p, px: px, py: py }; });
+
+    // 2) Trier par proximité au centre du cadre (les plus pertinents d'abord)
+    if (frame) {
+      const cx = frame.x + frame.w / 2;
+      const cy = frame.y + frame.h / 2;
+      candidates.forEach(c => { const dx = c.px - cx, dy = c.py - cy; c.d = dx*dx + dy*dy; });
+      candidates.sort((a, b) => a.d - b.d);
+    }
+
+    // 3) Pour chaque candidat : calculer position label + bbox finale ; rejeter si collision
+    //    avec un déjà accepté ou si maxLabels atteint.
+    const limit = (typeof maxLabels === 'number') ? maxLabels : Infinity;
+    const accepted = [];
+    for (const c of candidates) {
+      if (accepted.length >= limit) break;
+      const tw = ctx.measureText(c.p.n).width;
+      let tx = c.px;
+      let ty = c.py - TRI_H - GAP;
+      let align = 'center';
+      let baseline = 'alphabetic';
+      if (frame) {
+        if (ty - FONT_PX < frame.y + PAD) { ty = c.py + GAP; baseline = 'top'; }
+        const halfW = tw / 2;
+        if (c.px - halfW < frame.x + PAD)                  { align = 'left';  tx = c.px - TRI_W / 2; }
+        else if (c.px + halfW > frame.x + frame.w - PAD)   { align = 'right'; tx = c.px + TRI_W / 2; }
+      }
+      // Bbox du label
+      let lx1, lx2;
+      if (align === 'center')      { lx1 = tx - tw / 2; lx2 = tx + tw / 2; }
+      else if (align === 'left')   { lx1 = tx;          lx2 = tx + tw; }
+      else                         { lx1 = tx - tw;     lx2 = tx; }
+      const ly1 = (baseline === 'top') ? ty                : ty - FONT_PX;
+      const ly2 = (baseline === 'top') ? ty + FONT_PX + 2  : ty + 2;
+      // Bbox combinée (triangle + label) avec petite marge anti-chevauchement
+      const box = {
+        x1: Math.min(lx1, c.px - TRI_W / 2) - 1,
+        y1: Math.min(ly1, c.py - TRI_H) - 1,
+        x2: Math.max(lx2, c.px + TRI_W / 2) + 1,
+        y2: Math.max(ly2, c.py) + 1
+      };
+      const overlap = accepted.some(a => !(box.x2 < a.box.x1 || box.x1 > a.box.x2
+                                        || box.y2 < a.box.y1 || box.y1 > a.box.y2));
+      if (overlap) continue;
+      accepted.push({ c: c, tx: tx, ty: ty, align: align, baseline: baseline, box: box });
+    }
+
+    // 4) Dessiner triangles puis labels
+    accepted.forEach(a => {
+      const { c, tx, ty, align, baseline } = a;
+      ctx.beginPath();
+      ctx.moveTo(c.px - TRI_W / 2, c.py - TRI_H);
+      ctx.lineTo(c.px + TRI_W / 2, c.py - TRI_H);
+      ctx.lineTo(c.px, c.py);
+      ctx.closePath();
+      ctx.fillStyle = '#1A1A1A';
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+      ctx.fill();
+      ctx.textAlign = align;
+      ctx.textBaseline = baseline;
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = 'rgba(255,255,255,0.92)';
+      ctx.strokeText(c.p.n, tx, ty);
+      ctx.fillStyle = '#1A1A1A';
+      ctx.fillText(c.p.n, tx, ty);
+    });
+    ctx.restore();
+  }
+
   // Dessine la carte choroplèthe sur le canvas
   function drawCarteVisual(ctx, x, y, w, h) {
     if (typeof getMapGeoJSON !== 'function') return null;
@@ -3753,6 +3924,10 @@ function writeURLState() {
       else if (f.geometry.type === 'MultiPolygon') c.forEach(p => p.forEach(drawRing));
     });
     ctx.globalAlpha = 1;
+
+    // Repères géographiques (KML) — dessinés par-dessus les bureaux
+    drawReperesOnCarte(ctx, project, { minLng, maxLng, minLat, maxLat }, null,
+      { x: offX, y: offY, w: drawW, h: drawH });
 
     return { drawW, drawH, offX, offY };
   }
@@ -4193,7 +4368,18 @@ function writeURLState() {
       const py = _lat2pY(lat, zoom) * TS;
       return [x + (px - minPxX) * scale, y + (py - minPxY) * scale];
     }
-    return { zoom, TS, minPxX, maxPxX, minPxY, maxPxY, scale, project, x, y };
+    // BBox lng/lat de la vue visible APRÈS ajustement aspect (utile pour filtrer les repères
+    // hors-cadre — l'ajustement aspect a élargi la bbox initiale dans une des deux directions).
+    const z2 = Math.pow(2, zoom);
+    function pX2lng(pXnorm) { return pXnorm * 360 - 180; }
+    function pY2lat(pYnorm) { return Math.atan(Math.sinh(Math.PI * (1 - 2 * pYnorm))) * 180 / Math.PI; }
+    const bbox = {
+      minLng: pX2lng(minPxX / TS / z2),
+      maxLng: pX2lng(maxPxX / TS / z2),
+      maxLat: pY2lat(minPxY / TS / z2), // minPxY → top → max lat
+      minLat: pY2lat(maxPxY / TS / z2)
+    };
+    return { zoom, TS, minPxX, maxPxX, minPxY, maxPxY, scale, project, x, y, bbox };
   }
 
   // Charge en parallèle les tiles CartoCDN couvrant la bbox et les dessine.
@@ -4301,6 +4487,8 @@ function writeURLState() {
     await _drawMapTiles(ctx, view);
     _drawMapMask(ctx, x, y, w, h, view, allFeatures);
     _drawMapBureaux(ctx, view, allFeatures, targetFeatures, fctx.winnerCol);
+    // Repères géographiques : 5 max, priorité aux plus proches du centre, anti-collision activée.
+    drawReperesOnCarte(ctx, view.project, view.bbox, LR_REPERES.pointsFiche, { x: x, y: y, w: w, h: h }, 5);
     ctx.restore();
   }
 
