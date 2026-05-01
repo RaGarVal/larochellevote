@@ -1,0 +1,84 @@
+name: 📊 Tweet Quotidien — LaRochelleVote
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Ce workflow tourne chaque matin à 9h heure de Paris (heure d'été, UTC+2).
+# Il capture une image du site et la commite dans le dépôt.
+# Make.com lit ensuite ces fichiers et poste le tweet sur @LaRochelleVote.
+#
+# ⚠️  En heure d'hiver (UTC+1, de fin octobre à fin mars) :
+#     remplacer  "0 7 * * *"  par  "0 8 * * *"
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  schedule:
+    - cron: '0 7 * * *'   # 09h00 Paris (heure d'été)
+
+  # Permet de déclencher manuellement depuis l'onglet "Actions" de GitHub
+  # pour tester ou rejouer un jour précis
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Date à tweeter (YYYY-MM-DD) — laisser vide pour aujourd'hui'
+        required: false
+        default: ''
+
+jobs:
+  capture-et-commite:
+    name: Capture et commit de l'image du jour
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write   # nécessaire pour git push
+
+    steps:
+      # 1. Récupérer le code du dépôt
+      - name: 📥 Checkout du dépôt
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      # 2. Installer Node.js 20
+      - name: ⚙️  Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 3. Installer Puppeteer (inclut Chromium automatiquement)
+      - name: 📦 Installer Puppeteer
+        run: npm install puppeteer
+
+      # 4. Lancer le script de capture
+      - name: 📸 Capturer l'image du jour
+        run: node scripts/daily-capture.js
+        env:
+          # Si déclenché manuellement avec une date, on l'utilise
+          # Sinon la variable est vide et le script prend la date du jour
+          TWEET_DATE: ${{ github.event.inputs.date }}
+
+      # 5. Vérifier que l'image a bien été créée
+      - name: 🔍 Vérifier la présence de l'image
+        id: check_image
+        run: |
+          if [ -f "daily-tweet/image.png" ]; then
+            echo "image_exists=true" >> $GITHUB_OUTPUT
+            echo "✅ Image créée avec succès"
+            ls -lh daily-tweet/
+          else
+            echo "image_exists=false" >> $GITHUB_OUTPUT
+            echo "ℹ️  Pas d'image (probablement pas d'entrée pour aujourd'hui)"
+          fi
+
+      # 6. Commiter et pousser l'image dans le dépôt
+      #    (uniquement si une image a été créée)
+      - name: 🚀 Commit et push de l'image
+        if: steps.check_image.outputs.image_exists == 'true'
+        run: |
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add daily-tweet/image.png daily-tweet/tweet.txt daily-tweet/meta.json
+          # Ne commiter que s'il y a des changements
+          git diff --staged --quiet && echo "Rien à commiter" || (
+            git commit -m "📊 Tweet du $(date -u +%Y-%m-%d)"
+            git push
+            echo "✅ Image committée et disponible sur GitHub"
+          )

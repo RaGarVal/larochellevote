@@ -1,0 +1,60 @@
+[
+  {
+    "_comment": "────────────────────────────────────────────────────────────",
+    "_comment2": "RENDEZ-VOUS FIXES — LaRochelleVote",
+    "_comment3": "Ces dates sont prioritaires sur le tirage aléatoire.",
+    "_comment4": "En dehors de ces dates, le robot choisit seul.",
+    "_comment5": "────────────────────────────────────────────────────────────"
+  },
+
+  {
+    "date": "2026-04-23",
+    "note": "Anniversaire 1er tour Présidentielle 2022",
+    "type": "fiche",
+    "election": "Présidentielle 2022",
+    "tour": "T1"
+  },
+
+  {
+    "date": "2026-05-07",
+    "note": "Anniversaire 2e tour Présidentielle 2022",
+    "type": "carte",
+    "election": "Présidentielle 2022",
+    "tour": "T2"
+  },
+
+  {
+    "date": "2026-06-12",
+    "note": "Anniversaire 1er tour Législatives 2022",
+    "type": "carte",
+    "election": "Législatives 2022",
+    "tour": "T1"
+  },
+
+  {
+    "date": "2026-06-19",
+    "note": "Anniversaire 2e tour Législatives 2022",
+    "type": "fiche",
+    "election": "Législatives 2022",
+    "tour": "T2"
+  },
+
+  {
+    "date": "2026-06-09",
+    "note": "Anniversaire Européennes 2024",
+    "type": "carte",
+    "election": "Européennes 2024"
+  },
+
+  {
+    "_comment": "Ajoute tes propres rendez-vous ici, en respectant ce format :",
+    "_exemple": {
+      "date": "YYYY-MM-DD",
+      "note": "Description pour toi (pas publiée)",
+      "type": "fiche ou carte",
+      "election": "Nom exact de l'élection dans le site",
+      "tour": "T1, T2 ou TU (optionnel)",
+      "bureau": "0001 à 0057 (optionnel — sinon le robot en choisit un au hasard)"
+    }
+  }
+]
