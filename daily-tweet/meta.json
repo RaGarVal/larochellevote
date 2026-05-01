@@ -1,10 +1,10 @@
 {
   "date": "2026-05-01",
-  "niveau": "global",
-  "election": "Européennes 2014",
+  "niveau": "quartier",
+  "election": "Européennes 1999",
   "tour": "TU",
   "bureau": null,
-  "quartier": null,
-  "chars": 228,
-  "generated_at": "2026-05-01T19:40:54.278Z"
+  "quartier": "Saint-Maurice",
+  "chars": 252,
+  "generated_at": "2026-05-01T19:47:31.159Z"
 }
