@@ -1,10 +1,10 @@
 {
   "date": "2026-05-01",
   "niveau": "quartier",
-  "election": "Européennes 1999",
-  "tour": "TU",
+  "election": "Présidentielle 2002",
+  "tour": "T1",
   "bureau": null,
-  "quartier": "Saint-Maurice",
-  "chars": 252,
-  "generated_at": "2026-05-01T19:47:31.159Z"
+  "quartier": "Tasdon",
+  "chars": 246,
+  "generated_at": "2026-05-01T19:57:07.010Z"
 }
