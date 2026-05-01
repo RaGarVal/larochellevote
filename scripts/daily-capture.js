@@ -524,7 +524,25 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
   console.log(tweetText);
   console.log('─'.repeat(60));
 
-  // ── 8. Naviguer vers l'URL d'export ──────────────────────────────────────
+  // ── 8. Intercepter les tuiles cartographiques avant la navigation export ──
+  // En CI (GitHub Actions), les tuiles OpenStreetMap sont lentes ou bloquantes.
+  // On répond immédiatement avec un PNG transparent 1×1 pour que
+  // _drawMapTiles() termine instantanément sans attendre le réseau.
+  const BLANK_PNG = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ' +
+    'AAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+  await page.setRequestInterception(true);
+  page.on('request', req => {
+    const url = req.url();
+    // Tuiles OSM : a.tile.openstreetmap.org, b.tile…, c.tile…, etc.
+    if (/[a-z]\.tile\.openstreetmap\.org|tile\.osm\.org/i.test(url)) {
+      req.respond({ status: 200, contentType: 'image/png', body: BLANK_PNG });
+    } else {
+      req.continue();
+    }
+  });
+
+  // ── 9b. Naviguer vers l'URL d'export ─────────────────────────────────────
   const params = new URLSearchParams();
   params.set('election', election);
   if (tour && tour !== 'TU') params.set('tour', tour);
