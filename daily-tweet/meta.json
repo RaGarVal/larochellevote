@@ -1,10 +1,10 @@
 {
   "date": "2026-05-01",
-  "niveau": "quartier",
-  "election": "Présidentielle 2002",
-  "tour": "T1",
+  "niveau": "carte",
+  "election": "Régionales 1998",
+  "tour": "TU",
   "bureau": null,
-  "quartier": "Tasdon",
-  "chars": 246,
-  "generated_at": "2026-05-01T19:57:07.010Z"
+  "quartier": null,
+  "chars": 273,
+  "generated_at": "2026-05-01T20:01:07.272Z"
 }
