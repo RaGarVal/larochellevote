@@ -254,7 +254,7 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
   console.log('⏳ Attente des données JS…');
   try {
     await page.waitForFunction(
-      () => window.ELECTIONS && Object.keys(window.ELECTIONS).length > 0,
+      () => ELECTIONS && Object.keys(ELECTIONS).length > 0,
       { timeout: 30000 }
     );
   } catch {
@@ -264,11 +264,11 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
 
   // ── 2. Extraire la liste des élections, bureaux et quartiers ──────────────
   const siteData = await page.evaluate(() => {
-    const elections = Object.keys(window.ELECTIONS || {});
+    const elections = Object.keys(ELECTIONS || {});
 
     const bureauxParElection = {};
     elections.forEach(el => {
-      const sheets = window.ELECTIONS[el]?.sheets || {};
+      const sheets = ELECTIONS[el]?.sheets || {};
       const sheet  = sheets.T1 || sheets.TU || sheets[Object.keys(sheets)[0]];
       if (sheet) {
         bureauxParElection[el] = Object.keys(sheet).filter(num => {
@@ -279,7 +279,7 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
     });
 
     // Infos bureaux
-    const bi = window.BUREAU_INFO?.['2026'] || {};
+    const bi = BUREAU_INFO?.['2026'] || {};
     const bureauxInfo = {};
     const quartiersBureaux = {}; // { quartierNom: [num, num, ...] }
     Object.entries(bi).forEach(([num, b]) => {
@@ -309,7 +309,7 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
 
   // Déterminer le tour
   if (!tour) {
-    const availTours = await page.evaluate(el => Object.keys(window.ELECTIONS?.[el]?.sheets || {}), election);
+    const availTours = await page.evaluate(el => Object.keys(ELECTIONS?.[el]?.sheets || {}), election);
     tour = availTours.includes('T1') ? 'T1' : availTours.includes('TU') ? 'TU' : availTours[0];
   }
 
@@ -328,7 +328,7 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
 
   // ── 4. Extraire les données électorales ───────────────────────────────────
   const elecData = await page.evaluate((el, tr, bur, qrt, bureausDuQuartier, isRef) => {
-    const sheets = window.ELECTIONS?.[el]?.sheets || {};
+    const sheets = ELECTIONS?.[el]?.sheets || {};
     const sheet  = sheets[tr] || sheets.TU || sheets[Object.keys(sheets)[0]];
     if (!sheet) return null;
 
@@ -416,7 +416,7 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
   async function candInfo(name) {
     if (!name || name === 'Oui' || name === 'Non') return { prenom: '', nom: name, parti: '' };
     return page.evaluate((n, el) => {
-      const cd = window.CAND_DATA?.[n + '|' + el] || window.CAND_DATA?.[n] || {};
+      const cd = CAND_DATA?.[n + '|' + el] || CAND_DATA?.[n] || {};
       return { prenom: cd.p || '', nom: cd.n || n, parti: cd.pa || '' };
     }, name, election);
   }
