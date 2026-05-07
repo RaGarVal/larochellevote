@@ -7,6 +7,17 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>
+    /* Force la vue mobile (viewport=720) si le flag localStorage est activé.
+       Permet aux utilisateurs tablette de basculer en interface mobile via le burger. */
+    (function () {
+      try {
+        if (localStorage.getItem('lrvote_force_mobile') === '1') {
+          document.querySelector('meta[name=viewport]').setAttribute('content', 'width=720, user-scalable=yes');
+        }
+      } catch (_) {}
+    })();
+  </script>
   <title>La Rochelle électorale</title>
   <script>
     /* Theme bootstrap (anti-FOUC) — applique data-theme="dark" sur <html> avant le rendu CSS */
@@ -276,6 +287,10 @@ select#el-select {
 .pbox-sub  { font-size: 0.66rem; color: var(--text-meta); }
 .pbox-lbl  { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-meta); font-weight: 700; white-space: nowrap; }
 .cand-row  { margin-bottom: 9px; }
+/* Tête de chaque candidate row : (nom + parti) à gauche · (voix · pct) à droite, baseline alignée. */
+.cand-row-head     { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin-bottom: 3px; }
+.cand-row-namepart { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.cand-row-pctvoix  { flex-shrink: 0; display: flex; align-items: baseline; gap: 6px; }
 /* Grid 2 colonnes × 2 lignes : aligne nom/% et parti/voix par ligne, baselines respectées */
 .cand-top  { display: grid; grid-template-columns: 1fr auto; column-gap: 10px; margin-bottom: 3px; align-items: baseline; }
 .cand-name { font-size: 0.84rem; font-weight: 700; color: var(--text-modal); min-width: 0; }
@@ -357,6 +372,22 @@ select#el-select {
 .otab.on { color: var(--text-modal); background: var(--bg-tab-active); }
 .otab:hover:not(.on) { color: var(--text-modal-muted); }
 #ov-body { flex: 1; overflow-y: auto; padding: 20px 24px; position: relative; }
+/* Languette d'accès à la fiche globale (mobile uniquement, sur la map). */
+#global-tab { display: none; }
+
+/* Languette d'accès à la liste de nav (mobile uniquement, sur fiche bureau/quartier). */
+#nav-tab { display: none; }
+
+/* Side drawer mobile pour la nav bureaux/quartiers — caché par défaut. */
+#nav-sheet { display: none; }
+
+/* Bottom sheet mobile pour le sélecteur d'élection — caché par défaut. */
+#elec-sheet { display: none; }
+
+/* Bouton flottant "Voir la carte" — TOUJOURS caché par défaut.
+   Activé UNIQUEMENT si on est sur mobile (≤720 px) ET que l'overlay (fiche) est ouvert.
+   La classe .dismissed le cache à nouveau (en fade) après que la mini-carte a été aperçue. */
+#fiche-map-hint { display: none !important; }
 
 /* Fiche bureau */
 .fiche-id {
@@ -461,15 +492,6 @@ select#el-select {
 .q-dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
 .q-cur td { background: var(--bg-modal-accent) !important; }
 
-@media (max-width:700px) {
-  #topbar { height: 54px; }
-  #main { flex-direction: column; }
-  #sidebar { width: 100%; min-width: unset; height: 45%; }
-  #map { height: 55%; }
-  #overlay { width: 100%; }
-  .split { grid-template-columns: 1fr; }
-  #mm-wrap { height: 160px; }
-}
 
 
 .fiche-sub { font-size: 0.77rem; color: var(--text-modal-muted); margin-top: 2px; }
@@ -526,6 +548,11 @@ select#el-select {
 .mmbtn.on{background:var(--bg-active);border-color:var(--bg-active);color:var(--text-active);}
 .mmbtn:hover:not(.on){background:var(--bg-modal-accent);}
 #map-legend-body{font-size:0.69rem;line-height:1.5;}
+/* Bouton chevron pour escamoter la légende — invisible par défaut, visible sur mobile (≤720px) */
+#legend-toggle{display:none;position:absolute;top:3px;right:3px;width:30px;height:30px;border:1px solid var(--border-modal);background:var(--bg-modal);cursor:pointer;color:var(--text-modal);font-size:1rem;line-height:1;padding:0;border-radius:4px;z-index:2;font-weight:700;}
+#legend-toggle:hover{color:var(--text-modal);background:var(--bg-modal-hover);}
+.legend-toggle-chev{display:inline-block;transition:transform .18s ease;}
+#map-legend.expanded #legend-toggle .legend-toggle-chev{transform:rotate(180deg);}
 .leg-row{display:flex;align-items:center;gap:6px;padding:1px 0;}
 .leg-row-click{cursor:pointer;border-radius:4px;padding:2px 3px;margin:0 -3px;transition:background 0.1s;}
 .leg-row-click:hover{background:var(--bg-modal-hover);}
@@ -575,6 +602,600 @@ select#el-select {
   border: 1px solid var(--border-modal, rgba(180,155,126,0.18));
   border-radius: 8px;
 }
+
+/* ─────────────────────────────────────────────────────────────────
+ *  RESPONSIVE MOBILE — phase 1 (≤ 720 px)
+ *
+ *  Stratégie : la sidebar de "preview rapide" (active au hover sur desktop)
+ *  n'a pas d'équivalent tactile → on la masque totalement. Tap d'un bureau
+ *  → fiche complète plein écran directement. La map prend toute la place
+ *  disponible sous la topbar compactée.
+ *
+ *  Ce bloc est placé en FIN de feuille pour gagner naturellement la cascade
+ *  contre les règles desktop définies plus haut.
+ * ───────────────────────────────────────────────────────────────── */
+@media (max-width: 720px) {
+  /* === Topbar compactée === */
+  #topbar { height: 56px; padding: 0 12px; gap: 8px; }
+  .tb-nav { display: none; }                 /* nav "La carte / L'analyse" — on est déjà sur la carte */
+  #tb-elec-nav { display: none; }            /* boutons ‹ › (le dropdown élection suffit) */
+  .tb-logo { font-size: 1.6rem; gap: 3px; }
+  .tb-logo .tb-brand-light { display: none; }  /* "LR" masqué : on garde voile + "Vote" */
+  /* Sur mobile, on stacke élection + tour verticalement dans le centre */
+  #tb-center {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    line-height: 1.1;
+  }
+  #tb-election {
+    font-size: 1rem;
+    max-width: calc(100vw - 140px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #tb-tour {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 600;
+    background: var(--bg-chrome-accent);
+    color: var(--text-chrome-muted);
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  /* === Sidebar preview rapide & footer associé : masqués === */
+  #sidebar, #sb-footer { display: none; }
+
+  /* === Map en pleine largeur sous la topbar === */
+  #main { flex-direction: column; }
+  #map { flex: 1; width: 100%; height: auto; }
+
+  /* === Légende modes : barre compacte au pied de la map, body escamotable ===
+       Layout flex horizontal : 4 boutons modes + chevron à droite, sur la même ligne. */
+  #map-legend {
+    top: auto;
+    bottom: 8px;
+    left: 8px;
+    right: 8px;
+    max-width: none;
+    min-width: 0;
+    padding: 6px 8px;
+  }
+  #map-mode-btns {
+    display: flex;
+    gap: 2px;
+    align-items: stretch;
+  }
+  #map-mode-btns .mmbtn { flex: 1 1 0; font-size: 0.6rem; padding: 5px 2px; min-width: 0; }
+  /* Chevron : dans le flux à droite des boutons (pas absolute) */
+  #legend-toggle {
+    display: flex;
+    position: static;     /* annule l'absolute du desktop */
+    width: 28px; height: auto;
+    margin-left: 4px;
+    flex-shrink: 0;
+    align-self: stretch;  /* prend la hauteur des boutons modes */
+    align-items: center;
+    justify-content: center;
+  }
+  /* Layout flex : body en HAUT (caché par défaut), boutons modes + chevron en BAS toujours visibles.
+     La légende étant ancrée bottom:8, l'ouverture du body étire le conteneur vers le HAUT
+     sans bouger les boutons modes — ce qui donne l'impression d'un panel qui se déploie au-dessus. */
+  #map-legend { display: flex; flex-wrap: wrap; align-items: stretch; }
+  #map-legend-body { order: 1; flex-basis: 100%; }
+  #map-mode-btns   { order: 2; flex: 1; }
+  #legend-toggle   { order: 3; }
+  /* Body masqué par défaut, révélé si la légende est expanded.
+     On retire le margin-bottom des modes en bas (sinon vide visible entre body et modes),
+     et on cache le scrollbar mobile (qui apparaît gris sur Mac responsive). */
+  #map-legend-body { display: none; }
+  #map-mode-btns { margin-bottom: 0; }
+  #map-legend.expanded #map-legend-body {
+    display: block;
+    margin-bottom: 6px;
+    max-height: 38vh;
+    overflow-y: auto;
+    /* Scrollbar invisible (devient une fine barre grise sur Mac/Chrome au hover) */
+    scrollbar-width: none;             /* Firefox */
+    /* Le box-shadow de sélection autour du .leg-dot déborde de ~4 px à gauche, et le
+       margin-left négatif des .leg-row-click ajoute -3 px. On compense avec un padding
+       horizontal pour que rien ne soit clippé par overflow-y: auto. */
+    padding: 0 5px;
+  }
+  #map-legend.expanded #map-legend-body::-webkit-scrollbar {
+    display: none;                      /* Chrome / Safari */
+  }
+
+  /* === Fiche overlay plein écran === */
+  #overlay { width: 100%; inset: 0; }
+
+  /* === Bottom sheet "Choisir un scrutin" (tap sur le titre élection) === */
+  #elec-sheet {
+    display: block;
+    position: fixed; inset: 0; z-index: 600;
+    pointer-events: none;       /* invisible par défaut, sans bloquer la map */
+    visibility: hidden;
+  }
+  #elec-sheet.open { pointer-events: auto; visibility: visible; }
+  .elec-sheet-overlay {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.42);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+  #elec-sheet.open .elec-sheet-overlay { opacity: 1; }
+  .elec-sheet-panel {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    background: var(--bg-card);
+    border-radius: 16px 16px 0 0;
+    padding: 6px 0 18px;
+    max-height: 80vh;
+    transform: translateY(100%);
+    transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.22);
+    display: flex; flex-direction: column;
+  }
+  #elec-sheet.open .elec-sheet-panel { transform: translateY(0); }
+  /* Quand le sélecteur d'élections est ouvert, on masque la légende
+     (qui sinon reste visible par-dessus à cause de son z-index 800). */
+  body:has(#elec-sheet.open) #map-legend { display: none; }
+  .elec-sheet-handle {
+    width: 40px; height: 4px; border-radius: 2px;
+    background: var(--border-modal);
+    margin: 6px auto 8px;
+    cursor: pointer;
+  }
+  .elec-sheet-title {
+    font-size: 0.7rem; font-weight: 700;
+    text-align: center; color: var(--text-modal-muted);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    padding-bottom: 10px; margin-bottom: 6px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .elec-sheet-list { overflow-y: auto; padding: 4px 16px 8px; flex: 1; }
+  .elec-group { margin-bottom: 14px; }
+  .elec-group-label {
+    font-size: 0.62rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-modal-muted);
+    margin-bottom: 8px; padding: 0 4px;
+  }
+  .elec-item {
+    display: block; width: 100%;
+    text-align: left;
+    padding: 11px 14px;
+    background: var(--bg-modal-hover);
+    border: 1px solid var(--border-modal);
+    border-radius: 8px;
+    margin-bottom: 5px;
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--text-modal);
+    cursor: pointer;
+    transition: background 0.12s, transform 0.12s, border-color 0.12s;
+  }
+  .elec-item:hover { background: var(--bg-modal-accent); border-color: var(--text-modal-muted); }
+  .elec-item.is-current {
+    background: var(--bg-active);
+    color: var(--text-active);
+    border-color: var(--bg-active);
+    font-weight: 700;
+  }
+  .elec-item:active { transform: scale(0.98); }
+
+  /* Élections à deux tours : nom + chips T1/T2 */
+  .elec-item-2t {
+    border: 1px solid var(--border-modal);
+    border-radius: 8px;
+    padding: 9px 12px 10px;
+    margin-bottom: 5px;
+    background: var(--bg-modal-hover);
+  }
+  .elec-item-2t.is-current-elec {
+    background: var(--bg-modal-accent);
+    border-color: var(--text-modal-muted);
+  }
+  .elec-item-name {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-modal);
+    margin-bottom: 7px;
+    padding: 0 2px;
+  }
+  .elec-tour-chips {
+    display: flex;
+    gap: 6px;
+  }
+  .elec-tour-chip {
+    flex: 1;
+    padding: 7px 10px;
+    background: var(--bg-modal);
+    border: 1px solid var(--border-modal);
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-modal);
+    cursor: pointer;
+    transition: background 0.12s, transform 0.12s, border-color 0.12s;
+  }
+  .elec-tour-chip:hover { background: var(--bg-modal-hover); border-color: var(--text-modal-muted); }
+  .elec-tour-chip.is-current {
+    background: var(--bg-active);
+    color: var(--text-active);
+    border-color: var(--bg-active);
+    font-weight: 700;
+  }
+  .elec-tour-chip:active { transform: scale(0.96); }
+
+  /* Titre élection cliquable + chevron pour signaler */
+  #tb-election { cursor: pointer; }
+  #tb-election::after {
+    content: " ▾";
+    font-size: 0.7em;
+    opacity: 0.6;
+    margin-left: 2px;
+  }
+
+  /* Languette "Global" : ancrée sur le bord gauche du viewport, à mi-hauteur.
+     Visible quand on est sur la map ; cachée dès qu'on ouvre une fiche (overlay.show). */
+  #global-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    position: fixed;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 250;
+    background: var(--bg-card);
+    color: var(--text-modal);
+    border: 1px solid var(--border-modal);
+    border-left: none;
+    border-radius: 0 8px 8px 0;
+    padding: 8px 5px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    box-shadow: 2px 3px 10px rgba(0,0,0,0.18);
+  }
+  #global-tab:hover { background: var(--bg-modal-hover); }
+  #global-tab:active { transform: translateY(-50%) scale(0.96); }
+  .gtab-icon { font-size: 0.9rem; }
+  .gtab-label { writing-mode: horizontal-tb; }
+  /* Cachée dès qu'une fiche est ouverte (sinon recouvre la fiche) */
+  body:has(#overlay.show) #global-tab { display: none; }
+
+  /* Languette gauche minimaliste : "Liste" vertical + chevron, visible UNIQUEMENT sur fiche bureau ou quartier */
+  #nav-tab {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    position: fixed;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 250;
+    background: var(--bg-modal-hover);
+    color: var(--text-modal-muted);
+    border: 1px solid var(--border-soft);
+    border-left: none;
+    border-radius: 0 8px 8px 0;
+    padding: 8px 4px;
+    cursor: pointer;
+    font-family: inherit;
+    box-shadow: 2px 3px 8px rgba(0,0,0,0.12);
+    opacity: 0.85;
+  }
+  #nav-tab .ntab-label {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  #nav-tab .ntab-chevron {
+    font-size: 0.9rem;
+    line-height: 1;
+    opacity: 0.7;
+  }
+  #nav-tab:hover { background: var(--bg-modal-accent); color: var(--text-modal); opacity: 1; }
+  #nav-tab:active { transform: translateY(-50%) scale(0.96); }
+  /* Visible uniquement sur fiche bureau ou quartier (pas global, pas sur la carte) */
+  body:has(#overlay.show[data-tab="bureau"]) #nav-tab,
+  body:has(#overlay.show[data-tab="quartier"]) #nav-tab { display: flex; }
+
+  /* Side drawer (tiroir latéral GAUCHE) */
+  #nav-sheet {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 600;
+    pointer-events: none;
+    visibility: hidden;
+  }
+  #nav-sheet.open { pointer-events: auto; visibility: visible; }
+  .nav-sheet-overlay {
+    position: absolute; inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+  #nav-sheet.open .nav-sheet-overlay { opacity: 1; }
+  .nav-sheet-panel {
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    width: min(86vw, 340px);
+    background: var(--bg-modal);
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.2);
+    transform: translateX(-100%);
+    transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+    display: flex;
+    flex-direction: column;
+  }
+  #nav-sheet.open .nav-sheet-panel { transform: translateX(0); }
+
+  /* Header avec onglets + bouton close */
+  .nav-sheet-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 12px 8px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .nav-sheet-tabs {
+    display: flex;
+    gap: 4px;
+    flex: 1;
+  }
+  .nav-sheet-tab {
+    flex: 1;
+    padding: 6px 10px;
+    background: transparent;
+    border: 1px solid var(--border-soft);
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-modal-muted);
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+  }
+  .nav-sheet-tab.is-current {
+    background: var(--bg-active);
+    color: var(--text-active);
+    border-color: var(--bg-active);
+  }
+  .nav-sheet-close {
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    line-height: 1;
+    color: var(--text-modal-muted);
+    cursor: pointer;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+  .nav-sheet-close:hover { background: var(--bg-modal-hover); }
+
+  /* Body : liste scrollable */
+  .nav-sheet-body {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .nav-sheet-list { padding: 4px 0; }
+  /* On masque le header "X bureaux" / "X quartiers" car on a déjà des onglets dédiés */
+  .nav-sheet-list .blist-hdr.sb-list-toggle { display: none; }
+  .nav-sheet-list .sb-list-body { display: block !important; }
+  .nav-sheet-list .blist-row {
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+
+  /* Bouton flottant "Voir la carte" : centré en bas de la fiche.
+     Deux animations chaînées sur le cartouche :
+       1) entrée bottom→up (slide-in)
+       2) va-et-vient vertical en continu pour signaler la présence (cadence ~2 s) */
+  /* Le bouton est rendu visible UNIQUEMENT si l'overlay (fiche) est ouvert sur mobile.
+     Exception : pas de bouton sur la fiche globale (sa "carte" est juste la carte principale,
+     pas une mini-carte spécifique au bureau, donc l'invitation ne fait pas sens). */
+  #overlay.show #fiche-map-hint { display: flex !important; }
+  #overlay.show[data-tab="global"] #fiche-map-hint { display: none !important; }
+  /* Quand le drawer de nav est ouvert, on masque le bouton "Voir la carte" pour ne pas le superposer */
+  body:has(#nav-sheet.open) #fiche-map-hint { display: none !important; }
+  #fiche-map-hint {
+    position: fixed;
+    left: 50%;
+    bottom: 16px;
+    z-index: 9999;       /* au-dessus des tiles Leaflet et controls (qui montent à ~1000) */
+    align-items: center;
+    padding: 8px 16px;
+    background: var(--bg-card);
+    color: var(--text-modal);
+    border: 1px solid var(--border-modal);
+    border-radius: 999px;
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.22);
+    cursor: pointer;
+    /* Promotion en couche compositing GPU pour rendre les animations transform fluides
+       (sans cela, le rasterisation du texte est refaite à chaque frame → effet "crénelé"). */
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    transform: translate3d(-50%, 0, 0);
+    animation:
+      ficheMapHintIn 0.45s cubic-bezier(0.2, 0.8, 0.3, 1.2) 0.4s both,
+      ficheMapBob   2.2s ease-in-out 0.95s infinite;
+    transition: opacity 2s ease;
+  }
+  #fiche-map-hint:hover { background: var(--bg-modal-hover); }
+  /* Cache (fade-out) une fois la mini-carte aperçue : on utilise une ANIMATION (pas une
+     transition), car l'animation initiale ficheMapHintIn avec fill:both continue d'imposer
+     opacity:1 même après sa fin → une transition opacity ne peut pas la surclasser.
+     L'animation ficheMapHintOut prend le relais : elle remplace les animations existantes. */
+  #fiche-map-hint.dismissed {
+    animation: ficheMapHintOut 1s ease forwards;
+    pointer-events: none;
+  }
+  @keyframes ficheMapHintOut {
+    from { opacity: 1; transform: translate3d(-50%, 0, 0); }
+    to   { opacity: 0; transform: translate3d(-50%, 0, 0); }
+  }
+  .fmh-inner { display: inline-flex; align-items: center; gap: 6px; }
+  .fmh-chev  { font-size: 0.95rem; line-height: 1; }
+  /* Keyframes en translate3d pour rester sur la couche GPU.
+     translateX(-50%) conservé pour préserver le centrage horizontal. */
+  @keyframes ficheMapHintIn {
+    from { transform: translate3d(-50%, 50px, 0); opacity: 0; }
+    to   { transform: translate3d(-50%, 0,   0); opacity: 1; }
+  }
+  @keyframes ficheMapBob {
+    0%, 100% { transform: translate3d(-50%, 0,    0); }
+    50%      { transform: translate3d(-50%, -5px, 0); }
+  }
+
+  /* Layout fiche : tous les blocs informatifs (résultats, blocs politiques…) en HAUT,
+     mini-carte poussée TOUT EN BAS de la fiche.
+     Technique : #ov-body devient flex column ; .split passe en display:contents pour que
+     ses enfants (mini-carte + résultats) rejoignent le flow parent et puissent être
+     réordonnés indépendamment via order. */
+  #ov-body { display: flex; flex-direction: column; gap: 14px; }
+  #ov-body > * { margin-bottom: 0; }     /* la gap du flex remplace les margin-bottom inline */
+  .split { display: contents; }
+  /* Ordre mobile : header (auto) → résultats → participation → blocs politiques → mini-carte. */
+  .split > .sig-block               { order: 1; }
+  .fiche-section-participation       { order: 2; }
+  .fiche-section-blocs               { order: 3; }
+  .fiche-section-bureaux-list        { order: 4; }
+  .split > #mm-wrap                  { order: 99; }
+
+  /* Liste des bureaux/quartiers : chaque row passe sur 2 lignes (num+denom puis abst+barre).
+     L'en-tête de la liste ("N° Dénomination Abstention Blocs") est aussi adapté ou caché. */
+  .q-brow {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+      "num denom abst"
+      "bar bar   bar";
+    gap: 3px 10px;
+    align-items: center;
+  }
+  .q-brow > *:nth-child(1) { grid-area: num; }
+  .q-brow > *:nth-child(2) { grid-area: denom; min-width: 0; }
+  .q-brow > *:nth-child(3) { grid-area: abst; text-align: right !important; padding-top: 0 !important; }
+  /* Petit label "Abs." devant le chiffre (l'en-tête horizontal est caché en mobile, donc utile). */
+  .q-brow > *:nth-child(3)::before {
+    content: "Abs. ";
+    font-size: 0.78em;
+    font-weight: 500;
+    opacity: 0.55;
+    margin-right: 2px;
+  }
+  .q-brow > *:nth-child(4) { grid-area: bar; margin-left: 0 !important; padding-top: 0 !important; }
+
+  /* Variante pour la liste GLOBALE (fiche globale) : chaque row a seulement 3 enfants
+     (nom_quartier, abstention, barre) — donc grid 2 cols. */
+  [data-list-type="quartiers"] .q-brow {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "name abst"
+      "bar  bar";
+  }
+  [data-list-type="quartiers"] .q-brow > *:nth-child(1) { grid-area: name; min-width: 0; }
+  [data-list-type="quartiers"] .q-brow > *:nth-child(2) { grid-area: abst; text-align: right !important; padding-top: 0 !important; }
+  [data-list-type="quartiers"] .q-brow > *:nth-child(3) { grid-area: bar;  margin-left: 0 !important; padding-top: 0 !important; }
+  /* Dans ce contexte, :nth-child(3) est la barre (pas l'abstention) → annuler le label "Abs." */
+  [data-list-type="quartiers"] .q-brow > *:nth-child(3)::before { content: none; }
+  /* Et ajouter "Abs." devant :nth-child(2) (l'abstention dans ce contexte) */
+  [data-list-type="quartiers"] .q-brow > *:nth-child(2)::before {
+    content: "Abs. ";
+    font-size: 0.78em; font-weight: 500; opacity: 0.55; margin-right: 2px;
+  }
+
+  /* L'en-tête horizontal "N° Dénomination Abstention Blocs" devient peu utile en 2 lignes ;
+     on le cache pour économiser de l'espace. */
+  .fiche-section-bureaux-list > div[style*="display:flex;align-items:center;gap:10px;padding:4px 10px;margin-bottom:2px"] {
+    display: none !important;
+  }
+
+  #mm-wrap { height: 200px; }
+
+  /* === Liste candidats (mode 1er tour) : layout vertical compact ===
+     Sur desktop : "Nom Parti  Voix · %" sur une ligne.
+     Sur mobile  : Nom au-dessus de Parti à gauche  ·  % au-dessus de Voix à droite. */
+  .cand-row-namepart {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    flex-wrap: nowrap;
+  }
+  .cand-row-pctvoix {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 1px;
+  }
+  .cand-row-sep { display: none; }                 /* pas de · entre voix et pct en empilement */
+  .cand-row-pctvoix .cand-pct  { order: 1; font-size: 1.3rem !important; }  /* % en premier (en haut) */
+  .cand-row-pctvoix .cand-voix { order: 2; font-size: 0.7rem; }              /* voix en dessous */
+  /* Nom du candidat : un peu réduit (différence de taille avec le % conservée) */
+  .cand-row-namepart .cand-name { font-size: 1.1rem !important; }
+
+  /* === Bloc participation : 5 stats sur 2 lignes (3 + 2) au lieu de 5 colonnes === */
+  .partici-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+  .pbox-val { font-size: 0.78rem; }                          /* léger compactage */
+  .pbox-lbl { font-size: 0.6rem; letter-spacing: 0.2px; }
+
+  /* === Topbar de la fiche : tout sur une ligne, scroll horizontal si débordement ===
+     Le bouton Retour reste fixe à gauche ; les onglets ("Ce bureau", "Le quartier : …")
+     peuvent défiler horizontalement quand ils dépassent la largeur disponible. */
+  #ov-topbar { padding: 0 10px; gap: 8px; }
+  #ov-back   { flex-shrink: 0; font-size: 0.78rem; padding: 5px 9px; }
+  #ov-tabs {
+    flex: 1;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex-wrap: nowrap !important;
+    white-space: nowrap;
+    scrollbar-width: none;             /* Firefox */
+  }
+  #ov-tabs::-webkit-scrollbar { display: none; }   /* Chrome/Safari */
+  #ov-tabs > * { flex-shrink: 0; }
+  .otab { font-size: 0.78rem; padding: 5px 10px; white-space: nowrap; }
+
+  /* === Voile : remplacée par une barre verticale colorée animée top→bottom ===
+       Sur desktop, la voile est composée de 10 sail-rows en escalier avec animation
+       latérale. Sur mobile, on simplifie en une simple barre verticale qui se révèle
+       de haut en bas (gain de place, plus lisible sur petit écran). */
+  .fiche-sail .sail-row { display: none; }
+  .fiche-sail {
+    width: 6px !important;
+    height: auto !important;
+    align-self: stretch;
+    min-height: 40px;
+    background: var(--c, #ccc);
+    border-radius: 2px;
+    clip-path: inset(0 0 100% 0);     /* invisible (entièrement coupé par le bas) */
+    transition: clip-path 0.7s cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+  .fiche-sail.reveal { clip-path: inset(0 0 0 0); }   /* révélé : top → bottom */
+}
 </style>
 </head>
 <body>
@@ -598,7 +1219,7 @@ select#el-select {
     <a href="LRVanalyse.html" class="tb-nav-link" id="tb-link-analyse">L'analyse</a>
   </nav>
   <div id="tb-center">
-    <span id="tb-election">Municipales 2026</span>
+    <span id="tb-election" onclick="if (window.matchMedia && window.matchMedia('(max-width: 720px)').matches) openElecSheet();">Municipales 2026</span>
     <span id="tb-tour" style="display:none">1er tour</span>
     <div id="tb-elec-nav">
       <button id="tb-elec-prev" class="tb-elec-nav-btn" onclick="navigateElection(-1)" title="Élection précédente (←)" aria-label="Élection précédente">‹</button>
@@ -686,6 +1307,10 @@ select#el-select {
 <!-- ═══════════ MAP ═══════════ -->
 <div id="map"></div>
 <div id="map-legend">
+  <button id="legend-toggle" type="button" aria-label="Afficher / masquer la légende" aria-expanded="false"
+          onclick="document.getElementById('map-legend').classList.toggle('expanded'); this.setAttribute('aria-expanded', document.getElementById('map-legend').classList.contains('expanded'));">
+    <span class="legend-toggle-chev">▾</span>
+  </button>
   <div id="map-mode-btns">
     <button class="mmbtn on" onclick="setMapMode('candidat')">Candidats</button>
     <button class="mmbtn" onclick="setMapMode('bloc')">Blocs</button>
@@ -693,6 +1318,36 @@ select#el-select {
     <button class="mmbtn" onclick="setMapMode('bv')">Blancs/nuls</button>
   </div>
   <div id="map-legend-body"></div>
+</div>
+
+<!-- Languette mobile : accès à la fiche globale (la sidebar desktop le propose autrement) -->
+<button id="global-tab" type="button" onclick="openGlobalOverlay()" aria-label="Voir le résultat global">
+  <span class="gtab-icon" aria-hidden="true">📊</span>
+  <span class="gtab-label">Global</span>
+</button>
+
+<!-- Languette mobile : accès à la liste de navigation (bureaux / quartiers) — visible uniquement quand une fiche bureau/quartier est ouverte -->
+<button id="nav-tab" type="button" onclick="openNavSheet()" aria-label="Liste des bureaux et quartiers">
+  <span class="ntab-label">Liste</span>
+  <span class="ntab-chevron" aria-hidden="true">›</span>
+</button>
+
+<!-- Side drawer mobile : tiroir latéral droit avec onglets Bureaux / Quartiers -->
+<div id="nav-sheet" aria-hidden="true">
+  <div class="nav-sheet-overlay" onclick="closeNavSheet()"></div>
+  <div class="nav-sheet-panel" role="dialog" aria-label="Navigation bureaux et quartiers">
+    <div class="nav-sheet-head">
+      <div class="nav-sheet-tabs">
+        <button class="nav-sheet-tab is-current" data-nav-type="bureau" onclick="switchNavSheetTab('bureau')">Bureaux</button>
+        <button class="nav-sheet-tab" data-nav-type="quartier" onclick="switchNavSheetTab('quartier')">Quartiers</button>
+      </div>
+      <button class="nav-sheet-close" onclick="closeNavSheet()" aria-label="Fermer">×</button>
+    </div>
+    <div class="nav-sheet-body">
+      <div id="nav-sheet-bureaux" class="nav-sheet-list"></div>
+      <div id="nav-sheet-quartiers" class="nav-sheet-list" style="display:none"></div>
+    </div>
+  </div>
 </div>
 
 <!-- ═══════════ DETAIL OVERLAY ═══════════ -->
@@ -706,6 +1361,13 @@ select#el-select {
     <h2 id="ov-title" style="flex:1;text-align:right;font-size:0.82rem;opacity:0.6;font-weight:500"></h2>
   </div>
   <div id="ov-body"></div>
+  <!-- Bouton flottant mobile : scroll vers la mini-carte (visible uniquement ≤ 720 px).
+       L'animation va-et-vient se fait sur le span interne pour ne pas écraser le translateX
+       de centrage horizontal posé sur le bouton. -->
+  <button id="fiche-map-hint" type="button"
+          onclick="var w=document.getElementById('mm-wrap'); if(w) w.scrollIntoView({behavior:'smooth', block:'start'});">
+    <span class="fmh-inner"><span class="fmh-chev" aria-hidden="true">↓</span> Voir la carte</span>
+  </button>
 </div>
 
 <script>
@@ -938,19 +1600,46 @@ function syncFicheSails() {
     }
   });
 }
-// MutationObserver : déclenche syncFicheSails dès qu'un container de fiche change.
+// MutationObserver : déclenche syncFicheSails + setupFicheMapHint dès qu'un container de fiche change.
 window.addEventListener('DOMContentLoaded', () => {
   const targets = ['sb-info', 'ov-body'].map(id => document.getElementById(id)).filter(Boolean);
   if (!targets.length) return;
   let _t;
   const mo = new MutationObserver(() => {
     clearTimeout(_t);
-    _t = setTimeout(syncFicheSails, 0);
+    _t = setTimeout(() => { syncFicheSails(); setupFicheMapHint(); }, 0);
   });
   targets.forEach(t => mo.observe(t, { childList: true, subtree: true }));
   // resize → re-sync (fonts loading, layout reflow)
   window.addEventListener('resize', () => { clearTimeout(_t); _t = setTimeout(syncFicheSails, 50); });
 });
+
+// Bouton flottant "Voir la carte" : observe le #mm-wrap de la fiche courante et cache le bouton
+// (de manière permanente pour cette fiche) dès que la mini-carte entre dans le viewport.
+// Re-armé à chaque ouverture/changement de fiche grâce au MutationObserver ci-dessus.
+let _ficheMapHintObserver = null;
+function setupFicheMapHint() {
+  const hint = document.getElementById('fiche-map-hint');
+  const mm   = document.getElementById('mm-wrap');
+  // Sortir tôt SANS toucher à l'état si l'un des éléments manque (race avec Leaflet possible) :
+  // sinon on déconnecte l'observer alors que mm-wrap est juste momentanément absent.
+  if (!hint || !mm) return;
+  hint.classList.remove('dismissed');                                     // reset pour la nouvelle fiche
+  if (_ficheMapHintObserver) { _ficheMapHintObserver.disconnect(); _ficheMapHintObserver = null; }
+  // root = #ov-body car le scroll est INTERNE à ce conteneur (overflow-y: auto),
+  // pas global au viewport. Sans ça l'observer ne firerait jamais.
+  const scrollRoot = document.getElementById('ov-body');
+  _ficheMapHintObserver = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) {                                             // visible même de 1 px
+        hint.classList.add('dismissed');
+        if (_ficheMapHintObserver) { _ficheMapHintObserver.disconnect(); _ficheMapHintObserver = null; }
+        break;
+      }
+    }
+  }, { root: scrollRoot, threshold: 0, rootMargin: '0px 0px 200px 0px' });   // fire ~200 px avant l'entrée réelle dans le viewport
+  _ficheMapHintObserver.observe(mm);
+}
 function blocOfCandidate(name) { return candInfo(name).b || '?'; }
 function computeBlocs(data) {
   const blocs = {};
@@ -986,6 +1675,11 @@ const map = L.map('map', {
   // apparaisse dans la zone visible à droite du panneau flottant (qui couvre ~470px à gauche).
   center: [46.1597, -1.190], zoom: 13.5, zoomSnap: 0.1, zoomControl: false
 });
+// Sur mobile (≤ 720 px) : pas de panneau flottant, on recentre sur le vrai centre de
+// La Rochelle et on dézoome un peu pour voir l'ensemble de la ville.
+if (window.matchMedia && window.matchMedia('(max-width: 720px)').matches) {
+  map.setView([46.157, -1.170], 12.3);
+}
 // Tile layer adaptable au thème (light_all / dark_all CartoCDN)
 let _currentTileLayer = null;
 function applyMapTheme(){
@@ -1405,14 +2099,14 @@ function renderCandidates(data, ns, cityAvg, extr, compact, extrLabel) {
       const tipParts=[fullName]; if(paFull)tipParts.push(paFull); if(alFull)tipParts.push('Avec : '+alFull);
       if(ci.t&&ci.t.length)tipParts.push(ci.t.join(', '));
       return '<div class="cand-row" title="'+tipParts.join(' — ').replace(/"/g,'&quot;')+'">'
-        +'<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-bottom:3px">'
-        +'<div style="flex:1;min-width:0;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">'
+        +'<div class="cand-row-head">'
+        +'<div class="cand-row-namepart">'
         +'<span class="cand-name" style="font-size:1.3rem;line-height:1;font-weight:'+(isW?'800':'700')+'">'+fullName+'</span>'
         +'<span class="cand-sub" style="color:var(--text-meta)">'+paFull+(alShort?' <span style="color:var(--text-meta)">('+alShort+')</span>':'')+arrowFull+'</span>'
         +'</div>'
-        +'<div style="flex-shrink:0;display:flex;align-items:baseline;gap:6px">'
+        +'<div class="cand-row-pctvoix">'
         +'<span class="cand-voix">'+voix.toLocaleString('fr-FR')+' voix</span>'
-        +'<span style="color:var(--text-meta);font-size:0.7rem">·</span>'
+        +'<span class="cand-row-sep" style="color:var(--text-meta);font-size:0.7rem">·</span>'
         +'<span class="cand-pct" style="font-size:1.5rem;line-height:1">'+pct.toFixed(1)+'<span style="font-size:0.5em;margin-left:2px">%</span></span>'
         +'</div>'
         +'</div>'
@@ -1893,7 +2587,7 @@ function renderGlobalFiche() {
     + '</div>';
 
   // Split : minimap ville | résultats
-  h += '<div style="margin-bottom:14px">' + particiHTML(totI, abst_pct, abst_nb, blancsPct, totBn, totE) + '</div>';
+  h += '<div class="fiche-section-participation" style="margin-bottom:14px">' + particiHTML(totI, abst_pct, abst_nb, blancsPct, totBn, totE) + '</div>';
 
   var sig = '<div class="sig-block">';
   // Encart "question soumise au vote" pour les référendums (au-dessus du duel)
@@ -1960,13 +2654,13 @@ function renderGlobalFiche() {
     triptych += '<div style="position:relative"><div style="display:flex;height:72px;width:100%">'+barSegsG(curBlocs,currentElection)+'</div><div style="position:absolute;top:0;bottom:0;left:50%;width:0;border-left:1.5px dashed rgba(255,255,255,0.65);pointer-events:none;z-index:2"></div></div>';
     if (prev) triptych += sideBarG(globalHistoBlocs(prev),20,'Scrutin précédent',prev);
     triptych += '</div>';
-    h += '<div style="margin-bottom:18px"><div class="sec-ttl">Blocs politiques</div>'+triptych+'</div>';
+    h += '<div class="fiche-section-blocs" style="margin-bottom:18px"><div class="sec-ttl">Blocs politiques</div>'+triptych+'</div>';
   }
 
   // Liste des quartiers
   h += renderQuartierListGlobal();
 
-  document.getElementById('ov-body').innerHTML = h;
+  document.getElementById('ov-body').innerHTML = h; document.getElementById('ov-body').scrollTop = 0;
   initGlobalMinimap(winCol);
 }
 
@@ -1992,7 +2686,7 @@ function renderQuartierListGlobal() {
 
   var quartierNames = Object.keys(quartierBureaux).sort();
 
-  var h = '<div style="margin-top:18px">';
+  var h = '<div class="fiche-section-bureaux-list" data-list-type="quartiers" style="margin-top:18px">';
 
   // En-tête identique à celle de la page quartier
   h += '<div style="display:flex;align-items:center;gap:10px;padding:4px 10px;margin-bottom:2px">'
@@ -2445,7 +3139,7 @@ function renderFiche(feature) {
 
   if (!data) {
     h += '<div style="padding:16px;color:#aaa;font-style:italic">Données non disponibles pour ce bureau dans ce scrutin.</div>';
-    document.getElementById('ov-body').innerHTML = h;
+    document.getElementById('ov-body').innerHTML = h; document.getElementById('ov-body').scrollTop = 0;
     initMinimap(feature, winCol);
     return;
   }
@@ -2465,10 +3159,10 @@ function renderFiche(feature) {
     const abst_nb_r = Math.round((data.i || 0) * (data.a || 0) / 100);
     const votants_r = (data.i || 0) - abst_nb_r;
     const blancsPct_r = votants_r > 0 ? +((data.bn || 0) * 100 / votants_r).toFixed(1) : 0;
-    h += '<div style="margin-bottom:14px">' + particiHTML(data.i, data.a, abst_nb_r, blancsPct_r, data.bn || 0, data.e) + '</div>';
+    h += '<div class="fiche-section-participation" style="margin-bottom:14px">' + particiHTML(data.i, data.a, abst_nb_r, blancsPct_r, data.bn || 0, data.e) + '</div>';
     // Split : mini-carte à gauche + (question + duel) à droite
     h += '<div class="split"><div id="mm-wrap"></div>' + sig_r + '</div>';
-    document.getElementById('ov-body').innerHTML = h;
+    document.getElementById('ov-body').innerHTML = h; document.getElementById('ov-body').scrollTop = 0;
     const gjR = getMapGeoJSON();
     const freshR = gjR.features.find(f => numStr(f) === ns) || feature;
     initMinimap(freshR, winCol);
@@ -2484,16 +3178,16 @@ function renderFiche(feature) {
   const abst_nb = Math.round((data.i || 0) * (data.a || 0) / 100);
   const votants = (data.i || 0) - abst_nb;
   const blancsPct = votants > 0 ? +((data.bn || 0) * 100 / votants).toFixed(1) : 0;
-  h += '<div style="margin-bottom:14px">' + particiHTML(data.i, data.a, abst_nb, blancsPct, data.bn || 0, data.e) + '</div>';
+  h += '<div class="fiche-section-participation" style="margin-bottom:14px">' + particiHTML(data.i, data.a, abst_nb, blancsPct, data.bn || 0, data.e) + '</div>';
 
   h += '<div class="split"><div id="mm-wrap"></div>' + sig + '</div>';
 
     // Blocs
-  h += '<div style="margin-bottom:18px"><div class="sec-ttl">Blocs politiques</div>'
+  h += '<div class="fiche-section-blocs" style="margin-bottom:18px"><div class="sec-ttl">Blocs politiques</div>'
     + renderBlocTriptych(data, histoKey) + '</div>';
 
 
-  document.getElementById('ov-body').innerHTML = h;
+  document.getElementById('ov-body').innerHTML = h; document.getElementById('ov-body').scrollTop = 0;
 
   // Récupère la géométrie à jour depuis le GeoJSON du scrutin courant
   const gj = getMapGeoJSON();
@@ -2546,6 +3240,8 @@ function initMinimap(feature, winCol) {
   // Fit to selected feature — pad minimal : bureau entier visible, pas de contexte
   const selectedLayer = L.geoJSON({ type:'FeatureCollection', features:[feature] });
   mmMap.fitBounds(selectedLayer.getBounds().pad(0.06));
+  // Mini-carte prête → arme l'IntersectionObserver du bouton flottant "Voir la carte" (mobile).
+  if (typeof setupFicheMapHint === 'function') setupFicheMapHint();
 }
 
 // ── QUARTIER OVERLAY ──────────────────────────────────────────────────────────
@@ -2590,17 +3286,17 @@ function renderQuartier(){
     sig+=renderCandidates(qData,q,cityAvg,getExtremesByQuartier(),false,'quartier');sig+='</div>';
     const abst_nb_tot=Math.round(totI*abst_pct/100);
     const blancsPct=(totI-abst_nb_tot)>0?+(totBn*100/(totI-abst_nb_tot)).toFixed(1):0;
-    h+='<div style="margin-bottom:14px">'+particiHTML(totI,abst_pct,abst_nb_tot,blancsPct,totBn,totE)+'</div>';
+    h+='<div class="fiche-section-participation" style="margin-bottom:14px">'+particiHTML(totI,abst_pct,abst_nb_tot,blancsPct,totBn,totE)+'</div>';
     h+='<div class="split"><div id="mm-wrap"></div>'+sig+'</div>';
     // Section "Blocs politiques" skippée pour les référendums (incohérente avec Oui/Non).
     if (!(typeof isReferendum === 'function' && isReferendum(currentElection))) {
-      h+='<div style="margin-bottom:18px"><div class="sec-ttl">Blocs politiques</div>'+renderBlocTriptychQuartier(qData,bureauNums)+'</div>';
+      h+='<div class="fiche-section-blocs" style="margin-bottom:18px"><div class="sec-ttl">Blocs politiques</div>'+renderBlocTriptychQuartier(qData,bureauNums)+'</div>';
     }
   } else {
     h+='<div style="padding:12px;color:var(--text-meta);font-style:italic">Donn\u00e9es non disponibles pour ce scrutin.</div>';
   }
   if(!(mapYear0==='1988'&&q==='Saint-Eloi')){
-  h+='<div style="margin-bottom:18px"><div class="sec-ttl">Bureaux du quartier</div>';
+  h+='<div class="fiche-section-bureaux-list" style="margin-bottom:18px"><div class="sec-ttl">Bureaux du quartier</div>';
   h+='<div style="display:flex;align-items:center;gap:10px;padding:4px 10px;margin-bottom:2px">'
     +'<span style="font-size:0.6rem;font-weight:700;color:var(--text-meta);width:28px;flex-shrink:0">N\u00b0</span>'
     +'<span style="font-size:0.6rem;font-weight:700;color:var(--text-meta);flex:1">D\u00e9nomination</span>'
@@ -2629,7 +3325,7 @@ function renderQuartier(){
   }
   h+='</div>';
   } // end if not Saint-Eloi 1988
-  document.getElementById('ov-body').innerHTML=h;
+  document.getElementById('ov-body').innerHTML=h; document.getElementById('ov-body').scrollTop=0;
   if(totE>0){
     const qNums=new Set(bureauNums);if(mmMap){mmMap.remove();mmMap=null;}
     const wrap=document.getElementById('mm-wrap');
@@ -2673,7 +3369,12 @@ function getQuartiersForInfo(info){
   return quartiers;
 }
 function setOverlayDisplay(v) {
-  document.getElementById('overlay').style.display = v;
+  const ov = document.getElementById('overlay');
+  ov.style.display = v;
+  // Synchronise la classe .show pour les sélecteurs CSS qui en dépendent (ex bouton flottant mobile).
+  ov.classList.toggle('show', v !== 'none');
+  // Synchronise data-tab (bureau / quartier / global) pour les sélecteurs CSS différenciés.
+  if (v !== 'none' && typeof overlayTab === 'string') ov.dataset.tab = overlayTab;
   const leg = document.getElementById('map-legend');
   if (leg) leg.style.display = (v === 'none') ? '' : 'none';
 }
@@ -3457,8 +4158,84 @@ function writeURLState() {
     } catch(_) { return false; }
   }
 
+  // ─── Variante mobile : étapes adaptées ≤720 px ────────────────────────
+  // Le set desktop ne fonctionne pas tel quel sur mobile :
+  // - les chevrons ‹ › sont cachés (titre cliquable → bottom sheet)
+  // - la sidebar de preview au survol est cachée (pas de hover sur mobile)
+  // - certaines tailles/positions diffèrent
+  const STEPS_MOBILE = [
+    {
+      title: 'Bienvenue sur la carte',
+      body: 'Voici trente années d\'élections rochelaises projetées sur la carte. Chaque bureau de vote y prend sa couleur selon le scrutin sélectionné.',
+      target: '#topbar',
+      placement: 'bottom'
+    },
+    {
+      title: 'Choisir une élection',
+      body: 'Tape sur le <strong>nom de l\'élection</strong> dans la barre du haut pour ouvrir la liste des scrutins. Pour les élections à deux tours, tu peux aussi choisir le <strong>1ᵉʳ</strong> ou le <strong>2ᵉ tour</strong>.',
+      target: '#tb-center',
+      placement: 'bottom'
+    },
+    {
+      title: 'Quatre modes de coloration',
+      body: 'En bas de la carte, la légende propose quatre modes : <strong>candidat·e en tête</strong>, <strong>bloc politique</strong>, <strong>abstention</strong> ou <strong>blancs/nuls</strong>. Tape le chevron pour la déplier.',
+      target: '#map-legend',
+      placement: 'top',
+      setup: () => {
+        if (typeof closeOverlay === 'function' && document.getElementById('overlay').style.display !== 'none') closeOverlay();
+        if (typeof setMapMode === 'function') setMapMode('candidat');
+      }
+    },
+    {
+      title: 'Cliquer un nom colore la carte',
+      body: 'Dans la légende dépliée, tape sur un·e <strong>candidat·e</strong> ou un <strong>bloc politique</strong> pour colorer la carte selon ses scores aux différents bureaux.',
+      target: '#map-legend-body',
+      placement: 'top',
+      setup: () => {
+        if (typeof setMapMode === 'function') setMapMode('candidat');
+        // Déplier la légende pour révéler la liste cliquable
+        const leg = document.getElementById('map-legend');
+        const tog = document.getElementById('legend-toggle');
+        if (leg && !leg.classList.contains('expanded')) {
+          leg.classList.add('expanded');
+          if (tog) tog.setAttribute('aria-expanded', 'true');
+        }
+      }
+    },
+    {
+      title: 'Un tap ouvre la fiche complète',
+      body: 'Tape sur n\'importe quel bureau de la carte pour ouvrir sa fiche détaillée — résultats complets, blocs politiques, navigation vers les élections du même type, accès à la totalisation par quartier…',
+      placement: 'center',
+      setup: () => {
+        // Refermer la légende dépliée à l'étape précédente pour ne pas masquer la carte
+        const leg = document.getElementById('map-legend');
+        if (leg && leg.classList.contains('expanded')) leg.classList.remove('expanded');
+      }
+    },
+    {
+      title: 'Recherche universelle',
+      body: 'Tape la <strong>loupe</strong> en haut à droite pour chercher un bureau, un quartier, un·e candidat·e ou une élection.',
+      target: '.tb-search-btn',
+      placement: 'bottom',
+      setup: () => {
+        if (typeof closeOverlay === 'function' && document.getElementById('overlay').style.display !== 'none') closeOverlay();
+      }
+    },
+    {
+      title: 'Vous voilà autonome sur la carte !',
+      body: 'Pour la lecture temporelle longue durée — comparer les évolutions politiques sur trente ans, suivre une famille politique scrutin après scrutin — découvrez maintenant la partie analyse.',
+      placement: 'center',
+      finalCta: { label: 'Lancer le tour de l\'analyse →', href: 'LRVanalyse.html?tour=1' }
+    }
+  ];
+
+  function isMobile() {
+    return !!(window.matchMedia && window.matchMedia('(max-width: 720px)').matches);
+  }
+
   function start() {
-    window.startGuidedTour(STEPS, { tourId: 'carte_v2' });
+    const steps = isMobile() ? STEPS_MOBILE : STEPS;
+    window.startGuidedTour(steps, { tourId: 'carte_v2' });
   }
   // Expose pour le menu
   window.startCarteTour = start;
@@ -5294,6 +6071,143 @@ setupAppMenu({ tourFn: 'startCarteTour' });
   }
   tryExport();
 })();
+</script>
+
+<!-- Bottom sheet mobile pour changer d'élection -->
+<div id="elec-sheet" aria-hidden="true">
+  <div class="elec-sheet-overlay" onclick="closeElecSheet()"></div>
+  <div class="elec-sheet-panel" role="dialog" aria-label="Choisir une élection">
+    <div class="elec-sheet-handle" onclick="closeElecSheet()" aria-hidden="true"></div>
+    <div class="elec-sheet-title">Choisir un scrutin</div>
+    <div class="elec-sheet-list" id="elec-sheet-list"></div>
+  </div>
+</div>
+
+<script>
+/* Bottom sheet mobile pour le sélecteur d'élection.
+   Génère la liste depuis le <select id="el-select"> existant (qui contient les optgroups). */
+function openElecSheet() {
+  const sheet = document.getElementById('elec-sheet');
+  const listEl = document.getElementById('elec-sheet-list');
+  const sel = document.getElementById('el-select');
+  if (!sheet || !listEl || !sel) return;
+  // (Re)build le contenu — currentElection peut avoir changé entre 2 ouvertures.
+  let html = '';
+  for (const child of sel.children) {
+    if (child.tagName !== 'OPTGROUP') continue;
+    html += '<div class="elec-group"><div class="elec-group-label">' + child.label + '</div>';
+    for (const opt of child.children) {
+      if (opt.tagName !== 'OPTION') continue;
+      const label = opt.value;
+      const sheets = (typeof ELECTIONS !== 'undefined' && ELECTIONS[label] && ELECTIONS[label].sheets) || {};
+      const has2Tours = !!sheets['T2'];
+      const isCurrent = label === currentElection;
+      const safeVal = label.replace(/'/g, "\\'");
+      if (has2Tours) {
+        // Élection à 2 tours : nom de l'élection + 2 chips T1 / T2
+        html += '<div class="elec-item-2t' + (isCurrent ? ' is-current-elec' : '') + '">'
+              + '<div class="elec-item-name">' + opt.textContent + '</div>'
+              + '<div class="elec-tour-chips">'
+              +   '<button class="elec-tour-chip' + (isCurrent && currentSheet === 'T1' ? ' is-current' : '') + '"'
+              +     ' onclick="setElection(\'' + safeVal + '\'); setTour(1); closeElecSheet();">1ᵉʳ tour</button>'
+              +   '<button class="elec-tour-chip' + (isCurrent && currentSheet === 'T2' ? ' is-current' : '') + '"'
+              +     ' onclick="setElection(\'' + safeVal + '\'); setTour(2); closeElecSheet();">2ᵉ tour</button>'
+              + '</div></div>';
+      } else {
+        // Tour unique (TU ou T1 seul) : bouton simple
+        html += '<button class="elec-item' + (isCurrent ? ' is-current' : '') + '"'
+              + ' onclick="setElection(\'' + safeVal + '\'); closeElecSheet();">'
+              + opt.textContent + '</button>';
+      }
+    }
+    html += '</div>';
+  }
+  listEl.innerHTML = html;
+  sheet.classList.add('open');
+  sheet.setAttribute('aria-hidden', 'false');
+  // Scroll vers l'élection active
+  const cur = listEl.querySelector('.elec-item.is-current');
+  if (cur) cur.scrollIntoView({ block: 'center' });
+}
+function closeElecSheet() {
+  const sheet = document.getElementById('elec-sheet');
+  if (!sheet) return;
+  sheet.classList.remove('open');
+  sheet.setAttribute('aria-hidden', 'true');
+}
+
+// ═══════════ Side drawer mobile : nav bureaux / quartiers ═══════════
+// Synchronise le contenu des listes desktop (#sb-bureau-list / #sb-quartier-list)
+// vers les containers du drawer mobile (#nav-sheet-bureaux / #nav-sheet-quartiers).
+// Appelée à l'ouverture du drawer pour avoir le contenu à jour.
+function syncNavSheetContent() {
+  const srcB = document.getElementById('sb-bureau-list');
+  const srcQ = document.getElementById('sb-quartier-list');
+  const dstB = document.getElementById('nav-sheet-bureaux');
+  const dstQ = document.getElementById('nav-sheet-quartiers');
+  if (srcB && dstB) dstB.innerHTML = srcB.innerHTML;
+  if (srcQ && dstQ) dstQ.innerHTML = srcQ.innerHTML;
+}
+
+function switchNavSheetTab(type) {
+  const sheet = document.getElementById('nav-sheet');
+  if (!sheet) return;
+  const bureauxList = document.getElementById('nav-sheet-bureaux');
+  const quartiersList = document.getElementById('nav-sheet-quartiers');
+  const tabs = sheet.querySelectorAll('.nav-sheet-tab');
+  tabs.forEach(t => t.classList.toggle('is-current', t.dataset.navType === type));
+  if (type === 'quartier') {
+    bureauxList.style.display = 'none';
+    quartiersList.style.display = '';
+  } else {
+    bureauxList.style.display = '';
+    quartiersList.style.display = 'none';
+  }
+  // Scroll vers la ligne active du nouvel onglet
+  const cur = (type === 'quartier' ? quartiersList : bureauxList).querySelector('.blist-row.cur');
+  if (cur) cur.scrollIntoView({ block: 'center' });
+}
+
+function openNavSheet() {
+  const sheet = document.getElementById('nav-sheet');
+  if (!sheet) return;
+  syncNavSheetContent();
+  // Choisir l'onglet pertinent selon le type de fiche en cours
+  const initialTab = (typeof overlayTab === 'string' && overlayTab === 'quartier') ? 'quartier' : 'bureau';
+  switchNavSheetTab(initialTab);
+  sheet.classList.add('open');
+  sheet.setAttribute('aria-hidden', 'false');
+}
+
+function closeNavSheet() {
+  const sheet = document.getElementById('nav-sheet');
+  if (!sheet) return;
+  sheet.classList.remove('open');
+  sheet.setAttribute('aria-hidden', 'true');
+}
+
+// Délégation : clic sur une row dans le drawer
+document.addEventListener('click', function(e) {
+  const sheet = document.getElementById('nav-sheet');
+  if (!sheet || !sheet.classList.contains('open')) return;
+  const row = e.target.closest && e.target.closest('.blist-row');
+  if (!row || !sheet.contains(row)) return;
+  if (row.dataset.ns) {
+    if (typeof selectBureauFromList === 'function') selectBureauFromList(row.dataset.ns);
+    closeNavSheet();
+  } else if (row.dataset.q) {
+    if (typeof selectQuartierFromList === 'function') selectQuartierFromList(row.dataset.q);
+    closeNavSheet();
+  }
+});
+
+// Échap ferme le sheet
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeElecSheet();
+    closeNavSheet();
+  }
+});
 </script>
 </div><!-- /main -->
 </body>

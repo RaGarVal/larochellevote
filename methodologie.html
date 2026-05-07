@@ -3,6 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+  /* Force la vue mobile (viewport=720) si le flag localStorage est activé. */
+  (function () {
+    try {
+      if (localStorage.getItem('lrvote_force_mobile') === '1') {
+        document.querySelector('meta[name=viewport]').setAttribute('content', 'width=720, user-scalable=yes');
+      }
+    } catch (_) {}
+  })();
+</script>
 <title>Méthodologie & sources · La Rochelle Vote</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -301,12 +311,43 @@ footer.doc-foot a {
 }
 footer.doc-foot a:hover { color: var(--text-chrome); }
 
-/* Responsive */
-@media (max-width: 600px) {
-  #tb-page-title { display: none; }
-  header.doc-head h1 { font-size: 1.7rem; }
-  main.doc { padding: 32px 16px 60px; }
-  section.s h2 { font-size: 1.3rem; }
+/* ═══════════ MOBILE — adaptation ≤720 px ═══════════ */
+@media (max-width: 720px) {
+  /* Topbar compactée — alignée avec LRVcarte/LRVanalyse, mais on conserve "LR" dans le logo
+     puisqu'on a la place (pas de titre élection / titre fiche au centre comme sur les autres pages). */
+  #topbar { height: 56px; padding: 0 12px; gap: 8px; }
+  .tb-nav { display: none; }                    /* nav "carte / analyse" masquée — accessible via burger */
+  .tb-logo { font-size: 1.6rem; gap: 3px; flex-shrink: 0; }
+  .tb-search-btn { flex-shrink: 0; margin-left: auto; }  /* poussé à droite */
+  #tb-page-title { display: none; }              /* titre central caché : on a déjà la grosse h1 dans la page */
+
+  /* Layout de lecture : padding réduit */
+  main.doc { padding: 26px 14px 50px; }
+  .doc-wrap { gap: 28px; }
+
+  /* Header de page : titre plus compact */
+  header.doc-head { padding-bottom: 20px; }
+  header.doc-head .eyebrow { font-size: 0.68rem; margin-bottom: 8px; }
+  header.doc-head h1 { font-size: 1.7rem; margin-bottom: 12px; }
+  header.doc-head .lead { font-size: 0.95rem; line-height: 1.5; }
+
+  /* Sommaire */
+  nav.toc { padding: 14px 16px; }
+  nav.toc h2 { font-size: 0.7rem; margin-bottom: 8px; }
+  nav.toc a { font-size: 0.88rem; }
+
+  /* Sections */
+  section.s { gap: 14px; scroll-margin-top: 70px; }
+  section.s h2 { font-size: 1.2rem; padding-bottom: 8px; gap: 10px; }
+  section.s h2 .num { font-size: 0.82rem; }
+  section.s h3 { font-size: 1rem; margin-top: 10px; }
+  section.s p { font-size: 0.94rem; line-height: 1.55; }
+  section.s ul { padding-left: 18px; font-size: 0.92rem; line-height: 1.55; gap: 6px; }
+  section.s blockquote { padding: 10px 14px; font-size: 0.9rem; }
+  section.s code { font-size: 0.82em; padding: 1px 5px; }
+
+  /* Footer */
+  footer.doc-foot { font-size: 0.78rem; gap: 10px; padding-top: 18px; margin-top: 22px; }
 }
 </style>
 </head>

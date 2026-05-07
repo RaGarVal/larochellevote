@@ -97,6 +97,21 @@ function setupAppMenu(opts) {
   const tourItem = opts.tourFn
     ? { ico: '🧭', label: 'Visite guidée', action: () => { const f = window[opts.tourFn]; if (f) f(); } }
     : { ico: '🧭', label: 'Visite guidée', disabled: true, badge: 'Bientôt' };
+  // Détection de la page courante pour griser les items "La carte" / "L'analyse" déjà actifs.
+  const _path = location.pathname || '';
+  const _isCarte   = /LRVcarte\.html/i.test(_path);
+  const _isAnalyse = /LRVanalyse\.html/i.test(_path);
+  // Toggle "Vue mobile" — visible uniquement sur tablette/desktop (screen.width > 720).
+  // Sur un vrai smartphone, l'option n'a pas de sens car déjà en mobile.
+  function isForcedMobile(){ try { return localStorage.getItem('lrvote_force_mobile') === '1'; } catch(_) { return false; } }
+  function toggleForcedMobile(){
+    try { localStorage.setItem('lrvote_force_mobile', isForcedMobile() ? '0' : '1'); } catch(_) {}
+    location.reload();
+  }
+  const _showMobToggle = (typeof screen !== 'undefined' && screen.width > 720);
+  const mobileToggleItem = _showMobToggle
+    ? { dynamic: 'forcedMobile', action: toggleForcedMobile }
+    : null;
   const ITEMS = [
     { ico: '🏠', label: 'Accueil', action: () => location.href = 'index.html' },
     { sep: true },
@@ -105,6 +120,7 @@ function setupAppMenu(opts) {
     { ico: '📤', label: 'Partager cette vue',     action: () => { if (window.openShareModal) window.openShareModal(); } },
     { sep: true },
     { dynamic: 'theme', action: toggleTheme },
+    ...(mobileToggleItem ? [mobileToggleItem] : []),
     { sep: true },
     { ico: '📂', label: 'À propos', action: () => location.href = 'apropos.html' }
   ];
@@ -112,9 +128,13 @@ function setupAppMenu(opts) {
     if (it.dynamic === 'theme') {
       return { ico: isDark() ? '☀️' : '🌙', label: isDark() ? 'Mode clair' : 'Mode sombre', action: it.action };
     }
+    if (it.dynamic === 'forcedMobile') {
+      const forced = isForcedMobile();
+      return { ico: forced ? '🖥️' : '📱', label: forced ? 'Vue large' : 'Vue mobile', action: it.action };
+    }
     return it;
   }
-  const css = '.app-menu{position:fixed;background:var(--bg-modal);border:1px solid var(--border-modal);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);min-width:240px;padding:6px;z-index:1000;font-family:Space Grotesk,system-ui,sans-serif;display:none;opacity:0;transform:translateY(-4px);transition:opacity .12s,transform .12s}'
+  const css = '.app-menu{position:fixed;background:var(--bg-modal);border:1px solid var(--border-modal);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);min-width:260px;padding:6px;z-index:1000;font-family:Space Grotesk,system-ui,sans-serif;display:none;opacity:0;transform:translateY(-4px);transition:opacity .12s,transform .12s}'
     + '.app-menu.open{display:block;opacity:1;transform:translateY(0)}'
     + '.app-menu-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:6px;font-size:.88rem;color:var(--text-modal);cursor:pointer;transition:background .12s;border:none;background:none;width:100%;text-align:left;font-family:inherit}'
     + '.app-menu-item:hover:not(.disabled){background:var(--bg-modal-hover)}'
@@ -122,13 +142,36 @@ function setupAppMenu(opts) {
     + '.app-menu-item .ico{width:22px;text-align:center;flex-shrink:0;font-size:1rem}'
     + '.app-menu-item .lbl{flex:1;white-space:nowrap}'
     + '.app-menu-item .bad{font-size:.65rem;background:var(--bg-modal-accent);color:var(--text-modal-muted);padding:1px 7px;border-radius:3px;font-weight:600;letter-spacing:.02em}'
-    + '.app-menu-sep{height:1px;background:var(--border-modal);margin:4px 6px}';
+    + '.app-menu-sep{height:1px;background:var(--border-modal);margin:4px 6px}'
+    /* Duo de cards "La carte / L'analyse" en tête de menu */
+    + '.app-menu-hero{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:4px;margin-bottom:4px}'
+    + '.app-menu-card{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:14px 8px;border-radius:8px;border:1px solid var(--border-modal);background:var(--bg-modal-hover);cursor:pointer;font-family:inherit;color:var(--text-modal);transition:background .12s,transform .12s,border-color .12s;min-height:78px;text-align:center}'
+    + '.app-menu-card:hover:not(.is-current){background:var(--bg-modal-accent);border-color:var(--text-modal-muted)}'
+    + '.app-menu-card:active:not(.is-current){transform:scale(0.97)}'
+    + '.app-menu-card .ico{font-size:1.4rem;line-height:1}'
+    + '.app-menu-card .lbl{font-size:.85rem;font-weight:700;letter-spacing:-0.2px}'
+    + '.app-menu-card.is-current{background:var(--bg-active);border-color:var(--bg-active);color:var(--text-active);cursor:default}'
+    + '.app-menu-card.is-current .ico{filter:none}';
   const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
   const menu = document.createElement('div');
   menu.className = 'app-menu';
   menu.setAttribute('role', 'menu');
   function renderMenu(){
-    menu.innerHTML = ITEMS.map((it, i) => {
+    // Duo de cards "La carte / L'analyse" en tête de menu — destinations principales
+    const heroHtml = '<div class="app-menu-hero">'
+      + '<button class="app-menu-card' + (_isCarte ? ' is-current' : '') + '" data-go="carte"'
+      +   (_isCarte ? ' aria-current="page"' : '') + ' role="menuitem">'
+      +   '<span class="ico" aria-hidden="true">🗺️</span>'
+      +   '<span class="lbl">La carte</span>'
+      + '</button>'
+      + '<button class="app-menu-card' + (_isAnalyse ? ' is-current' : '') + '" data-go="analyse"'
+      +   (_isAnalyse ? ' aria-current="page"' : '') + ' role="menuitem">'
+      +   '<span class="ico" aria-hidden="true">📊</span>'
+      +   '<span class="lbl">L’analyse</span>'
+      + '</button>'
+      + '</div>'
+      + '<div class="app-menu-sep"></div>';
+    const itemsHtml = ITEMS.map((it, i) => {
       if (it.sep) return '<div class="app-menu-sep"></div>';
       const r = resolveItem(it);
       return '<button class="app-menu-item' + (r.disabled ? ' disabled' : '') + '" data-i="' + i + '"'
@@ -138,6 +181,17 @@ function setupAppMenu(opts) {
         + (r.badge ? '<span class="bad">' + r.badge + '</span>' : '')
         + '</button>';
     }).join('');
+    menu.innerHTML = heroHtml + itemsHtml;
+    // Hooks sur les cards hero
+    menu.querySelectorAll('.app-menu-card').forEach(el => {
+      el.addEventListener('click', () => {
+        if (el.classList.contains('is-current')) return;
+        const dest = el.dataset.go;
+        closeMenu();
+        if (dest === 'carte')   location.href = 'LRVcarte.html';
+        if (dest === 'analyse') location.href = 'LRVanalyse.html';
+      });
+    });
     menu.querySelectorAll('.app-menu-item').forEach(el => {
       el.addEventListener('click', () => {
         if (el.classList.contains('disabled')) return;
