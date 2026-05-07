@@ -5578,6 +5578,11 @@ function writeURLState() {
     const fname = (fctx ? 'lrvote-fiche-' : 'lrvote-carte-') + slug(slugBase) + '.png';
     await downloadCanvas(canvas, fname);
   };
+
+  // Exposition pour les tests / l'export Puppeteer sans passer par downloadCanvas (qui déclencherait un vrai download).
+  window.compose         = compose;
+  window.composeFiche    = composeFiche;
+  window.getFicheContext = getFicheContext;
 })();
 
 // ─── Menu logo (dropdown global) ─────────────────────────────────────────

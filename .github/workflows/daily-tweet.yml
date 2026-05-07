@@ -49,7 +49,7 @@ jobs:
 
       # 4. Lancer le script de capture
       - name: 📸 Capturer l'image du jour
-        run: node scripts/daily-capture.js
+        run: node daily-capture.js
         env:
           # Si déclenché manuellement avec une date, on l'utilise
           # Sinon la variable est vide et le script prend la date du jour

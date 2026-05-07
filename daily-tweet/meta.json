@@ -1,10 +1,10 @@
 {
-  "date": "2026-05-01",
+  "date": "2026-05-07",
   "niveau": "quartier",
   "election": "Municipales 1995",
-  "tour": "T1",
-  "bureau": "0011",
-  "quartier": null,
-  "chars": 235,
-  "generated_at": "2026-05-01T21:04:51.480Z"
+  "tour": "T2",
+  "bureau": null,
+  "quartier": "Mireuil",
+  "chars": 250,
+  "generated_at": "2026-05-07T19:30:34.640Z"
 }

@@ -1,3 +1,3 @@
 📊 @LaRochelleVote — La donnée du jour
-🏙️ Le 11 juin 1995, pour les municipales (1er tour), undefined arrive en tête avec NaN % dans le quartier de Mireuil.
+🏙️ Le 18 juin 1995, pour les municipales (2e tour), Michel Crépeau (Radical) arrive en tête avec 60,8 % dans le quartier de Mireuil.
 Les résultats de ce quartier, et tous les autres, sur https://ragarval.github.io/larochellevote

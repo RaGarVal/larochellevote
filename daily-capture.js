@@ -22,8 +22,14 @@ const path      = require('path');
 
 // ══ CONFIGURATION ════════════════════════════════════════════════════════════
 
-const BASE_URL = 'https://ragarval.github.io/larochellevote/';
-const SITE_URL = 'https://ragarval.github.io/larochellevote'; // compté 23 chars par Twitter
+// BASE_URL : où charger le site pour la capture.
+// - En PROD (GitHub Actions), on utilise github.io.
+// - En LOCAL (test sur ton Mac), on utilise file:// pour tester ta version locale.
+//   Pour basculer en mode local : LOCAL=1 node daily-capture.js
+const BASE_URL = process.env.LOCAL === '1'
+  ? 'file://' + __dirname + '/'
+  : 'https://ragarval.github.io/larochellevote/';
+const SITE_URL = 'https://ragarval.github.io/larochellevote'; // compté 23 chars par Twitter (toujours l'URL publique)
 const CHAPEAU  = '📊 @LaRochelleVote — La donnée du jour';
 
 // Probabilités de tirage (doivent sommer à 1)
@@ -225,7 +231,7 @@ function getDate(electionLabel, tour) {
 const today = (process.env.TWEET_DATE || new Date().toISOString().split('T')[0]).trim();
 console.log(`\n📅 Date : ${today}`);
 
-const schedulePath = path.join(__dirname, '../daily-tweet/schedule.json');
+const schedulePath = path.join(__dirname, 'schedule.json');
 const schedule     = fs.existsSync(schedulePath)
   ? JSON.parse(fs.readFileSync(schedulePath, 'utf8')).filter(e => e.date)
   : [];
@@ -307,11 +313,19 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
   console.log(`📊 ${elections.length} élections, ${Object.keys(bureauxInfo).length} bureaux, ${quartiers.length} quartiers`);
 
   // ── 3. Choisir le contenu du jour ─────────────────────────────────────────
-  let niveau   = rdv?.type     || pickWeighted(PROBA);     // carte/bureau/quartier/global
-  let election = rdv?.election || pickRandom(elections.filter(el => (bureauxParElection[el]||[]).length > 0));
-  let tour     = rdv?.tour     || null;
-  let bureau   = rdv?.bureau   || null;
-  let quartier = rdv?.quartier || null;
+  // Env vars de debug : NIVEAU=, ELECTION=, TOUR=, BUREAU=, QUARTIER= forcent un cas précis.
+  let niveau   = process.env.NIVEAU   || rdv?.type     || pickWeighted(PROBA);
+  let election = process.env.ELECTION || rdv?.election || pickRandom(elections.filter(el => (bureauxParElection[el]||[]).length > 0));
+  let tour     = process.env.TOUR     || rdv?.tour     || null;
+  let bureau   = process.env.BUREAU   || rdv?.bureau   || null;
+  let quartier = process.env.QUARTIER || rdv?.quartier || null;
+
+  // Normaliser 'fiche' (alias dans schedule.json) → bureau/quartier/global selon les params
+  if (niveau === 'fiche') {
+    if (bureau)        niveau = 'bureau';
+    else if (quartier) niveau = 'quartier';
+    else               niveau = pickWeighted({ bureau: 0.6, quartier: 0.3, global: 0.1 });
+  }
 
   // Déterminer le tour
   if (!tour) {
@@ -472,6 +486,11 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
       extra  = {};
     }
 
+    // Si pas de winner pour ce niveau (ex. quartier d'aujourd'hui mappé sur un découpage
+    // antérieur où les bureau IDs ne matchent pas), on retourne null pour déclencher
+    // la cascade de repli (FALLBACK[niveau] → niveau plus large jusqu'à 'global').
+    if (!winner) return null;
+
     const ci = await candInfo(winner?.cand);
     const vars = {
       ...baseVars, ...extra,
@@ -524,73 +543,81 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
     }
   });
 
-  // ── 9. Naviguer vers l'URL d'export ──────────────────────────────────────
+  // ── 9. Naviguer vers l'URL avec les params (sans mode=export — on contrôle nous-mêmes) ──
   const params = new URLSearchParams();
   params.set('election', election);
   if (tour && tour !== 'TU') params.set('tour', tour);
   if (niveau === 'bureau'   && bureau)   params.set('bureau',   bureau);
   if (niveau === 'quartier' && quartier) params.set('quartier', quartier);
   if (niveau === 'global')               params.set('tab',      'global');
-  params.set('mode', 'export');
+  // PAS de params.set('mode', 'export') — on évite l'IIFE auto-export de la page
+  // qui a un timing fragile et un override de downloadCanvas qui peut nous échapper.
 
   const targetUrl = BASE_URL + 'LRVcarte.html#' + params.toString();
   console.log(`\n🌐 → ${targetUrl}`);
 
-  // about:blank force un vrai rechargement (pas une simple navigation hash)
   await page.goto('about:blank');
   try {
     await page.goto(targetUrl, { waitUntil: 'networkidle0', timeout: 60000 });
   } catch { /* timeout toléré */ }
 
-  // ── 10. Attendre que compose() / composeFiche() soient disponibles ────────
-  // Note : compose() et composeFiche() retournent directement le canvas —
-  // on les appelle directement sans passer par exportShareImage() ni downloadCanvas().
-  console.log('⏳ Attente des fonctions de composition…');
+  // Capter les console.* du navigateur (debug)
+  page.on('console', msg => {
+    const t = msg.type();
+    if (t === 'error' || t === 'warning' || t === 'log') console.log(`[browser ${t}]`, msg.text());
+  });
+  page.on('pageerror', err => console.log('[browser pageerror]', err.message));
+
+  // ── 10. Attendre que window.compose / composeFiche soient dispo ──────────
+  // Ces fonctions sont exposées par LRVcarte.html sur window à la fin de l'IIFE.
+  // On les appelle directement → pas de download intempestif (downloadCanvas non touché).
+  console.log('⏳ Attente de window.compose / composeFiche…');
   try {
     await page.waitForFunction(
-      () => typeof compose === 'function'
+      () => typeof window.compose === 'function'
+         && typeof window.composeFiche === 'function'
+         && typeof window.getFicheContext === 'function'
          && typeof ELECTIONS !== 'undefined'
          && Object.keys(ELECTIONS).length > 0,
       { timeout: 30000 }
     );
   } catch {
-    console.error('❌ Fonctions de composition non disponibles après 30s. Abandon.');
-    await browser.close(); process.exit(0);
+    console.error('❌ window.compose/composeFiche non dispo après 30s. Le LRVcarte.html sur lequel tu testes ne les expose pas (push à jour ou utilise LOCAL=1).');
+    await browser.close(); process.exit(1);
   }
 
-  // Petite attente pour que le site ait le temps de lire le hash et mettre à jour son état
-  await new Promise(r => setTimeout(r, 1500));
+  // Petite attente pour que le site applique le hash (overlay ouvert si fiche, etc.)
+  console.log('⏳ Attente application des params (3s)…');
+  await new Promise(r => setTimeout(r, 3000));
 
-  // ── 11. Appel direct de compose() ou composeFiche() ───────────────────────
+  // ── 11. Capture : appel direct compose/composeFiche, retour dataUrl ──────
   let screenshotBuffer;
   console.log('🖼️  Génération de l\'image (appel direct compose/composeFiche)…');
-  page.setDefaultTimeout(90000);
-
   try {
     const dataUrl = await page.evaluate(async () => {
-      // _exportMode = true → évite le blocage fonts.ready dans compose/composeFiche
-      window._exportMode = true;
+      window._exportMode = true; // skip fonts.ready dans compose
 
-      // Timeout interne de 60 s pour éviter un blocage silencieux
-      const timeout = new Promise((_, rej) =>
-        setTimeout(() => rej(new Error('timeout interne 60s')), 60000));
+      const tStart = Date.now();
+      const dt = () => ((Date.now() - tStart) / 1000).toFixed(1) + 's';
 
-      const fctx   = (typeof getFicheContext === 'function') ? getFicheContext() : null;
-      const canvas = await Promise.race([
-        fctx ? composeFiche(fctx) : compose(),
-        timeout,
-      ]);
-      if (!canvas) return '__ERROR__:canvas null';
+      const fctx = window.getFicheContext();
+      console.log('[trace] fctx:', fctx ? 'fiche' : 'carte');
+
+      const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout 60s')), 60000));
+      const composer = fctx ? window.composeFiche(fctx) : window.compose();
+
+      const canvas = await Promise.race([composer, timeout]);
+      console.log('[trace] canvas obtenu après ' + dt(), 'taille:', canvas?.width, 'x', canvas?.height);
+      if (!canvas) throw new Error('canvas null');
       return canvas.toDataURL('image/png');
     });
 
-    if (dataUrl && dataUrl.startsWith('data:image/png;base64,')) {
-      const base64 = dataUrl.replace(/^data:image\/png;base64,/, '');
-      screenshotBuffer = Buffer.from(base64, 'base64');
-      console.log('✅ Export natif réussi (1200×675 px)');
-    } else {
-      throw new Error(dataUrl || 'dataUrl vide');
+    if (!dataUrl || !dataUrl.startsWith('data:image/png;base64,')) {
+      throw new Error('dataUrl manquant ou format invalide');
     }
+    const base64 = dataUrl.replace(/^data:image\/png;base64,/, '');
+    screenshotBuffer = Buffer.from(base64, 'base64');
+    console.log(`✅ Export natif réussi (${(screenshotBuffer.length / 1024).toFixed(0)} KB)`);
   } catch (err) {
     console.warn(`⚠️  Export natif échoué (${err.message}) — fallback screenshot`);
     const selector = niveau === 'carte' ? '#main' : '#overlay';
@@ -610,7 +637,7 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
   await browser.close();
 
   // ── 10. Sauvegarde ────────────────────────────────────────────────────────
-  const outDir = path.join(__dirname, '../daily-tweet');
+  const outDir = path.join(__dirname, 'daily-tweet');
   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
 
   fs.writeFileSync(path.join(outDir, 'image.png'),  screenshotBuffer);
