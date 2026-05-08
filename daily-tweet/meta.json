@@ -1,10 +1,10 @@
 {
-  "date": "2026-05-07",
-  "niveau": "bureau",
-  "election": "Présidentielle 2022",
-  "tour": "T2",
-  "bureau": "0021",
+  "date": "2026-05-08",
+  "niveau": "global",
+  "election": "Législatives 1993",
+  "tour": "T1",
+  "bureau": "0041",
   "quartier": null,
-  "chars": 276,
-  "generated_at": "2026-05-07T22:46:26.831Z"
+  "chars": 237,
+  "generated_at": "2026-05-08T08:03:58.597Z"
 }
