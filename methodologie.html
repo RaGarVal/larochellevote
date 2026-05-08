@@ -14,6 +14,21 @@
   })();
 </script>
 <title>Méthodologie & sources · La Rochelle Vote</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta name="description" content="Comment fonctionne La Rochelle Vote, d'où viennent les données, ce qu'il faut savoir pour les lire correctement.">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="La Rochelle Vote">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:title" content="Méthodologie & sources — La Rochelle Vote">
+<meta property="og:description" content="Comment fonctionne La Rochelle Vote, d'où viennent les données, ce qu'il faut savoir pour les lire correctement.">
+<meta property="og:image" content="https://larochellevote.fr/share.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://larochellevote.fr/methodologie.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Méthodologie & sources — La Rochelle Vote">
+<meta name="twitter:description" content="Comment fonctionne La Rochelle Vote, d'où viennent les données, ce qu'il faut savoir pour les lire correctement.">
+<meta name="twitter:image" content="https://larochellevote.fr/share.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -117,7 +132,21 @@ body {
 .sail-mini { width: 1cap; height: 1cap; display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex-shrink: 0; align-self: center; }
 /* Mode sombre : léger halo clair autour du logo voile */
 [data-theme="dark"] .sail-mini { filter: drop-shadow(0 0 1.5px rgba(236,230,221,0.35)); }
-.sail-mini .sail-row { width: var(--w); height: calc((100% - 5px) / 6); background-color: #CC0100; }
+.sail-mini .sail-row {
+  position: relative;
+  width: var(--w); height: calc((100% - 5px) / 6);
+  background-color: var(--c1, #CC0100);
+  overflow: hidden;
+}
+.sail-mini .sail-row::after {
+  content: '';
+  position: absolute; inset: 0;
+  background-color: var(--c2, #F1C232);
+  clip-path: inset(0 0 0 100%);
+  transition: clip-path 0.55s cubic-bezier(0.33, 0, 0.4, 1);
+}
+.sail-mini .sail-row.sliding::after { clip-path: inset(0 0 0 0%); }
+.sail-mini .sail-row.no-trans::after { transition: none; }
 
 #tb-page-title { flex: 1; display: flex; align-items: center; justify-content: center; }
 #tb-page-title h1 { font-size: 1.1rem; font-weight: 600; color: var(--text-chrome); letter-spacing: -0.01em; }
@@ -392,6 +421,8 @@ footer.doc-foot a:hover { color: var(--text-chrome); }
         <li><a href="#sources"><span class="num">1.</span> Sources des données</a></li>
         <li><a href="#lecture"><span class="num">2.</span> Lecture des données</a></li>
         <li><a href="#limites"><span class="num">3.</span> Limites connues</a></li>
+        <li><a href="#glossaire"><span class="num">4.</span> Glossaire</a></li>
+        <li><a href="#confidentialite"><span class="num">5.</span> Confidentialité &amp; technique</a></li>
       </ol>
     </nav>
 
@@ -447,6 +478,25 @@ footer.doc-foot a:hover { color: var(--text-chrome); }
         un·e même candidat·e peut changer d'étiquette politique entre deux élections, et le site
         reflète ces évolutions.
       </p>
+
+      <h3>1.4 Métadonnées des bureaux de vote</h3>
+      <p>
+        Au-delà des résultats, le site stocke pour chaque bureau un ensemble de métadonnées&nbsp;:
+        son <strong>numéro officiel</strong> (qui peut changer entre deux ères), une
+        <strong>dénomination géographiquement parlante</strong> («&nbsp;Médiathèque–Ville-en-Bois&nbsp;»,
+        «&nbsp;Église de La&nbsp;Genette&nbsp;», «&nbsp;Parc Kennedy&nbsp;»…) qui lui donne une
+        identité principale sur le site, son <strong>nom officiel</strong> (souvent le nom du
+        bâtiment qui l'accueille ou simplement le nom du quartier), son
+        <strong>rattachement à un quartier</strong>, parfois deux, et son
+        <strong>canton</strong> (découpage 1985 puis découpage 2015). Ces informations sont
+        saisies manuellement et harmonisées entre les ères grâce à la table de correspondances
+        décrite plus bas (§2.3).
+      </p>
+      <p>
+        Pour les bureaux ayant changé de numéro ou de localisation au cours du temps, la table
+        maintient une <strong>chaîne d'identités historiques</strong> qui permet de retracer la
+        trajectoire d'un même territoire depuis 1988, autant que faire se peut.
+      </p>
     </section>
 
     <!-- ─────────────── §2 LECTURE ─────────────── -->
@@ -493,9 +543,26 @@ footer.doc-foot a:hover { color: var(--text-chrome); }
       <p>
         Outre les blocs, qui permettent des comparaisons sur la longue période, chaque candidat·e
         ou tête de liste peut être rattaché·e à une ou plusieurs <strong>familles politiques
-        fines</strong> — par exemple « gauche modérée », « gauche radicale », « écologistes »,
-        « droite républicaine », « souverainistes », « chasseurs-ruralistes »…
+        fines</strong>. C'est un «&nbsp;work in progress&nbsp;» qui n'est pas parfait, mais a le
+        mérite d'offrir une analyse un peu plus fine. Liste utilisée sur le site, par défaut, de la
+        gauche à l'extrême droite puis catégories particulières&nbsp;:
       </p>
+      <ul>
+        <li><span class="bloc-chip" style="background:#7B0000">Extrême gauche</span> — LO, NPA, LCR…</li>
+        <li><span class="bloc-chip" style="background:#9A5084">Gauche radicale</span> — LFI, PCF, Front de gauche…</li>
+        <li><span class="bloc-chip" style="background:#CC0100">Gauche modérée</span> — PS, PRG, divers gauche modérés…</li>
+        <li><span class="bloc-chip" style="background:#3D8B3D">Gauche écologiste</span> — Les Verts (depuis 1995) et ses différentes itérations depuis, Génération·s, José Bové…</li>
+        <li><span class="bloc-chip" style="background:#6AA84F">Écologistes</span> — tous les écologistes, de droite, de gauche ou d'ailleurs, depuis les premières candidatures.</li>
+        <li><span class="bloc-chip" style="background:#FF9900">Centristes</span> — UDF à partir de 2007, puis MoDem, UDI depuis 2022.</li>
+        <li><span class="bloc-chip" style="background:#F1C232; color:#1A1A1A">Macronistes</span> — EM, LREM, RE…</li>
+        <li><span class="bloc-chip" style="background:#6D9EEB">Droite libérale</span> — Démocratie libérale, globalement l'UDF pré-2007.</li>
+        <li><span class="bloc-chip" style="background:#0F55CC">Droite républicaine</span> — RPR, UMP, LR…</li>
+        <li><span class="bloc-chip" style="background:#1F3A6E">Droite conservatrice</span> — Christine Boutin, PCD…</li>
+        <li><span class="bloc-chip" style="background:#0C5394">Souverainistes</span> — RPF, DLF, MPF, mais aussi souverainistes de gauche.</li>
+        <li><span class="bloc-chip" style="background:#20124D">Extrême droite</span> — FN, RN, Reconquête, MNR…</li>
+        <li><span class="bloc-chip" style="background:#7F6001">Chasseurs-ruralistes</span> — CPNT, LMR, Jean Lassalle…</li>
+        <li><span class="bloc-chip" style="background:#558E37">Animalistes</span> — Parti animaliste.</li>
+      </ul>
       <p>
         <strong>Important&nbsp;:</strong> un·e même candidat·e ou tête de liste peut appartenir à
         plusieurs familles à la fois (ex. un·e écologiste peut être à la fois « gauche modérée » et
@@ -521,6 +588,63 @@ footer.doc-foot a:hover { color: var(--text-chrome); }
         de suivre l'évolution politique d'un même territoire sur plus de trente ans, malgré les
         changements géographiques.
       </p>
+
+      <h3>2.4 Les modes de coloration de la carte</h3>
+      <p>
+        Sur la page Carte, chaque bureau de vote est colorié selon l'un des quatre <strong>modes de
+        coloration</strong> sélectionnables dans la légende&nbsp;:
+      </p>
+      <ul>
+        <li><strong>Candidat·e</strong> — chaque bureau prend la couleur du candidat·e (ou tête de
+          liste) arrivé·e en tête. Cliquer sur un nom dans la légende bascule en mode
+          « choroplèthe »&nbsp;: la carte se colore alors selon le <em>score de cette personne</em>
+          dans chaque bureau, du plus pâle (score le plus bas) au plus saturé (le plus haut).</li>
+        <li><strong>Bloc politique</strong> — chaque bureau est colorié selon le bloc politique
+          majoritaire (gauche, centre, droite, extrême droite). Cliquer sur un bloc dans la légende
+          active le choroplèthe pour ce bloc.</li>
+        <li><strong>Abstention</strong> — choroplèthe du taux d'abstention, du clair (faible) au
+          foncé (élevé).</li>
+        <li><strong>Blancs / nuls</strong> — choroplèthe du taux de bulletins blancs ou nuls.</li>
+      </ul>
+      <p>
+        Le mode actif et la sélection sont mémorisés dans l'URL (le hash) — ce qui permet de
+        partager un lien qui ouvre directement une vue précise.
+      </p>
+
+      <h3>2.5 Les graphiques d'analyse</h3>
+      <p>
+        La page Analyse permet de comparer plusieurs scrutins en parallèle, sur trois décennies.
+        Plusieurs options de visualisation sont disponibles&nbsp;:
+      </p>
+      <ul>
+        <li><strong>Courbes</strong> — chaque bloc ou famille a sa courbe d'évolution dans le
+          temps. Idéal pour repérer des tendances longues, des pics ou des effondrements.</li>
+        <li><strong>Empilés</strong> — chaque scrutin est une barre verticale empilée par bloc /
+          famille. Permet de visualiser d'un coup d'œil le partage du gâteau électoral à chaque
+          échéance.</li>
+        <li><strong>% / Voix</strong> — bascule entre pourcentage des suffrages exprimés (lecture
+          relative) et nombre absolu de voix (lecture en valeur, sensible aux variations de la
+          participation).</li>
+        <li><strong>Blocs / Familles</strong> — choix entre la lecture en blocs larges (2, 3, 4 ou
+          5 blocs) et la lecture en familles politiques fines.</li>
+      </ul>
+
+      <h3>2.6 Les comparaisons</h3>
+      <p>
+        En vue <strong>quartier</strong> ou <strong>bureau</strong>, l'analyse permet de comparer
+        les résultats à une référence&nbsp;:
+      </p>
+      <ul>
+        <li><strong>Comparer à la ville entière</strong> — superpose la courbe des résultats globaux
+          de La Rochelle aux résultats du quartier ou du bureau étudié. Permet de voir l'écart&nbsp;:
+          ce quartier vote-t-il plus à gauche, plus à droite, plus blanc ou plus abstentionniste
+          que la moyenne municipale&nbsp;? Cet écart évolue-t-il dans le temps&nbsp;?</li>
+        <li><strong>Comparer à un quartier de référence</strong> — pour comparer un bureau à son
+          quartier, ou un quartier à un autre.</li>
+        <li><strong>Base 100</strong> — réécriture des résultats en indice base 100 par rapport à
+          la référence. Comment un quartier ou un bureau évolue relativement à la ville&nbsp;? C'est
+          l'outil idéal pour le savoir.</li>
+      </ul>
     </section>
 
     <!-- ─────────────── §3 LIMITES ─────────────── -->
@@ -568,6 +692,68 @@ footer.doc-foot a:hover { color: var(--text-chrome); }
         Si vous repérez une erreur ou une donnée manquante, merci de nous la signaler&nbsp;:
         chaque correction améliore la base partagée par tou·tes les utilisateur·ices du site.
       </blockquote>
+    </section>
+
+    <!-- ─────────────── §4 GLOSSAIRE ─────────────── -->
+    <section class="s" id="glossaire">
+      <h2><span class="num">4.</span> Glossaire</h2>
+      <ul>
+        <li><strong>Bureau de vote</strong> — unité géographique élémentaire d'enregistrement et de
+          comptage des suffrages. 30 bureaux à La&nbsp;Rochelle en 1965, 40 en 1988, 61 en 2026.</li>
+        <li><strong>Quartier</strong> — regroupement géographique de bureaux, défini conventionnellement
+          par l'autrice pour faciliter les agrégations à l'échelle d'un quartier rochelais
+          (Centre-Ville, Mireuil, Villeneuve-les-Salines, Lafond, La&nbsp;Genette, etc.).</li>
+        <li><strong>Ère</strong> — période de validité d'un découpage administratif des bureaux&nbsp;:
+          1988, 1993, 1996, 2004, 2007, 2010, 2012, 2015, 2022, 2026. Chaque ère a ses propres limites
+          de bureaux.</li>
+        <li><strong>Bureau agrégé</strong> — quand un bureau historique a été scindé ou n'a pas pu
+          être localisé précisément, ses résultats sont attribués à un groupe de bureaux contemporains,
+          indiqué sur la carte par une zone élargie.</li>
+        <li><strong>Bloc politique</strong> — regroupement large de candidat·es ou listes pour la
+          lecture transversale (gauche, centre, droite, extrême droite). 2, 3, 4 ou 5 blocs selon
+          le mode choisi.</li>
+        <li><strong>Famille politique</strong> — sous-catégorie politique fine (gauche modérée,
+          écologistes, souverainistes, etc.). Une·e même candidat·e peut appartenir à plusieurs
+          familles à la fois.</li>
+        <li><strong>Suffrages exprimés</strong> — total des bulletins valables (hors blancs et nuls).
+          Le pourcentage d'un·e candidat·e est par défaut calculé sur les exprimés.</li>
+        <li><strong>Blancs / nuls</strong> — bulletins non comptabilisés dans les exprimés (vote
+          blanc, bulletins abîmés, plusieurs bulletins, etc.).</li>
+        <li><strong>Abstention</strong> — proportion d'inscrit·es n'ayant pas voté. Calculée sur les
+          inscrit·es du bureau.</li>
+        <li><strong>Choroplèthe</strong> — carte où chaque zone géographique (ici un bureau) est
+          coloriée selon une valeur quantitative (score d'un·e candidat·e, taux d'abstention…).</li>
+        <li><strong>Table de correspondances</strong> — fichier interne qui relie chaque bureau de
+          la carte 2026 à ses ancêtres territoriaux dans les ères précédentes. Permet de suivre
+          l'évolution politique d'un même territoire malgré les redécoupages.</li>
+      </ul>
+    </section>
+
+    <!-- ─────────────── §5 CONFIDENTIALITÉ & TECHNIQUE ─────────────── -->
+    <section class="s" id="confidentialite">
+      <h2><span class="num">5.</span> Confidentialité &amp; technique</h2>
+      <p>
+        Le site <strong>ne collecte aucune donnée personnelle identifiable</strong>&nbsp;: pas de
+        cookie de tracking, pas de compte utilisateur, pas de profilage. Tout fonctionne
+        <strong>côté client</strong> (dans le navigateur)&nbsp;: les données électorales sont
+        chargées une fois sous forme de fichiers JavaScript, puis manipulées localement. Aucun
+        appel ne sort vers un serveur applicatif.
+      </p>
+      <p>
+        Une mesure d'audience anonyme est assurée par <strong>Cloudflare Web Analytics</strong>,
+        qui fournit des statistiques agrégées (nombre de visites, pages les plus consultées, pays
+        d'origine) <strong>sans cookie ni identifiant individuel</strong>. Aucune donnée n'est
+        stockée côté navigateur, et il n'est pas possible de tracer un·e visiteur·euse précis·e.
+      </p>
+      <p>
+        La carte utilise les fonds d'<strong>OpenStreetMap</strong>, servis par CARTO. Ces requêtes
+        permettent à OpenStreetMap/CARTO de connaître l'IP du visiteur·euse et la zone consultée —
+        c'est inhérent à toute carte web utilisant des tuiles tierces.
+      </p>
+      <p>
+        Le site est hébergé en statique (HTML/CSS/JS) sur GitHub Pages, derrière un domaine custom
+        <code>larochellevote.fr</code>. Pas de serveur applicatif, pas de base de données distante.
+      </p>
     </section>
 
     <footer class="doc-foot">
@@ -657,6 +843,9 @@ footer.doc-foot a:hover { color: var(--text-chrome); }
 // ─── Menu logo ──────────────────────────────────────────────────────────
 // Implémenté dans shared.js · setupAppMenu() (tour désactivé sur cette page)
 setupAppMenu();
+
+// ─── Animation de la voile mini (topbar) ────────────────────────────────
+setupSailAnimation();
 
 // ─── Cmd+K universal search ──────────────────────────────────────────────
 (function setupCmdK(){
@@ -872,5 +1061,9 @@ setupAppMenu();
   if (el) el.textContent = formatLastUpdate(LAST_UPDATE);
 })();
 </script>
+
+<!-- Cloudflare Web Analytics -->
+<script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "65e9e43629c74f448a059b679fcc2484"}'></script>
+<!-- End Cloudflare Web Analytics -->
 </body>
 </html>

@@ -38,6 +38,59 @@ const PARTI_COLORS = [
 ];
 
 // ───────────────────────────────────────────────────────────────
+//  ANIMATION DU LOGO VOILE (.sail-mini > .sail-row)
+//  À appeler après que le DOM soit prêt sur les pages qui ont la voile mini
+//  dans leur topbar (apropos, methodologie, …). Cycle de couleurs aléatoires
+//  prises dans PARTI_COLORS, avec respect de prefers-reduced-motion.
+//
+//  Note : LRVcarte, LRVanalyse, index ont leur propre implémentation inline
+//  (pour des raisons historiques). Cette fonction reproduit le même comportement
+//  pour les pages doc.
+// ───────────────────────────────────────────────────────────────
+function setupSailAnimation() {
+  if (typeof PARTI_COLORS === 'undefined' || !PARTI_COLORS.length) return;
+  const rows = Array.from(document.querySelectorAll('.sail-mini .sail-row')).reverse();
+  if (!rows.length) return;
+  // a11y : prefers-reduced-motion → couleur fixe sans animation
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduceMotion) {
+    const fixed = PARTI_COLORS[Math.floor(Math.random() * PARTI_COLORS.length)];
+    rows.forEach(r => { r.style.setProperty('--c1', fixed); r.style.setProperty('--c2', fixed); });
+    return;
+  }
+  const NB = rows.length, SLIDE_DUR = 550, STEP = 200, PAUSE_END = 4000;
+  function pickColor(prev) {
+    let c; do { c = PARTI_COLORS[Math.floor(Math.random()*PARTI_COLORS.length)]; }
+    while (c === prev); return c;
+  }
+  let curColor = pickColor(null), nextColor = pickColor(curColor), cursor = 0;
+  rows.forEach(r => { r.style.setProperty('--c1', curColor); r.style.setProperty('--c2', nextColor); });
+  function tick() {
+    const row = rows[cursor], target = nextColor;
+    row.classList.add('sliding');
+    setTimeout(() => {
+      row.classList.add('no-trans');
+      row.style.setProperty('--c1', target);
+      row.classList.remove('sliding');
+      void row.offsetWidth;
+      row.classList.remove('no-trans');
+    }, SLIDE_DUR + 30);
+    cursor++;
+    let nextDelay = STEP;
+    if (cursor >= NB) {
+      cursor = 0;
+      curColor = nextColor;
+      nextColor = pickColor(curColor);
+      const newC2 = nextColor;
+      setTimeout(() => rows.forEach(r => r.style.setProperty('--c2', newC2)), SLIDE_DUR + 60);
+      nextDelay = SLIDE_DUR - STEP + PAUSE_END;
+    }
+    setTimeout(tick, nextDelay);
+  }
+  tick();
+}
+
+// ───────────────────────────────────────────────────────────────
 //  TRI DES ÉLECTIONS — priorité par type
 //  Pour départager des élections de la même année.
 //  Exceptions chronologiques :

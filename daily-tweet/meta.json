@@ -1,10 +1,10 @@
 {
   "date": "2026-05-07",
-  "niveau": "quartier",
-  "election": "Municipales 1995",
+  "niveau": "bureau",
+  "election": "Présidentielle 2022",
   "tour": "T2",
-  "bureau": null,
-  "quartier": "Mireuil",
-  "chars": 250,
-  "generated_at": "2026-05-07T19:30:34.640Z"
+  "bureau": "0021",
+  "quartier": null,
+  "chars": 276,
+  "generated_at": "2026-05-07T22:46:26.831Z"
 }

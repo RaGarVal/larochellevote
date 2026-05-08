@@ -14,6 +14,21 @@
   })();
 </script>
 <title>À propos · La Rochelle Vote</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta name="description" content="Le projet La Rochelle Vote : archives électorales rochelaises depuis 1988. Auteur, sources, licence, contact.">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="La Rochelle Vote">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:title" content="À propos — La Rochelle Vote">
+<meta property="og:description" content="Le projet La Rochelle Vote : archives électorales rochelaises depuis 1988. Auteur, sources, licence, contact.">
+<meta property="og:image" content="https://larochellevote.fr/share.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://larochellevote.fr/apropos.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="À propos — La Rochelle Vote">
+<meta name="twitter:description" content="Le projet La Rochelle Vote : archives électorales rochelaises depuis 1988. Auteur, sources, licence, contact.">
+<meta name="twitter:image" content="https://larochellevote.fr/share.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -117,7 +132,21 @@ body {
 .sail-mini { width: 1cap; height: 1cap; display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex-shrink: 0; align-self: center; }
 /* Mode sombre : léger halo clair autour du logo voile */
 [data-theme="dark"] .sail-mini { filter: drop-shadow(0 0 1.5px rgba(236,230,221,0.35)); }
-.sail-mini .sail-row { width: var(--w); height: calc((100% - 5px) / 6); background-color: #CC0100; }
+.sail-mini .sail-row {
+  position: relative;
+  width: var(--w); height: calc((100% - 5px) / 6);
+  background-color: var(--c1, #CC0100);
+  overflow: hidden;
+}
+.sail-mini .sail-row::after {
+  content: '';
+  position: absolute; inset: 0;
+  background-color: var(--c2, #F1C232);
+  clip-path: inset(0 0 0 100%);
+  transition: clip-path 0.55s cubic-bezier(0.33, 0, 0.4, 1);
+}
+.sail-mini .sail-row.sliding::after { clip-path: inset(0 0 0 0%); }
+.sail-mini .sail-row.no-trans::after { transition: none; }
 
 #tb-page-title { flex: 1; display: flex; align-items: center; justify-content: center; }
 #tb-page-title h1 { font-size: 1.1rem; font-weight: 600; color: var(--text-chrome); letter-spacing: -0.01em; }
@@ -221,7 +250,7 @@ section.s a:hover { color: var(--accent-warm); }
 /* Cartes de crédits / contact */
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(2, 1fr);   /* 2 colonnes fixes sur desktop */
   gap: 14px;
   margin-top: 6px;
 }
@@ -395,20 +424,31 @@ footer.doc-foot a:hover { color: var(--text-chrome); }
     <section class="s" id="licence">
       <h2><span class="num">4.</span> Licence &amp; droits</h2>
       <p>
-        <strong>Données électorales</strong>&nbsp;: les résultats électoraux sont par nature publics
-        et libres de réutilisation, dans le respect des règles de la statistique publique française.
+        <strong>Données électorales</strong>&nbsp;: les résultats sont publics par nature et libres
+        de réutilisation, conformément aux règles de la statistique publique française. Sources
+        détaillées sur la page <a href="methodologie.html">Méthodologie &amp; sources</a>.
       </p>
       <p>
-        <strong>Code source</strong> du site&nbsp;: <em>licence à préciser</em>.
+        <strong>Fonds cartographiques (bureaux 2015→aujourd'hui)</strong>&nbsp;: polygones issus du
+        portail Open Data de la Ville de La&nbsp;Rochelle, sous <strong>Licence Ouverte / Open
+        Licence 2.0</strong> (Etalab), avec mention obligatoire&nbsp;:
+        <em>Source&nbsp;: Ville de La&nbsp;Rochelle — Open Data</em>.
       </p>
       <p>
-        <strong>Cartes &amp; visualisations</strong>&nbsp;: réutilisation autorisée avec
-        mention de la source et lien vers le site.
+        <strong>Fonds cartographiques (bureaux antérieurs à 2015)</strong>&nbsp;: numérisation
+        manuelle à partir des cartes papier fournies par le service des élections.
       </p>
-      <div class="todo-note">
-        ✏️ <strong>À choisir&nbsp;:</strong> licence du code (MIT, GPL, AGPL&nbsp;?), licence des
-        visuels (CC-BY, CC-BY-SA, CC0&nbsp;?), conditions d'usage commercial éventuel.
-      </div>
+      <p>
+        <strong>Code source</strong>&nbsp;: licence <strong>MIT</strong>. Réutilisation, adaptation
+        et modification autorisées, à condition de conserver la mention de copyright.
+      </p>
+      <p>
+        <strong>Cartes &amp; visualisations</strong>&nbsp;: licence <strong>Creative Commons
+        CC-BY&nbsp;4.0</strong>, appliquée à la composition éditoriale (mise en page, choix
+        graphiques, choroplèthes, etc.). Réutilisation libre — presse, recherche, pédagogie,
+        projets dérivés — avec mention&nbsp;: <em>Visualisation&nbsp;: larochellevote.fr · Fonds
+        géographiques 2015→&nbsp;: Ville de La&nbsp;Rochelle — Open Data</em>.
+      </p>
     </section>
 
     <section class="s" id="contact">
@@ -422,12 +462,20 @@ footer.doc-foot a:hover { color: var(--text-chrome); }
       </p>
       <div class="card-grid">
         <div class="card">
-          <span class="card-label">Email</span>
-          <span class="card-value"><a href="mailto:contact@example.com">contact@example.com</a></span>
+          <span class="card-label">Le projet · X</span>
+          <span class="card-value"><a href="https://x.com/LaRochelleVote" target="_blank" rel="noopener">@LaRochelleVote</a></span>
         </div>
         <div class="card">
-          <span class="card-label">Réseaux</span>
-          <span class="card-value"><a href="https://x.com/LaRochelleVote" target="_blank" rel="noopener">@LaRochelleVote</a></span>
+          <span class="card-label">Le projet · Bluesky</span>
+          <span class="card-value"><a href="https://bsky.app/profile/larochellevote.bsky.social" target="_blank" rel="noopener">@larochellevote.bsky.social</a></span>
+        </div>
+        <div class="card">
+          <span class="card-label">L'autrice · X</span>
+          <span class="card-value"><a href="https://x.com/Ra_GarVal" target="_blank" rel="noopener">@Ra_GarVal</a></span>
+        </div>
+        <div class="card">
+          <span class="card-label">L'autrice · Bluesky</span>
+          <span class="card-value"><a href="https://bsky.app/profile/ragarval.bsky.social" target="_blank" rel="noopener">@ragarval.bsky.social</a></span>
         </div>
       </div>
     </section>
@@ -440,12 +488,33 @@ footer.doc-foot a:hover { color: var(--text-chrome); }
         rapide sans serveur d'application.
       </p>
       <p>
-        Le code source&nbsp;: <em>repository à publier</em>.
+        Le code reste privé pour l'instant. Une ouverture est envisagée à terme, notamment pour
+        permettre à d'autres villes ou à des médias d'adapter le modèle à leur territoire.
       </p>
-      <div class="todo-note">
-        ✏️ <strong>À renseigner&nbsp;:</strong> URL du dépôt GitHub/GitLab (s'il est public),
-        ou mention que le code reste pour l'instant fermé.
-      </div>
+    </section>
+
+    <section class="s" id="soutien">
+      <h2><span class="num">7.</span> Soutenir le projet</h2>
+      <p>
+        <strong>La&nbsp;Rochelle&nbsp;Vote</strong> est entièrement bénévole et auto-financé. La
+        compilation des archives électorales, la numérisation des cartes anciennes, le développement
+        du site et la veille des nouveaux scrutins demandent un travail régulier — qui se poursuivra
+        scrutin après scrutin.
+      </p>
+      <p>
+        Si vous souhaitez soutenir le projet, afin d'en alléger le coût pour l'autrice, deux
+        options&nbsp;: un don ponctuel ou un abonnement mensuel régulier.
+      </p>
+      <p style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:18px">
+        <a href="https://buy.stripe.com/cNi9AU3IH3Vh6DZ2VM4ko00" target="_blank" rel="noopener"
+           style="display:inline-block;padding:12px 24px;background:var(--accent-warm);color:#fff;text-decoration:none;border-radius:8px;font-weight:600;letter-spacing:0.01em">
+          ☕ Offrir un café (don ponctuel)
+        </a>
+        <a href="https://buy.stripe.com/8x2cN6931fDZaUfbsi4ko01" target="_blank" rel="noopener"
+           style="display:inline-block;padding:12px 24px;background:var(--text-chrome);color:var(--bg-card);text-decoration:none;border-radius:8px;font-weight:600;letter-spacing:0.01em">
+          ❤️ Soutien mensuel
+        </a>
+      </p>
     </section>
 
     <footer class="doc-foot">
@@ -535,6 +604,9 @@ footer.doc-foot a:hover { color: var(--text-chrome); }
 // ─── Menu logo ──────────────────────────────────────────────────────────
 // Implémenté dans shared.js · setupAppMenu() (tour désactivé sur cette page)
 setupAppMenu();
+
+// ─── Animation de la voile mini (topbar) ────────────────────────────────
+setupSailAnimation();
 
 // ─── Cmd+K universal search (même module que les autres pages) ──────────
 (function setupCmdK(){
@@ -749,5 +821,9 @@ setupAppMenu();
   if (el) el.textContent = formatLastUpdate(LAST_UPDATE);
 })();
 </script>
+
+<!-- Cloudflare Web Analytics -->
+<script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "65e9e43629c74f448a059b679fcc2484"}'></script>
+<!-- End Cloudflare Web Analytics -->
 </body>
 </html>

@@ -19,6 +19,21 @@
     })();
   </script>
   <title>La Rochelle électorale</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <meta name="description" content="Explorez les résultats électoraux rochelais sur la carte, bureau par bureau, élection par élection.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="La Rochelle Vote">
+  <meta property="og:locale" content="fr_FR">
+  <meta property="og:title" content="La Rochelle Vote — La carte électorale">
+  <meta property="og:description" content="Explorez les résultats électoraux rochelais sur la carte, bureau par bureau, élection par élection.">
+  <meta property="og:image" content="https://larochellevote.fr/share.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:url" content="https://larochellevote.fr/LRVcarte.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="La Rochelle Vote — La carte électorale">
+  <meta name="twitter:description" content="Explorez les résultats électoraux rochelais sur la carte, bureau par bureau, élection par élection.">
+  <meta name="twitter:image" content="https://larochellevote.fr/share.png">
   <script>
     /* Theme bootstrap (anti-FOUC) — applique data-theme="dark" sur <html> avant le rendu CSS */
     (function(){
@@ -4896,7 +4911,7 @@ function writeURLState() {
     ctx.fillStyle = '#5A5A5A';
     ctx.font = '500 13px "Space Grotesk", system-ui, sans-serif';
     const today = new Date().toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' });
-    ctx.fillText('lrvote.fr · @LaRochelleVote · exporté le ' + today, PAD, H - 22);
+    ctx.fillText('larochellevote.fr · @LaRochelleVote · exporté le ' + today, PAD, H - 22);
 
     return canvas;
   }
@@ -5552,7 +5567,7 @@ function writeURLState() {
     ctx.textAlign = 'left';
     ctx.font = '500 13px "Space Grotesk", system-ui, sans-serif';
     const today = new Date().toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' });
-    ctx.fillText('lrvote.fr · @LaRochelleVote · exporté le ' + today, PAD, H - 22);
+    ctx.fillText('larochellevote.fr · @LaRochelleVote · exporté le ' + today, PAD, H - 22);
     return canvas;
   }
 
@@ -6215,5 +6230,9 @@ document.addEventListener('keydown', (e) => {
 });
 </script>
 </div><!-- /main -->
+
+<!-- Cloudflare Web Analytics -->
+<script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "65e9e43629c74f448a059b679fcc2484"}'></script>
+<!-- End Cloudflare Web Analytics -->
 </body>
 </html>

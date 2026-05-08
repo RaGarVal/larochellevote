@@ -82,3 +82,11 @@ jobs:
             git push
             echo "✅ Image committée et disponible sur GitHub"
           )
+
+      # 7. Poster automatiquement sur Bluesky (X reste manuel via Telegram)
+      - name: 🦋 Poster sur Bluesky
+        if: steps.check_image.outputs.image_exists == 'true'
+        run: node post-bluesky.js
+        env:
+          BSKY_HANDLE: ${{ secrets.BSKY_HANDLE }}
+          BSKY_APP_PASSWORD: ${{ secrets.BSKY_APP_PASSWORD }}

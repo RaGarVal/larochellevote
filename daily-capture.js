@@ -23,13 +23,13 @@ const path      = require('path');
 // ══ CONFIGURATION ════════════════════════════════════════════════════════════
 
 // BASE_URL : où charger le site pour la capture.
-// - En PROD (GitHub Actions), on utilise github.io.
+// - En PROD (GitHub Actions), on utilise le domaine custom larochellevote.fr.
 // - En LOCAL (test sur ton Mac), on utilise file:// pour tester ta version locale.
 //   Pour basculer en mode local : LOCAL=1 node daily-capture.js
 const BASE_URL = process.env.LOCAL === '1'
   ? 'file://' + __dirname + '/'
-  : 'https://ragarval.github.io/larochellevote/';
-const SITE_URL = 'https://ragarval.github.io/larochellevote'; // compté 23 chars par Twitter (toujours l'URL publique)
+  : 'https://larochellevote.fr/';
+const SITE_URL = 'https://larochellevote.fr'; // URL publique citée dans les tweets (compté 23 chars par Twitter)
 const CHAPEAU  = '📊 @LaRochelleVote — La donnée du jour';
 
 // Probabilités de tirage (doivent sommer à 1)
@@ -50,17 +50,17 @@ const C = {
   carte_presidentielle:
 `${CHAPEAU}
 {emoji} Le {date_election}, pour la {election} {tour}, {prenom_nom} ({parti}) a obtenu {score} % à La Rochelle. 📍 Meilleur score dans le bureau n°{bureau_num} · {denomination} à {quartier}.
-Les résultats de ce scrutin, bureau par bureau, sur ${SITE_URL}`,
+Les résultats de ce scrutin, bureau par bureau, sur {site_url}`,
 
   carte_referendum:
 `${CHAPEAU}
 {emoji} Le {date_election}, pour le {election}, le {reponse} a obtenu {score} % à La Rochelle. 📍 Meilleur score dans le bureau n°{bureau_num} · {denomination} à {quartier}.
-Les résultats de ce scrutin, bureau par bureau, sur ${SITE_URL}`,
+Les résultats de ce scrutin, bureau par bureau, sur {site_url}`,
 
   carte_autres:
 `${CHAPEAU}
 {emoji} Le {date_election}, pour les {election} {tour}, {prenom_nom} ({parti}) a obtenu {score} % à La Rochelle. 📍 Meilleur score dans le bureau n°{bureau_num} · {denomination} à {quartier}.
-Les résultats de ce scrutin, bureau par bureau, sur ${SITE_URL}`,
+Les résultats de ce scrutin, bureau par bureau, sur {site_url}`,
 
   // ── FICHE BUREAU ───────────────────────────────────────────────────────────
   // Vue panneau d'un bureau. Texte : gagnant dans ce bureau.
@@ -68,17 +68,17 @@ Les résultats de ce scrutin, bureau par bureau, sur ${SITE_URL}`,
   bureau_presidentielle:
 `${CHAPEAU}
 {emoji} Le {date_election}, pour la {election} {tour}, {prenom_nom} ({parti}) arrive en tête avec {score} % dans le bureau n°{bureau_num} · {denomination} à {quartier}.
-Les résultats de ce bureau, et tous les autres, sur ${SITE_URL}`,
+Les résultats de ce bureau, et tous les autres, sur {site_url}`,
 
   bureau_referendum:
 `${CHAPEAU}
 {emoji} Le {date_election}, pour le {election}, le {reponse} est arrivé en tête avec {score} % dans le bureau n°{bureau_num} · {denomination} à {quartier}.
-Les résultats de ce bureau, et tous les autres, sur ${SITE_URL}`,
+Les résultats de ce bureau, et tous les autres, sur {site_url}`,
 
   bureau_autres:
 `${CHAPEAU}
 {emoji} Le {date_election}, pour les {election} {tour}, {prenom_nom} ({parti}) arrive en tête avec {score} % dans le bureau n°{bureau_num} · {denomination} à {quartier}.
-Les résultats de ce bureau, et tous les autres, sur ${SITE_URL}`,
+Les résultats de ce bureau, et tous les autres, sur {site_url}`,
 
   // ── FICHE QUARTIER ─────────────────────────────────────────────────────────
   // Vue panneau d'un quartier. Texte : gagnant dans ce quartier.
@@ -86,17 +86,17 @@ Les résultats de ce bureau, et tous les autres, sur ${SITE_URL}`,
   quartier_presidentielle:
 `${CHAPEAU}
 {emoji} Le {date_election}, pour la {election} {tour}, {prenom_nom} ({parti}) arrive en tête avec {score} % dans le quartier de {quartier}.
-Les résultats de ce quartier, et tous les autres, sur ${SITE_URL}`,
+Les résultats de ce quartier, et tous les autres, sur {site_url}`,
 
   quartier_referendum:
 `${CHAPEAU}
 {emoji} Le {date_election}, pour le {election}, le {reponse} est arrivé en tête avec {score} % dans le quartier de {quartier}.
-Les résultats de ce quartier, et tous les autres, sur ${SITE_URL}`,
+Les résultats de ce quartier, et tous les autres, sur {site_url}`,
 
   quartier_autres:
 `${CHAPEAU}
 {emoji} Le {date_election}, pour les {election} {tour}, {prenom_nom} ({parti}) arrive en tête avec {score} % dans le quartier de {quartier}.
-Les résultats de ce quartier, et tous les autres, sur ${SITE_URL}`,
+Les résultats de ce quartier, et tous les autres, sur {site_url}`,
 
   // ── FICHE GLOBAL ───────────────────────────────────────────────────────────
   // Vue résultats ville entière. Texte : gagnant à La Rochelle.
@@ -104,17 +104,17 @@ Les résultats de ce quartier, et tous les autres, sur ${SITE_URL}`,
   global_presidentielle:
 `${CHAPEAU}
 {emoji} Le {date_election}, pour la {election} {tour}, {prenom_nom} ({parti}) arrive en tête avec {score} % à La Rochelle.
-Les résultats de ce scrutin, et tous les autres, sur ${SITE_URL}`,
+Les résultats de ce scrutin, et tous les autres, sur {site_url}`,
 
   global_referendum:
 `${CHAPEAU}
 {emoji} Le {date_election}, pour le {election}, le {reponse} est arrivé en tête avec {score} % à La Rochelle.
-Les résultats de ce scrutin, et tous les autres, sur ${SITE_URL}`,
+Les résultats de ce scrutin, et tous les autres, sur {site_url}`,
 
   global_autres:
 `${CHAPEAU}
 {emoji} Le {date_election}, pour les {election} {tour}, {prenom_nom} ({parti}) arrive en tête avec {score} % à La Rochelle.
-Les résultats de ce scrutin, et tous les autres, sur ${SITE_URL}`,
+Les résultats de ce scrutin, et tous les autres, sur {site_url}`,
 };
 
 // Ordre de repli si > 280 chars (du plus spécifique au plus court)
@@ -465,6 +465,17 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
     quartier:     bInfo.quartier || '',
   };
 
+  // Construit l'URL profonde vers la vue exacte du tweet (carte/bureau/quartier/global)
+  function buildDeepLink(niv) {
+    const params = new URLSearchParams();
+    params.set('election', election);
+    if (tour && tour !== 'TU')        params.set('tour',     tour);
+    if (niv === 'bureau'   && bureau) params.set('bureau',   bureau);
+    if (niv === 'quartier' && quartier) params.set('quartier', quartier);
+    if (niv === 'global')             params.set('tab',      'global');
+    return SITE_URL + '/LRVcarte.html#' + params.toString();
+  }
+
   // ── 7. Générer le texte avec cascade de repli ─────────────────────────────
   async function buildText(niv) {
     const key = `${niv}_${suffix}`;
@@ -498,6 +509,7 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
       parti:      ci.parti || '',
       score:      formatPct(winner?.pct),
       reponse:    isRef ? winner?.cand : '',
+      site_url:   buildDeepLink(niv),
     };
 
     return fillCaneva(tpl, vars).replace(/\s*\(\s*\)/g, '').replace(/\s+,/g, ',').trim();
@@ -517,7 +529,7 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
 
   if (!tweetText) {
     // Dernier recours : texte global tronqué
-    tweetText = await buildText('global') || `${CHAPEAU}\n${SITE_URL}`;
+    tweetText = await buildText('global') || `${CHAPEAU}\n{site_url}`;
     niveauFinal = 'global (forcé)';
   }
 
