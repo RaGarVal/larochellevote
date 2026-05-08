@@ -34,6 +34,26 @@
   <meta name="twitter:title" content="La Rochelle Vote — La carte électorale">
   <meta name="twitter:description" content="Explorez les résultats électoraux rochelais sur la carte, bureau par bureau, élection par élection.">
   <meta name="twitter:image" content="https://larochellevote.fr/share.png">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "La carte électorale — La Rochelle Vote",
+    "url": "https://larochellevote.fr/LRVcarte.html",
+    "description": "Explorez les résultats électoraux rochelais sur la carte, bureau par bureau, élection par élection.",
+    "inLanguage": "fr-FR",
+    "isPartOf": {
+      "@type": "WebSite",
+      "name": "La Rochelle Vote",
+      "url": "https://larochellevote.fr/"
+    },
+    "mainEntity": {
+      "@type": "Dataset",
+      "name": "Archives électorales de La Rochelle, 1988-2026",
+      "url": "https://larochellevote.fr/"
+    }
+  }
+  </script>
   <script>
     /* Theme bootstrap (anti-FOUC) — applique data-theme="dark" sur <html> avant le rendu CSS */
     (function(){
@@ -154,9 +174,10 @@ body {
 .tb-search-btn { background: none; border: 1px solid var(--border-chrome); border-radius: 6px; width: 30px; height: 30px; cursor: pointer; color: var(--text-chrome-muted); transition: all .15s; display: flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0; }
 .tb-search-btn:hover { background: var(--bg-chrome-hover); color: var(--text-chrome); }
 .tb-search-btn svg { width: 15px; height: 15px; }
-.tb-random-btn { background: none; border: 1px solid var(--border-chrome); border-radius: 6px; width: 30px; height: 30px; cursor: pointer; transition: all .15s; display: flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0; font-size: 0.95rem; line-height: 1; font-family: inherit; }
-.tb-random-btn:hover { background: var(--bg-chrome-hover); transform: rotate(15deg); }
+.tb-random-btn { background: none; border: 1px solid var(--border-chrome); border-radius: 6px; width: 30px; height: 30px; cursor: pointer; color: var(--text-chrome-muted); transition: all .15s; display: flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0; }
+.tb-random-btn:hover { background: var(--bg-chrome-hover); color: var(--text-chrome); transform: rotate(15deg); }
 .tb-random-btn:active { transform: rotate(-15deg) scale(0.92); }
+.tb-random-btn svg { width: 15px; height: 15px; transition: transform .15s; }
 
 /* ── Logo voile + wordmark (gauche du topbar) ── */
 .tb-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; flex-shrink: 0; background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-family: inherit; }
@@ -1244,7 +1265,16 @@ select#el-select {
       <button id="tb-elec-next" class="tb-elec-nav-btn" onclick="navigateElection(1)" title="Élection suivante (→)" aria-label="Élection suivante">›</button>
     </div>
   </div>
-  <button class="tb-random-btn" onclick="randomDiscover()" title="Au hasard" aria-label="Au hasard">🎲</button>
+  <button class="tb-random-btn" onclick="randomDiscover()" title="Au hasard" aria-label="Au hasard">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2.5" y="2.5" width="11" height="11" rx="2"/>
+      <circle cx="5.5" cy="5.5" r="1" fill="currentColor" stroke="none"/>
+      <circle cx="10.5" cy="5.5" r="1" fill="currentColor" stroke="none"/>
+      <circle cx="8" cy="8" r="1" fill="currentColor" stroke="none"/>
+      <circle cx="5.5" cy="10.5" r="1" fill="currentColor" stroke="none"/>
+      <circle cx="10.5" cy="10.5" r="1" fill="currentColor" stroke="none"/>
+    </svg>
+  </button>
   <button class="tb-search-btn" onclick="if(window.openCmdK)window.openCmdK()" title="Rechercher (⌘K / Ctrl+K)" aria-label="Rechercher">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg>
   </button>
