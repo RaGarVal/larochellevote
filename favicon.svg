@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" aria-label="La Rochelle Vote">
+  <!-- Voile : 6 barres rouges, alignées à droite, largeurs croissantes de haut en bas (17, 33, 50, 67, 83, 100%) -->
+  <rect x="27" y="2"  width="5"  height="3" fill="#CC0100"/>
+  <rect x="21" y="7"  width="11" height="3" fill="#CC0100"/>
+  <rect x="16" y="12" width="16" height="3" fill="#CC0100"/>
+  <rect x="11" y="17" width="21" height="3" fill="#CC0100"/>
+  <rect x="5"  y="22" width="27" height="3" fill="#CC0100"/>
+  <rect x="0"  y="27" width="32" height="3" fill="#CC0100"/>
+</svg>
