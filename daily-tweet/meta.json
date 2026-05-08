@@ -1,10 +1,10 @@
 {
   "date": "2026-05-08",
-  "niveau": "global",
-  "election": "Législatives 1993",
+  "niveau": "bureau",
+  "election": "Législatives 2007",
   "tour": "T1",
-  "bureau": "0041",
+  "bureau": "0012",
   "quartier": null,
-  "chars": 237,
-  "generated_at": "2026-05-08T08:03:58.597Z"
+  "chars": 263,
+  "generated_at": "2026-05-08T08:21:12.012Z"
 }
