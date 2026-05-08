@@ -6231,8 +6231,26 @@ document.addEventListener('keydown', (e) => {
 </script>
 </div><!-- /main -->
 
-<!-- Cloudflare Web Analytics -->
-<script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "65e9e43629c74f448a059b679fcc2484"}'></script>
+<!-- Cloudflare Web Analytics — avec opt-out par localStorage (?notrack=1 pour activer l'exclusion) -->
+<script>
+  (function() {
+    try {
+      var url = new URL(location.href);
+      if (url.searchParams.get('notrack') === '1') {
+        localStorage.setItem('lrvote_no_track', '1');
+        url.searchParams.delete('notrack');
+        history.replaceState(null, '', url.pathname + url.search + url.hash);
+        return;
+      }
+      if (localStorage.getItem('lrvote_no_track') === '1') return;
+    } catch(_) {}
+    var s = document.createElement('script');
+    s.defer = true;
+    s.src = 'https://static.cloudflareinsights.com/beacon.min.js';
+    s.setAttribute('data-cf-beacon', '{"token": "65e9e43629c74f448a059b679fcc2484"}');
+    document.head.appendChild(s);
+  })();
+</script>
 <!-- End Cloudflare Web Analytics -->
 </body>
 </html>
