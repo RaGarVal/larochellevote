@@ -1,0 +1,8 @@
+# robots.txt — La Rochelle Vote
+# Site public, indexation autorisée par tous les crawlers.
+
+User-agent: *
+Allow: /
+
+# Référence au sitemap pour faciliter la découverte des pages
+Sitemap: https://larochellevote.fr/sitemap.xml
