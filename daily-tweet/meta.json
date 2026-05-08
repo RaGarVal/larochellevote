@@ -1,10 +1,10 @@
 {
   "date": "2026-05-08",
-  "niveau": "bureau",
-  "election": "Législatives 2007",
+  "niveau": "quartier",
+  "election": "Législatives 1988",
   "tour": "T1",
-  "bureau": "0012",
-  "quartier": null,
-  "chars": 263,
-  "generated_at": "2026-05-08T08:21:12.012Z"
+  "bureau": null,
+  "quartier": "Lafond",
+  "chars": 246,
+  "generated_at": "2026-05-08T08:22:07.586Z"
 }
