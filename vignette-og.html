@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Vignette OG — La Rochelle Vote</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  background: #E8E2DA;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Zone à capturer — exactement 1200×630 ── */
+.card {
+  width: 1200px;
+  height: 630px;
+  background: #F7F3EE;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 36px;
+  flex-shrink: 0;
+}
+
+/* ── Logo — reproduction exacte de index.html ── */
+.logo-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.logo-word {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-size: 92px;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: #1A1A1A;
+  white-space: nowrap;
+}
+.logo-word--light { font-weight: 400; }
+.logo-word--bold  { font-weight: 700; }
+
+/* ── Voile — même mécanique que index.html ── */
+.sail {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-size: 92px;          /* même taille que les mots */
+  width:  0.72em;           /* fallback cap-height */
+  height: 0.72em;
+  width:  1cap;             /* cap-height exacte = hauteur du V */
+  height: 1cap;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  flex-shrink: 0;
+}
+.sail-row {
+  width: var(--w);
+  height: calc((100% - 9px) / 10);
+  background-color: var(--sail-color, #CC0100);
+}
+
+.tagline {
+  font-size: 15px;
+  font-weight: 500;
+  color: #8A8078;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ══════════════════════════════════════════
+   Panneau de sélection — hors zone capture
+══════════════════════════════════════════ */
+.controls {
+  width: 1200px;
+  padding: 24px 32px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.controls-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #888;
+  white-space: nowrap;
+}
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+}
+.swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform .1s, border-color .1s;
+  flex-shrink: 0;
+}
+.swatch:hover  { transform: scale(1.18); }
+.swatch.active { border-color: #1A1A1A; }
+
+.custom-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.custom-wrap label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #888;
+}
+input[type="color"] {
+  width: 36px;
+  height: 28px;
+  border: 1.5px solid #CCC;
+  border-radius: 4px;
+  padding: 2px;
+  cursor: pointer;
+  background: none;
+}
+</style>
+</head>
+<body>
+
+<!-- ══ ZONE À CAPTURER ══ -->
+<div class="card">
+  <div class="logo-row">
+    <span class="logo-word logo-word--light">La Rochelle</span>
+
+    <div class="sail" id="sail">
+      <div class="sail-row" style="--w:10%"></div>
+      <div class="sail-row" style="--w:20%"></div>
+      <div class="sail-row" style="--w:30%"></div>
+      <div class="sail-row" style="--w:40%"></div>
+      <div class="sail-row" style="--w:50%"></div>
+      <div class="sail-row" style="--w:60%"></div>
+      <div class="sail-row" style="--w:70%"></div>
+      <div class="sail-row" style="--w:80%"></div>
+      <div class="sail-row" style="--w:90%"></div>
+      <div class="sail-row" style="--w:100%"></div>
+    </div>
+
+    <span class="logo-word logo-word--bold">Vote</span>
+  </div>
+
+  <p class="tagline">Les archives électorales de La Rochelle, bureau par bureau, depuis 1988</p>
+</div>
+
+<!-- ══ PANNEAU DE CONTRÔLE (hors capture) ══ -->
+<div class="controls">
+  <span class="controls-label">Couleur</span>
+
+  <div class="swatches" id="swatches"></div>
+
+  <div class="custom-wrap">
+    <label for="custom-color">Autre</label>
+    <input type="color" id="custom-color" value="#CC0100">
+  </div>
+</div>
+
+<script>
+const COLORS = [
+  '#CC0100','#980000','#FF0000','#FF4D50','#E06667','#EA9999',
+  '#F1C232','#BF9000','#7F6001','#FF9900',
+  '#0F55CC','#3C78D8','#6D9EEB','#0C5394','#063763',
+  '#20124D','#361C75','#8E7CC3',
+  '#38761D','#6AA84F','#93C47D',
+  '#46818E','#A0E1E2',
+  '#741B47','#9A5084',
+];
+
+const sail = document.getElementById('sail');
+const swatchContainer = document.getElementById('swatches');
+const customInput = document.getElementById('custom-color');
+let activeEl = null;
+
+function setColor(hex, el) {
+  sail.style.setProperty('--sail-color', hex);
+  customInput.value = hex;
+  if (activeEl) activeEl.classList.remove('active');
+  if (el) { el.classList.add('active'); activeEl = el; }
+  else { activeEl = null; }
+}
+
+COLORS.forEach(c => {
+  const s = document.createElement('button');
+  s.className = 'swatch';
+  s.style.background = c;
+  s.title = c;
+  s.addEventListener('click', () => setColor(c, s));
+  swatchContainer.appendChild(s);
+  if (c === '#CC0100') { setColor(c, s); }
+});
+
+customInput.addEventListener('input', () => setColor(customInput.value, null));
+</script>
+</body>
+</html>
