@@ -154,6 +154,9 @@ body {
 .tb-search-btn { background: none; border: 1px solid var(--border-chrome); border-radius: 6px; width: 30px; height: 30px; cursor: pointer; color: var(--text-chrome-muted); transition: all .15s; display: flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0; }
 .tb-search-btn:hover { background: var(--bg-chrome-hover); color: var(--text-chrome); }
 .tb-search-btn svg { width: 15px; height: 15px; }
+.tb-random-btn { background: none; border: 1px solid var(--border-chrome); border-radius: 6px; width: 30px; height: 30px; cursor: pointer; transition: all .15s; display: flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0; font-size: 0.95rem; line-height: 1; font-family: inherit; }
+.tb-random-btn:hover { background: var(--bg-chrome-hover); transform: rotate(15deg); }
+.tb-random-btn:active { transform: rotate(-15deg) scale(0.92); }
 
 /* ── Logo voile + wordmark (gauche du topbar) ── */
 .tb-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; flex-shrink: 0; background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-family: inherit; }
@@ -1241,6 +1244,7 @@ select#el-select {
       <button id="tb-elec-next" class="tb-elec-nav-btn" onclick="navigateElection(1)" title="Élection suivante (→)" aria-label="Élection suivante">›</button>
     </div>
   </div>
+  <button class="tb-random-btn" onclick="randomDiscover()" title="Au hasard" aria-label="Au hasard">🎲</button>
   <button class="tb-search-btn" onclick="if(window.openCmdK)window.openCmdK()" title="Rechercher (⌘K / Ctrl+K)" aria-label="Rechercher">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg>
   </button>
@@ -5603,6 +5607,47 @@ function writeURLState() {
 // ─── Menu logo (dropdown global) ─────────────────────────────────────────
 // Implémenté dans shared.js · setupAppMenu({ tourFn })
 setupAppMenu({ tourFn: 'startCarteTour' });
+
+// ─── Bouton "🎲 Au hasard" : tirage aléatoire élection + niveau (carte/bureau/quartier/global) ──
+function randomDiscover() {
+  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+  const elections = Object.keys(ELECTIONS || {});
+  if (!elections.length) return;
+  const election = pick(elections);
+  // Choisir un tour valide (T1 préféré, sinon TU, sinon T2)
+  const sheets = Object.keys(ELECTIONS[election].sheets || {});
+  let tour = sheets.includes('T1') ? 'T1' : sheets.includes('TU') ? 'TU' : sheets[0];
+  // Tirer aussi T2 parfois si dispo, pour varier
+  if (sheets.includes('T2') && Math.random() < 0.5) tour = 'T2';
+  // Tirer un niveau selon une pondération (carte 30, bureau 40, quartier 20, global 10)
+  const r = Math.random();
+  let niveau, params = { election: election };
+  if (tour && tour !== 'TU') params.tour = tour;
+  if (r < 0.30) {
+    niveau = 'carte';
+  } else if (r < 0.70) {
+    niveau = 'bureau';
+    // Tirer un bureau présent dans le sheet de cette élection
+    const sheet = ELECTIONS[election].sheets[tour] || {};
+    const nums = Object.keys(sheet).filter(n => sheet[n] && sheet[n].c);
+    if (nums.length) params.bureau = pick(nums);
+    else niveau = 'carte';
+  } else if (r < 0.90) {
+    niveau = 'quartier';
+    // Tirer un quartier dispo
+    const yearInfo = (BUREAU_INFO[String(ELECTIONS[election].my || 2026)] || BUREAU_INFO['2026'] || {});
+    const quartiers = Array.from(new Set(Object.values(yearInfo).map(b => b && b.q).filter(q => q && q !== 'Nul')));
+    if (quartiers.length) params.quartier = pick(quartiers);
+    else niveau = 'carte';
+  } else {
+    niveau = 'global';
+    params.tab = 'global';
+  }
+  // Construire le hash et naviguer (rechargement nécessaire pour appliquer toutes les vues proprement)
+  const hash = '#' + new URLSearchParams(params).toString();
+  location.hash = hash;
+  location.reload();
+}
 
 
 // ─── Cmd+K universal search ──────────────────────────────────────────────

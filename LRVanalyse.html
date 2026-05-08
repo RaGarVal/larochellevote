@@ -168,6 +168,9 @@ body{font-family:'Space Grotesk', 'Segoe UI', system-ui, sans-serif;background:v
 .tb-search-btn{background:none;border:1px solid var(--border-chrome);border-radius:6px;width:30px;height:30px;cursor:pointer;color:var(--text-chrome-muted);transition:all .15s;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0}
 .tb-search-btn:hover{background:var(--bg-chrome-hover);color:var(--text-chrome)}
 .tb-search-btn svg{width:15px;height:15px}
+.tb-random-btn{background:none;border:1px solid var(--border-chrome);border-radius:6px;width:30px;height:30px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;font-size:.95rem;line-height:1;font-family:inherit}
+.tb-random-btn:hover{background:var(--bg-chrome-hover);transform:rotate(15deg)}
+.tb-random-btn:active{transform:rotate(-15deg) scale(.92)}
 #tb-era { font-size: 0.85rem; font-weight: 600; background: var(--bg-chrome-accent); color: var(--text-chrome-muted); padding: 4px 12px; border-radius: 5px; white-space: nowrap; flex-shrink: 0; align-self: center; }
 .has-tooltip { position: relative; cursor: help; }
 .has-tooltip::after {
@@ -962,6 +965,7 @@ html[data-admin="1"] .rd-add-btn{display:block}
     </div>
   </div>
 </div>
+  <button class="tb-random-btn" onclick="randomDiscover()" title="Au hasard" aria-label="Au hasard">🎲</button>
   <button class="tb-search-btn" onclick="if(window.openCmdK)window.openCmdK()" title="Rechercher (⌘K / Ctrl+K)" aria-label="Rechercher">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg>
   </button>
@@ -4501,6 +4505,33 @@ function copyRedecoupageCode() {
 // ─── Menu logo (dropdown global) ─────────────────────────────────────────
 // Implémenté dans shared.js · setupAppMenu({ tourFn })
 setupAppMenu({ tourFn: 'startAnalyseTour' });
+
+// ─── Bouton "🎲 Au hasard" : tirage aléatoire d'un niveau d'analyse + sélection ──
+function randomDiscover() {
+  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+  // Pondération : ville 20%, quartier 40%, bureau 40%
+  const r = Math.random();
+  let niveau;
+  if (r < 0.20) niveau = 'ville';
+  else if (r < 0.60) niveau = 'quartier';
+  else niveau = 'bureau';
+  setNiveau(niveau);
+  // Si quartier / bureau, tirer une sélection au hasard parmi les options du select
+  if (niveau === 'quartier') {
+    const sel = document.getElementById('sel-quartier');
+    if (sel && sel.options.length) {
+      const opt = pick(Array.from(sel.options));
+      sel.value = opt.value;
+    }
+  } else if (niveau === 'bureau') {
+    const sel = document.getElementById('sel-bureau');
+    if (sel && sel.options.length) {
+      const opt = pick(Array.from(sel.options));
+      sel.value = opt.value;
+    }
+  }
+  if (typeof refresh === 'function') refresh();
+}
 
 // ─── Cmd+K universal search ──────────────────────────────────────────────
 (function setupCmdK(){
