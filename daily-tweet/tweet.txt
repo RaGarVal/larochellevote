@@ -1,3 +1,3 @@
 📊 @LaRochelleVote — La donnée du jour
-👤 Le 24 avril 2022, pour la présidentielle (2e tour), Emmanuel Macron (LREM) arrive en tête avec 82,4 % dans le bureau n°21 · Église de La Genette à La Genette.
-Les résultats de ce bureau, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Pr%C3%A9sidentielle+2022&tour=T2&bureau=0021
+🏛️ Le 21 mars 1993, pour les législatives (1er tour), Jean-Louis Léonard (RPR) arrive en tête avec 34,4 % à La Rochelle.
+Les résultats de ce scrutin, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=L%C3%A9gislatives+1993&tour=T1&tab=global
