@@ -1,17 +1,22 @@
 name: 📊 Tweet Quotidien — LaRochelleVote
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Ce workflow tourne chaque matin à 9h heure de Paris (heure d'été, UTC+2).
-# Il capture une image du site et la commite dans le dépôt.
-# Make.com lit ensuite ces fichiers et poste le tweet sur @LaRochelleVote.
+# Ce workflow tourne chaque matin à 8h13 heure de Paris (heure d'été, UTC+2).
+# Il capture une image du site, la commite dans le dépôt, et poste sur Bluesky.
+# Make.com récupère ensuite ces fichiers (vers 8h30) et les envoie sur Telegram.
+#
+# Pourquoi 13 minutes après l'heure ? Les cron à minute "ronde" (00, 15, 30, 45)
+# sur GitHub Actions sont fortement congestionnés et peuvent être retardés ou
+# skippés. Un horaire décalé est plus fiable.
 #
 # ⚠️  En heure d'hiver (UTC+1, de fin octobre à fin mars) :
-#     remplacer  "0 7 * * *"  par  "0 8 * * *"
+#     remplacer  "13 6 * * *"  par  "13 7 * * *"
 # ─────────────────────────────────────────────────────────────────────────────
 
 on:
   schedule:
-    - cron: '0 7 * * *'   # 09h00 Paris (heure d'été)
+    # 06h13 UTC = 08h13 Paris (heure d'été). Minutes "rondes" évitées pour fiabilité.
+    - cron: '13 6 * * *'
 
   # Permet de déclencher manuellement depuis l'onglet "Actions" de GitHub
   # pour tester ou rejouer un jour précis
