@@ -1,10 +1,10 @@
 {
-  "date": "2026-05-08",
-  "niveau": "quartier",
-  "election": "Législatives 1988",
-  "tour": "T1",
+  "date": "2026-05-09",
+  "niveau": "global",
+  "election": "Européennes 2014",
+  "tour": "TU",
   "bureau": null,
-  "quartier": "Lafond",
-  "chars": 246,
-  "generated_at": "2026-05-08T08:22:07.586Z"
+  "quartier": null,
+  "chars": 221,
+  "generated_at": "2026-05-09T08:05:55.483Z"
 }
