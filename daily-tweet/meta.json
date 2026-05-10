@@ -1,10 +1,10 @@
 {
-  "date": "2026-05-09",
-  "niveau": "global",
-  "election": "Européennes 2014",
-  "tour": "TU",
-  "bureau": null,
+  "date": "2026-05-10",
+  "niveau": "bureau",
+  "election": "Présidentielle 2002",
+  "tour": "T1",
+  "bureau": "0010",
   "quartier": null,
-  "chars": 221,
-  "generated_at": "2026-05-09T08:05:55.483Z"
+  "chars": 277,
+  "generated_at": "2026-05-10T07:55:39.003Z"
 }
