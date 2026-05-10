@@ -1,10 +1,10 @@
 {
-  "date": "2026-05-09",
-  "niveau": "global",
-  "election": "Européennes 2014",
+  "date": "2026-05-10",
+  "niveau": "quartier",
+  "election": "Européennes 2004",
   "tour": "TU",
   "bureau": null,
-  "quartier": null,
-  "chars": 221,
-  "generated_at": "2026-05-09T08:05:55.483Z"
+  "quartier": "Laleu/La Pallice",
+  "chars": 247,
+  "generated_at": "2026-05-10T08:21:49.861Z"
 }
