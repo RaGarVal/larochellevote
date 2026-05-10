@@ -1,10 +1,10 @@
 {
   "date": "2026-05-10",
-  "niveau": "bureau",
-  "election": "Présidentielle 2002",
-  "tour": "T1",
-  "bureau": "0010",
-  "quartier": null,
-  "chars": 277,
-  "generated_at": "2026-05-10T07:55:39.003Z"
+  "niveau": "quartier",
+  "election": "Européennes 2004",
+  "tour": "TU",
+  "bureau": null,
+  "quartier": "Laleu/La Pallice",
+  "chars": 247,
+  "generated_at": "2026-05-10T08:21:49.861Z"
 }
