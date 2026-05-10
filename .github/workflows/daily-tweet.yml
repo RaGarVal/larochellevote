@@ -16,7 +16,14 @@ name: 📊 Tweet Quotidien — LaRochelleVote
 on:
   schedule:
     # 06h13 UTC = 08h13 Paris (heure d'été). Minutes "rondes" évitées pour fiabilité.
-    - cron: '13 6 * * *'
+    # On programme 3 crons rapprochés : si le premier est skippé par GitHub
+    # (ce qui arrive régulièrement), le suivant tentera. Le script lui-même est
+    # idempotent : si daily-tweet/ a déjà été commité aujourd'hui, le second
+    # passage ne change rien (ou regénère un autre tweet — au pire on a deux
+    # contenus pour la même journée).
+    - cron: '13 6 * * *'  # 8h13 Paris (heure d'été)
+    - cron: '23 6 * * *'  # 8h23 — secours #1
+    - cron: '37 6 * * *'  # 8h37 — secours #2
 
   # Permet de déclencher manuellement depuis l'onglet "Actions" de GitHub
   # pour tester ou rejouer un jour précis
@@ -42,26 +49,49 @@ jobs:
         with:
           fetch-depth: 1
 
-      # 2. Installer Node.js 20
+      # 2. Idempotence : on skip tout le job si daily-tweet/meta.json a déjà
+      #    la date du jour (= un cron antérieur a déjà fait le boulot).
+      #    Le déclenchement manuel (workflow_dispatch) BYPASSE ce check pour
+      #    permettre de re-générer / forcer une date précise.
+      - name: 🔍 Skip si déjà tweeté aujourd'hui
+        id: idempotence
+        run: |
+          today=$(date -u +%Y-%m-%d)
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Manual trigger → on continue."
+            echo "skip=false" >> $GITHUB_OUTPUT
+          elif [ -f "daily-tweet/meta.json" ] && grep -q "\"date\": \"$today\"" daily-tweet/meta.json; then
+            echo "✅ Tweet du $today déjà commité, on skip."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "Pas de tweet pour $today → on génère."
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      # 3. Installer Node.js 20
       - name: ⚙️  Setup Node.js 20
+        if: steps.idempotence.outputs.skip == 'false'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      # 3. Installer Puppeteer (inclut Chromium automatiquement)
+      # 4. Installer Puppeteer (inclut Chromium automatiquement)
       - name: 📦 Installer Puppeteer
+        if: steps.idempotence.outputs.skip == 'false'
         run: npm install puppeteer
 
-      # 4. Lancer le script de capture
+      # 5. Lancer le script de capture
       - name: 📸 Capturer l'image du jour
+        if: steps.idempotence.outputs.skip == 'false'
         run: node daily-capture.js
         env:
           # Si déclenché manuellement avec une date, on l'utilise
           # Sinon la variable est vide et le script prend la date du jour
           TWEET_DATE: ${{ github.event.inputs.date }}
 
-      # 5. Vérifier que l'image a bien été créée
+      # 6. Vérifier que l'image a bien été créée
       - name: 🔍 Vérifier la présence de l'image
+        if: steps.idempotence.outputs.skip == 'false'
         id: check_image
         run: |
           if [ -f "daily-tweet/image.png" ]; then
@@ -73,10 +103,10 @@ jobs:
             echo "ℹ️  Pas d'image (probablement pas d'entrée pour aujourd'hui)"
           fi
 
-      # 6. Commiter et pousser l'image dans le dépôt
+      # 7. Commiter et pousser l'image dans le dépôt
       #    (uniquement si une image a été créée)
       - name: 🚀 Commit et push de l'image
-        if: steps.check_image.outputs.image_exists == 'true'
+        if: steps.idempotence.outputs.skip == 'false' && steps.check_image.outputs.image_exists == 'true'
         run: |
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
@@ -88,9 +118,18 @@ jobs:
             echo "✅ Image committée et disponible sur GitHub"
           )
 
-      # 7. Poster automatiquement sur Bluesky (X reste manuel via Telegram)
+      # 7bis. Purger le cache jsDelivr (sinon Make/Telegram récupèrent l'ancienne image
+      #       — jsDelivr cache jusqu'à 7 jours pour les URLs de branche).
+      - name: 🧹 Purge jsDelivr cache
+        if: steps.idempotence.outputs.skip == 'false' && steps.check_image.outputs.image_exists == 'true'
+        run: |
+          curl -s "https://purge.jsdelivr.net/gh/ragarval/larochellevote@main/daily-tweet/image.png" || true
+          curl -s "https://purge.jsdelivr.net/gh/ragarval/larochellevote@main/daily-tweet/tweet.txt" || true
+          echo "✅ Cache jsDelivr purgé"
+
+      # 8. Poster automatiquement sur Bluesky (X reste manuel via Telegram)
       - name: 🦋 Poster sur Bluesky
-        if: steps.check_image.outputs.image_exists == 'true'
+        if: steps.idempotence.outputs.skip == 'false' && steps.check_image.outputs.image_exists == 'true'
         run: node post-bluesky.js
         env:
           BSKY_HANDLE: ${{ secrets.BSKY_HANDLE }}

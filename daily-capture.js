@@ -30,7 +30,7 @@ const BASE_URL = process.env.LOCAL === '1'
   ? 'file://' + __dirname + '/'
   : 'https://larochellevote.fr/';
 const SITE_URL = 'https://larochellevote.fr'; // URL publique citée dans les tweets (compté 23 chars par Twitter)
-const CHAPEAU  = '📊 @LaRochelleVote — La donnée du jour';
+const CHAPEAU  = '📊 La Rochelle Vote — La donnée du jour';
 
 // Probabilités de tirage (doivent sommer à 1)
 const PROBA = {
