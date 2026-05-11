@@ -1,10 +1,10 @@
 {
-  "date": "2026-05-10",
-  "niveau": "quartier",
-  "election": "Européennes 2004",
+  "date": "2026-05-11",
+  "niveau": "bureau",
+  "election": "Référendum 2000",
   "tour": "TU",
-  "bureau": null,
-  "quartier": "Laleu/La Pallice",
-  "chars": 247,
-  "generated_at": "2026-05-10T08:21:49.861Z"
+  "bureau": "0018",
+  "quartier": null,
+  "chars": 256,
+  "generated_at": "2026-05-11T06:55:00.289Z"
 }
