@@ -49,17 +49,23 @@ const C = {
 
   carte_presidentielle:
 `${CHAPEAU}
+
 {emoji} Le {date_election}, pour la {election} {tour}, {prenom_nom} ({parti}) a obtenu {score} % à La Rochelle. 📍 Meilleur score dans le bureau n°{bureau_num} · {denomination} à {quartier}.
+
 Les résultats de ce scrutin, bureau par bureau, sur {site_url}`,
 
   carte_referendum:
 `${CHAPEAU}
+
 {emoji} Le {date_election}, pour le {election}, le {reponse} a obtenu {score} % à La Rochelle. 📍 Meilleur score dans le bureau n°{bureau_num} · {denomination} à {quartier}.
+
 Les résultats de ce scrutin, bureau par bureau, sur {site_url}`,
 
   carte_autres:
 `${CHAPEAU}
+
 {emoji} Le {date_election}, pour les {election} {tour}, {prenom_nom} ({parti}) a obtenu {score} % à La Rochelle. 📍 Meilleur score dans le bureau n°{bureau_num} · {denomination} à {quartier}.
+
 Les résultats de ce scrutin, bureau par bureau, sur {site_url}`,
 
   // ── FICHE BUREAU ───────────────────────────────────────────────────────────
@@ -67,17 +73,23 @@ Les résultats de ce scrutin, bureau par bureau, sur {site_url}`,
 
   bureau_presidentielle:
 `${CHAPEAU}
+
 {emoji} Le {date_election}, pour la {election} {tour}, {prenom_nom} ({parti}) arrive en tête avec {score} % dans le bureau n°{bureau_num} · {denomination} à {quartier}.
+
 Les résultats de ce bureau, et tous les autres, sur {site_url}`,
 
   bureau_referendum:
 `${CHAPEAU}
+
 {emoji} Le {date_election}, pour le {election}, le {reponse} est arrivé en tête avec {score} % dans le bureau n°{bureau_num} · {denomination} à {quartier}.
+
 Les résultats de ce bureau, et tous les autres, sur {site_url}`,
 
   bureau_autres:
 `${CHAPEAU}
+
 {emoji} Le {date_election}, pour les {election} {tour}, {prenom_nom} ({parti}) arrive en tête avec {score} % dans le bureau n°{bureau_num} · {denomination} à {quartier}.
+
 Les résultats de ce bureau, et tous les autres, sur {site_url}`,
 
   // ── FICHE QUARTIER ─────────────────────────────────────────────────────────
@@ -85,17 +97,23 @@ Les résultats de ce bureau, et tous les autres, sur {site_url}`,
 
   quartier_presidentielle:
 `${CHAPEAU}
+
 {emoji} Le {date_election}, pour la {election} {tour}, {prenom_nom} ({parti}) arrive en tête avec {score} % dans le quartier de {quartier}.
+
 Les résultats de ce quartier, et tous les autres, sur {site_url}`,
 
   quartier_referendum:
 `${CHAPEAU}
+
 {emoji} Le {date_election}, pour le {election}, le {reponse} est arrivé en tête avec {score} % dans le quartier de {quartier}.
+
 Les résultats de ce quartier, et tous les autres, sur {site_url}`,
 
   quartier_autres:
 `${CHAPEAU}
+
 {emoji} Le {date_election}, pour les {election} {tour}, {prenom_nom} ({parti}) arrive en tête avec {score} % dans le quartier de {quartier}.
+
 Les résultats de ce quartier, et tous les autres, sur {site_url}`,
 
   // ── FICHE GLOBAL ───────────────────────────────────────────────────────────
@@ -103,17 +121,23 @@ Les résultats de ce quartier, et tous les autres, sur {site_url}`,
 
   global_presidentielle:
 `${CHAPEAU}
+
 {emoji} Le {date_election}, pour la {election} {tour}, {prenom_nom} ({parti}) arrive en tête avec {score} % à La Rochelle.
+
 Les résultats de ce scrutin, et tous les autres, sur {site_url}`,
 
   global_referendum:
 `${CHAPEAU}
+
 {emoji} Le {date_election}, pour le {election}, le {reponse} est arrivé en tête avec {score} % à La Rochelle.
+
 Les résultats de ce scrutin, et tous les autres, sur {site_url}`,
 
   global_autres:
 `${CHAPEAU}
+
 {emoji} Le {date_election}, pour les {election} {tour}, {prenom_nom} ({parti}) arrive en tête avec {score} % à La Rochelle.
+
 Les résultats de ce scrutin, et tous les autres, sur {site_url}`,
 };
 
@@ -162,6 +186,11 @@ const DATES = {
   'Référendum 1992':     { TU: '20 septembre 1992'   },
   'Référendum 2000':     { TU: '24 septembre 2000'   },
   'Référendum 2005':     { TU: '29 mai 2005'         },
+  'Régionales 1998':     { TU: '15 mars 1998'        },
+  'Régionales 2004':     { T1: '21 mars 2004',       T2: '28 mars 2004'     },
+  'Régionales 2010':     { T1: '14 mars 2010',       T2: '21 mars 2010'     },
+  'Régionales 2015':     { T1: '6 décembre 2015',    T2: '13 décembre 2015' },
+  'Régionales 2021':     { T1: '20 juin 2021',       T2: '27 juin 2021'     },
 };
 
 // ══ UTILITAIRES ══════════════════════════════════════════════════════════════
@@ -275,8 +304,17 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
   }
 
   // ── 2. Extraire la liste des élections, bureaux et quartiers ──────────────
+  // On extrait BUREAU_INFO pour TOUTES les ères (pas seulement 2026) pour que la
+  // dénomination/quartier d'un bureau corresponde bien à l'année de l'élection
+  // tirée (ex. Municipales 1995 → nom du bureau en 1995, pas en 2026).
   const siteData = await page.evaluate(() => {
     const elections = Object.keys(ELECTIONS || {});
+
+    // map : election → era (year of the découpage utilisé pour cette élection)
+    const electionEra = {};
+    elections.forEach(el => {
+      electionEra[el] = String(ELECTIONS[el]?.my || '2026');
+    });
 
     const bureauxParElection = {};
     elections.forEach(el => {
@@ -290,27 +328,35 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
       }
     });
 
-    // Infos bureaux
-    const bi = BUREAU_INFO?.['2026'] || {};
-    const bureauxInfo = {};
-    const quartiersBureaux = {}; // { quartierNom: [num, num, ...] }
-    Object.entries(bi).forEach(([num, b]) => {
-      if (b && b.q !== 'Nul') {
-        bureauxInfo[num] = { denomination: b.den || b.nom || `Bureau ${num}`, quartier: b.q || '' };
-        const q = b.q || '';
-        if (q) {
-          if (!quartiersBureaux[q]) quartiersBureaux[q] = [];
-          quartiersBureaux[q].push(num);
+    // Infos bureaux par ère : { era: { num: {denomination, quartier} } }
+    const bureauxByEra = {};
+    const quartiersByEra = {}; // { era: { quartierNom: [num, ...] } }
+    Object.keys(BUREAU_INFO || {}).forEach(era => {
+      const bi = BUREAU_INFO[era] || {};
+      bureauxByEra[era] = {};
+      quartiersByEra[era] = {};
+      Object.entries(bi).forEach(([num, b]) => {
+        if (b && b.q !== 'Nul') {
+          bureauxByEra[era][num] = { denomination: b.den || b.nom || `Bureau ${num}`, quartier: b.q || '' };
+          const q = b.q || '';
+          if (q) {
+            if (!quartiersByEra[era][q]) quartiersByEra[era][q] = [];
+            quartiersByEra[era][q].push(num);
+          }
         }
-      }
+      });
     });
 
-    return { elections, bureauxParElection, bureauxInfo, quartiersBureaux };
+    return { elections, electionEra, bureauxParElection, bureauxByEra, quartiersByEra };
   });
 
-  const { elections, bureauxParElection, bureauxInfo, quartiersBureaux } = siteData;
-  const quartiers = Object.keys(quartiersBureaux);
-  console.log(`📊 ${elections.length} élections, ${Object.keys(bureauxInfo).length} bureaux, ${quartiers.length} quartiers`);
+  const { elections, electionEra, bureauxParElection, bureauxByEra, quartiersByEra } = siteData;
+  // Pour les besoins du tirage aléatoire d'un quartier (qui doit exister pour l'élection
+  // tirée), on consultera les quartiersByEra à la volée. Pour l'affichage du count log,
+  // on utilise l'ère 2026 comme référence.
+  const bureauxInfo2026 = bureauxByEra['2026'] || {};
+  const quartiers2026 = Object.keys(quartiersByEra['2026'] || {});
+  console.log(`📊 ${elections.length} élections, ${Object.keys(bureauxInfo2026).length} bureaux (2026), ${quartiers2026.length} quartiers (2026)`);
 
   // ── 3. Choisir le contenu du jour ─────────────────────────────────────────
   // Env vars de debug : NIVEAU=, ELECTION=, TOUR=, BUREAU=, QUARTIER= forcent un cas précis.
@@ -333,13 +379,19 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
     tour = availTours.includes('T1') ? 'T1' : availTours.includes('TU') ? 'TU' : availTours[0];
   }
 
-  // Sélections aléatoires selon le niveau
+  // L'ère du découpage utilisé pour cette élection (1988, 1995, ..., 2026)
+  const era = electionEra[election] || '2026';
+  const bureauxInfoEra = bureauxByEra[era] || {};
+  const quartiersBureauxEra = quartiersByEra[era] || {};
+  const quartiersEra = Object.keys(quartiersBureauxEra);
+
+  // Sélections aléatoires selon le niveau (en se basant sur l'ère de l'élection)
   if (niveau === 'bureau' && !bureau) {
-    const candidats = (bureauxParElection[election] || []).filter(n => bureauxInfo[n]);
+    const candidats = (bureauxParElection[election] || []).filter(n => bureauxInfoEra[n]);
     bureau = pickRandom(candidats);
   }
   if ((niveau === 'quartier' || (niveau === 'bureau' && !bureau)) && !quartier) {
-    quartier = pickRandom(quartiers);
+    quartier = pickRandom(quartiersEra);
   }
 
   const suffix = electionSuffix(election);
@@ -425,7 +477,7 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
 
     return { cityWinner, bestBureau, bestBureauPct, bureauWinner, quartierWinner };
 
-  }, election, tour, bureau, quartier, bureau ? null : (quartiersBureaux[quartier] || null), isRef);
+  }, election, tour, bureau, quartier, bureau ? null : (quartiersBureauxEra[quartier] || null), isRef);
 
   if (!elecData) {
     console.error('❌ Données introuvables. Abandon.');
@@ -449,16 +501,16 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
     emoji:         electionEmoji(election),
   };
 
-  // Info meilleur bureau (pour carte)
-  const bestBInfo = bureauxInfo[elecData.bestBureau] || {};
+  // Info meilleur bureau (pour carte) — dénomination/quartier de l'ère de l'élection
+  const bestBInfo = bureauxInfoEra[elecData.bestBureau] || {};
   const carteVars = {
     bureau_num:   elecData.bestBureau ? String(parseInt(elecData.bestBureau)) : '?',
     denomination: bestBInfo.denomination || '',
     quartier:     bestBInfo.quartier || '',
   };
 
-  // Info bureau sélectionné (pour fiche bureau)
-  const bInfo    = bureauxInfo[bureau] || {};
+  // Info bureau sélectionné (pour fiche bureau) — idem, ère de l'élection
+  const bInfo    = bureauxInfoEra[bureau] || {};
   const bureauVars = {
     bureau_num:   bureau ? String(parseInt(bureau)) : '?',
     denomination: bInfo.denomination || '',
