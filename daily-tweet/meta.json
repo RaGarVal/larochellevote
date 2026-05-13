@@ -1,10 +1,10 @@
 {
-  "date": "2026-05-12",
+  "date": "2026-05-13",
   "niveau": "global",
-  "election": "Européennes 1999",
-  "tour": "TU",
+  "election": "Régionales 2010",
+  "tour": "T1",
   "bureau": null,
   "quartier": null,
-  "chars": 225,
-  "generated_at": "2026-05-12T06:00:40.555Z"
+  "chars": 226,
+  "generated_at": "2026-05-13T06:00:36.193Z"
 }
