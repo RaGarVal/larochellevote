@@ -404,6 +404,13 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
     const sheet  = sheets[tr] || sheets.TU || sheets[Object.keys(sheets)[0]];
     if (!sheet) return null;
 
+    // Filtre les pseudo-candidats qui n'ont pas de sens dans un tweet :
+    // "Autres (X listes)" = agrégats de petites listes dans les Européennes.
+    // Si l'un d'eux finit premier, le tweet aurait l'air bizarre, on le saute.
+    function isPseudoCand(cand) {
+      return /^Autres /.test(cand);
+    }
+
     // Agrégation pondérée sur un ensemble de bureaux
     function aggregate(nums) {
       const totalExp = nums.reduce((s, n) => s + (sheet[n]?.e || 0), 0);
@@ -416,6 +423,7 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
         });
       });
       return { totalExp, ranked: Object.entries(scores)
+        .filter(([cand]) => !isPseudoCand(cand))
         .map(([cand, v]) => ({ cand, pct: totalExp > 0 ? (v / totalExp) * 100 : 0 }))
         .sort((a, b) => b.pct - a.pct) };
     }
@@ -433,10 +441,11 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
       });
     }
 
-    // Gagnant dans un bureau précis
+    // Gagnant dans un bureau précis (en excluant les pseudo-candidats)
     let bureauWinner = null;
     if (bur && sheet[bur]?.c) {
       const ranked = Object.entries(sheet[bur].c)
+        .filter(([cand]) => !isPseudoCand(cand))
         .map(([cand, pct]) => ({ cand, pct }))
         .sort((a, b) => b.pct - a.pct);
       bureauWinner = ranked[0] || null;
@@ -485,12 +494,20 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
   }
 
   // ── 5. Infos candidat depuis CAND_DATA ────────────────────────────────────
+  // Ordre de lookup (plus spécifique → plus général), cohérent avec
+  // l'implémentation de LRVcarte.html / LRVanalyse.html :
+  //   1. name|election|tour  (ex. "Royal PS-PRG|Régionales 2010|T1")
+  //   2. name|election       (override par scrutin)
+  //   3. name                (entrée générique)
   async function candInfo(name) {
     if (!name || name === 'Oui' || name === 'Non') return { prenom: '', nom: name, parti: '' };
-    return page.evaluate((n, el) => {
-      const cd = CAND_DATA?.[n + '|' + el] || CAND_DATA?.[n] || {};
+    return page.evaluate((n, el, tr) => {
+      const cd = CAND_DATA?.[n + '|' + el + '|' + tr]
+              || CAND_DATA?.[n + '|' + el]
+              || CAND_DATA?.[n]
+              || {};
       return { prenom: cd.p || '', nom: cd.n || n, parti: cd.pa || '' };
-    }, name, election);
+    }, name, election, tour);
   }
 
   // ── 6. Construire les variables communes ──────────────────────────────────
