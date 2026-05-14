@@ -1,10 +1,10 @@
 {
-  "date": "2026-05-13",
-  "niveau": "global",
-  "election": "Régionales 2010",
+  "date": "2026-05-14",
+  "niveau": "quartier",
+  "election": "Législatives 2007",
   "tour": "T1",
   "bureau": null,
-  "quartier": null,
-  "chars": 226,
-  "generated_at": "2026-05-13T06:00:36.193Z"
+  "quartier": "La Genette",
+  "chars": 257,
+  "generated_at": "2026-05-14T06:00:31.927Z"
 }

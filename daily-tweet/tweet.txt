@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🏙️ Le 14 mars 2010, pour les régionales (1er tour), Royal PS-PRG arrive en tête avec 38,7 % à La Rochelle.
+🏛️ Le 10 juin 2007, pour les législatives (1er tour), Dominique Morvant (UMP) arrive en tête avec 46,9 % dans le quartier de La Genette.
 
-Les résultats de ce scrutin, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=R%C3%A9gionales+2010&tour=T1&tab=global
+Les résultats de ce quartier, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=L%C3%A9gislatives+2007&tour=T1&quartier=La+Genette
