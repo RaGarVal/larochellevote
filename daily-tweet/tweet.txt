@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🏛️ Le 10 juin 2007, pour les législatives (1er tour), Dominique Morvant (UMP) arrive en tête avec 46,9 % dans le quartier de La Genette.
+🏙️ Le 6 décembre 2015, pour les régionales (1er tour), Virginie Calmels (UMP) arrive en tête avec 32,0 % dans le bureau n°30 · Le Prieuré à Lafond.
 
-Les résultats de ce quartier, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=L%C3%A9gislatives+2007&tour=T1&quartier=La+Genette
+Les résultats de ce bureau, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=R%C3%A9gionales+2015&tour=T1&bureau=0030

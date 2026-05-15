@@ -1,10 +1,10 @@
 {
-  "date": "2026-05-14",
-  "niveau": "quartier",
-  "election": "Législatives 2007",
+  "date": "2026-05-15",
+  "niveau": "bureau",
+  "election": "Régionales 2015",
   "tour": "T1",
-  "bureau": null,
-  "quartier": "La Genette",
-  "chars": 257,
-  "generated_at": "2026-05-14T06:00:31.927Z"
+  "bureau": "0030",
+  "quartier": null,
+  "chars": 266,
+  "generated_at": "2026-05-15T06:00:41.244Z"
 }
