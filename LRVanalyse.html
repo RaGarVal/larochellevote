@@ -188,7 +188,6 @@ body{font-family:'Space Grotesk', 'Segoe UI', system-ui, sans-serif;background:v
   /* Renforce le verrou horizontal au cas où un enfant outrepasse en largeur :
      overscroll-behavior bloque le "rubber-band" horizontal de Chrome / Safari mobile. */
   overscroll-behavior-x:none;
-  max-width:100vw;
 }
 #topbar{background:var(--bg-chrome);color:var(--text-chrome);display:flex;align-items:center;gap:16px;padding:0 24px;height:66px;flex-shrink:0;border-bottom:1px solid var(--border-chrome)}
 .tb-logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;flex-shrink:0;background:none;border:none;padding:0;margin:0;cursor:pointer;font-family:inherit}
@@ -336,7 +335,13 @@ select.ctrl-sel{width:100%;padding:7px 10px;border:1.5px solid var(--border-moda
 #content-title .fiche-num{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text-meta);margin-bottom:3px}
 #content-title .fiche-name{font-size:1.6rem;font-weight:900;color:var(--text-chrome);line-height:1.1;margin-bottom:4px;letter-spacing:-.5px}
 #content-title .fiche-sub{font-size:0.77rem;color:var(--text-chrome-muted);margin-top:2px}
-#chart-area{height:calc(100% - 38px);flex-shrink:0;background:var(--bg-card);border-radius:10px;border:1px solid var(--border-chrome);overflow:hidden;position:relative;display:flex;flex-direction:column}
+#chart-area{height:calc(100% - 38px);flex-shrink:0;background:var(--bg-card);border-radius:10px;border:1px solid var(--border-chrome);overflow:hidden;position:relative;display:flex;flex-direction:column;
+  /* min-width:0 + max-width:100% : verrou pour éviter qu'un enfant (par ex.
+     l'orientation-hint absolu) ne fasse déborder le chart-area de son parent
+     en mode portrait Chrome mobile. Sans ça, le chart-area peut s'étendre au-delà
+     du viewport et son contenu (chart + hint) apparaît clippé à droite. */
+  min-width:0;
+  max-width:100%}
 #famille-callout{position:absolute;top:10px;left:14px;max-width:300px;background:var(--bg-modal-hover);border:1px solid var(--border-modal);border-radius:6px;padding:8px 26px 8px 10px;font-size:.7rem;line-height:1.4;color:var(--text-chrome-muted);box-shadow:0 1px 4px rgba(0,0,0,.06);z-index:5}
 #famille-callout b{color:var(--text-chrome)}
 #famille-callout .close{position:absolute;top:4px;right:6px;width:16px;height:16px;line-height:14px;text-align:center;cursor:pointer;color:var(--text-meta);font-size:14px;border-radius:3px;user-select:none}
@@ -3672,10 +3677,23 @@ function _onChartResize() {
 }
 window.addEventListener('resize', _onChartResize);
 // orientationchange : Chrome mobile peut déclencher l'event AVANT que les
-// dimensions soient à jour. On attend 200 ms puis on force un re-render.
+// dimensions soient à jour, ou les changer en plusieurs étapes pendant l'anim
+// de rotation. On force plusieurs re-renders à différents délais pour rattraper
+// le bon état après stabilisation du layout.
 window.addEventListener('orientationchange', () => {
-  setTimeout(_onChartResize, 200);
+  setTimeout(_onChartResize, 100);
+  setTimeout(_onChartResize, 400);
+  setTimeout(_onChartResize, 800);
 });
+// matchMedia listener : déclenche aussi un re-render quand l'orientation change
+// au sens CSS (= les @media (orientation:...) basculent), ce qui correspond au
+// moment où le layout réagit aux nouvelles dimensions.
+if (window.matchMedia) {
+  const _orientMQ = window.matchMedia('(orientation: portrait)');
+  const _onOrient = () => setTimeout(_onChartResize, 100);
+  if (_orientMQ.addEventListener) _orientMQ.addEventListener('change', _onOrient);
+  else if (_orientMQ.addListener) _orientMQ.addListener(_onOrient);
+}
 
 // ─── Démarrage ───────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
