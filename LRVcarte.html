@@ -1263,11 +1263,11 @@ select#el-select {
      toucher au design visuel. Les boutons gardent leur apparence ; seul
      leur padding/min-height grandit.
      ───────────────────────────────────────────────────────────────── */
-  .nav-row    { padding: 11px 20px; }   /* 7px 20px : liste bureaux dans la fiche */
-  .otab       { padding: 9px 14px; }    /* 5px 10px : onglets bureau/quartier/global */
-  #ov-back    { padding: 10px 14px; font-size: 1rem; }   /* 5px 9px : bouton retour fiche */
-  .elec-item  { padding: 14px 16px; }   /* 11px 14px : items du bottom sheet d'élection */
-  .otab, #ov-back, .nav-row, .elec-item { min-height: 44px; }
+  .nav-row    { padding: 11px 20px; }                /* 7px 20px : liste bureaux dans la fiche */
+  .otab       { padding: 9px 14px; }                 /* 5px 10px : onglets bureau/quartier/global */
+  #ov-back    { padding: 7px 11px; }                 /* 5px 9px : léger bump, on garde la font-size 0.78rem d'origine */
+  .elec-item  { padding: 14px 16px; }                /* 11px 14px : items du bottom sheet d'élection */
+  .otab, .nav-row, .elec-item { min-height: 44px; }  /* WCAG tap target — #ov-back exclu (icone seule, taille naturelle plus compacte) */
 }
 
 /* ─────────────────────────────────────────────────────────────────
