@@ -6419,6 +6419,86 @@ function randomDiscover() {
   updateElectionNavButtons();
 })();
 
+// ─────────────────────────────────────────────────────────────────────────
+// Swipe-down sur la fiche overlay (mobile uniquement) : tirer vers le bas
+// pour fermer la fiche, à la manière d'un bottom sheet iOS/Android.
+// Logique :
+//   • On démarre le drag quand l'utilisateur touche la zone "handle" du
+//     topbar de la fiche, OU le contenu lui-même si la fiche est scrollée
+//     tout en haut (sinon on laisse le scroll natif faire son boulot).
+//   • Pendant le drag, on translateY l'overlay 1:1 avec le doigt pour
+//     un feedback temps réel.
+//   • Au relâchement : si tiré > 25 % de la hauteur viewport → fermeture
+//     animée jusqu'en bas + closeOverlay(). Sinon spring-back à zéro.
+// Le bouton "← Retour" reste opérationnel (les utilisateurs habitués à
+// taper en haut à gauche ne perdent rien).
+// ─────────────────────────────────────────────────────────────────────────
+(function setupSwipeDownToClose(){
+  function isMobile() {
+    return window.matchMedia && window.matchMedia('(max-width: 720px)').matches;
+  }
+  const overlay = document.getElementById('overlay');
+  const ovBody  = document.getElementById('ov-body');
+  const ovTop   = document.getElementById('ov-topbar');
+  if (!overlay || !ovBody || !ovTop) return;
+
+  let startY = 0, currentY = 0;
+  let dragging = false;
+
+  function canStartDrag(target) {
+    if (!isMobile()) return false;
+    // Drag autorisé depuis le topbar (zone "handle") quoi qu'il arrive
+    if (ovTop.contains(target)) return true;
+    // Sinon, uniquement si on est au sommet du scroll du contenu
+    return ovBody.scrollTop <= 0;
+  }
+
+  overlay.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) { dragging = false; return; }
+    if (!canStartDrag(e.target)) { dragging = false; return; }
+    startY   = e.touches[0].clientY;
+    currentY = startY;
+    dragging = true;
+    overlay.style.transition = 'none'; // suivi temps réel, pas d'easing
+  }, { passive: true });
+
+  overlay.addEventListener('touchmove', (e) => {
+    if (!dragging) return;
+    currentY = e.touches[0].clientY;
+    const dy = currentY - startY;
+    if (dy <= 0) {
+      // Drag vers le haut : on abandonne pour ne pas bloquer le scroll natif
+      overlay.style.transform = '';
+      dragging = false;
+      return;
+    }
+    overlay.style.transform = 'translateY(' + dy + 'px)';
+  }, { passive: true });
+
+  function endDrag() {
+    if (!dragging) return;
+    dragging = false;
+    const dy = currentY - startY;
+    const threshold = window.innerHeight * 0.25;  // 25 % de la viewport
+    overlay.style.transition = 'transform 0.25s ease-out';
+    if (dy > threshold) {
+      // Glissée suffisante → on slide jusqu'en bas puis on ferme
+      overlay.style.transform = 'translateY(100%)';
+      setTimeout(() => {
+        overlay.style.transition = '';
+        overlay.style.transform  = '';
+        if (typeof closeOverlay === 'function') closeOverlay();
+      }, 250);
+    } else {
+      // Spring-back vers la position d'origine
+      overlay.style.transform = '';
+      setTimeout(() => { overlay.style.transition = ''; }, 250);
+    }
+  }
+  overlay.addEventListener('touchend',    endDrag, { passive: true });
+  overlay.addEventListener('touchcancel', endDrag, { passive: true });
+})();
+
 </script>
 
 <script>
