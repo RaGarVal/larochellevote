@@ -2237,8 +2237,14 @@ function loadMap(){
       const ns=numStr(feature);
       const info=bureauInfo(feature);
       layer.bindTooltip('',{sticky:true,opacity:1,className:'map-tooltip'});
+      // Détection "vrai pointeur fin" (souris/trackpad) vs tactile. Sur touch-only
+      // (mobile/tablette), le hover est une simulation de touchend → on l'ignore
+      // pour ne pas afficher le tooltip et la preview sidebar de façon inattendue
+      // après un swipe-down ou un tap.
+      const hasHover = () => window.matchMedia && window.matchMedia('(hover: hover)').matches;
       layer.on({
         mouseover:e=>{
+          if (!hasHover()) return;
           layer.setTooltipContent(buildTooltipHtml(feature,ns,info));
           if(layer!==selectedLayer)e.target.setStyle({fillOpacity:0.9,weight:2,color:'#333'});
           // B8 phase 2 : preview du bureau survolé dans la bulle (sb-info)
@@ -2255,6 +2261,7 @@ function loadMap(){
           }
         },
         mouseout:e=>{
+          if (!hasHover()) return;
           if(layer!==selectedLayer)mainLayer.resetStyle(e.target);
           // B8 phase 2 : retour à l'état "ville globale" par défaut
           const ov = document.getElementById('overlay');
