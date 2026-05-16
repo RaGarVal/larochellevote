@@ -354,3 +354,170 @@ function setupAppMenu(opts) {
     console.warn('━'.repeat(64));
   }
 })();
+
+// ───────────────────────────────────────────────────────────────
+//  PASTILLE "SOUTENIR" — sur toutes les pages sauf l'index
+// ───────────────────────────────────────────────────────────────
+//  Petit appel à contribution discret en bas à droite. Au clic, ouvre une
+//  modal reprenant le texte et les liens Stripe de la section 7 d'apropos.html.
+//  Sur mobile : encore plus discret (icône seule, opacité réduite).
+//  Position élevée sur LRVcarte mobile (bottom:70px) pour ne pas chevaucher
+//  la légende des modes carte.
+(function setupSoutenirPill() {
+  if (typeof document === 'undefined' || !document.body) {
+    // body pas encore prêt → on attend DOMContentLoaded
+    document.addEventListener('DOMContentLoaded', setupSoutenirPill);
+    return;
+  }
+  // Skip uniquement sur la page d'accueil (qui a déjà son propre appel)
+  const path = (location.pathname || '').toLowerCase();
+  if (/(^\/?$)|(\/index\.html?$)/.test(path)) return;
+
+  // Détection page carte (pour ajuster le positionnement mobile)
+  const isCarte = /lrvcarte\.html?$/i.test(path);
+
+  // CSS injecté une seule fois
+  const css = `
+#soutenir-pill {
+  position: fixed;
+  /* LRVcarte : au-dessus du footer (~24 px). Autres pages : marge standard */
+  bottom: ${isCarte ? '32px' : '14px'};
+  right: 14px;
+  z-index: 100;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 10px;
+  background: rgba(255,255,255,0.78);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  color: var(--text-chrome-muted, #6A6A6A);
+  font-size: 0.72rem;
+  font-weight: 500;
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,0.06);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  cursor: pointer;
+  font-family: inherit;
+  opacity: 0.7;            /* discret par défaut */
+  transition: opacity 0.18s, transform 0.15s, color 0.18s;
+}
+#soutenir-pill:hover {
+  opacity: 1;
+  color: var(--text-chrome, #1A1A1A);
+  transform: translateY(-1px);
+}
+#soutenir-pill:active { transform: translateY(0); }
+[data-theme="dark"] #soutenir-pill {
+  background: rgba(40,40,40,0.78);
+  color: var(--text-chrome-muted, #999);
+  border-color: rgba(255,255,255,0.08);
+}
+@media (max-width: 720px) {
+  /* Mobile : encore plus discret — icône seule, très petit, opacité basse */
+  #soutenir-pill {
+    bottom: ${isCarte ? '64px' : '12px'};
+    right: 8px;
+    padding: 5px;
+    width: 28px; height: 28px;
+    justify-content: center;
+    opacity: 0.5;
+    box-shadow: none;
+    background: rgba(255,255,255,0.6);
+  }
+  #soutenir-pill:hover { opacity: 1; }
+  #soutenir-pill .sp-text { display: none; }
+  #soutenir-pill .sp-icon { font-size: 0.95rem; }
+}
+
+/* Modal */
+#soutenir-modal {
+  position: fixed; inset: 0; display: none; z-index: 10500;
+  font-family: 'Space Grotesk','Segoe UI',system-ui,sans-serif;
+}
+#soutenir-modal.open { display: block; }
+.ssm-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.45);
+  opacity: 0; transition: opacity 0.18s;
+}
+#soutenir-modal.open .ssm-overlay { opacity: 1; }
+.ssm-card {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%) scale(0.96);
+  background: var(--bg-modal, #fff);
+  color: var(--text-modal, #1A1A1A);
+  border-radius: 12px;
+  width: 480px; max-width: calc(100vw - 32px);
+  padding: 22px 24px 24px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.28);
+  opacity: 0; transition: opacity 0.18s, transform 0.18s;
+}
+#soutenir-modal.open .ssm-card { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+.ssm-card h3 { margin: 0 0 14px; font-size: 1.05rem; font-weight: 700; padding-right: 32px; }
+.ssm-card p { margin: 0 0 12px; font-size: 0.92rem; line-height: 1.55; color: var(--text-modal-muted, #555); }
+.ssm-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+.ssm-btn {
+  flex: 1; min-width: 140px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 11px 14px; border-radius: 8px;
+  text-decoration: none; font-weight: 600; font-size: 0.9rem;
+  letter-spacing: 0.01em;
+  transition: filter 0.15s, transform 0.1s;
+}
+.ssm-btn:hover { filter: brightness(1.08); }
+.ssm-btn:active { transform: translateY(1px); }
+.ssm-btn.warm { background: var(--accent-warm, #c47a40); color: #fff; }
+.ssm-btn.cool { background: var(--text-chrome, #1A1A1A); color: var(--bg-card, #fff); }
+.ssm-close {
+  position: absolute; top: 12px; right: 12px;
+  background: rgba(0,0,0,0.06); border: none;
+  width: 28px; height: 28px; border-radius: 6px;
+  cursor: pointer; font-size: 1rem;
+  color: var(--text-modal-muted, #555);
+  display: flex; align-items: center; justify-content: center;
+  font-family: inherit;
+}
+.ssm-close:hover { background: rgba(0,0,0,0.12); }
+`;
+  const style = document.createElement('style');
+  style.textContent = css;
+  document.head.appendChild(style);
+
+  // Pill
+  const pill = document.createElement('button');
+  pill.id = 'soutenir-pill';
+  pill.type = 'button';
+  pill.setAttribute('aria-label', 'Soutenir le projet');
+  pill.innerHTML = '<span class="sp-icon" aria-hidden="true">💛</span><span class="sp-text">Soutenir</span>';
+  document.body.appendChild(pill);
+
+  // Modal — texte aligné sur la section 7 d'apropos.html
+  const modal = document.createElement('div');
+  modal.id = 'soutenir-modal';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-labelledby', 'ssm-title');
+  modal.innerHTML = `
+    <div class="ssm-overlay" aria-hidden="true"></div>
+    <div class="ssm-card">
+      <button class="ssm-close" type="button" aria-label="Fermer">&times;</button>
+      <h3 id="ssm-title">Soutenir La Rochelle Vote</h3>
+      <p><strong>La&nbsp;Rochelle&nbsp;Vote</strong> est entièrement bénévole et auto-financé. La compilation des archives électorales, la numérisation des cartes anciennes, le développement du site et la veille des nouveaux scrutins demandent un travail régulier — qui se poursuivra scrutin après scrutin.</p>
+      <p>Si vous souhaitez soutenir le projet, afin d'en alléger le coût pour l'autrice, deux options&nbsp;: un don ponctuel ou un abonnement mensuel régulier.</p>
+      <div class="ssm-actions">
+        <a class="ssm-btn warm" href="https://buy.stripe.com/cNi9AU3IH3Vh6DZ2VM4ko00" target="_blank" rel="noopener">☕ Offrir un café</a>
+        <a class="ssm-btn cool" href="https://buy.stripe.com/8x2cN6931fDZaUfbsi4ko01" target="_blank" rel="noopener">❤️ Soutien mensuel</a>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  // Bindings
+  function open() { modal.classList.add('open'); document.body.style.overflow = 'hidden'; }
+  function close() { modal.classList.remove('open'); document.body.style.overflow = ''; }
+  pill.addEventListener('click', open);
+  modal.querySelector('.ssm-overlay').addEventListener('click', close);
+  modal.querySelector('.ssm-close').addEventListener('click', close);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && modal.classList.contains('open')) close();
+  });
+})();
