@@ -91,10 +91,10 @@
   },
   {
     "date": "2026-05-16",
-    "signature": "global|Européennes 1999|TU",
+    "signature": "global|Législatives 2007|T1",
     "niveau": "global",
-    "election": "Européennes 1999",
-    "tour": "TU",
+    "election": "Législatives 2007",
+    "tour": "T1",
     "bureau": null,
     "quartier": null
   }
