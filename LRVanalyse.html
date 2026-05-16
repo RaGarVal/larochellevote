@@ -3634,15 +3634,36 @@ function toggleAbst() {
   refresh();
 }
 
-// ─── Resize ───────────────────────────────────────────────────────────────
-window.addEventListener('resize', () => {
-  if (window._chartData) {
-    if (chartType === 'empiles') drawStackedChart(window._chartData);
-    else drawChart(window._chartData);
-  }
-  // Re-applique le tourniquet du titre (overflow peut changer avec la rotation)
-  const _ctn = document.getElementById('ct-name');
-  if (_ctn) setMarqueeText(_ctn, _ctn.textContent || '');
+// ─── Resize / changement d'orientation ───────────────────────────────────
+// Sur Chrome mobile, la rotation portrait↔paysage fait varier la taille du
+// conteneur du chart (la topbar est masquée en paysage, libérant de la place).
+// On re-rend le chart ET la frise pour qu'ils prennent les nouvelles dimensions.
+// Debounce 80 ms : la rotation déclenche plusieurs resize successifs (pendant
+// l'animation Chrome), on attend que le layout se stabilise avant de redessiner.
+let _resizeRaf = 0;
+function _onChartResize() {
+  if (_resizeRaf) cancelAnimationFrame(_resizeRaf);
+  _resizeRaf = requestAnimationFrame(() => {
+    _resizeRaf = 0;
+    if (window._chartData) {
+      if (chartType === 'empiles') drawStackedChart(window._chartData);
+      else drawChart(window._chartData);
+      // Re-rend aussi la frise (sa géométrie dépend des positions du chart).
+      const bid = niveau === 'bureau' ? document.getElementById('sel-bureau').value
+                : niveau === 'quartier' ? document.getElementById('sel-quartier').value
+                : null;
+      if (bid && typeof drawFrise === 'function') drawFrise(bid);
+    }
+    // Re-applique le tourniquet du titre (overflow peut changer avec la rotation)
+    const _ctn = document.getElementById('ct-name');
+    if (_ctn) setMarqueeText(_ctn, _ctn.textContent || '');
+  });
+}
+window.addEventListener('resize', _onChartResize);
+// orientationchange : Chrome mobile peut déclencher l'event AVANT que les
+// dimensions soient à jour. On attend 200 ms puis on force un re-render.
+window.addEventListener('orientationchange', () => {
+  setTimeout(_onChartResize, 200);
 });
 
 // ─── Démarrage ───────────────────────────────────────────────────────────
