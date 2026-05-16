@@ -344,7 +344,11 @@ select.ctrl-sel{width:100%;padding:7px 10px;border:1.5px solid var(--border-moda
 .frise-track{flex:1;display:flex;border:1px solid var(--border-modal);border-radius:4px}
 .frise-track > .frise-block:first-child{border-top-left-radius:3px;border-bottom-left-radius:3px}
 .frise-track > .frise-block:last-child{border-top-right-radius:3px;border-bottom-right-radius:3px}
-.frise-block{display:flex;align-items:center;justify-content:center;padding:4px 3px;font-size:10.5px;color:#1A1A1A;border-right:1px solid var(--bg-frise);min-width:0;cursor:default;position:relative}
+.frise-block{display:flex;align-items:center;justify-content:center;padding:4px 3px;font-size:10.5px;color:#1A1A1A;border-right:1px solid var(--bg-frise);min-width:0;cursor:default;position:relative;
+  /* Transition douce sur background : quand un bloc change d'alt-0/alt-1 suite
+     à une refusion (entrée/sortie d'éra pendant le pan), la couleur glisse
+     progressivement (250 ms) au lieu d'un flash sec. */
+  transition: background-color 0.25s ease}
 .frise-block.alt-0 { background: var(--frise-alt-0); }
 .frise-block.alt-1 { background: var(--frise-alt-1); }
 [data-theme="dark"] .frise-block { color: var(--text-chrome); }
@@ -355,13 +359,73 @@ select.ctrl-sel{width:100%;padding:7px 10px;border:1.5px solid var(--border-moda
 .frise-axis{margin-top:1px}
 .frise-axis .frise-track{border:none;background:none}
 .frise-axis .frise-era{font-size:10px;color:var(--text-chrome-muted);display:flex;align-items:center;gap:2px;padding:0 4px;border-right:1px solid var(--border-modal);min-width:0;overflow:hidden}
+
 .frise-era:last-child{border-right:none}
 .frise-block:last-child{border-right:none}
 .frise-rd{display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;border-radius:50%;font-size:9px;font-weight:900;color:#fff;cursor:pointer;flex-shrink:0}
 .frise-rd.creation{background:#27AE60}
 .frise-rd.majeur{background:#E05010}
 .frise-rd.mineur{background:#C89010}
-#chart-svg{width:100%;flex:1;min-height:0}
+#chart-svg{width:100%;flex:1;min-height:0;
+  /* touch-action: pan-y = on capture nous-mêmes les gestes horizontaux (pinch, pan)
+     mais on laisse passer le scroll vertical de la page. Le browser n'essaie pas
+     de pincer-zoomer la page entière (qui ferait zoomer le DOM tout entier). */
+  touch-action: pan-y;
+}
+
+/* Bouton reset zoom : flottant en haut-droite du chart, visible uniquement
+   quand le graphique est zoomé (cf. JS resetChartZoom + refresh). */
+#chart-zoom-reset {
+  position: absolute;
+  top: 8px; right: 8px;
+  z-index: 8;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  background: var(--bg-modal); color: var(--text-modal);
+  border: 1px solid var(--border-modal);
+  border-radius: 999px;
+  font: inherit; font-size: 0.78rem; font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  cursor: pointer;
+  transition: background 0.12s, transform 0.12s;
+}
+#chart-zoom-reset:hover  { background: var(--bg-modal-hover); }
+#chart-zoom-reset:active { transform: scale(0.96); }
+@media (max-width: 720px) {
+  #chart-zoom-reset { padding: 8px 12px; min-height: 38px; }
+}
+
+/* Pastille de repère temporelle : apparaît pendant qu'on zoome/pan, indique
+   la fenêtre visible (ex. "1995 — 2017"), s'efface après 1,5 s d'inactivité.
+   Centrée en haut du chart, par-dessus la courbe sans la bloquer (pointer-events). */
+#chart-range-pill {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translate(-50%, -4px);
+  z-index: 7;
+  padding: 6px 14px;
+  background: var(--bg-modal);
+  color: var(--text-modal);
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  border-radius: 999px;
+  border: 1px solid var(--border-modal);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s, transform 0.18s;
+  white-space: nowrap;
+}
+#chart-range-pill.visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+@media (max-width: 720px) {
+  #chart-range-pill { font-size: 0.8rem; padding: 5px 12px; }
+}
 /* Charts SVG : variables CSS appliquées via classes (compatible mode sombre) */
 #chart-svg .chart-grid-h { stroke: var(--chart-grid); }
 #chart-svg .chart-grid-v { stroke: var(--chart-grid-v); }
@@ -462,6 +526,20 @@ html[data-admin="1"] .rd-add-btn{display:block}
 .qc-bv-q{color:var(--text-meta);font-style:italic;font-size:0.75rem}
 #ref-overlay{position:absolute;inset:0;background:rgba(0,0,0,.45)}
 #ref-dialog{position:relative;background:var(--bg-modal);border-radius:12px;padding:22px 24px;width:500px;max-width:94vw;max-height:80vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.22);z-index:1}
+
+/* Petits écrans (≤ 380 px = iPhone SE / vieux téléphones) : on resserre les
+   paddings et on laisse les modales prendre toute la largeur disponible avec
+   juste 12 px de marge de chaque côté. Sinon le contenu devient illisible. */
+@media (max-width: 380px) {
+  #redecoupage-dialog,
+  #qcorresp-dialog,
+  #ref-dialog {
+    width: calc(100vw - 24px);
+    max-width: none;
+    padding: 16px 14px;
+    border-radius: 10px;
+  }
+}
 #ref-title{font-size:.95rem;font-weight:700;color:var(--text-modal);margin-bottom:3px}
 #ref-subtitle{font-size:0.8rem;color:var(--text-modal-muted);margin-bottom:14px}
 .ref-era-row{margin-bottom:10px;padding:8px 10px;border:1.5px solid var(--border-soft);border-radius:8px;background:var(--bg-modal-hover)}
@@ -653,6 +731,16 @@ html[data-admin="1"] .rd-add-btn{display:block}
   /* — Tableau : toujours présent, scroll horizontal si large — */
   #table-area { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   #data-table { font-size: 0.78rem; min-width: max-content; }
+  /* Header sticky : reste visible quand on scroll verticalement (les libellés
+     de colonne ne disparaissent pas en bas de tableau). Ombre légère pour le
+     démarquer du contenu qui défile dessous. */
+  #data-table thead th {
+    position: sticky;
+    top: 0;
+    background: var(--bg-card, #fff);
+    box-shadow: 0 1px 0 var(--border-modal, rgba(0,0,0,0.12));
+    z-index: 5;
+  }
 
   /* — Famille callout (encadré explicatif) : reste visible mais compact — */
   #famille-callout {
@@ -727,20 +815,25 @@ html[data-admin="1"] .rd-add-btn{display:block}
   #sidebar .sb-section:has(.niveau-btn) .sb-label {
     flex-basis: 100%;
   }
+  /* Tap targets WCAG : tous les boutons filtres ≥ 44 px de hauteur tactile.
+     On ajuste padding-y et on impose min-height pour garantir le tap confortable
+     même quand le texte est très court. Le visual reste compact horizontalement. */
   #sidebar .niveau-btn {
     flex: 1 1 0;
     width: auto;
     min-width: 0;
     margin: 0;
     text-align: center;
-    padding: 7px 4px;
+    padding: 12px 4px;        /* 7px → 12px */
+    min-height: 44px;
     font-size: 0.74rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    display: flex; align-items: center; justify-content: center;
   }
 
-  /* Type d'élection : chips horizontales avec wrap */
+  /* Type d'élection : chips horizontales avec wrap. On garde 36 px (chips compacts) */
   #sidebar #type-toggles {
     flex-direction: row;
     flex-wrap: wrap;
@@ -748,33 +841,45 @@ html[data-admin="1"] .rd-add-btn{display:block}
   }
   #sidebar .type-toggle {
     flex: 0 1 auto;
-    padding: 5px 10px;
+    padding: 9px 12px;        /* 5px 10px → 9px 12px */
+    min-height: 38px;
     font-size: 0.76rem;
     border-radius: 999px;
+    display: inline-flex; align-items: center;
   }
 
-  /* Type de graphique + échelle : déjà en segmented, on ajuste juste la taille */
+  /* Type de graphique + échelle : déjà en segmented, on garantit 44 px */
   #sidebar .chart-type-selector .ct-btn {
-    padding: 6px 4px;
+    padding: 12px 4px;        /* 6px → 12px */
+    min-height: 44px;
     font-size: 0.78rem;
+    display: flex; align-items: center; justify-content: center;
   }
 
-  /* Représentation : Blocs/Familles + mode 2/3/4/5 → tailles homogènes */
+  /* Représentation : Blocs/Familles + mode 2/3/4/5 → tailles homogènes 44 px */
   #sidebar .mode-selector .mode-btn {
-    padding: 5px 4px;
+    padding: 12px 4px;        /* 5px → 12px */
+    min-height: 44px;
     font-size: 0.76rem;
+    display: flex; align-items: center; justify-content: center;
   }
 
-  /* Bloc-toggles : on densifie un peu (gap réduit) */
-  #sidebar #bloc-toggles { display: flex; flex-direction: column; gap: 1px; }
-  #sidebar .bloc-toggle { padding: 5px 0; }
+  /* Bloc-toggles : checkbox-style ; on élargit la zone tactile sans gonfler le visuel.
+     padding vertical + min-height pour que toute la ligne soit cliquable. */
+  #sidebar #bloc-toggles { display: flex; flex-direction: column; gap: 2px; }
+  #sidebar .bloc-toggle {
+    padding: 10px 4px;        /* 5px 0 → 10px 4px */
+    min-height: 44px;
+  }
 
-  /* Comparaison : boutons un peu plus serrés */
+  /* Comparaison : boutons à 44 px */
   #sidebar #toggle-ville-comp,
   #sidebar #toggle-quartier-comp,
   #sidebar #toggle-base100 {
-    padding: 6px 8px;
+    padding: 12px 12px;       /* 6px 8px → 12px 12px */
+    min-height: 44px;
     font-size: 0.78rem;
+    display: inline-flex; align-items: center; justify-content: center;
   }
 
   /* Selects (quartier/bureau) : plus généreux pour le tap, et font-size: 16px pour éviter
@@ -888,6 +993,36 @@ input:focus-visible,
   border-radius: 4px;
 }
 
+/* ─────────────────────────────────────────────────────────────────
+   LOADER — visible pendant le parse de donnees.js (1 Mo)
+   Apparaît dès le parse HTML et se masque après le 1er render
+   (cf. handler en bas du body). Évite l'effet "site cassé".
+   ───────────────────────────────────────────────────────────────── */
+#page-loader {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 60;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 14px;
+  color: var(--text-chrome, #333);
+  font-size: 0.92rem; font-weight: 500;
+  pointer-events: none;
+  transition: opacity 0.25s;
+}
+#page-loader.is-hidden { opacity: 0; pointer-events: none; }
+.page-loader-spinner {
+  width: 38px; height: 38px;
+  border: 3px solid rgba(0, 0, 0, 0.08);
+  border-top-color: var(--accent, #2871d6);
+  border-radius: 50%;
+  animation: page-loader-spin 0.8s linear infinite;
+}
+@keyframes page-loader-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .page-loader-spinner { animation-duration: 2.4s; }
+}
+
 /* ═══════════════════════════════════════════════════════════════════════
    MOBILE PAYSAGE — mode plein écran : on libère le maximum de hauteur
    pour le chart (topbar masquée, paddings réduits, chart pleine viewport).
@@ -986,6 +1121,13 @@ input:focus-visible,
 </style>
 </head>
 <body>
+
+<!-- Loader : visible dès le parse HTML, masqué après le 1er rendu du chart.
+     Identique en esprit à celui de LRVcarte.html — fini l'écran blanc. -->
+<div id="page-loader" aria-live="polite" aria-busy="true">
+  <div class="page-loader-spinner" aria-hidden="true"></div>
+  <div>Chargement des données électorales…</div>
+</div>
 
 <div id="frise-overlay" onclick="closeFrisePanel()"></div>
 <div id="frise-panel">
@@ -1136,6 +1278,16 @@ input:focus-visible,
       <button class="oh-close" type="button" onclick="dismissOrientationHint()" aria-label="Masquer le conseil">×</button>
     </div>
     <svg id="chart-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    <!-- Bouton "reset zoom" : visible uniquement quand le graphique est zoomé.
+         Position absolue en haut-droite du chart, discret mais accessible. -->
+    <button id="chart-zoom-reset" type="button" onclick="resetChartZoom()" aria-label="Réinitialiser le zoom" style="display:none">
+      <span aria-hidden="true">⟲</span> Tout afficher
+    </button>
+    <!-- Pastille de repère : affiche la fenêtre temporelle visible pendant
+         qu'on zoome/pan. Apparaît au geste et s'efface après 1,5 s d'inactivité. -->
+    <div id="chart-range-pill" aria-hidden="true">
+      <span id="chart-range-pill-text">—</span>
+    </div>
     <div id="famille-callout" style="display:none"></div>
     <div id="tooltip">
       <button id="tooltip-close" type="button" onclick="hideTooltip()" aria-label="Fermer">×</button>
@@ -2128,6 +2280,26 @@ function updateCarteLink() {
   a.href = 'LRVcarte.html' + suffix;
 }
 
+// ─── Zoom temporel du graphique (par indices d'élection) ─────────────────
+// Approche : drawChart rend TOUTES les élections à des positions absolues, et
+// on n'affiche qu'une "fenêtre" via clip-path. Le pan fait glisser le groupe
+// pannable sur le contenu pré-rendu → glisse fluide, jamais de blanc révélé.
+//
+// État : index du premier scrutin visible + nombre de scrutins visibles.
+// Indices fractionnaires autorisés pour pan smooth.
+let chartViewStartIdx = 0;           // début de la fenêtre visible (peut être fractionnaire)
+let chartVisibleCount = Infinity;    // nombre de scrutins dans la fenêtre (= N par défaut = tout)
+
+// Limite de zoom : on ne descend pas en dessous de 20 scrutins visibles
+// (au-delà, perte de contexte historique). Modifiable selon retour utilisateur.
+const CHART_MIN_VISIBLE = 20;
+
+function isChartZoomed() {
+  // Zoomé si on ne couvre pas l'intégralité des données
+  const N = (window._chartFullData || []).length;
+  return N > 0 && (chartViewStartIdx > 0.01 || chartVisibleCount < N - 0.01);
+}
+
 function refresh() {
   const typeFilter = getActiveTypes();
   updateContentTitle();
@@ -2173,12 +2345,36 @@ function refresh() {
     });
   }
   window._boundaryChanges = getBoundaryChanges();
+
+  // Stocke le full data pour les calculs de zoom/pan + reset du bouton.
+  // Toutes les élections sont passées au chart : c'est lui qui positionne
+  // les visibles dans la fenêtre et les autres hors zone (clip-path les cache).
+  window._chartFullData = data;
+  const N = data.length;
+  // Si la fenêtre courante est plus grande que les données, on reset (cas
+  // changement de filtre qui réduit le nombre de scrutins).
+  if (chartVisibleCount > N || chartVisibleCount < CHART_MIN_VISIBLE) {
+    chartViewStartIdx = 0;
+    chartVisibleCount = N;
+  }
+  // Bornes : viewStartIdx + visibleCount ne doit pas dépasser N
+  if (chartViewStartIdx + chartVisibleCount > N) {
+    chartViewStartIdx = Math.max(0, N - chartVisibleCount);
+  }
+  if (chartViewStartIdx < 0) chartViewStartIdx = 0;
+
+  // Visibilité du bouton reset zoom
+  const _resetBtn = document.getElementById('chart-zoom-reset');
+  if (_resetBtn) _resetBtn.style.display = isChartZoomed() ? 'inline-flex' : 'none';
+
+  // On passe TOUJOURS le full data au chart (pas de filter). drawChart
+  // se charge de positionner et de clipper selon viewStartIdx + visibleCount.
   if (chartType === 'empiles') drawStackedChart(data);
   else drawChart(data);
   drawFrise(niveau === 'bureau' ? document.getElementById('sel-bureau').value
           : niveau === 'quartier' ? document.getElementById('sel-quartier').value
           : null);
-  drawTable(data);
+  drawTable(data);  // ← full data (pas le slice : cf. spec)
   if (typeof writeURLState === 'function') writeURLState();
 }
 
@@ -2427,7 +2623,18 @@ function drawChart(data) {
     return;
   }
 
-  const xScale = i => PAD.left + (n === 1 ? cW/2 : i * cW / (n-1));
+  // Fenêtre courante de visualisation : nombre de scrutins visibles + index de départ.
+  const visibleCount = Math.max(2, Math.min(n, chartVisibleCount || n));
+  const viewStart = Math.max(0, Math.min(n - visibleCount, chartViewStartIdx || 0));
+  // Espacement horizontal entre 2 scrutins consécutifs (en pixels).
+  // Formule : unitX = cW / visibleCount (et NON visibleCount-1) pour insérer une
+  // marge de unitX/2 de chaque côté → le 1er et le dernier scrutin restent
+  // entièrement visibles (pas coupés par le clip aux bords).
+  const unitX = cW / visibleCount;
+  // xScale : indice ABSOLU dans le data complet → position pixel.
+  // Inset unitX/2 à gauche : 1er scrutin visible centré sur PAD.left + unitX/2,
+  // dernier sur PAD.left + cW - unitX/2.
+  const xScale = i => PAD.left + unitX/2 + (i - viewStart) * unitX;
   // Échelle Y dynamique : 0-100 en mode pct, 0-maxV en mode voix, ou bornes recadrées en base 100
   let yMax = 100, yMin = 0;
   if (chartScale === 'voix') {
@@ -2478,7 +2685,11 @@ function drawChart(data) {
     }
   } else { window._base100Data = null; window._base100Blocks = []; }
 
+  // html = contenu PANNABLE (curves, X-axis, etc.) → groupe avec transform
+  // yAxisHtml = contenu FIXE (Y-axis labels + Y-grid lines) → reste à sa place
+  // clipPath cache le pannable hors zone [PAD.left, PAD.left+cW]
   let html = '';
+  let yAxisHtml = '';
   const uncertainElections = getUncertainElections();
 
   // Zones d'incertitude (fond grisé) — dessinées avant tout le reste
@@ -2510,8 +2721,9 @@ function drawChart(data) {
   }
   yTicks.forEach(y => {
     const yy = yScale(y);
-    html += `<line class="chart-grid-h" x1="${PAD.left}" y1="${yy}" x2="${W-PAD.right}" y2="${yy}" stroke-width="1"/>`;
-    html += `<text class="chart-label" x="${PAD.left-4}" y="${yy+4}" text-anchor="end" font-size="10" font-family="'Space Grotesk', 'Segoe UI', system-ui, sans-serif">${yLabel(y)}</text>`;
+    // Y-grid lines + Y-labels → groupe FIXE (ne suivent pas le pan).
+    yAxisHtml += `<line class="chart-grid-h" x1="${PAD.left}" y1="${yy}" x2="${W-PAD.right}" y2="${yy}" stroke-width="1"/>`;
+    yAxisHtml += `<text class="chart-label" x="${PAD.left-4}" y="${yy+4}" text-anchor="end" font-size="10" font-family="'Space Grotesk', 'Segoe UI', system-ui, sans-serif">${yLabel(y)}</text>`;
   });
 
   // Sur mobile (portrait OU paysage) : labels X ultra-compacts → 1 lettre (P/L/M/E/R) +
@@ -2680,13 +2892,36 @@ function drawChart(data) {
 
   html = drawBoundaryMarkers(html, data, xScale, PAD, cH, window._boundaryChanges || {});
 
-  svg.innerHTML = html;
+  // Compose le SVG final :
+  //   • <defs>           : clipPath fixe définissant la zone visible [PAD.left, PAD.left+cW]
+  //   • <g fixed>        : Y-axis labels + Y-grid lines (jamais panné)
+  //   • <g .clip-host>   : applique le clip → zone visible STABLE (le clip ne bouge pas)
+  //   • <g .pannable>    : enfant du clip-host, reçoit le transform pendant le pan
+  //
+  // Crucial : clip et transform NE doivent PAS être sur le même groupe. Sinon le clip
+  // se déplace avec le transform → trou visible au bord opposé. Avec le clip sur un
+  // parent fixe et le transform sur un enfant, le contenu glisse à l'intérieur d'une
+  // fenêtre figée → c'est ce qui donne l'effet "loupe" attendu.
+  svg.innerHTML = `
+    <defs>
+      <clipPath id="chart-data-clip">
+        <rect x="${PAD.left}" y="0" width="${cW}" height="${H}"/>
+      </clipPath>
+    </defs>
+    <g class="chart-fixed">${yAxisHtml}</g>
+    <g class="chart-clip-host" clip-path="url(#chart-data-clip)">
+      <g class="chart-pannable">${html}</g>
+    </g>
+  `;
   window._chartData = data;
   window._chartXScale = xScale;
   window._chartYScale = yScale;
   window._chartPAD = PAD;
   window._chartCH = cH;
   window._chartCW = cW;
+  window._chartUnitX = unitX;          // pour les handlers pan/zoom
+  window._chartVisibleCount = visibleCount;
+  window._chartViewStart = viewStart;
 }
 
 function showTooltip(e, idx) {
@@ -2953,7 +3188,12 @@ function drawStackedChart(data) {
 }
 
 // ─── Frise chronologique (vue bureau) ────────────────────────────────────────
-function drawFrise(bid) {
+// drawFrise peut être appelée avec un xScaleOverride pour prévisualiser
+// la position pendant un pan en cours du graphique (sans avoir besoin de
+// recalculer drawChart qui est lourd). Si omis, on utilise window._chartXScale.
+// previewWindow (optionnel) = {viewStart, visibleCount} pour filtrer les éras
+// affichées à la fenêtre visible (sinon on prend la fenêtre courante du chart).
+function drawFrise(bid, xScaleOverride, previewWindow) {
   const el = document.getElementById('frise-area');
   if (!el) return;
   if (niveau === 'ville') { el.classList.remove('visible'); return; }
@@ -3014,14 +3254,26 @@ function drawFrise(bid) {
   const eraChanges = window._boundaryChanges || {};
 
   // ── Calcul des positions depuis les données réelles du graphe ──────────────
+  // xFn = xScale du chart. Soit l'override (preview pendant pan), soit celui
+  // posé par drawChart au dernier rendu officiel.
   const chartData = window._chartData || [];
-  const xFn      = window._chartXScale;
+  const xFn      = xScaleOverride || window._chartXScale;
   const cPAD     = window._chartPAD || { left: 42, right: 35 };
   const cW       = window._chartCW  || 1;
 
-  // Pour chaque ère, indices des élections présentes dans le graphe
+  // Fenêtre visible courante (chart) ou prévisualisée (pendant pan) : on filtre
+  // les scrutins de la frise pour ne garder que ceux dans la fenêtre. Sinon la
+  // frise montrerait toutes les éras (chartData étant le full data) compressées
+  // dans cW — chaque éra finissant minuscule en zoom serré.
+  const winStart = previewWindow ? previewWindow.viewStart : chartViewStartIdx;
+  const winCount = previewWindow ? previewWindow.visibleCount : chartVisibleCount;
+  const idxMin = Math.floor(winStart);
+  const idxMax = Math.ceil(winStart + winCount - 1);
+
+  // Pour chaque ère, indices des élections PRÉSENTES DANS LA FENÊTRE VISIBLE
   const eraElecs = {}; // era -> [indices]
   chartData.forEach((d, i) => {
+    if (i < idxMin || i > idxMax) return;  // hors fenêtre : on ignore
     const era = String((ELECTIONS[d.label] || {}).my || '2026');
     if (!eraElecs[era]) eraElecs[era] = [];
     eraElecs[era].push(i);
@@ -3046,6 +3298,24 @@ function drawFrise(bid) {
 
   // ── Rendu des lignes ────────────────────────────────────────────────────────
   function buildBlocks(getValue) {
+    // Pré-calcule l'alt-0/1 de chaque éra basé sur la séquence COMPLÈTE des
+    // valeurs (sur ERAS entiers, indépendamment de la fenêtre visible). Le
+    // compteur n'augmente que quand la valeur change. Conséquence :
+    //   • éras de même valeur → même alt → fusion stable au pan (couleur fixe)
+    //   • éras de valeur différente → alts opposés → alternance fiable
+    // Cet alt est porté par le bloc via b.alt (utilisé dans renderRow).
+    const eraAlt = {};
+    let counter = 0;
+    let prevVal = null;
+    ERAS.forEach(era => {
+      const info = eraInfo[era];
+      if (!info) return;
+      const val = getValue(info);
+      if (prevVal !== null && val !== prevVal) counter++;
+      eraAlt[era] = counter % 2;
+      prevVal = val;
+    });
+
     const blocks = []; let cur = null;
     presentEras.forEach(era => {
       const info = eraInfo[era] || {};
@@ -3061,7 +3331,8 @@ function drawFrise(bid) {
         cur.ids = ids; // ids de la dernière ère du bloc
       } else {
         if (cur) blocks.push(cur);
-        cur = { val, pct, changed: !!cur, agg, eras: [era], eraPcts: [pct], ids };
+        cur = { val, pct, changed: !!cur, agg, eras: [era], eraPcts: [pct], ids,
+                alt: eraAlt[era] !== undefined ? eraAlt[era] : 0 };
       }
     });
     if (cur) blocks.push(cur);
@@ -3071,7 +3342,10 @@ function drawFrise(bid) {
   function renderRow(blocks, label) {
     let h = `<div class="frise-row"><div class="frise-label">${label}</div><div class="frise-track">`;
     blocks.forEach((b, i) => {
-      const altCls = `alt-${i % 2}`;
+      // Couleur stable : b.alt est précalculé dans buildBlocks à partir de la
+      // séquence complète des éras (cf. commentaire détaillé là-bas). Pas de
+      // dépendance à la fenêtre visible → pas de saut de couleur au pan.
+      const altCls = `alt-${b.alt}`;
       const cls = ['frise-block', altCls, 'has-tooltip', b.changed ? 'changed' : '', b.agg ? 'agg' : ''].filter(Boolean).join(' ');
       const style = `width:${b.pct.toFixed(3)}%`;
       const isLatest = i === blocks.length - 1;
@@ -3083,17 +3357,16 @@ function drawFrise(bid) {
     return h + '</div></div>';
   }
 
-  let html = renderRow(buildBlocks(d => d.den), 'Nom');
-  html += renderRow(buildBlocks(d => d.num), 'N°');
+  const nomHtml = renderRow(buildBlocks(d => d.den), 'Nom');
+  const numHtml = renderRow(buildBlocks(d => d.num), 'N°');
 
-  // Axe des ères
-  html += `<div class="frise-row frise-axis"><div class="frise-label"></div><div class="frise-track">`;
+  let axisHtml = `<div class="frise-row frise-axis"><div class="frise-label"></div><div class="frise-track">`;
   presentEras.forEach(era => {
-    html += `<div class="frise-era" style="width:${eraPct[era].pct.toFixed(3)}%">${era === '2026' ? '26' : era}</div>`;
+    axisHtml += `<div class="frise-era" style="width:${eraPct[era].pct.toFixed(3)}%">${era === '2026' ? '26' : era}</div>`;
   });
-  html += '</div></div>';
+  axisHtml += '</div></div>';
 
-  el.innerHTML = html;
+  el.innerHTML = nomHtml + numHtml + axisHtml;
 
   // Exposer eraInfo pour les bulles de survol
   window._friseEraInfo = eraInfo;
@@ -3376,8 +3649,355 @@ window.addEventListener('resize', () => {
 window.addEventListener('DOMContentLoaded', () => {
   init();
   // Attendre que le layout soit calculé avant de dessiner
-  requestAnimationFrame(() => requestAnimationFrame(refresh));
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    refresh();
+    setupChartZoom();
+    // Le loader (#page-loader) est visible depuis le parse HTML. Une fois le
+    // 1er render terminé, on le masque en douceur et on le retire du DOM.
+    const _ldr = document.getElementById('page-loader');
+    if (_ldr) {
+      _ldr.classList.add('is-hidden');
+      _ldr.setAttribute('aria-busy', 'false');
+      setTimeout(() => _ldr.remove(), 400);
+    }
+  }));
 });
+
+// ─── Zoom temporel du graphique (touch + wheel + reset) ─────────────────
+// Pan : 1 doigt horizontal ou clic-glisse souris → décale la fenêtre temporelle.
+// Zoom : pinch 2 doigts ou molette → resserre/élargit la fenêtre autour du
+//         point central du geste.
+// Bornes : on ne peut zoomer plus serré que CHART_MIN_VISIBLE scrutins,
+//          ni plus large que la plage complète des données.
+// Throttle : tous les changements appellent requestRefresh() qui rappelle
+//            refresh() au plus une fois par frame (60 fps max).
+function resetChartZoom() {
+  chartViewStartIdx = 0;
+  chartVisibleCount = Infinity;  // sera clampé à N dans refresh
+  refresh();
+}
+
+let _refreshRaf = 0;
+function requestRefresh() {
+  if (_refreshRaf) return;
+  _refreshRaf = requestAnimationFrame(() => {
+    _refreshRaf = 0;
+    refresh();
+    showRangePill();
+  });
+}
+
+// Affiche la pastille "année min — année max" en haut du chart pendant le
+// zoom/pan. On dérive les années depuis les indices et le full data.
+let _rangePillHideTimer = 0;
+function showRangePill() {
+  const pill = document.getElementById('chart-range-pill');
+  const txt  = document.getElementById('chart-range-pill-text');
+  if (!pill || !txt) return;
+  clearTimeout(_rangePillHideTimer);
+  if (!isChartZoomed()) {
+    pill.classList.remove('visible');
+    return;
+  }
+  const data = window._chartFullData || [];
+  const startEl = data[Math.round(chartViewStartIdx)];
+  const endEl = data[Math.round(chartViewStartIdx + chartVisibleCount - 1)];
+  const yMin = startEl ? startEl.year : '?';
+  const yMax = endEl ? endEl.year : '?';
+  txt.textContent = (yMin === yMax) ? String(yMin) : (yMin + ' — ' + yMax);
+  pill.classList.add('visible');
+  _rangePillHideTimer = setTimeout(() => {
+    pill.classList.remove('visible');
+  }, 1500);
+}
+
+function setupChartZoom() {
+  const svg = document.getElementById('chart-svg');
+  if (!svg) return;
+
+  // Touch state — pinch (zoom) + pan horizontal (navigation)
+  let dragActive = false;     // pan en cours (1 doigt, après axis-lock H)
+  let pinchActive = false;
+  let startX = 0, startY = 0; // position initiale du touch principal
+  let startViewStart = 0;     // viewStart au début du geste
+  let startVisibleCount = 0;  // visibleCount au début du geste
+  let startPinchDist = 0;     // distance initiale entre les 2 doigts
+  let startPinchCenterX = 0;  // X du milieu des 2 doigts au touchstart
+  let axisLocked = false;
+  let lockH = false;
+
+  // Convertit un delta-pixel en delta d'indices (en utilisant unitX pré-calculé par drawChart).
+  function pxToIdx(px) {
+    const u = window._chartUnitX;
+    return (u && u > 0) ? (px / u) : 0;
+  }
+
+  // Calcule les bornes courantes pour les gestes.
+  function getViewState() {
+    const N = (window._chartFullData || []).length;
+    return {
+      N,
+      viewStart: chartViewStartIdx,
+      visibleCount: chartVisibleCount > N ? N : chartVisibleCount,
+      unitX: window._chartUnitX || 1
+    };
+  }
+
+  // Applique un pan : translation horizontale en pixels → décalage en indices.
+  // Le geste à droite (deltaPx > 0) doit faire RECULER la fenêtre (= scrutins plus anciens
+  // → idx plus petits → viewStart diminue). On clamp aux bornes [0, N - visibleCount].
+  function applyPan(deltaPx) {
+    const s = getViewState();
+    const deltaIdx = -deltaPx / s.unitX;  // pixels → indices
+    let newStart = (startViewStart) + deltaIdx;
+    const maxStart = Math.max(0, s.N - s.visibleCount);
+    if (newStart < 0) newStart = 0;
+    if (newStart > maxStart) newStart = maxStart;
+    chartViewStartIdx = newStart;
+  }
+
+  // Pinch zoom : scale > 1 = zoom in (visibleCount ↓). Centré sur le doigt.
+  function applyPinch(scale, centerPx) {
+    const s = getViewState();
+    const cw = (window._chartCW || s.unitX * (s.visibleCount - 1));
+    const padLeft = (window._chartPAD || {}).left || 42;
+    // On vise à maintenir la même position visuelle (centerPx) à la même position de donnée
+    // (centerIdx) avant et après zoom.
+    const centerIdx = startViewStart + ((centerPx - padLeft) / s.unitX);
+    let newCount = startVisibleCount / scale;
+    // Clamp : min CHART_MIN_VISIBLE, max N (= tout visible = zoom out complet)
+    newCount = Math.max(CHART_MIN_VISIBLE, Math.min(s.N, newCount));
+    // Nouvel unitX implicite (pour recalculer la position du centerIdx) :
+    // unitX_new = cw / (newCount - 1). On veut centerIdx à la même position pixel :
+    // padLeft + (centerIdx - newStart) * unitX_new = centerPx
+    // → newStart = centerIdx - (centerPx - padLeft) / unitX_new
+    const unitXNew = newCount > 1 ? cw / (newCount - 1) : cw;
+    let newStart = centerIdx - (centerPx - padLeft) / unitXNew;
+    const maxStart = Math.max(0, s.N - newCount);
+    if (newStart < 0) newStart = 0;
+    if (newStart > maxStart) newStart = maxStart;
+    chartViewStartIdx = newStart;
+    chartVisibleCount = newCount;
+  }
+
+  // ── TOUCH ──
+  svg.addEventListener('touchstart', (e) => {
+    const s = getViewState();
+    startViewStart = s.viewStart;
+    startVisibleCount = s.visibleCount;
+    const rect = svg.getBoundingClientRect();
+    if (e.touches.length === 1) {
+      // 1 doigt : on prépare un pan potentiel. On ne capture pas tout de suite ;
+      // c'est l'axis-lock (8 px) dans touchmove qui décide si on prend la main
+      // (horizontal → pan chart) ou si on relâche (vertical → scroll page).
+      dragActive = true; pinchActive = false; axisLocked = false; lockH = false;
+      startX = e.touches[0].clientX - rect.left;
+      startY = e.touches[0].clientY - rect.top;
+    } else if (e.touches.length === 2) {
+      dragActive = false; pinchActive = true;
+      const t1 = e.touches[0], t2 = e.touches[1];
+      startPinchDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      startPinchCenterX = ((t1.clientX + t2.clientX) / 2) - rect.left;
+    }
+  }, { passive: true });
+
+  svg.addEventListener('touchmove', (e) => {
+    const rect = svg.getBoundingClientRect();
+    if (pinchActive && e.touches.length === 2) {
+      const t1 = e.touches[0], t2 = e.touches[1];
+      const d = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      if (startPinchDist > 0) {
+        const scale = d / startPinchDist;
+        applyPinch(scale, startPinchCenterX);
+        requestRefresh();
+        if (e.cancelable) e.preventDefault();
+      }
+    } else if (dragActive && e.touches.length === 1) {
+      const x = e.touches[0].clientX - rect.left;
+      const y = e.touches[0].clientY - rect.top;
+      const dx = x - startX;
+      const dy = y - startY;
+      // Axis-lock à 8 px : décide horizontal (= pan chart) vs vertical (= scroll page).
+      if (!axisLocked) {
+        if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+          lockH = Math.abs(dx) > Math.abs(dy) * 1.2;
+          axisLocked = true;
+          if (!lockH) { dragActive = false; return; }
+        }
+      }
+      if (axisLocked && lockH) {
+        // FLUIDE : translate du groupe pannable, mais CLAMPÉ aux bornes des
+        // données pour ne jamais révéler du blanc au-delà du contenu disponible.
+        const s = getViewState();
+        const unit = s.unitX;
+        // Plage de dx admissible :
+        //  • pan droite (dx > 0) → viewStart diminue → max dx = startViewStart * unit
+        //  • pan gauche (dx < 0) → viewStart augmente → min dx = -(N - vc - startViewStart) * unit
+        const maxDx = startViewStart * unit;
+        const minDx = -(s.N - s.visibleCount - startViewStart) * unit;
+        const clampedDx = Math.max(minDx, Math.min(maxDx, dx));
+        const g = svg.querySelector('.chart-pannable');
+        if (g) {
+          g.setAttribute('transform', 'translate(' + clampedDx + ',0)');
+          g.style.willChange = 'transform';
+        }
+        previewPanRange(clampedDx);
+        previewFrise(clampedDx);  // synchronise la frise temporelle avec le pan
+        if (e.cancelable) e.preventDefault();
+      }
+    }
+  }, { passive: false });
+
+  function endTouch(e) {
+    // Commit du pan : on transforme la translate visuelle en décalage de viewStartIdx,
+    // puis on retire le transform et re-render à la nouvelle position. La position
+    // visuelle finale = position pendant le pan transformé (math identique).
+    if (dragActive && lockH && axisLocked) {
+      const g = svg.querySelector('.chart-pannable');
+      let dx = 0;
+      if (g) {
+        const tr = g.getAttribute('transform') || '';
+        const m = tr.match(/translate\(([-\d.]+),/);
+        dx = m ? parseFloat(m[1]) : 0;
+        g.removeAttribute('transform');
+        g.style.willChange = '';
+      }
+      if (dx !== 0) {
+        applyPan(dx);
+        refresh();
+        showRangePill();
+      }
+    }
+    dragActive = false; pinchActive = false; axisLocked = false; lockH = false;
+  }
+  svg.addEventListener('touchend',    endTouch, { passive: true });
+  svg.addEventListener('touchcancel', endTouch, { passive: true });
+
+  // Calcule un xScale "preview" pour un dx en cours de pan. Reproduit la
+  // formule de drawChart mais avec un viewStart prévu.
+  function buildPreviewXScale(dx) {
+    const padLeft = (window._chartPAD || {}).left || 42;
+    const unit = window._chartUnitX || 1;
+    const previewViewStart = startViewStart - dx / unit;
+    return i => padLeft + unit/2 + (i - previewViewStart) * unit;
+  }
+
+  // Re-rend la frise avec le pan en cours. Throttled via rAF pour rester à 60 fps.
+  // On passe explicitement la fenêtre de pré-visualisation pour que drawFrise
+  // filtre les éras au bon endroit (sans dépendre de l'état global chartViewStartIdx
+  // qui n'est pas encore mis à jour pendant le pan).
+  let _frisePreviewRaf = 0;
+  function previewFrise(dx) {
+    if (_frisePreviewRaf) return;
+    _frisePreviewRaf = requestAnimationFrame(() => {
+      _frisePreviewRaf = 0;
+      if (typeof drawFrise !== 'function') return;
+      const bid = niveau === 'bureau' ? document.getElementById('sel-bureau').value
+                : niveau === 'quartier' ? document.getElementById('sel-quartier').value
+                : null;
+      if (!bid) return;
+      const unit = window._chartUnitX || 1;
+      const previewViewStart = startViewStart - dx / unit;
+      drawFrise(bid, buildPreviewXScale(dx), {
+        viewStart: previewViewStart,
+        visibleCount: startVisibleCount
+      });
+    });
+  }
+
+  // Préview de la pastille pendant le pan. Affiche les années de la fenêtre
+  // qu'on aurait après commit du dx courant.
+  function previewPanRange(dx) {
+    const s = getViewState();
+    const deltaIdx = -dx / s.unitX;
+    let newStart = startViewStart + deltaIdx;
+    const maxStart = Math.max(0, s.N - s.visibleCount);
+    if (newStart < 0) newStart = 0;
+    if (newStart > maxStart) newStart = maxStart;
+    const data = window._chartFullData || [];
+    const startEl = data[Math.round(newStart)];
+    const endEl = data[Math.round(newStart + s.visibleCount - 1)];
+    const pill = document.getElementById('chart-range-pill');
+    const txt  = document.getElementById('chart-range-pill-text');
+    if (!pill || !txt) return;
+    const yMin = startEl ? startEl.year : '?';
+    const yMax = endEl ? endEl.year : '?';
+    txt.textContent = (yMin === yMax) ? String(yMin) : (yMin + ' — ' + yMax);
+    pill.classList.add('visible');
+    clearTimeout(_rangePillHideTimer);
+  }
+
+  // ── WHEEL (desktop) ──
+  // Wheel verticale = zoom. Wheel horizontale (trackpad swipe) ou shift+wheel = pan.
+  svg.addEventListener('wheel', (e) => {
+    if (Math.abs(e.deltaY) < 1 && Math.abs(e.deltaX) < 1) return;
+    const rect = svg.getBoundingClientRect();
+    const s = getViewState();
+    startViewStart = s.viewStart;
+    startVisibleCount = s.visibleCount;
+    if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+      const deltaPx = -(e.deltaX || e.deltaY);
+      applyPan(deltaPx);
+    } else {
+      const factor = Math.exp(-e.deltaY * 0.002);
+      applyPinch(factor, e.clientX - rect.left);
+    }
+    requestRefresh();
+    if (e.cancelable) e.preventDefault();
+  }, { passive: false });
+
+  // ── MOUSE DRAG (desktop) ──
+  // Pan via transform sur le groupe pannable, commit au mouseup.
+  let mouseDragging = false;
+  let mouseStartX = 0;
+  let mouseLastDx = 0;
+  svg.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return;
+    const rect = svg.getBoundingClientRect();
+    const s = getViewState();
+    startViewStart = s.viewStart;
+    startVisibleCount = s.visibleCount;
+    mouseDragging = true;
+    mouseStartX = e.clientX - rect.left;
+    mouseLastDx = 0;
+    svg.style.cursor = 'grabbing';
+  });
+  window.addEventListener('mousemove', (e) => {
+    if (!mouseDragging) return;
+    const rect = svg.getBoundingClientRect();
+    const dx = (e.clientX - rect.left) - mouseStartX;
+    // Clamp aux bornes des données (cf. touch handler pour explication)
+    const s = getViewState();
+    const unit = s.unitX;
+    const maxDx = startViewStart * unit;
+    const minDx = -(s.N - s.visibleCount - startViewStart) * unit;
+    const clampedDx = Math.max(minDx, Math.min(maxDx, dx));
+    mouseLastDx = clampedDx;
+    const g = svg.querySelector('.chart-pannable');
+    if (g) {
+      g.setAttribute('transform', 'translate(' + clampedDx + ',0)');
+      g.style.willChange = 'transform';
+    }
+    previewPanRange(clampedDx);
+    previewFrise(clampedDx);  // synchronise la frise temporelle avec le pan
+  });
+  window.addEventListener('mouseup', () => {
+    if (!mouseDragging) return;
+    mouseDragging = false;
+    svg.style.cursor = '';
+    const g = svg.querySelector('.chart-pannable');
+    if (g) {
+      g.removeAttribute('transform');
+      g.style.willChange = '';
+    }
+    if (mouseLastDx !== 0) {
+      applyPan(mouseLastDx);
+      refresh();
+      showRangePill();
+    }
+  });
+  svg.style.cursor = 'grab';
+}
 
 // ─── Bottom sheet "Filtres" mobile ──────────────────────────────────────
 function openFiltersSheet() {
@@ -3397,7 +4017,10 @@ document.addEventListener('keydown', (e) => {
 function dismissOrientationHint() {
   const el = document.getElementById('orientation-hint');
   if (el) el.classList.add('dismissed');
-  try { sessionStorage.setItem('lrvote_orient_hint_dismissed', '1'); } catch(_) {}
+  // localStorage (au lieu de sessionStorage) : on garde le dismiss entre les
+  // sessions. Une fois que l'utilisateur a fermé l'astuce, on ne la lui ressort
+  // plus jamais — un même conseil répété est plus irritant qu'utile.
+  try { localStorage.setItem('lrvote_orient_hint_dismissed', '1'); } catch(_) {}
 }
 
 // ─── Mobile : dismiss du tooltip au scroll ou tap hors chart ─────────────
@@ -3424,10 +4047,15 @@ window.addEventListener('DOMContentLoaded', () => {
     hideTooltip();
   });
 });
-// Au chargement, on restaure l'état "dismissed" si l'utilisateur l'avait déjà fermé pendant cette session
+// Au chargement, on restaure l'état "dismissed" si l'utilisateur l'a déjà fermé
+// (localStorage persiste entre les sessions — voir dismissOrientationHint).
+// Migration : on lit aussi l'ancienne clé sessionStorage pour les utilisateurs
+// qui avaient dismiss avant cette mise à jour.
 window.addEventListener('DOMContentLoaded', () => {
   try {
-    if (sessionStorage.getItem('lrvote_orient_hint_dismissed') === '1') {
+    const persisted = localStorage.getItem('lrvote_orient_hint_dismissed') === '1'
+                   || sessionStorage.getItem('lrvote_orient_hint_dismissed') === '1';
+    if (persisted) {
       const el = document.getElementById('orientation-hint');
       if (el) el.classList.add('dismissed');
     }
@@ -3443,7 +4071,7 @@ window.addEventListener('DOMContentLoaded', () => {
 <div id="filters-backdrop" onclick="closeFiltersSheet()" aria-hidden="true"></div>
 
 <!-- ─── Modal références historiques ─────────────────────────────── -->
-<div id="qcorresp-modal" onclick="if(event.target===this)closeQCorrespPanel()">
+<div id="qcorresp-modal" role="dialog" aria-modal="true" aria-labelledby="qcorresp-title" onclick="if(event.target===this)closeQCorrespPanel()">
   <div id="qcorresp-dialog">
     <h3 id="qcorresp-title">Correspondances historiques — Quartier</h3>
     <div id="qcorresp-body"></div>
@@ -3453,8 +4081,8 @@ window.addEventListener('DOMContentLoaded', () => {
   </div>
 </div>
 
-<div id="ref-modal">
-  <div id="ref-overlay" onclick="closeRefForm()"></div>
+<div id="ref-modal" role="dialog" aria-modal="true" aria-labelledby="ref-title">
+  <div id="ref-overlay" onclick="closeRefForm()" aria-hidden="true"></div>
   <div id="ref-dialog">
     <div id="ref-title">📍 Références historiques</div>
     <div id="ref-subtitle"></div>
@@ -3472,8 +4100,8 @@ window.addEventListener('DOMContentLoaded', () => {
 </div>
 
 <!-- ─── Modal redécoupage ────────────────────────────────────────── -->
-<div id="redecoupage-modal">
-  <div id="redecoupage-overlay" onclick="closeRedecoupageForm()"></div>
+<div id="redecoupage-modal" role="dialog" aria-modal="true" aria-labelledby="redecoupage-title">
+  <div id="redecoupage-overlay" onclick="closeRedecoupageForm()" aria-hidden="true"></div>
   <div id="redecoupage-dialog">
     <div id="redecoupage-title">✏️ Annoter un redécoupage</div>
     <div id="redecoupage-ctx"></div>
