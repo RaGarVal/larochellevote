@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🇪🇺 Le 13 juin 1999, pour les européennes, François Hollande (PS) arrive en tête avec 28,1 % à La Rochelle.
+🏛️ Le 10 juin 2007, pour les législatives (1er tour), Maxime Bono (PS) arrive en tête avec 45,1 % à La Rochelle.
 
-Les résultats de ce scrutin, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Europ%C3%A9ennes+1999&tab=global
+Les résultats de ce scrutin, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=L%C3%A9gislatives+2007&tour=T1&tab=global
