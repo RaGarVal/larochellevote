@@ -171,6 +171,13 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; colo
   --frise-alt-1: #1A2820;        /* vert profond */
 }
 
+html{
+  /* Verrou page : aucun scroll horizontal au niveau document (la rotation Chrome
+     mobile peut sinon rendre la page "swipable" horizontalement, ce qui capte
+     les gestes destinés au tableau ou au chart en dessous). */
+  overflow-x:hidden;
+  overscroll-behavior-x:none;
+}
 body{font-family:'Space Grotesk', 'Segoe UI', system-ui, sans-serif;background:var(--bg-chrome);color:var(--text-chrome);display:flex;flex-direction:column;overflow:hidden;
   /* Hauteur viewport : 100vh fallback, 100dvh moderne pour Chrome mobile / Safari iOS
      (s'ajuste dynamiquement à la barre d'URL). Évite que la topbar et le bas du contenu
@@ -178,6 +185,10 @@ body{font-family:'Space Grotesk', 'Segoe UI', system-ui, sans-serif;background:v
   height:100vh; height:100dvh;
   /* Safe-areas : respecte notch et barre de gestes Android si applicable. */
   padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom);
+  /* Renforce le verrou horizontal au cas où un enfant outrepasse en largeur :
+     overscroll-behavior bloque le "rubber-band" horizontal de Chrome / Safari mobile. */
+  overscroll-behavior-x:none;
+  max-width:100vw;
 }
 #topbar{background:var(--bg-chrome);color:var(--text-chrome);display:flex;align-items:center;gap:16px;padding:0 24px;height:66px;flex-shrink:0;border-bottom:1px solid var(--border-chrome)}
 .tb-logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;flex-shrink:0;background:none;border:none;padding:0;margin:0;cursor:pointer;font-family:inherit}
