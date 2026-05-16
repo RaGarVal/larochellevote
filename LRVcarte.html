@@ -23,6 +23,17 @@
   </script>
   <title>La Rochelle électorale</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <!-- ──────────────────────────────────────────────────────────────────────
+       PWA — installable sur l'écran d'accueil iOS et Android (mode standalone)
+       Le manifest gère Android/Chrome ; les meta apple-* sont nécessaires sur
+       iOS (Safari ne lit pas tous les champs du manifest).
+       ────────────────────────────────────────────────────────────────────── -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#F7F3EE">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="LR Vote">
   <meta name="description" content="Explorez les résultats électoraux rochelais sur la carte, bureau par bureau, élection par élection.">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="La Rochelle Vote">

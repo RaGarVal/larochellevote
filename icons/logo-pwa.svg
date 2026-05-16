@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" aria-label="La Rochelle Vote">
+  <!-- Voile : 6 barres rouges, largeurs croissantes (5, 11, 16, 21, 27, 32 sur 32),
+       alignées à droite. Version dense pour PWA : barres de 4 px, gaps de 1 px,
+       total 29 px centré dans le 32×32. Au lieu du 3+2 du favicon classique qui
+       laissait trop d'air entre les barres en grand format. -->
+  <rect x="27" y="1.5"  width="5"  height="4" fill="#0F8A8A"/>
+  <rect x="21" y="6.5"  width="11" height="4" fill="#0F8A8A"/>
+  <rect x="16" y="11.5" width="16" height="4" fill="#0F8A8A"/>
+  <rect x="11" y="16.5" width="21" height="4" fill="#0F8A8A"/>
+  <rect x="5"  y="21.5" width="27" height="4" fill="#0F8A8A"/>
+  <rect x="0"  y="26.5" width="32" height="4" fill="#0F8A8A"/>
+</svg>
