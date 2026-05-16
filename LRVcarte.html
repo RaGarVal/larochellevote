@@ -1643,7 +1643,7 @@ function bureauInfo(feature) {
   const mapYear = String(el ? el.my : 2026);
   // Look up in the Excel data for the current map era, by native bureau number
   // Fallback to 2026 info for bureaux non présents dans l'ère courante (ex: bureau 57 sur carte 2015)
-  const eraInfo = (BUREAU_INFO[mapYear] || {})[ns] || (BUREAU_INFO['2026'] || {})[ns];
+  const eraInfo = (BUREAU_INFO[mapYear] || {})[ns] || (BUREAU_INFO[CURRENT_ERA] || {})[ns];
   if (eraInfo && eraInfo.den) {
     return {
       numero:       ns,
@@ -1673,7 +1673,7 @@ function bureauInfo(feature) {
 function getBureausByQuartier(quartier){
   if(!quartier)return[];
   const el=ELECTIONS[currentElection];const mapYear=String(el?el.my:2026);
-  const yearInfo=BUREAU_INFO[mapYear]||BUREAU_INFO['2026']||{};
+  const yearInfo=BUREAU_INFO[mapYear]||BUREAU_INFO[CURRENT_ERA]||{};
   // Bureaux dont q correspond directement (split sur "/" gardé pour rétrocompatibilité)
   const direct=Object.keys(yearInfo).filter(num=>{
     const q=yearInfo[num].q||'';
@@ -1758,7 +1758,7 @@ function getExtremesByQuartier() {
   const shData = getSheetData();
   const el0 = ELECTIONS[currentElection];
   const mapYear = String(el0 ? el0.my : 2026);
-  const yearInfo = BUREAU_INFO[mapYear] || BUREAU_INFO['2026'] || {};
+  const yearInfo = BUREAU_INFO[mapYear] || BUREAU_INFO[CURRENT_ERA] || {};
   // Agrégation par quartier (en respectant les multi-quartiers via getQuartierParts)
   const qAg = {};
   Object.keys(yearInfo).forEach(ns => {
@@ -2078,7 +2078,7 @@ L.control.zoom({ position: 'topright' }).addTo(map);
 function getMapGeoJSON() {
   const el = ELECTIONS[currentElection];
   const yr = String(el ? el.my : 2026);
-  return yr === '2026' ? GEOJSON : (MAPS_DATA[yr] || GEOJSON);
+  return yr === CURRENT_ERA ? GEOJSON : (MAPS_DATA[yr] || GEOJSON);
 }
 
 // Cache du min/max d'abstention pour le scrutin courant (recomputed quand on change d'élection/tour)
@@ -2821,7 +2821,7 @@ function renderBlocTriptych(data, histoKey) {
                                        : (el.sheets['TU'] || el.sheets['T1']);
       if (sh) {
         // Résolution cross-ère via BUREAU_CORRESPONDANCES
-        const myAdj = String(el.my || '2026');
+        const myAdj = String(el.my || CURRENT_ERA);
         const corr = (typeof BUREAU_CORRESPONDANCES !== 'undefined' && BUREAU_CORRESPONDANCES[bureauKey]) || {};
         const ref = corr[myAdj] !== undefined ? corr[myAdj] : bureauKey;
         const d = _resolveBureauForEra(ref, sh, bureauKey);
@@ -3071,7 +3071,7 @@ function renderQuartierListGlobal() {
   var shData = getSheetData();
   var el0 = ELECTIONS[currentElection];
   var mapYear = String(el0 ? el0.my : 2026);
-  var yearInfo = BUREAU_INFO[mapYear] || BUREAU_INFO['2026'] || {};
+  var yearInfo = BUREAU_INFO[mapYear] || BUREAU_INFO[CURRENT_ERA] || {};
   var LINE = '<div style="position:absolute;top:0;bottom:0;left:50%;width:0;border-left:1.5px dashed rgba(255,255,255,0.65);pointer-events:none;z-index:2"></div>';
 
   // Collecter les quartiers et leurs bureaux (en tenant compte de getQuartierParts)
@@ -3162,7 +3162,7 @@ function renderQuartierListGlobal() {
 function openQuartierFromGlobal(qName) {
   var el0 = ELECTIONS[currentElection];
   var mapYear = String(el0 ? el0.my : 2026);
-  var yearInfo = BUREAU_INFO[mapYear] || BUREAU_INFO['2026'] || {};
+  var yearInfo = BUREAU_INFO[mapYear] || BUREAU_INFO[CURRENT_ERA] || {};
   var ns = null;
   Object.keys(yearInfo).forEach(function(num) {
     if (ns) return;
@@ -3192,7 +3192,7 @@ function updateAccentColor(){
   } else if(overlayTab==='quartier'){
     // Agréger les bureaux du quartier pour trouver le gagnant
     var el0=ELECTIONS[currentElection];var mapYear=String(el0?el0.my:2026);
-    var yearInfo=BUREAU_INFO[mapYear]||BUREAU_INFO['2026']||{};
+    var yearInfo=BUREAU_INFO[mapYear]||BUREAU_INFO[CURRENT_ERA]||{};
     var q=currentQuartier||(currentFeature?(getQuartierParts(bureauInfo(currentFeature).quartier||'')[0]||''):'');
     var shData=getSheetData();var candTotV={};var totE=0;
     Object.keys(yearInfo).forEach(function(ns){
@@ -3314,7 +3314,7 @@ function renderBureauList(){
   var h='<div class="blist-hdr sb-list-toggle"><span>'+nums.length+' bureaux</span><span class="chevron">▾</span></div><div class="sb-list-body">';
   nums.forEach(function(ns2){
     var d=getBureauData(ns2)||shData[ns2];
-    var inf=eraInfo[ns2]||(BUREAU_INFO['2026']||{})[ns2]||{};
+    var inf=eraInfo[ns2]||(BUREAU_INFO[CURRENT_ERA]||{})[ns2]||{};
     var isAgg2=isAggNs(ns2);
     var denom=isAgg2?('Bureaux agr\u00e9g\u00e9s de '+(inf.q||inf.nom||'')):(inf.den||inf.nom||'Bureau '+parseInt(ns2));
     var numLabel=isAgg2?(aggNumList(ns2).join('\u2009/\u2009')):String(parseInt(ns2));
@@ -3348,7 +3348,7 @@ function renderQuartierList(){
   var shData=getSheetData();
   var el0=ELECTIONS[currentElection];
   var mapYear=String(el0?el0.my:2026);
-  var yearInfo=BUREAU_INFO[mapYear]||BUREAU_INFO['2026']||{};
+  var yearInfo=BUREAU_INFO[mapYear]||BUREAU_INFO[CURRENT_ERA]||{};
   // Aggrégation par quartier (multi-quartiers via getQuartierParts)
   var qAgg={};
   Object.keys(yearInfo).forEach(function(ns){
@@ -3398,7 +3398,7 @@ function selectQuartierFromList(qName){
   // Récupérer un bureau du quartier comme currentFeature et basculer en onglet quartier
   var el0=ELECTIONS[currentElection];
   var mapYear=String(el0?el0.my:2026);
-  var yearInfo=BUREAU_INFO[mapYear]||BUREAU_INFO['2026']||{};
+  var yearInfo=BUREAU_INFO[mapYear]||BUREAU_INFO[CURRENT_ERA]||{};
   var ns=null;
   Object.keys(yearInfo).forEach(function(num){
     if(ns)return;
@@ -3665,7 +3665,7 @@ function renderQuartier(){
   const qWinCol=qWinner?colorOfCandidate(qWinner[0]):'#ccc';
   const abst_pct=totI>0?+(totAbst/totI*100).toFixed(1):0;
   const el0=ELECTIONS[currentElection];const mapYear0=String(el0?el0.my:2026);
-  const eraBI0=BUREAU_INFO[mapYear0]||BUREAU_INFO['2026']||{};
+  const eraBI0=BUREAU_INFO[mapYear0]||BUREAU_INFO[CURRENT_ERA]||{};
   const cantons=[...new Set(bureauNums.map(ns2=>{const i0=eraBI0[ns2];return i0?(i0.c||null):null;}).filter(c=>c&&c!==''&&c!=='Nul'))].sort((a,b)=>parseInt(a)-parseInt(b));
   let h='<div class="fiche-id">'
     + ficheSail(qWinCol, false)
@@ -3707,7 +3707,7 @@ function renderQuartier(){
   const sortedNums=bureauNums.slice().sort();
   function bureauRow(ns2){
     const d=shData[ns2];const el2=ELECTIONS[currentElection];const mapYear2=String(el2?el2.my:2026);
-    const eraInfo2=(BUREAU_INFO[mapYear2]||BUREAU_INFO['2026']||{})[ns2];
+    const eraInfo2=(BUREAU_INFO[mapYear2]||BUREAU_INFO[CURRENT_ERA]||{})[ns2];
     const denom=eraInfo2?(eraInfo2.den||eraInfo2.nom):'Bureau '+parseInt(ns2);
     const isActive=ns2===numStr(currentFeature);const abst2=d?(d.a||0):null;
     const bar=_blocsBarHTML(d,{height:14});
@@ -3750,7 +3750,7 @@ function getQuartierParts(q){
   var parts=q.split('/').map(function(s){return s.trim();}).filter(Boolean);
   if(parts.length<=1)return parts;
   var el0=ELECTIONS[currentElection];var mapYear0=String(el0?el0.my:2026);
-  var yearInfo=BUREAU_INFO[mapYear0]||BUREAU_INFO['2026']||{};var allQ={};
+  var yearInfo=BUREAU_INFO[mapYear0]||BUREAU_INFO[CURRENT_ERA]||{};var allQ={};
   Object.values(yearInfo).forEach(function(b){if(b.q)allQ[b.q]=1;});
   return parts.every(function(p){return allQ[p];})?parts:[q];
 }
@@ -3913,8 +3913,8 @@ function setElection(label){
   // Conserver la sélection bloc entre élections (les blocs sont stables d'un scrutin à l'autre)
   const preservedBlocSel = (currentMapMode === 'bloc' && currentMapSelection) ? currentMapSelection : null;
   // Mémoriser l'ère de l'ancienne élection AVANT de basculer
-  const oldEra = String(ELECTIONS[currentElection]?.my || '2026');
-  const newEra = String(ELECTIONS[label]?.my || '2026');
+  const oldEra = String(ELECTIONS[currentElection]?.my || CURRENT_ERA);
+  const newEra = String(ELECTIONS[label]?.my || CURRENT_ERA);
   const prevNumero = prevFeature ? numStr(prevFeature) : null;
   const prevB2026 = prevFeature ? (prevFeature.properties.b2026 || prevNumero) : null;
   currentElection=label; currentFeature=null;
@@ -4168,7 +4168,35 @@ function writeURLState() {
     if (location.href.split('#')[0] + (newHash ? '#' + newHash : '') !== location.href) {
       try { history.replaceState(null, '', desired); } catch(_) {}
     }
+    // Met à jour aussi le lien "L'analyse" pour qu'il transmette le bureau/quartier
+    // courant à la page d'analyse (sens inverse du lien existant analyse→carte).
+    updateAnalyseLink();
   });
+}
+
+// Met à jour le href du lien "L'analyse" en y ajoutant le hash correspondant à
+// la fiche actuellement ouverte (bureau ou quartier). Permet à l'utilisateur de
+// passer sur la page d'analyse en gardant son contexte.
+function updateAnalyseLink() {
+  const a = document.getElementById('tb-link-analyse');
+  if (!a) return;
+  let suffix = '';
+  const ov = document.getElementById('overlay');
+  const ovOpen = ov && ov.style.display !== 'none';
+  if (ovOpen) {
+    if (overlayTab === 'bureau' && currentFeature) {
+      suffix = '#bureau=' + encodeURIComponent(numStr(currentFeature));
+    } else if (overlayTab === 'quartier') {
+      let q = currentQuartier;
+      if (!q && currentFeature && typeof bureauInfo === 'function' && typeof getQuartierParts === 'function') {
+        const info = bureauInfo(currentFeature);
+        const parts = getQuartierParts(info.quartier || '');
+        if (parts.length) q = parts[0];
+      }
+      if (q) suffix = '#quartier=' + encodeURIComponent(q);
+    }
+  }
+  a.href = 'LRVanalyse.html' + suffix;
 }
 
 // Lecture du hash (#bureau=XXXX ou #quartier=NomDuQuartier) — vient depuis la page analyse.
@@ -4249,7 +4277,7 @@ function writeURLState() {
       updateAccentColor();
     } else if (qname) {
       // Construire un currentFeature « factice » via le 1er bureau du quartier
-      const yearInfo = BUREAU_INFO['2026'] || {};
+      const yearInfo = BUREAU_INFO[CURRENT_ERA] || {};
       const ids = Object.entries(yearInfo)
         .filter(([, b]) => getQuartierParts(b.q || '').includes(qname))
         .map(([id]) => id);
@@ -6018,7 +6046,7 @@ function randomDiscover() {
   } else if (r < 0.90) {
     niveau = 'quartier';
     // Tirer un quartier dispo
-    const yearInfo = (BUREAU_INFO[String(ELECTIONS[election].my || 2026)] || BUREAU_INFO['2026'] || {});
+    const yearInfo = (BUREAU_INFO[String(ELECTIONS[election].my || 2026)] || BUREAU_INFO[CURRENT_ERA] || {});
     const quartiers = Array.from(new Set(Object.values(yearInfo).map(b => b && b.q).filter(q => q && q !== 'Nul')));
     if (quartiers.length) params.quartier = pick(quartiers);
     else niveau = 'carte';
@@ -6043,9 +6071,9 @@ function randomDiscover() {
     if (_index) return _index;
     const items = [];
     // Bureaux carte 2026 — texte de recherche enrichi des anciens numéros/noms/dénominations.
-    const b2026 = (typeof BUREAU_INFO !== 'undefined' && BUREAU_INFO['2026']) || {};
+    const b2026 = (typeof BUREAU_INFO !== 'undefined' && BUREAU_INFO[CURRENT_ERA]) || {};
     const corr = (typeof BUREAU_CORRESPONDANCES !== 'undefined' && BUREAU_CORRESPONDANCES) || {};
-    const ERAS = ['1988','1993','1996','2004','2007','2010','2012','2015','2022','2026'];
+    // ERAS vient de shared.js (calculé dynamiquement depuis BUREAU_INFO)
     Object.entries(b2026).forEach(([id, b]) => {
       if (!b || b.q === 'Nul') return;
       const num = parseInt(id);
@@ -6076,7 +6104,7 @@ function randomDiscover() {
       const searchExtra = [...aliasNums, ...aliasNames, ...aliasQs].join(' ');
       items.push({
         type: 'bureau', icon: '📍', label: 'N°' + num + ' — ' + den,
-        badge: 'Carte 2026',
+        badge: 'Carte ' + CURRENT_ERA,
         badgeTip: 'Découpage des bureaux de vote actuellement en vigueur.',
         sub: q ? 'Bureau · ' + q : 'Bureau',
         key: id,
@@ -6196,7 +6224,7 @@ function randomDiscover() {
       }
     } else if (item.type === 'quartier') {
       // On a besoin d'un currentFeature pour l'overlay quartier ; prendre le 1er bureau
-      const yearInfo = BUREAU_INFO['2026'] || {};
+      const yearInfo = BUREAU_INFO[CURRENT_ERA] || {};
       const ids = Object.entries(yearInfo)
         .filter(([, b]) => getQuartierParts(b.q || '').includes(item.key))
         .map(([id]) => id);
@@ -6364,8 +6392,8 @@ function randomDiscover() {
   function neighborBureau(dir){
     if (!currentFeature) return null;
     const cur = numStr(currentFeature);
-    const sortedNums = Object.keys(BUREAU_INFO['2026'] || {})
-      .filter(id => (BUREAU_INFO['2026'][id].q || '') !== 'Nul')
+    const sortedNums = Object.keys(BUREAU_INFO[CURRENT_ERA] || {})
+      .filter(id => (BUREAU_INFO[CURRENT_ERA][id].q || '') !== 'Nul')
       .sort((a,b) => parseInt(a) - parseInt(b));
     const i = sortedNums.indexOf(cur);
     const tgt = sortedNums[i + dir];

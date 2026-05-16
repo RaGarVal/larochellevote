@@ -282,3 +282,75 @@ function setupAppMenu(opts) {
   });
   window.addEventListener('resize', () => { if (menu.classList.contains('open')) openMenu(); });
 }
+
+// ───────────────────────────────────────────────────────────────
+//  ÈRES CARTOGRAPHIQUES — calculées dynamiquement depuis BUREAU_INFO
+// ───────────────────────────────────────────────────────────────
+//  ERAS         = liste de toutes les ères présentes en base, triées chronologiquement
+//                 (ex. ['1988','1993','1996','2004','2007','2010','2012','2015','2022','2026'])
+//  CURRENT_ERA  = la plus récente (= découpage "actuellement en vigueur")
+//
+//  Pourquoi : avant, ces deux valeurs étaient codées en dur à plusieurs endroits.
+//  Conséquence : l'ajout d'une nouvelle ère cartographique nécessitait de toucher
+//  au code à plusieurs reprises. Maintenant, il suffit d'ajouter l'ère dans
+//  BUREAU_INFO (donnees.js) et tout s'adapte automatiquement.
+//
+//  Pré-requis : shared.js DOIT être chargé APRÈS donnees.js (qui définit BUREAU_INFO).
+//  Si BUREAU_INFO est vide ou absent, on retombe sur ['2026'] / '2026' en sécurité.
+(function () {
+  if (typeof BUREAU_INFO === 'undefined' || !BUREAU_INFO) {
+    window.ERAS = ['2026'];
+    window.CURRENT_ERA = '2026';
+    return;
+  }
+  const keys = Object.keys(BUREAU_INFO).filter(k => /^\d{4}$/.test(k)).sort();
+  window.ERAS = keys.length ? keys : ['2026'];
+  window.CURRENT_ERA = window.ERAS[window.ERAS.length - 1];
+})();
+
+// ───────────────────────────────────────────────────────────────
+//  VALIDATION DES DONNÉES — warnings console au démarrage
+// ───────────────────────────────────────────────────────────────
+//  Détecte les incohérences silencieuses dans donnees.js qui pourraient
+//  causer des bugs subtils (ex. élection sans `my` → fallback sur CURRENT_ERA
+//  qui peut shifter dans le futur, ou `my` pointant sur une ère absente
+//  de BUREAU_INFO → lookups vides). Affiche les problèmes en console au
+//  premier chargement de la page.
+//
+//  Production : silencieux quand tout va bien. En cas de problème : un bloc
+//  console.warn lisible avec la liste des entrées à corriger.
+(function validateData() {
+  if (typeof ELECTIONS === 'undefined' || !ELECTIONS) return;
+  const validEras = new Set(window.ERAS || []);
+  const warnings = [];
+
+  Object.entries(ELECTIONS).forEach(([label, data]) => {
+    if (!data) {
+      warnings.push('ELECTION vide : "' + label + '"');
+      return;
+    }
+    // Propriété `my` (year-era) manquante → fallback dangereux sur CURRENT_ERA
+    if (data.my === undefined || data.my === null) {
+      warnings.push('ELECTION sans `my` : "' + label
+        + '" → fallback sur CURRENT_ERA (' + window.CURRENT_ERA
+        + '). Ajouter la propriété `my` dans donnees.js.');
+    } else if (!validEras.has(String(data.my))) {
+      // `my` pointe sur une ère qui n'existe pas dans BUREAU_INFO
+      warnings.push('ELECTION "' + label + '" pointe sur l\'ère "' + data.my
+        + '" introuvable dans BUREAU_INFO. Vérifier l\'orthographe ou ajouter '
+        + 'BUREAU_INFO["' + data.my + '"] dans donnees.js.');
+    }
+    // Aucun tour défini → la page ne pourra rien afficher
+    if (!data.sheets || !Object.keys(data.sheets).length) {
+      warnings.push('ELECTION "' + label + '" sans aucun tour (sheets vide).');
+    }
+  });
+
+  if (warnings.length) {
+    console.warn('━'.repeat(64));
+    console.warn('La Rochelle Vote — Validation des données : ' + warnings.length + ' avertissement(s)');
+    console.warn('━'.repeat(64));
+    warnings.forEach(w => console.warn('  ⚠️  ' + w));
+    console.warn('━'.repeat(64));
+  }
+})();

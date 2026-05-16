@@ -411,6 +411,67 @@ select.ctrl-sel{width:100%;padding:7px 10px;border:1.5px solid var(--border-moda
   #chart-zoom-reset { padding: 8px 12px; min-height: 38px; }
 }
 
+/* Toast d'erreur : message bref affiché en haut de page quand un hash invalide
+   est reçu (par ex. arrivée sur LRVanalyse depuis la carte avec un bureau
+   inconnu). Auto-fade après 4 s. */
+.hash-error-toast {
+  position: fixed;
+  top: 70px; left: 50%;
+  transform: translate(-50%, -8px);
+  z-index: 10000;
+  padding: 10px 18px;
+  background: #c0392b;
+  color: #fff;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  max-width: calc(100vw - 32px);
+  text-align: center;
+}
+.hash-error-toast.visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* Hint zoom : cartouche translucide centré au milieu du chart. Apparaît en
+   fade au chargement, disparaît en fade auto après 3 s, OU instantanément
+   au premier scroll/pinch. Persisté en sessionStorage : ne réapparaît plus
+   dans la session courante après dismiss. */
+#chart-zoom-hint {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 7;
+  max-width: 60%;
+  padding: 18px 24px;
+  background: rgba(255, 255, 255, 0.78);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  color: var(--text-modal);
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.45;
+  text-align: center;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.14);
+  pointer-events: none;       /* le hint ne capture aucun geste */
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+#chart-zoom-hint.is-visible { opacity: 1; }
+[data-theme="dark"] #chart-zoom-hint {
+  background: rgba(40, 40, 40, 0.78);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-chrome);
+}
+@media (max-width: 720px) {
+  #chart-zoom-hint { font-size: 0.92rem; padding: 14px 18px; max-width: 75%; }
+}
+
 /* Pastille de repère temporelle : apparaît pendant qu'on zoome/pan, indique
    la fenêtre visible (ex. "1995 — 2017"), s'efface après 1,5 s d'inactivité.
    Centrée en haut du chart, par-dessus la courbe sans la bloquer (pointer-events). */
@@ -1299,6 +1360,11 @@ input:focus-visible,
     <button id="chart-zoom-reset" type="button" onclick="resetChartZoom()" aria-label="Réinitialiser le zoom" style="display:none">
       <span aria-hidden="true">⟲</span> Tout afficher
     </button>
+    <!-- Hint zoom : cartouche translucide centré, fade in/out auto, dismiss
+         instantané au premier zoom/pan. Persisté via sessionStorage. -->
+    <div id="chart-zoom-hint" role="note" aria-hidden="true">
+      <span class="czh-text"></span>
+    </div>
     <!-- Pastille de repère : affiche la fenêtre temporelle visible pendant
          qu'on zoome/pan. Apparaît au geste et s'efface après 1,5 s d'inactivité. -->
     <div id="chart-range-pill" aria-hidden="true">
@@ -1669,12 +1735,12 @@ function updateBase100Visibility() {
   }
 }
 function getQuartiersForBureau(bid) {
-  const info = (BUREAU_INFO['2026'] || {})[bid] || {};
+  const info = (BUREAU_INFO[CURRENT_ERA] || {})[bid] || {};
   let quartiers = info.q ? [info.q] : [];
   if (typeof QUARTIER_CORRESPONDANCES !== 'undefined') {
     Object.keys(QUARTIER_CORRESPONDANCES).forEach(qName => {
       if (qName.indexOf('/') >= 0) return;
-      const arr = QUARTIER_CORRESPONDANCES[qName] && QUARTIER_CORRESPONDANCES[qName]['2026'];
+      const arr = QUARTIER_CORRESPONDANCES[qName] && QUARTIER_CORRESPONDANCES[qName][CURRENT_ERA];
       if (arr && arr.indexOf(bid) >= 0 && quartiers.indexOf(qName) < 0) quartiers.push(qName);
     });
   }
@@ -1686,9 +1752,13 @@ let hoveredIdx = null;
 function init() {
   buildBlocToggles();
 
+  // Met à jour le badge topbar avec l'ère courante (auto-adaptatif si nouvelle ère ajoutée)
+  const tbEra = document.getElementById('tb-era');
+  if (tbEra && typeof CURRENT_ERA !== 'undefined') tbEra.textContent = 'Carte ' + CURRENT_ERA;
+
   // Remplir le sélecteur de quartiers
   const quartiers = new Set();
-  const eraData = BUREAU_INFO['2026'] || BUREAU_INFO[Object.keys(BUREAU_INFO).pop()];
+  const eraData = BUREAU_INFO[CURRENT_ERA] || BUREAU_INFO[Object.keys(BUREAU_INFO).pop()];
   if (eraData) {
     Object.values(eraData).forEach(b => { if (b.q && b.q !== 'Nul') quartiers.add(b.q); });
   }
@@ -1701,7 +1771,7 @@ function init() {
 
   // Remplir le sélecteur de bureaux
   const selB = document.getElementById('sel-bureau');
-  const bureaux2026 = BUREAU_INFO['2026'] || {};
+  const bureaux2026 = BUREAU_INFO[CURRENT_ERA] || {};
   Object.entries(bureaux2026)
     .filter(([id, b]) => b.q !== 'Nul')
     .sort((a,b) => parseInt(a[0]) - parseInt(b[0]))
@@ -1790,6 +1860,22 @@ function writeURLState() {
   });
 }
 
+// Toast d'erreur éphémère pour signaler qu'un bureau/quartier reçu par hash
+// est inconnu. Auto-fade après 4 s. Non bloquant — la page continue avec
+// son état par défaut.
+function showHashError(message) {
+  const el = document.createElement('div');
+  el.className = 'hash-error-toast';
+  el.setAttribute('role', 'alert');
+  el.textContent = message;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('visible'));
+  setTimeout(() => {
+    el.classList.remove('visible');
+    setTimeout(() => el.remove(), 320);
+  }, 4000);
+}
+
 function applyHashSelection() {
   const hash = (location.hash || '').replace(/^#/, '');
   if (!hash) return;
@@ -1823,6 +1909,9 @@ function applyHashSelection() {
           if (sec) sec.style.display = (x==='bureau') ? '' : 'none';
         });
       }
+    } else {
+      // Bureau inconnu (passé via hash depuis carte/lien direct) → message
+      showHashError('Bureau "' + bid + '" introuvable.');
     }
   }
   const qname = params.get('quartier');
@@ -1839,6 +1928,8 @@ function applyHashSelection() {
           if (sec) sec.style.display = (x==='quartier') ? '' : 'none';
         });
       }
+    } else {
+      showHashError('Quartier "' + qname + '" introuvable.');
     }
   }
 
@@ -2031,7 +2122,7 @@ function getQuartierData(quartier, typeFilter) {
     if (!matchesTypeFilter(label, typeFilter)) continue;
     const sheet = elData.sheets?.T1 || elData.sheets?.TU;
     if (!sheet) continue;
-    const era = elData.my || '2026';
+    const era = elData.my || CURRENT_ERA;
     const { ids } = getQBureauxForEra(quartier, era);
     let totalE = 0, totalI = 0;
     const sums = {};
@@ -2101,7 +2192,7 @@ function getBureauHistData(bureauId, typeFilter) {
     if (!matchesTypeFilter(label, typeFilter)) continue;
     const sheet = elData.sheets?.T1 || elData.sheets?.TU;
     if (!sheet) continue;
-    const my = elData.my || '2026';
+    const my = elData.my || CURRENT_ERA;
     const ref = corr[my] !== undefined ? corr[my] : bureauId;
     const bd = resolveHistRef(ref, sheet, bureauId);
     if (!bd) continue;
@@ -2251,7 +2342,7 @@ function updateContentTitle() {
     sub.textContent  = '';
   } else if (niveau === 'quartier') {
     const q = document.getElementById('sel-quartier').value;
-    const bureaux2026 = BUREAU_INFO['2026'] || {};
+    const bureaux2026 = BUREAU_INFO[CURRENT_ERA] || {};
     const bNums = Object.entries(bureaux2026)
       .filter(([id, b]) => b.q === q && b.q !== 'Nul')
       .map(([id]) => parseInt(id))
@@ -2261,7 +2352,7 @@ function updateContentTitle() {
     sub.textContent  = bNums.length ? 'Bureaux ' + bNums.join(', ') : '';
   } else {
     const bid  = document.getElementById('sel-bureau').value;
-    const info = (BUREAU_INFO['2026'] || {})[bid] || {};
+    const info = (BUREAU_INFO[CURRENT_ERA] || {})[bid] || {};
     const n    = parseInt(bid);
     num.textContent  = '';
     setMarqueeText(name, 'N°' + n + ' · ' + (info.den || info.nom || bid));
@@ -2270,7 +2361,7 @@ function updateContentTitle() {
     if (typeof QUARTIER_CORRESPONDANCES !== 'undefined') {
       Object.keys(QUARTIER_CORRESPONDANCES).forEach(qName => {
         if (qName.indexOf('/') >= 0) return;
-        const arr = QUARTIER_CORRESPONDANCES[qName] && QUARTIER_CORRESPONDANCES[qName]['2026'];
+        const arr = QUARTIER_CORRESPONDANCES[qName] && QUARTIER_CORRESPONDANCES[qName][CURRENT_ERA];
         if (arr && arr.indexOf(bid) >= 0 && quartiers.indexOf(qName) < 0) {
           quartiers.push(qName);
         }
@@ -2428,7 +2519,7 @@ function getUncertainElections() {
       if (zone.startsWith('quartier:')) return;
       if (zone === bid) {
         Object.entries(ELECTIONS).forEach(([label, el]) => {
-          if (String(el.my || '2026') === eraYear) uncertain.add(label);
+          if (String(el.my || CURRENT_ERA) === eraYear) uncertain.add(label);
         });
       }
     });
@@ -2440,7 +2531,7 @@ function getUncertainElections() {
       if (zoneQ && (q === zoneQ || q.split('/').map(s => s.trim()).includes(zoneQ)
                                 || zoneQ.split('/').map(s => s.trim()).includes(q))) {
         Object.entries(ELECTIONS).forEach(([label, el]) => {
-          if (String(el.my || '2026') === eraYear) uncertain.add(label);
+          if (String(el.my || CURRENT_ERA) === eraYear) uncertain.add(label);
         });
       }
     });
@@ -2508,7 +2599,7 @@ function getBoundaryChanges() {
 
   } else if (niveau === 'quartier') {
     const q = document.getElementById('sel-quartier').value;
-    const eraData = BUREAU_INFO['2026'] || {};
+    const eraData = BUREAU_INFO[CURRENT_ERA] || {};
     const seen = {};
     // Recenser les ères avec override quartier (null = supprimer, objet = remplacer)
     const quartierOverrides = {};
@@ -2597,7 +2688,7 @@ function drawBoundaryMarkers(html, data, xFn, PAD, cH, changes) {
   // même si le bureau n'a pas de données pour la toute première élection chronologique de l'ère.
   const seenEras = new Set();
   data.forEach((d, i) => {
-    const eraYear = String((ELECTIONS[d.label] || {}).my || '2026');
+    const eraYear = String((ELECTIONS[d.label] || {}).my || CURRENT_ERA);
     const isFirstOfEra = !seenEras.has(eraYear);
     seenEras.add(eraYear);
     const ch = changes[eraYear];
@@ -2776,7 +2867,7 @@ function drawChart(data) {
       html += `<text ${labelClass} ${labelFill} x="${x}" y="${PAD.top+cH+30}" font-size="10" font-family="'Space Grotesk', 'Segoe UI', system-ui, sans-serif" text-anchor="middle">${yearLabel}</text>`;
     }
     if (isUncertain) {
-      const eraYear = String((ELECTIONS[d.label]||{}).my||'2026');
+      const eraYear = String((ELECTIONS[d.label]||{}).my||CURRENT_ERA);
       const note = getUncertainNote(eraYear) || 'Données incertaines pour cette période.';
       const noteEnc = encodeURIComponent(note).replace(/'/g, '%27');
       html += `<g transform="translate(${x},${PAD.top+cH+44})" style="cursor:help"
@@ -3047,9 +3138,16 @@ function drawStackedChart(data) {
     return;
   }
 
-  const gap = cW / n;
+  // Fenêtre courante (zoom/pan) : nombre de scrutins visibles + index de départ.
+  // Même approche que drawChart : on rend TOUTES les barres avec des positions
+  // absolues, et un clip-path cache celles hors fenêtre visible.
+  const visibleCount = Math.max(2, Math.min(n, chartVisibleCount || n));
+  const viewStart = Math.max(0, Math.min(n - visibleCount, chartViewStartIdx || 0));
+  const gap = cW / visibleCount;
   const barW = Math.max(3, gap * 0.72);
-  const xCenter = i => PAD.left + i * gap + gap / 2;
+  // xCenter : indice ABSOLU → centre de la barre. Barres hors fenêtre = centres
+  // négatifs ou > cW+PAD.left, clippées par clipPath.
+  const xCenter = i => PAD.left + gap / 2 + (i - viewStart) * gap;
   // Échelle Y dynamique : 0-100 en mode pct, 0-maxV en mode voix
   let yMax = 100;
   if (chartScale === 'voix') {
@@ -3071,17 +3169,22 @@ function drawStackedChart(data) {
 
   // Motifs hachurés — 2 angles par famille (45° et 135°) pour pouvoir cumuler
   // deux familles « partenaires » sans que les hachures se confondent.
-  let html = '<defs>';
+  // defsHtml = patterns + clipPath (rendu UNE fois dans le <defs> du SVG final)
+  let defsHtml = '';
   Object.entries(FAMILY_CONFIG).forEach(([key, cfg]) => {
     const sk = slugifyKey(key);
-    html += `<pattern id="hatch-${sk}" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+    defsHtml += `<pattern id="hatch-${sk}" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
       <line x1="0" y1="0" x2="0" y2="6" stroke="${cfg.color}" stroke-width="2.5" opacity="0.9"/>
     </pattern>`;
-    html += `<pattern id="hatch-${sk}-x" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(135)">
+    defsHtml += `<pattern id="hatch-${sk}-x" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(135)">
       <line x1="0" y1="0" x2="0" y2="6" stroke="${cfg.color}" stroke-width="2.5" opacity="0.9"/>
     </pattern>`;
   });
-  html += '</defs>';
+
+  // html = pannable (barres + labels X + zones d'incertitude)
+  // yAxisHtml = fixe (Y-grid + Y-labels)
+  let html = '';
+  let yAxisHtml = '';
   const uncertainElections = getUncertainElections();
 
   // Zones d'incertitude (fond grisé) — dessinées avant tout le reste
@@ -3101,8 +3204,9 @@ function drawStackedChart(data) {
   const yLabel = v => chartScale === 'voix' ? v.toLocaleString('fr-FR') : v + '%';
   yTicks.forEach(y => {
     const yy = yScale(y);
-    html += `<line x1="${PAD.left}" y1="${yy}" x2="${W-PAD.right}" y2="${yy}" stroke="#f0f0f0" stroke-width="1"/>`;
-    html += `<text x="${PAD.left-4}" y="${yy+4}" text-anchor="end" font-size="10" fill="#999" font-family="'Space Grotesk', 'Segoe UI', system-ui, sans-serif">${yLabel(y)}</text>`;
+    // Y-grid + Y-labels → groupe FIXE (ne suivent pas le pan)
+    yAxisHtml += `<line x1="${PAD.left}" y1="${yy}" x2="${W-PAD.right}" y2="${yy}" stroke="#f0f0f0" stroke-width="1"/>`;
+    yAxisHtml += `<text x="${PAD.left-4}" y="${yy+4}" text-anchor="end" font-size="10" fill="#999" font-family="'Space Grotesk', 'Segoe UI', system-ui, sans-serif">${yLabel(y)}</text>`;
   });
 
   // Barres empilées
@@ -3181,7 +3285,7 @@ function drawStackedChart(data) {
       html += `<text x="${xCenter(i)}" y="${PAD.top+cH+30}" font-size="10" fill="${lFill}" font-family="'Space Grotesk', 'Segoe UI', system-ui, sans-serif" text-anchor="middle">${yearLabel}</text>`;
     }
     if (isUncertain) {
-      const eraYear = String((ELECTIONS[d.label]||{}).my||'2026');
+      const eraYear = String((ELECTIONS[d.label]||{}).my||CURRENT_ERA);
       const note = getUncertainNote(eraYear) || 'Données incertaines pour cette période.';
       const noteEnc = encodeURIComponent(note).replace(/'/g, '%27');
       html += `<g transform="translate(${xCenter(i)},${PAD.top+cH+44})" style="cursor:help"
@@ -3194,13 +3298,33 @@ function drawStackedChart(data) {
 
   html = drawBoundaryMarkers(html, data, xCenter, PAD, cH, window._boundaryChanges || {});
 
-  svg.innerHTML = html;
+  // Compose le SVG final avec :
+  //   • <defs>           : patterns hachurés + clipPath de la zone des barres
+  //   • <g .chart-fixed> : Y-grid + Y-labels (pas de pan)
+  //   • <g .chart-clip-host> : applique le clip → zone visible fixe
+  //   • <g .chart-pannable>  : barres + labels X + zones d'incertitude (reçoit transform au pan)
+  // Architecture cohérente avec drawChart (mode courbes) — même mécanique de pan/zoom.
+  svg.innerHTML = `
+    <defs>
+      ${defsHtml}
+      <clipPath id="chart-data-clip">
+        <rect x="${PAD.left}" y="0" width="${cW}" height="${H}"/>
+      </clipPath>
+    </defs>
+    <g class="chart-fixed">${yAxisHtml}</g>
+    <g class="chart-clip-host" clip-path="url(#chart-data-clip)">
+      <g class="chart-pannable">${html}</g>
+    </g>
+  `;
   window._chartData = data;
   window._chartXScale = xCenter;
   window._chartYScale = yScale;
   window._chartPAD = PAD;
   window._chartCH = cH;
   window._chartCW = cW;
+  window._chartUnitX = gap;            // pour pan/zoom (cohérent avec drawChart)
+  window._chartVisibleCount = visibleCount;
+  window._chartViewStart = viewStart;
 }
 
 // ─── Frise chronologique (vue bureau) ────────────────────────────────────────
@@ -3215,7 +3339,7 @@ function drawFrise(bid, xScaleOverride, previewWindow) {
   if (niveau === 'ville') { el.classList.remove('visible'); return; }
   el.classList.add('visible');
 
-  const ERAS = ['1988','1993','1996','2004','2007','2010','2012','2015','2022','2026'];
+  // ERAS provient de shared.js (calculé dynamiquement depuis BUREAU_INFO)
   // L'alternance des ères est gérée par les classes .alt-0 / .alt-1 (variables --frise-alt-0/1)
 
   // Données (dénomination, n°) par ère — selon le niveau
@@ -3290,7 +3414,7 @@ function drawFrise(bid, xScaleOverride, previewWindow) {
   const eraElecs = {}; // era -> [indices]
   chartData.forEach((d, i) => {
     if (i < idxMin || i > idxMax) return;  // hors fenêtre : on ignore
-    const era = String((ELECTIONS[d.label] || {}).my || '2026');
+    const era = String((ELECTIONS[d.label] || {}).my || CURRENT_ERA);
     if (!eraElecs[era]) eraElecs[era] = [];
     eraElecs[era].push(i);
   });
@@ -3378,7 +3502,7 @@ function drawFrise(bid, xScaleOverride, previewWindow) {
 
   let axisHtml = `<div class="frise-row frise-axis"><div class="frise-label"></div><div class="frise-track">`;
   presentEras.forEach(era => {
-    axisHtml += `<div class="frise-era" style="width:${eraPct[era].pct.toFixed(3)}%">${era === '2026' ? '26' : era}</div>`;
+    axisHtml += `<div class="frise-era" style="width:${eraPct[era].pct.toFixed(3)}%">${era === CURRENT_ERA ? '26' : era}</div>`;
   });
   axisHtml += '</div></div>';
 
@@ -3405,8 +3529,9 @@ function setScale(s) {
 }
 let _frisePanelState = null; // { eras, currentEra, niv, sel }
 
-// Toutes les ères qui ont des données géographiques (MAPS_DATA + GEOJSON 2026)
-const GEO_ERAS = ['1988','1993','1996','2004','2007','2010','2012','2015','2022','2026'];
+// Toutes les ères qui ont des données géographiques (MAPS_DATA + GEOJSON courant).
+// Calculé dynamiquement depuis ERAS (qui vient de shared.js).
+const GEO_ERAS = ERAS.slice();
 
 function openFrisePanel(el, event) {
   event.stopPropagation();
@@ -3528,7 +3653,7 @@ function _showFrisePanelEra(era) {
 
 function _updateFriseMap(era, idsStr) {
   if (!_friseMap) return;
-  const geoData = (era === '2026') ? GEOJSON : (MAPS_DATA[era] || null);
+  const geoData = (era === CURRENT_ERA) ? GEOJSON : (MAPS_DATA[era] || null);
   if (!geoData) return;
 
   _friseMapLayers.forEach(l => _friseMap.removeLayer(l));
@@ -3702,6 +3827,7 @@ window.addEventListener('DOMContentLoaded', () => {
   requestAnimationFrame(() => requestAnimationFrame(() => {
     refresh();
     setupChartZoom();
+    initZoomHint();
     // Le loader (#page-loader) est visible depuis le parse HTML. Une fois le
     // 1er render terminé, on le masque en douceur et on le retire du DOM.
     const _ldr = document.getElementById('page-loader');
@@ -3725,6 +3851,46 @@ function resetChartZoom() {
   chartViewStartIdx = 0;
   chartVisibleCount = Infinity;  // sera clampé à N dans refresh
   refresh();
+}
+
+// Hint zoom : affiche un cartouche translucide centré au chargement pour
+// indiquer aux utilisateurs qu'ils peuvent zoomer. Texte adapté au type
+// d'appareil (tactile vs souris). Fade-in 300 ms, visible 3 s, puis fade-out
+// 300 ms — OU dismiss instantané au premier zoom/pan effectif.
+// Persistance : sessionStorage → plus jamais réaffiché dans cette session.
+let _zoomHintAutoTimer = 0;
+function initZoomHint() {
+  const hint = document.getElementById('chart-zoom-hint');
+  if (!hint) return;
+  try {
+    if (sessionStorage.getItem('lrvote_zoom_hint_seen') === '1') {
+      hint.remove();
+      return;
+    }
+  } catch (_) {}
+  const isTouch = window.matchMedia && window.matchMedia('(hover: none)').matches;
+  hint.querySelector('.czh-text').textContent = isTouch
+    ? 'Pincez pour zoomer le graphique'
+    : 'Utilisez la molette pour zoomer le graphique';
+  // Fade-in à la frame suivante (sinon la transition CSS ne se déclenche pas)
+  requestAnimationFrame(() => hint.classList.add('is-visible'));
+  // Auto fade-out après 3 s
+  _zoomHintAutoTimer = setTimeout(() => dismissZoomHint(false), 3000);
+}
+
+// Masque le hint. `instant=true` → retrait immédiat (pas de fade) ; sinon fade
+// out gracieux. Dans les deux cas, on marque le hint comme vu pour la session.
+function dismissZoomHint(instant) {
+  const hint = document.getElementById('chart-zoom-hint');
+  if (!hint) return;
+  clearTimeout(_zoomHintAutoTimer);
+  try { sessionStorage.setItem('lrvote_zoom_hint_seen', '1'); } catch (_) {}
+  if (instant) {
+    hint.remove();
+  } else {
+    hint.classList.remove('is-visible');
+    setTimeout(() => hint.remove(), 320);  // attend la fin de la transition
+  }
 }
 
 let _refreshRaf = 0;
@@ -3797,6 +3963,8 @@ function setupChartZoom() {
   // Le geste à droite (deltaPx > 0) doit faire RECULER la fenêtre (= scrutins plus anciens
   // → idx plus petits → viewStart diminue). On clamp aux bornes [0, N - visibleCount].
   function applyPan(deltaPx) {
+    // Premier pan effectif → on masque le hint zoom instantanément.
+    if (typeof dismissZoomHint === 'function') dismissZoomHint(true);
     const s = getViewState();
     const deltaIdx = -deltaPx / s.unitX;  // pixels → indices
     let newStart = (startViewStart) + deltaIdx;
@@ -3808,6 +3976,8 @@ function setupChartZoom() {
 
   // Pinch zoom : scale > 1 = zoom in (visibleCount ↓). Centré sur le doigt.
   function applyPinch(scale, centerPx) {
+    // Premier zoom effectif → on masque le hint zoom instantanément.
+    if (typeof dismissZoomHint === 'function') dismissZoomHint(true);
     const s = getViewState();
     const cw = (window._chartCW || s.unitX * (s.visibleCount - 1));
     const padLeft = (window._chartPAD || {}).left || 42;
@@ -4215,7 +4385,7 @@ function openRedecoupageForm(prefillEraYear, prefillText, prefillType) {
   // One option per distinct era: show the year + first election using that map
   const byEra = {};
   Object.entries(ELECTIONS).forEach(([label, el]) => {
-    const ey = String(el.my || '2026');
+    const ey = String(el.my || CURRENT_ERA);
     if (!byEra[ey]) byEra[ey] = label;  // keep first election of this era
   });
   Object.entries(byEra).sort((a, b) => Number(a[0]) - Number(b[0])).forEach(([ey, firstLabel]) => {
@@ -4240,12 +4410,12 @@ function openQCorrespPanel() {
     'Correspondances historiques — ' + quartier;
 
   // Ères qui ont des élections (my values distinctes)
-  const eras = [...new Set(Object.values(ELECTIONS).map(e => String(e.my || '2026')))]
+  const eras = [...new Set(Object.values(ELECTIONS).map(e => String(e.my || CURRENT_ERA)))]
     .sort((a,b) => Number(a)-Number(b));
   // Élections représentatives par ère
   const eraLabel = {};
   Object.entries(ELECTIONS).forEach(([lbl, el]) => {
-    const ey = String(el.my || '2026');
+    const ey = String(el.my || CURRENT_ERA);
     if (!eraLabel[ey]) eraLabel[ey] = [];
     eraLabel[ey].push(lbl);
   });
@@ -5301,9 +5471,9 @@ function randomDiscover() {
   function buildIndex(){
     if (_index) return _index;
     const items = [];
-    const b2026 = (typeof BUREAU_INFO !== 'undefined' && BUREAU_INFO['2026']) || {};
+    const b2026 = (typeof BUREAU_INFO !== 'undefined' && BUREAU_INFO[CURRENT_ERA]) || {};
     const corr = (typeof BUREAU_CORRESPONDANCES !== 'undefined' && BUREAU_CORRESPONDANCES) || {};
-    const ERAS = ['1988','1993','1996','2004','2007','2010','2012','2015','2022','2026'];
+    // ERAS provient de shared.js (calculé dynamiquement depuis BUREAU_INFO)
     Object.entries(b2026).forEach(([id, b]) => {
       if (!b || b.q === 'Nul') return;
       const num = parseInt(id);
