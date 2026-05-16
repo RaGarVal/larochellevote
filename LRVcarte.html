@@ -162,7 +162,16 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; colo
 body {
   font-family: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
   background: var(--bg-chrome); color: var(--text-chrome);
-  display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+  display: flex; flex-direction: column; overflow: hidden;
+  /* Hauteur viewport : 100vh fallback pour vieux navigateurs, 100dvh moderne (Chrome 108+, Safari 15.4+).
+     dvh s'ajuste dynamiquement à la barre d'URL Chrome mobile/Safari iOS, évitant que
+     la topbar soit poussée hors écran et que le bas soit invisible. */
+  height: 100vh;
+  height: 100dvh;
+  /* Safe-areas : respecte le notch (iPhone) et la barre de gestes (Android) si le navigateur
+     dessine la page sous ces zones. Pas d'effet sur les desktops ou mobiles sans encoche. */
+  padding-top:    env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 #topbar {
   background: var(--bg-chrome); color: var(--text-chrome);
@@ -241,6 +250,7 @@ body {
   width: 430px;
   /* topbar (66) + marge haut (12) + footer fixe (~28) + marge bas (12) = 118 */
   max-height: calc(100vh - 118px);
+  max-height: calc(100dvh - 118px);
   background: var(--bg-card);
   display: flex; flex-direction: column;
   border-radius: 10px;
@@ -573,7 +583,7 @@ select#el-select {
 #sb-bureau-list,#sb-quartier-list{min-height:0;display:none;flex-direction:column;overflow:hidden;}
 #sb-bureau-list.expanded,#sb-quartier-list.expanded{flex:1 1 0;min-height:0;}
 /* En mode fiche, le sidebar prend toute la hauteur dispo (pour permettre le 50/50 strict des listes) */
-#sidebar.fiche-list-mode{height:calc(100vh - 118px);}
+#sidebar.fiche-list-mode{height:calc(100vh - 118px); height:calc(100dvh - 118px);}
 #sb-bureau-list.collapsed,#sb-quartier-list.collapsed{flex:0 0 auto;}
 #sb-bureau-list.expanded .sb-list-body,#sb-quartier-list.expanded .sb-list-body{flex:1 1 auto;overflow-y:auto;display:block;}
 #sb-bureau-list.collapsed .sb-list-body,#sb-quartier-list.collapsed .sb-list-body{display:none;}
@@ -715,7 +725,13 @@ select#el-select {
     gap: 2px;
     align-items: stretch;
   }
-  #map-mode-btns .mmbtn { flex: 1 1 0; font-size: 0.6rem; padding: 5px 2px; min-width: 0; }
+  #map-mode-btns .mmbtn {
+    flex: 1 1 0;
+    font-size: 0.75rem;        /* 0.6 → 0.75rem : lisible (≈12px au lieu de ≈9.6px) */
+    padding: 10px 4px;         /* 5px 2px → 10px 4px : hauteur tactile confortable */
+    min-width: 0;
+    min-height: 40px;          /* garantit un tap target proche de la cible WCAG 44px */
+  }
   /* Chevron : dans le flux à droite des boutons (pas absolute) */
   #legend-toggle {
     display: flex;
@@ -1240,6 +1256,39 @@ select#el-select {
     transition: clip-path 0.7s cubic-bezier(0.25, 0.1, 0.25, 1);
   }
   .fiche-sail.reveal { clip-path: inset(0 0 0 0); }   /* révélé : top → bottom */
+
+  /* ─────────────────────────────────────────────────────────────────
+     TAP TARGETS — confort tactile (cible WCAG : 44×44 px)
+     Augmente la zone tactile des contrôles cliquables sur mobile sans
+     toucher au design visuel. Les boutons gardent leur apparence ; seul
+     leur padding/min-height grandit.
+     ───────────────────────────────────────────────────────────────── */
+  .nav-row    { padding: 11px 20px; }   /* 7px 20px : liste bureaux dans la fiche */
+  .otab       { padding: 9px 14px; }    /* 5px 10px : onglets bureau/quartier/global */
+  #ov-back    { padding: 10px 14px; font-size: 1rem; }   /* 5px 9px : bouton retour fiche */
+  .elec-item  { padding: 14px 16px; }   /* 11px 14px : items du bottom sheet d'élection */
+  .otab, #ov-back, .nav-row, .elec-item { min-height: 44px; }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   FOCUS-VISIBLE — accessibilité clavier (toutes tailles d'écran)
+   Affiche un anneau de focus net uniquement pour la navigation clavier
+   (Tab), sans polluer la souris/le tactile. Compatible WCAG 2.1 AA.
+   Hors du @media car utile aussi sur desktop pour utilisateurs au clavier
+   et lecteurs d'écran.
+   ───────────────────────────────────────────────────────────────── */
+button:focus-visible,
+a:focus-visible,
+select:focus-visible,
+input:focus-visible,
+[role="button"]:focus-visible,
+.mmbtn:focus-visible,
+.nav-row:focus-visible,
+.otab:focus-visible,
+.elec-item:focus-visible {
+  outline: 2px solid var(--accent, #2871d6);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 </style>
 </head>
