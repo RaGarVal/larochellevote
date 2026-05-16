@@ -81,10 +81,10 @@
 </script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link rel="stylesheet" href="shared.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="geodata.js"></script>
-<script src="donnees.js"></script>
-<script src="shared.js"></script>
+<!-- Scripts externes déplacés en bas du <body>, juste avant le premier <script>
+     inline. Permet au navigateur de rendre la structure HTML AVANT de charger
+     1,7 Mo de JS (donnees.js + geodata.js). Voir LRVcarte.html pour la note
+     détaillée. -->
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 button, input, select, textarea { font-family: inherit; font-size: inherit; color: inherit; }
@@ -1150,6 +1150,14 @@ input:focus-visible,
   </div>
 </div>
 </div>
+
+<!-- Scripts externes déplacés ici (ex-head). Ordre important : geodata →
+     donnees → shared → leaflet. Les inline scripts qui suivent dépendent
+     de tous ces globaux (ELECTIONS, BUREAU_INFO, GEOJSON, L). -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="geodata.js"></script>
+<script src="donnees.js"></script>
+<script src="shared.js"></script>
 
 <script>
 // ─── Configuration blocs ───────────────────────────────────────────────────

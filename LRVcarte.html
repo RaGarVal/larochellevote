@@ -74,10 +74,15 @@
   </script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link rel="stylesheet" href="shared.css"/>
-  <script src="geodata.js"></script>
-  <script src="donnees.js"></script>
-  <script src="shared.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- ──────────────────────────────────────────────────────────────────────────
+       Scripts externes (geodata.js, donnees.js, shared.js, leaflet.js) déplacés
+       en bas du <body>, juste avant le premier <script> inline. Permet au
+       navigateur de parser et commencer à rendre le HTML du <body> (topbar,
+       sidebar, légende…) AVANT de charger 1,7 Mo de JS. L'utilisateur voit
+       la structure de la page immédiatement au lieu d'un écran blanc.
+       Ne pas remettre ici sans réfléchir : les inline scripts dépendent de
+       l'ordre de chargement (ELECTIONS, BUREAU_INFO, GEOJSON, L Leaflet).
+       ────────────────────────────────────────────────────────────────────── -->
   <style>
 
 /* ══════════════════════════════════════════════════
@@ -428,6 +433,23 @@ select#el-select {
 /* Par défaut (desktop), on montre la version longue du préfixe "Le quartier : "
    et on cache la version courte "Q. ". Le @media mobile inverse cet état. */
 .otab-prefix-short { display: none; }
+/* Noms de candidats : par défaut on affiche le prénom complet ("Jean-Luc").
+   La version courte ("J.-L.") n'apparaît QUE si le JS a détecté que le nom
+   complet déborde de son conteneur, auquel cas il ajoute la classe
+   "prenom-abbrev" sur le .cand-name parent (cf. adjustCandNameAbbreviation). */
+.cand-name .cn-prenom-short { display: none; }
+.cand-name.prenom-abbrev .cn-prenom-full  { display: none; }
+.cand-name.prenom-abbrev .cn-prenom-short { display: inline; }
+
+/* Nom de parti : cascade à 3 niveaux selon la place disponible (gérée par JS) :
+     0. défaut          → "Mouvement Démocrate (LREM + UDI) ▲ meilleur bureau"
+     1. .parti-abbrev   → "MoDem (LREM + UDI) ▲ meilleur bureau"
+     2. .allies-hidden  → "MoDem ▲ meilleur bureau"   (masque les alliés)
+   Le JS essaie 0, puis 1, puis 2 jusqu'à ce que le contenu tienne sur 1 ligne. */
+.cand-sub .cand-parti-short { display: none; }
+.cand-sub.parti-abbrev .cand-parti-full  { display: none; }
+.cand-sub.parti-abbrev .cand-parti-short { display: inline; }
+.cand-sub.allies-hidden .cand-allies { display: none; }
 #ov-tabs { display: none; }
 .otab { padding: 5px 12px; font-size: 0.83rem; font-weight: 600; border: none; border-radius: 5px; cursor: pointer; color: var(--text-meta); background: none; transition: all 0.12s; }
 .otab.on { color: var(--text-modal); background: var(--bg-tab-active); }
@@ -1293,6 +1315,54 @@ select#el-select {
 }
 
 /* ─────────────────────────────────────────────────────────────────
+   PHABLETS — gros téléphones et tablettes étroites (640-720 px)
+   Sur ces écrans on a plus de place horizontale que sur un iPhone SE :
+   on peut s'offrir des boutons modes carte un peu plus généreux sans
+   gêner. En dessous de 640 px, on garde les règles compactes par défaut.
+   ───────────────────────────────────────────────────────────────── */
+@media (min-width: 640px) and (max-width: 720px) {
+  #map-mode-btns .mmbtn {
+    font-size: 0.85rem;   /* 0.75 → 0.85rem : un poil plus lisible quand l'écran le permet */
+    padding: 12px 8px;    /* 10/4 → 12/8 : tap target plus confortable */
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   LOADER — visible pendant le chargement de donnees.js (1 Mo)
+   Apparaît dès le parse HTML (avant le download des scripts) et se
+   masque dès que Leaflet a initialisé la carte. Évite l'effet "site
+   cassé" pendant les 1-3 s de parse JS.
+   ───────────────────────────────────────────────────────────────── */
+#map-loader {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  color: var(--text-chrome, #333);
+  font-size: 0.92rem;
+  font-weight: 500;
+  pointer-events: none;     /* le loader ne bloque jamais un clic */
+  transition: opacity 0.25s;
+}
+#map-loader.is-hidden { opacity: 0; pointer-events: none; }
+.map-loader-spinner {
+  width: 38px; height: 38px;
+  border: 3px solid rgba(0, 0, 0, 0.08);
+  border-top-color: var(--accent, #2871d6);
+  border-radius: 50%;
+  animation: map-loader-spin 0.8s linear infinite;
+}
+@keyframes map-loader-spin { to { transform: rotate(360deg); } }
+/* Respect du paramètre "reduce motion" (accessibilité) */
+@media (prefers-reduced-motion: reduce) {
+  .map-loader-spinner { animation-duration: 2.4s; }
+}
+
+/* ─────────────────────────────────────────────────────────────────
    FOCUS-VISIBLE — accessibilité clavier (toutes tailles d'écran)
    Affiche un anneau de focus net uniquement pour la navigation clavier
    (Tab), sans polluer la souris/le tactile. Compatible WCAG 2.1 AA.
@@ -1315,6 +1385,12 @@ input:focus-visible,
 </style>
 </head>
 <body>
+
+<!-- Loader : visible dès le parse HTML, masqué après init Leaflet (cf. setup au bas du body) -->
+<div id="map-loader" aria-live="polite" aria-busy="true">
+  <div class="map-loader-spinner" aria-hidden="true"></div>
+  <div>Chargement des données électorales…</div>
+</div>
 
 <div id="topbar">
   <button type="button" class="tb-logo" id="tb-logo-btn" aria-label="Menu" aria-haspopup="true" aria-expanded="false">
@@ -1495,6 +1571,17 @@ input:focus-visible,
     <span class="fmh-inner"><span class="fmh-chev" aria-hidden="true">↓</span> Voir la carte</span>
   </button>
 </div>
+
+<!-- ──────────────────────────────────────────────────────────────────────────
+     Scripts externes déplacés ici (ex-head). L'ordre est important : geodata
+     définit GEOJSON, donnees définit ELECTIONS/BUREAU_INFO/CAND_DATA, shared
+     définit les helpers communs, et leaflet expose L. Les inline scripts qui
+     suivent dépendent de tous ces globaux.
+     ────────────────────────────────────────────────────────────────────── -->
+<script src="geodata.js"></script>
+<script src="donnees.js"></script>
+<script src="shared.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
 
@@ -1784,6 +1871,151 @@ function computeBlocsAdj(data, elecLabel) {
   });
   return blocs;
 }
+// Abrège un prénom en initiales pointées :
+//   "Jean-Luc"     → "J.-L."
+//   "Marie-George" → "M.-G."
+//   "Emmanuel"     → "E."
+//   "Marine"       → "M."
+function abbreviatePrenom(prenom) {
+  if (!prenom) return '';
+  return prenom.split('-')
+    .map(p => p.trim()).filter(p => p.length)
+    .map(p => p.charAt(0).toUpperCase() + '.')
+    .join('-');
+}
+
+// Variante HTML de candDisplayName : encapsule le prénom dans deux spans
+// (version longue + version abrégée). Le swap se fait en CSS via @media :
+// desktop affiche la version longue, mobile affiche les initiales.
+// Pas de rerender JS au resize.
+function candDisplayNameHtml(rawName) {
+  const d = candInfo(rawName);
+  let prenom, nom;
+  if (d.p && d.n) { prenom = d.p; nom = d.n; }
+  else if (d.p) { prenom = d.p; nom = rawName.replace(/\s*\([^)]*\)\s*$/, '').replace(/\s+\S+$/, '').trim(); }
+  else return rawName.replace(/\s*\([^)]*\)\s*$/, '').trim();
+  if (!prenom) return nom;
+  const short = abbreviatePrenom(prenom);
+  // Espace insécable en fin de span pour rester cohérent avec candDisplayName
+  // (qui utilise   entre prénom et nom — visible dans l'audit od).
+  return '<span class="cn-prenom-full">' + prenom + ' </span>'
+       + '<span class="cn-prenom-short">' + short + ' </span>'
+       + nom;
+}
+
+// Calcule la hauteur d'une ligne pour un élément donné.
+// Retourne 0 si la mesure échoue (élément invisible / pas de font).
+function lineHeightOf(el) {
+  const styles = getComputedStyle(el);
+  let lineH = parseFloat(styles.lineHeight);
+  if (isNaN(lineH)) lineH = parseFloat(styles.fontSize) * 1.2;
+  return lineH || 0;
+}
+
+// Vrai si l'élément déborde sur ≥ 2 lignes (offsetHeight > 1.5× lineHeight).
+function isMultiline(el) {
+  const lineH = lineHeightOf(el);
+  if (!lineH) return false;
+  return el.offsetHeight > lineH * 1.5;
+}
+
+// Helper générique : détecte les éléments qui wrappent et applique une classe
+// pour les abréger.
+function applyAbbrevIfMultiline(elements, abbrevClass) {
+  elements.forEach(el => {
+    el.classList.remove(abbrevClass);
+    if (isMultiline(el)) el.classList.add(abbrevClass);
+  });
+}
+
+// Cascade à 2 paliers sur .cand-sub :
+//   1. on essaie l'abréviation du parti (paFull → paCode)
+//   2. si ça déborde encore, on masque aussi les alliés "(LREM + UDI)"
+// Le HTML rend tous les éléments ; les classes contrôlent uniquement
+// la visibilité via CSS.
+function applyCandSubCascade(elements) {
+  elements.forEach(el => {
+    el.classList.remove('parti-abbrev', 'allies-hidden');
+    if (!isMultiline(el)) return;
+    // Palier 1 : raccourcir le nom de parti
+    el.classList.add('parti-abbrev');
+    if (!isMultiline(el)) return;
+    // Palier 2 : masquer les alliés
+    el.classList.add('allies-hidden');
+  });
+}
+
+// Met en forme une dénomination longue pour qu'elle wrappe à un endroit
+// logique (tiret central « – » ou « — ») plutôt qu'à une espace ou un trait
+// d'union interne.
+//   "Arsenal–Hôpital Saint-Louis"  →  "Arsenal–<wbr>Hôpital&nbsp;Saint‑Louis"
+// Conséquence : le seul point de coupure possible est après le tiret central,
+// ce qui donne "Arsenal–" / "Hôpital Saint-Louis" au lieu de "Arsenal–Hôpital
+// Saint-" / "Louis". Pour les dénominations SANS tiret central, on retourne
+// le texte inchangé : le navigateur garde ses libertés naturelles.
+function formatDenomination(name) {
+  if (!name) return '';
+  // Pas de tiret central → comportement par défaut du navigateur
+  if (!/[–—]/.test(name)) return name;
+  // Découpage en conservant les séparateurs (tirets cadratin/demi-cadratin)
+  const parts = name.split(/([–—])/);
+  return parts.map((p, i) => {
+    if (i % 2 === 1) {
+      // Séparateur (impair) : on ajoute <wbr> pour offrir un point de coupure préféré ici
+      return p + '<wbr>';
+    }
+    // Contenu (pair) : on rend insécables les espaces internes (NBSP U+00A0)
+    // et les traits d'union internes (non-breaking hyphen U+2011)
+    return p.replace(/ /g, ' ').replace(/-/g, '‑');
+  }).join('');
+}
+
+// Détecte les noms de candidats ET les labels de parti qui débordent
+// (wrap sur 2 lignes) et applique le bon niveau d'abréviation :
+//   .cand-name → "Jean-Luc Mélenchon" → "J.-L. Mélenchon" (binaire)
+//   .cand-sub  → cascade à 2 paliers (cf. applyCandSubCascade)
+// Appelée après chaque rendu de fiche, et au resize de la fenêtre.
+function adjustCandNameAbbreviation(scope) {
+  const root = scope || document;
+  applyAbbrevIfMultiline(root.querySelectorAll('.cand-name'), 'prenom-abbrev');
+  applyCandSubCascade(root.querySelectorAll('.cand-sub'));
+}
+
+// Re-mesure tous les noms au resize de la fenêtre (debounced 150 ms pour
+// éviter de spammer pendant un drag). Couvre la rotation du téléphone et
+// l'ouverture/fermeture de la barre d'URL Chrome mobile.
+(function(){
+  let t;
+  window.addEventListener('resize', () => {
+    clearTimeout(t);
+    t = setTimeout(() => adjustCandNameAbbreviation(), 150);
+  }, { passive: true });
+})();
+
+// MutationObserver sur #ov-body : à chaque mise à jour de contenu (changement
+// de fiche bureau, switch d'onglet quartier/global, etc.), on relance la
+// détection d'overflow sur les .cand-name nouvellement rendus.
+// Plus DRY que d'appeler adjustCandNameAbbreviation() à chaque innerHTML.
+(function setupCandNameObserver(){
+  function attach() {
+    const ov = document.getElementById('ov-body');
+    if (!ov) { setTimeout(attach, 100); return; }
+    let raf = 0;
+    new MutationObserver(() => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        adjustCandNameAbbreviation(ov);
+      });
+    }).observe(ov, { childList: true, subtree: true });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', attach);
+  } else {
+    attach();
+  }
+})();
+
 function candDisplayName(rawName) {
   const d = candInfo(rawName);
   if (d.p && d.n) return d.p + ' ' + d.n;
@@ -1800,6 +2032,17 @@ const map = L.map('map', {
   // B8 phase 3 : centre décalé vers l'ouest (lng plus négative) pour que La Rochelle
   // apparaisse dans la zone visible à droite du panneau flottant (qui couvre ~470px à gauche).
   center: [46.1597, -1.190], zoom: 13.5, zoomSnap: 0.1, zoomControl: false
+});
+// Le loader (#map-loader) est visible depuis le parse HTML. Une fois Leaflet
+// prêt (whenReady fire après le premier layout), on le masque en douceur.
+map.whenReady(() => {
+  const _ldr = document.getElementById('map-loader');
+  if (_ldr) {
+    _ldr.classList.add('is-hidden');
+    _ldr.setAttribute('aria-busy', 'false');
+    // On retire complètement le nœud après l'anim pour libérer le DOM
+    setTimeout(() => _ldr.remove(), 400);
+  }
 });
 // Sur mobile (≤ 720 px) : pas de panneau flottant, on recentre sur le vrai centre de
 // La Rochelle et on dézoome un peu pour voir l'ensemble de la ville.
@@ -2218,7 +2461,8 @@ function renderCandidates(data, ns, cityAvg, extr, compact, extrLabel) {
         +'</div>';
     } else {
       const dV=+(pct-(cityAvg[name]||0)).toFixed(1);
-      const fullName=candDisplayName(name);
+      const fullName=candDisplayName(name);          // texte brut (pour tooltip)
+      const fullNameHtml=candDisplayNameHtml(name);  // HTML avec spans (swap mobile)
       const paCode=ci.pa||coal; const paFull=PARTI_NAMES[paCode]||paCode;
       const alStr=ci.al||''; const alFull=alStr?alStr.split(',').map(a=>PARTI_NAMES[a.trim()]||a.trim()).join(' + '):'';
       const alShort=alStr?alStr.split(',').map(a=>a.trim()).join(' + '):'';
@@ -2227,8 +2471,13 @@ function renderCandidates(data, ns, cityAvg, extr, compact, extrLabel) {
       return '<div class="cand-row" title="'+tipParts.join(' — ').replace(/"/g,'&quot;')+'">'
         +'<div class="cand-row-head">'
         +'<div class="cand-row-namepart">'
-        +'<span class="cand-name" style="font-size:1.3rem;line-height:1;font-weight:'+(isW?'800':'700')+'">'+fullName+'</span>'
-        +'<span class="cand-sub" style="color:var(--text-meta)">'+paFull+(alShort?' <span style="color:var(--text-meta)">('+alShort+')</span>':'')+arrowFull+'</span>'
+        +'<span class="cand-name" style="font-size:1.3rem;line-height:1;font-weight:'+(isW?'800':'700')+'">'+fullNameHtml+'</span>'
+        +'<span class="cand-sub" style="color:var(--text-meta)">'
+          +'<span class="cand-parti-full">'+paFull+'</span>'
+          +'<span class="cand-parti-short">'+paCode+'</span>'
+          +(alShort?' <span class="cand-allies" style="color:var(--text-meta)">('+alShort+')</span>':'')
+          +arrowFull
+        +'</span>'
         +'</div>'
         +'<div class="cand-row-pctvoix">'
         +'<span class="cand-voix">'+voix.toLocaleString('fr-FR')+' voix</span>'
@@ -2323,7 +2572,7 @@ function buildBureauPreviewHTML(feature) {
   let h = '<div class="fiche-id-static" style="border-left:5px solid '+winCol+'">'
     + '<div style="flex:1">'
     + '<div class="fiche-num">'+sbNum+'</div>'
-    + '<div class="fiche-name">'+sbName+'</div>'
+    + '<div class="fiche-name">'+formatDenomination(sbName)+'</div>'
     + (info.quartier ? '<div class="fiche-sub">'+(getQuartiersForInfo(info).join(' \u00b7 ')||info.quartier)+'</div>' : '')
     + (info.canton ? '<div class="fiche-sub" style="color:#aaa">'+fmtCanton(info.canton)+'</div>' : '')
     + '</div>'
@@ -3248,7 +3497,7 @@ function renderFiche(feature) {
     + ficheSail(winCol, false)
     + '<div class="fiche-text">'
     + '<div class="fiche-num">' + ficheNum + '</div>'
-    + '<div class="fiche-name">' + ficheName + '</div>'
+    + '<div class="fiche-name">' + formatDenomination(ficheName) + '</div>'
     + '<div class="fiche-meta">'
     + (info.quartier ? '<span><strong>Quartier</strong> ' + (getQuartiersForInfo(info).join(' · ') || info.quartier) + '</span>' : '')
     + (info.canton   ? '<span><strong>Canton</strong> ' + fmtCanton(info.canton) + '</span>' : '')
@@ -3399,7 +3648,7 @@ function renderQuartier(){
   let h='<div class="fiche-id">'
     + ficheSail(qWinCol, false)
     + '<div class="fiche-text">'
-    + '<div class="fiche-num">Quartier</div><div class="fiche-name">'+q+'</div>'
+    + '<div class="fiche-num">Quartier</div><div class="fiche-name">'+formatDenomination(q)+'</div>'
     + '<div class="fiche-meta"><span><strong>Bureaux</strong> '+bureauNums.length+'</span>'
     + '<span><strong>Inscrits</strong> '+totI.toLocaleString('fr-FR')+'</span>'
     + (cantons.length?'<span><strong>Canton'+(cantons.length>1?'s':'')+'</strong> '+cantons.map(fmtCanton).join(', ')+'</span>':'')
