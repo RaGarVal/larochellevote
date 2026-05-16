@@ -91,11 +91,13 @@
   },
   {
     "date": "2026-05-16",
-    "signature": "global|Législatives 2007|T1",
-    "niveau": "global",
-    "election": "Législatives 2007",
+    "signature": "carte|Municipales 1995|T1|cand:Crépeau MRG",
+    "niveau": "carte",
+    "election": "Municipales 1995",
     "tour": "T1",
     "bureau": null,
-    "quartier": null
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "Crépeau MRG"
   }
 ]

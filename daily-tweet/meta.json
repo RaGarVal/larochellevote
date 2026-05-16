@@ -1,11 +1,13 @@
 {
   "date": "2026-05-16",
   "niveau": "global",
-  "election": "Législatives 2007",
+  "election": "Municipales 1995",
   "tour": "T1",
   "bureau": null,
   "quartier": null,
-  "signature": "global|Législatives 2007|T1",
-  "chars": 232,
-  "generated_at": "2026-05-16T10:21:01.092Z"
+  "subtype": "candidat",
+  "candidat": "Crépeau MRG",
+  "signature": "carte|Municipales 1995|T1|cand:Crépeau MRG",
+  "chars": 239,
+  "generated_at": "2026-05-16T11:08:13.477Z"
 }
