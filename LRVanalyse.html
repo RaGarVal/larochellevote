@@ -5,10 +5,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>
-  /* Force la vue mobile (viewport=720) si le flag localStorage est activé. */
+  /* Force la vue mobile (viewport=720) si le flag localStorage est activé.
+     Garde-fou : seulement si écran physique ≥ 600 px (= tablette/desktop).
+     Sur petit téléphone, l'override forcerait un débordement horizontal. */
   (function () {
     try {
-      if (localStorage.getItem('lrvote_force_mobile') === '1') {
+      if (localStorage.getItem('lrvote_force_mobile') === '1' && window.screen.width >= 600) {
         document.querySelector('meta[name=viewport]').setAttribute('content', 'width=720, user-scalable=yes');
       }
     } catch (_) {}

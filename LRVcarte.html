@@ -9,10 +9,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script>
     /* Force la vue mobile (viewport=720) si le flag localStorage est activé.
-       Permet aux utilisateurs tablette de basculer en interface mobile via le burger. */
+       Permet aux utilisateurs tablette de basculer en interface mobile via le burger.
+       Sécurité : on n'applique l'override que si l'écran physique est ≥ 600 px de large
+       (= tablette ou desktop). Sur un téléphone (< 600 px), forcer viewport=720 créerait
+       un débordement horizontal pénible — on respecte alors le viewport device-width. */
     (function () {
       try {
-        if (localStorage.getItem('lrvote_force_mobile') === '1') {
+        if (localStorage.getItem('lrvote_force_mobile') === '1' && window.screen.width >= 600) {
           document.querySelector('meta[name=viewport]').setAttribute('content', 'width=720, user-scalable=yes');
         }
       } catch (_) {}
@@ -422,6 +425,9 @@ select#el-select {
 }
 #ov-back:hover { background: var(--bg-modal-accent); }
 #ov-topbar h2  { display: none; }
+/* Par défaut (desktop), on montre la version longue du préfixe "Le quartier : "
+   et on cache la version courte "Q. ". Le @media mobile inverse cet état. */
+.otab-prefix-short { display: none; }
 #ov-tabs { display: none; }
 .otab { padding: 5px 12px; font-size: 0.83rem; font-weight: 600; border: none; border-radius: 5px; cursor: pointer; color: var(--text-meta); background: none; transition: all 0.12s; }
 .otab.on { color: var(--text-modal); background: var(--bg-tab-active); }
@@ -1268,6 +1274,22 @@ select#el-select {
   #ov-back    { padding: 7px 11px; }                 /* 5px 9px : léger bump, on garde la font-size 0.78rem d'origine */
   .elec-item  { padding: 14px 16px; }                /* 11px 14px : items du bottom sheet d'élection */
   .otab, .nav-row, .elec-item { min-height: 44px; }  /* WCAG tap target — #ov-back exclu (icone seule, taille naturelle plus compacte) */
+
+  /* Onglets quartier : sur mobile, on bascule le préfixe long "Le quartier : "
+     vers une abréviation "Q. " pour que plusieurs onglets tiennent côte à côte
+     sans qu'aucun ne soit caché hors écran. Le swap est purement CSS — pas de
+     rerender JS au resize. */
+  .otab-prefix-full  { display: none; }
+  .otab-prefix-short { display: inline; }
+
+  /* Filet de sécurité : si malgré l'abréviation un onglet déborde encore
+     (cas avec 3+ quartiers à noms longs), un fondu à droite signale qu'il
+     y a du contenu hors écran et qu'on peut scroller horizontalement. */
+  #ov-tabs {
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - 18px), transparent 100%);
+    mask-image:         linear-gradient(to right, black calc(100% - 18px), transparent 100%);
+  }
+
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -2427,7 +2449,12 @@ function updateOverlayTabs(){
     const quartiers = (typeof getQuartiersForInfo === 'function') ? getQuartiersForInfo(info) : [];
     quartiers.forEach((q) => {
       const isActive = (overlayTab === 'quartier' && currentQuartier === q);
-      const label = 'Le quartier : ' + q;
+      // Deux préfixes : version longue desktop ("Le quartier : ") et version
+      // compacte mobile ("Q. "). Le swap se fait en CSS via @media — pas de
+      // détection JS, donc cohérent au resize sans rerender.
+      const label =
+        '<span class="otab-prefix-full">Le quartier : </span>' +
+        '<span class="otab-prefix-short">Q. </span>' + q;
       const safeQ = q.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
       html += '<button class="otab' + (isActive?' on':'') + '" onclick="switchTabQ(\'' + safeQ + '\')">' + label + '</button>';
     });
