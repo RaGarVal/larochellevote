@@ -696,6 +696,17 @@ select#el-select {
   border: 1px solid var(--border-modal, rgba(180,155,126,0.18));
   border-radius: 8px;
 }
+/* Mobile : la question prend trop de place verticale à 1.47rem sur petit écran
+   (souvent 3-4 lignes). On la ramène à une taille plus mesurée et on resserre
+   un peu le padding pour gagner de la hauteur visible avant le duel. */
+@media (max-width: 720px) {
+  .ref-question {
+    font-size: 1.05rem;
+    line-height: 1.35;
+    padding: 12px 16px;
+    margin-bottom: 14px;
+  }
+}
 
 /* ─────────────────────────────────────────────────────────────────
  *  RESPONSIVE MOBILE — phase 1 (≤ 720 px)
@@ -1392,6 +1403,52 @@ input:focus-visible,
   outline: 2px solid var(--accent, #2871d6);
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   DUEL — tourniquet (marquee) pour les noms trop longs en mobile
+   Même principe que la topbar de LRVanalyse : si le texte ne tient pas
+   sur la largeur disponible du bloc, on l'anime en va-et-vient pour
+   révéler la portion masquée. Activé via JS qui pose .has-marquee +
+   --duel-marquee-d (= distance signée à atteindre : négatif pour les
+   blocs alignés à gauche, positif pour les blocs alignés à droite).
+   ───────────────────────────────────────────────────────────────── */
+.duel-nom-host {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.duel-nom-host .duel-nom-inner {
+  display: inline-block;
+  white-space: nowrap;
+}
+.duel-nom-host.has-marquee .duel-nom-inner {
+  will-change: transform;
+  animation: duelNomMarquee 9s ease-in-out infinite;
+}
+@keyframes duelNomMarquee {
+  0%, 12%   { transform: translateX(0); }
+  50%, 62%  { transform: translateX(var(--duel-marquee-d, 0)); }
+  100%      { transform: translateX(0); }
+}
+/* Fade côté EXTÉRIEUR (opposé du VS) sur les noms qui débordent.
+   Masque la zone de clip et adoucit l'entrée/sortie du texte animé.
+   - data-align="right" (bloc GAUCHE) → texte calé à droite, fade à gauche.
+   - data-align="left"  (bloc DROIT)  → texte calé à gauche, fade à droite.
+   Largeur du fade : 10px, suffisamment fin pour rester près du bord extérieur
+   sans empiéter sur la zone de texte lisible. */
+.duel-nom-host.has-marquee[data-align="right"] {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 10px, #000 100%);
+          mask-image: linear-gradient(to right, transparent 0, #000 10px, #000 100%);
+}
+.duel-nom-host.has-marquee[data-align="left"] {
+  -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 10px), transparent 100%);
+          mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 10px), transparent 100%);
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Accessibilité : on supprime le tourniquet, le texte reste clippé
+     normalement. L'utilisateur peut consulter la fiche complète ailleurs. */
+  .duel-nom-host.has-marquee .duel-nom-inner { animation: none; }
 }
 </style>
 </head>
@@ -2361,53 +2418,95 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
   }
   // Sur référendum (Oui/Non sans prénom ni parti), on agrandit le nom pour combler l'espace.
   const isRefDuel = (typeof isReferendum === 'function' && isReferendum(currentElection));
-  const nomSize  = isRefDuel ? '3.2rem' : '2.2rem'; // version full
-  const nomSizeC = isRefDuel ? '2.0rem' : '1.4rem'; // version compact
+  // Mobile : on réduit toutes les tailles en mode "full" pour que le duel
+  // tienne dans la largeur disponible sans déborder (deux blocs côte à côte
+  // sur < 400 px = très contraint sinon).
+  const isMobileDuel = !!(window.matchMedia && window.matchMedia('(max-width: 720px)').matches);
+  const nomSize  = isRefDuel ? (isMobileDuel ? '2.2rem' : '3.2rem')
+                              : (isMobileDuel ? '1.6rem' : '2.2rem');
+  const nomSizeC = isRefDuel ? '2.0rem' : '1.4rem'; // version compact (sidebar)
+  // Tailles adaptatives mobile / desktop pour le mode "full"
+  const dScoreSize  = isMobileDuel ? '2.2rem' : '3.5rem';
+  const dVoixSize   = isMobileDuel ? '0.78rem' : '1.0rem';
+  const dPrenomSize = isMobileDuel ? '1.0rem' : '1.5rem';
+  const dPartiSize  = isMobileDuel ? '0.74rem' : '0.88rem';
+  const dAllieSize  = isMobileDuel ? '0.68rem' : '0.75rem';
+  const dPad        = isMobileDuel ? '12px 14px' : '18px 20px';
+  const dGapPrenom  = isMobileDuel ? '6px' : '14px';
+  const dGapVoix    = isMobileDuel ? '3px' : '5px';
+  const dGapParti   = isMobileDuel ? '3px' : '6px';
   // Bloc gagnant : fond plein coloré, texte blanc
   // Bloc perdant : fond blanc, score coloré, ligne colorée côté VS
   // pa = acronyme du parti (pour compact) ; parti = nom complet (pour full)
   function blockWinner(col, name, pct, voix, prenom, nom, parti, pa, allie, align, c) {
     const arrow = arrowFor(name, c, true);
-    const nomHtml = align === 'right' ? (arrow ? arrow+'\xa0\xa0' : '')+nom : nom+arrow;
+    // Mobile (full) : la flèche meilleur/pire est déplacée à côté du score, côté extérieur.
+    // Côté extérieur = opposé du VS : align='right' (bloc gauche) → flèche À GAUCHE du score.
+    //                                  align='left'  (bloc droit) → flèche À DROITE du score.
+    const arrowOnScore = (isMobileDuel && !c) ? arrow : '';
+    const arrowOnNom   = (isMobileDuel && !c) ? '' : arrow;
+    const nomHtml = align === 'right' ? (arrowOnNom ? arrowOnNom+'\xa0\xa0' : '')+nom : nom+arrowOnNom;
+    const scoreCore = pct.toFixed(1)+'<span style="font-size:0.5em;margin-left:0.12em">%</span>';
+    const scoreHtml = align === 'right' ? arrowOnScore + scoreCore : scoreCore + arrowOnScore;
+    // Mobile : on remplace le nom complet du parti par son acronyme court (pa).
+    const partiToShow = (isMobileDuel && !c) ? (pa || parti) : parti;
+    // Mobile (full) : on transforme la cellule "nom" en hôte de tourniquet — le JS
+    // mesurera après insertion DOM et activera l'animation si le texte déborde.
+    // L'attribut data-align permet au JS de connaître le sens du défilement.
+    const nomAttrs = (isMobileDuel && !c) ? ' class="duel-nom-host" data-align="'+align+'"' : '';
+    const nomInner = (isMobileDuel && !c) ? '<span class="duel-nom-inner">'+nomHtml+'</span>' : nomHtml;
+    // flex:1 1 0 + min-width:0 + overflow:hidden : garantit que chaque côté du duel
+    // prend EXACTEMENT 50 % de l'espace disponible (le VS reste donc strictement centré),
+    // même si un des noms est plus long que l'autre. Le débordement est clippé.
     return (c
-      ? '<div style="flex:1;background:'+col+';padding:10px 12px;text-align:'+align+'">'
-        + '<div style="font-size:2.2rem;font-weight:900;color:#fff;line-height:1">'+pct.toFixed(1)+' %</div>'
+      ? '<div style="flex:1 1 0;min-width:0;overflow:hidden;background:'+col+';padding:10px 12px;text-align:'+align+'">'
+        + '<div style="font-size:2.2rem;font-weight:900;color:#fff;line-height:1">'+pct.toFixed(1)+'<span style="font-size:0.5em;margin-left:0.12em">%</span></div>'
         + diffLine(name, pct, true, align, c)
         + '<div style="font-size:0.82rem;color:rgba(255,255,255,0.75);margin-top:3px">'+voix.toLocaleString('fr-FR')+' voix</div>'
         + '<div style="font-size:'+nomSizeC+';font-weight:700;color:#fff;margin-top:8px">'+nomHtml+'</div>'
         + (pa ? '<div style="font-size:0.68rem;color:rgba(255,255,255,0.7);margin-top:3px">'+pa+'</div>' : '')
         + '</div>'
-      : '<div style="flex:1;background:'+col+';padding:18px 20px;text-align:'+align+'">'
-        + '<div style="font-size:3.5rem;font-weight:900;color:#fff;line-height:1">'+pct.toFixed(1)+' %</div>'
+      : '<div style="flex:1 1 0;min-width:0;overflow:hidden;background:'+col+';padding:'+dPad+';text-align:'+align+'">'
+        + '<div style="font-size:'+dScoreSize+';font-weight:900;color:#fff;line-height:1">'+scoreHtml+'</div>'
         + diffLine(name, pct, true, align, c)
-        + '<div style="font-size:1.0rem;color:rgba(255,255,255,0.75);margin-top:5px">'+voix.toLocaleString('fr-FR')+' voix</div>'
-        + (prenom ? '<div style="font-size:1.5rem;color:rgba(255,255,255,0.85);margin-top:14px">'+prenom+'</div>' : '')
-        + '<div style="font-size:'+nomSize+';font-weight:700;color:#fff;margin-top:'+(isRefDuel?'14px':'2px')+';line-height:1.1">'+nomHtml+'</div>'
-        + (parti ? '<div style="font-size:0.88rem;color:rgba(255,255,255,0.7);margin-top:6px">'+parti+'</div>' : '')
-        + (allie ? '<div style="font-size:0.75rem;color:rgba(255,255,255,0.55);margin-top:2px">'+allie+'</div>' : '')
+        + '<div style="font-size:'+dVoixSize+';color:rgba(255,255,255,0.75);margin-top:'+dGapVoix+'">'+voix.toLocaleString('fr-FR')+' voix</div>'
+        + (prenom ? '<div style="font-size:'+dPrenomSize+';color:rgba(255,255,255,0.85);margin-top:'+dGapPrenom+';line-height:1">'+prenom+'</div>' : '')
+        + '<div'+nomAttrs+' style="font-size:'+nomSize+';font-weight:700;color:#fff;margin-top:'+(isRefDuel?dGapPrenom:'2px')+';line-height:1">'+nomInner+'</div>'
+        + (partiToShow ? '<div style="font-size:'+dPartiSize+';color:rgba(255,255,255,0.7);margin-top:'+dGapParti+'">'+partiToShow+'</div>' : '')
+        + (allie ? '<div style="font-size:'+dAllieSize+';color:rgba(255,255,255,0.55);margin-top:2px">'+allie+'</div>' : '')
         + '</div>'
     );
   }
   function blockLoser(col, name, pct, voix, prenom, nom, parti, pa, allie, align, borderSide, c) {
     const bw = c ? '4px' : '5px';
     const arrow = arrowFor(name, c, false);
-    const nomHtml = align === 'right' ? (arrow ? arrow+'\xa0\xa0' : '')+nom : nom+arrow;
+    // Mobile (full) : flèche déplacée côté score, côté extérieur (cf. blockWinner).
+    const arrowOnScore = (isMobileDuel && !c) ? arrow : '';
+    const arrowOnNom   = (isMobileDuel && !c) ? '' : arrow;
+    const nomHtml = align === 'right' ? (arrowOnNom ? arrowOnNom+'\xa0\xa0' : '')+nom : nom+arrowOnNom;
+    const scoreCore = pct.toFixed(1)+'<span style="font-size:0.5em;margin-left:0.12em">%</span>';
+    const scoreHtml = align === 'right' ? arrowOnScore + scoreCore : scoreCore + arrowOnScore;
+    const partiToShow = (isMobileDuel && !c) ? (pa || parti) : parti;
+    // Marquise mobile sur la cellule nom (cf. blockWinner pour le détail).
+    const nomAttrs = (isMobileDuel && !c) ? ' class="duel-nom-host" data-align="'+align+'"' : '';
+    const nomInner = (isMobileDuel && !c) ? '<span class="duel-nom-inner">'+nomHtml+'</span>' : nomHtml;
+    // Idem blockWinner : 50/50 strict, VS centré, débordement clippé.
     return (c
-      ? '<div style="flex:1;padding:10px 12px;text-align:'+align+';background:var(--bg-card);border-'+borderSide+':'+bw+' solid '+col+'">'
-        + '<div style="font-size:2.2rem;font-weight:900;color:'+col+';line-height:1">'+pct.toFixed(1)+' %</div>'
+      ? '<div style="flex:1 1 0;min-width:0;overflow:hidden;padding:10px 12px;text-align:'+align+';background:var(--bg-card);border-'+borderSide+':'+bw+' solid '+col+'">'
+        + '<div style="font-size:2.2rem;font-weight:900;color:'+col+';line-height:1">'+pct.toFixed(1)+'<span style="font-size:0.5em;margin-left:0.12em">%</span></div>'
         + diffLine(name, pct, false, align, c)
         + '<div style="font-size:0.82rem;color:var(--text-modal-muted);margin-top:3px">'+voix.toLocaleString('fr-FR')+' voix</div>'
         + '<div style="font-size:'+nomSizeC+';font-weight:700;color:var(--text-modal);margin-top:8px">'+nomHtml+'</div>'
         + (pa ? '<div style="font-size:0.68rem;color:var(--text-modal-muted);margin-top:3px">'+pa+'</div>' : '')
         + '</div>'
-      : '<div style="flex:1;padding:18px 20px;text-align:'+align+';background:var(--bg-card);border-'+borderSide+':'+bw+' solid '+col+'">'
-        + '<div style="font-size:3.5rem;font-weight:900;color:'+col+';line-height:1">'+pct.toFixed(1)+' %</div>'
+      : '<div style="flex:1 1 0;min-width:0;overflow:hidden;padding:'+dPad+';text-align:'+align+';background:var(--bg-card);border-'+borderSide+':'+bw+' solid '+col+'">'
+        + '<div style="font-size:'+dScoreSize+';font-weight:900;color:'+col+';line-height:1">'+scoreHtml+'</div>'
         + diffLine(name, pct, false, align, c)
-        + '<div style="font-size:1.0rem;color:var(--text-modal-muted);margin-top:5px">'+voix.toLocaleString('fr-FR')+' voix</div>'
-        + (prenom ? '<div style="font-size:1.5rem;color:var(--text-modal-muted);margin-top:14px">'+prenom+'</div>' : '')
-        + '<div style="font-size:'+nomSize+';font-weight:700;color:var(--text-modal);margin-top:'+(isRefDuel?'14px':'2px')+';line-height:1.1">'+nomHtml+'</div>'
-        + (parti ? '<div style="font-size:0.88rem;color:var(--text-modal-muted);margin-top:6px">'+parti+'</div>' : '')
-        + (allie ? '<div style="font-size:0.75rem;color:var(--text-modal-muted);margin-top:2px">'+allie+'</div>' : '')
+        + '<div style="font-size:'+dVoixSize+';color:var(--text-modal-muted);margin-top:'+dGapVoix+'">'+voix.toLocaleString('fr-FR')+' voix</div>'
+        + (prenom ? '<div style="font-size:'+dPrenomSize+';color:var(--text-modal-muted);margin-top:'+dGapPrenom+';line-height:1">'+prenom+'</div>' : '')
+        + '<div'+nomAttrs+' style="font-size:'+nomSize+';font-weight:700;color:var(--text-modal);margin-top:'+(isRefDuel?dGapPrenom:'2px')+';line-height:1">'+nomInner+'</div>'
+        + (partiToShow ? '<div style="font-size:'+dPartiSize+';color:var(--text-modal-muted);margin-top:'+dGapParti+'">'+partiToShow+'</div>' : '')
+        + (allie ? '<div style="font-size:'+dAllieSize+';color:var(--text-modal-muted);margin-top:2px">'+allie+'</div>' : '')
         + '</div>'
     );
   }
@@ -2420,19 +2519,28 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
     if (!isBest && !isWorst) return '';
     const colBest  = onColor ? 'rgba(255,255,255,0.8)' : '#1a7a4a';
     const colWorst = onColor ? 'rgba(255,255,255,0.8)' : '#b91c1c';
+    // Compact (sidebar) : juste le symbole, côté nom (prioritaire sur mobile car
+    // la sidebar conserve le même layout compact à toutes les tailles d'écran).
     if (c) return isBest
       ? ' <span style="color:'+colBest+';font-size:0.7rem;font-weight:900">▲</span>'
       : ' <span style="color:'+colWorst+';font-size:0.7rem;font-weight:900">▼</span>';
+    // Mobile (full) : symbole inline sizé en em, sera placé côté score (pas côté nom).
+    if (isMobileDuel) {
+      const sym = isBest ? '▲' : '▼';
+      const col = isBest ? colBest : colWorst;
+      return '<span style="color:'+col+';font-size:0.42em;font-weight:900;vertical-align:0.4em;margin:0 0.2em">'+sym+'</span>';
+    }
+    // Desktop full : symbole + étiquette texte, côté nom
     return isBest
       ? ' <span style="color:'+colBest+';font-size:0.68rem;font-weight:700">▲ meilleur '+_xLab+'</span>'
       : ' <span style="color:'+colWorst+';font-size:0.68rem;font-weight:700">▼ pire '+_xLab+'</span>';
   }
-  const pad = compact ? '10px' : '16px';
+  const pad = compact ? '10px' : (isMobileDuel ? '8px' : '16px');
   const vsDiv = '<div style="padding:0 '+pad+';display:flex;align-items:center;flex-shrink:0">'
-    + '<div style="font-size:'+(compact?'0.65rem':'0.75rem')+';font-weight:700;color:#bbb">VS</div>'
+    + '<div style="font-size:'+(compact?'0.65rem':(isMobileDuel?'0.65rem':'0.75rem'))+';font-weight:700;color:#bbb">VS</div>'
     + '</div>';
   const radius = compact ? '8px' : '10px';
-  const margin = compact ? '12px' : '18px';
+  const margin = compact ? '12px' : (isMobileDuel ? '12px' : '18px');
   // Côté gauche : text-align:right (texte vers le VS) ; côté droit : text-align:left
   let leftBlock, rightBlock;
   if (winLeft) {
@@ -2442,7 +2550,12 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
     leftBlock  = blockLoser (colL, nameL, pctL, voixL, prenomL, nomL, partiL, paL, allieL, 'right', 'right', compact);
     rightBlock = blockWinner(colR, nameR, pctR, voixR, prenomR, nomR, partiR, paR, allieR, 'left', compact);
   }
-  return '<div style="display:flex;align-items:stretch;gap:0;border-radius:'+radius+';overflow:hidden;margin-bottom:'+margin+'">'
+  // Grid minmax(0,1fr) auto minmax(0,1fr) : garantit MATHÉMATIQUEMENT que les deux
+  // colonnes latérales sont strictement égales et que la colonne VS reste au centre
+  // pixel-parfait. Le minmax(0, 1fr) est crucial : sans le min=0, une colonne 1fr
+  // peut grandir au-delà de sa part si son contenu (min-content) est plus large,
+  // ce qui décalerait le VS. Avec min=0, la colonne peut shrinker à 0 si besoin.
+  return '<div style="display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:stretch;border-radius:'+radius+';overflow:hidden;margin-bottom:'+margin+'">'
     + leftBlock + vsDiv + rightBlock + '</div>';
 }
 
@@ -6547,6 +6660,110 @@ function randomDiscover() {
   }
   overlay.addEventListener('touchend',    endDrag, { passive: true });
   overlay.addEventListener('touchcancel', endDrag, { passive: true });
+})();
+
+/* ─────────────────────────────────────────────────────────────────
+   DUEL — setup tourniquet (marquise) sur les noms qui débordent.
+   Pattern emprunté à LRVanalyse / setMarqueeText. Différences ici :
+   - on cible tous les .duel-nom-host (rendus par blockWinner/blockLoser
+     en mode mobile full),
+   - on adapte le sens du défilement à data-align (right→+, left→−),
+   - on déclenche automatiquement (MutationObserver) — pas besoin de
+     hooker chaque site d'appel de renderDuel.
+   ───────────────────────────────────────────────────────────────── */
+(function setupDuelMarquees(){
+  // Garde : si quelqu'un désactive volontairement la fonctionnalité.
+  if (window._noDuelMarquees) return;
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduceMotion) return; // accessibilité : on laisse simplement le clip CSS
+
+  // Largeur du fade côté extérieur (DOIT correspondre au gradient des règles
+  // .has-marquee[data-align="..."] dans le CSS). On overshoote la translation
+  // de cette valeur pour que la portion révélée à l'extrême de l'animation
+  // dépasse la zone de fade et soit totalement opaque.
+  const FADE_PX = 10;
+
+  // Calcule l'overflow d'un host et applique/retire la marquise.
+  function applyMarquee(host) {
+    if (!host || !host.isConnected) return;
+    const inner = host.querySelector('.duel-nom-inner');
+    if (!inner) return;
+    // Reset éventuel pour re-mesurer proprement (resize, orientation, etc.).
+    host.classList.remove('has-marquee');
+    host.style.removeProperty('--duel-marquee-d');
+    const containerW = host.clientWidth;
+    const innerW = inner.scrollWidth;
+    if (!containerW || !innerW) return;
+    const overflow = innerW - containerW;
+    if (overflow <= 5) return; // marge de tolérance (sub-pixel rounding)
+    // Distance totale = overflow + largeur du fade.
+    // Overshoot : à l'extrême, la portion révélée dépasse la zone de fade et
+    // est donc 100 % opaque. Sans cet ajout, le bout du texte resterait pile
+    // sous le gradient transparent et serait partiellement masqué.
+    const distance = overflow + FADE_PX;
+    // Sens du défilement selon l'alignement :
+    // - data-align="left"  (bloc droit) → texte calé à gauche, on translate de -distance (slide à gauche) pour révéler la fin.
+    // - data-align="right" (bloc gauche) → texte calé à droite, on translate de +distance (slide à droite) pour révéler le début.
+    const align = host.getAttribute('data-align') || 'left';
+    const sign  = (align === 'right') ? '+' : '-';
+    host.style.setProperty('--duel-marquee-d', sign + distance + 'px');
+    host.classList.add('has-marquee');
+  }
+
+  // Scanne le sous-arbre et applique sur chaque host non encore mesuré.
+  // L'idempotence est gérée via has-marquee + data-mq-done (on remesure quand même
+  // au resize, mais pas à chaque mutation parasite).
+  function scanAndApply(root) {
+    if (!root || !root.querySelectorAll) return;
+    const hosts = root.querySelectorAll('.duel-nom-host');
+    hosts.forEach(h => {
+      if (h.dataset.mqDone === '1' && !h._needsRemeasure) return;
+      // Double rAF : on attend que le layout soit stable (le duel vient d'être inséré).
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        applyMarquee(h);
+        h.dataset.mqDone = '1';
+        h._needsRemeasure = false;
+      }));
+    });
+  }
+
+  // Observateur : déclenché à chaque insertion DOM. Filtre les noeuds pertinents.
+  const obs = new MutationObserver(muts => {
+    for (const m of muts) {
+      if (m.type !== 'childList') continue;
+      m.addedNodes.forEach(n => {
+        if (n.nodeType !== 1) return;
+        if (n.classList && n.classList.contains('duel-nom-host')) {
+          scanAndApply(n.parentNode || document.body);
+        } else if (n.querySelector && n.querySelector('.duel-nom-host')) {
+          scanAndApply(n);
+        }
+      });
+    }
+  });
+  function startObs() {
+    obs.observe(document.body, { childList: true, subtree: true });
+    // Premier scan au cas où des duels seraient déjà dans le DOM.
+    scanAndApply(document.body);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startObs);
+  } else {
+    startObs();
+  }
+
+  // Resize / orientationchange : on remesure tout (les largeurs des blocs changent).
+  // On débrouille les flags d'idempotence pour forcer un re-calcul.
+  let resizeT;
+  function onResize() {
+    clearTimeout(resizeT);
+    resizeT = setTimeout(() => {
+      document.querySelectorAll('.duel-nom-host').forEach(h => { h._needsRemeasure = true; });
+      scanAndApply(document.body);
+    }, 150);
+  }
+  window.addEventListener('resize', onResize, { passive: true });
+  window.addEventListener('orientationchange', onResize, { passive: true });
 })();
 
 </script>

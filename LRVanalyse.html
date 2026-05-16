@@ -3456,6 +3456,13 @@ function drawFrise(bid, xScaleOverride, previewWindow) {
       prevVal = val;
     });
 
+    // Valeur "actuelle" = celle de l'ère CURRENT_ERA pour ce row (nom ou numéro).
+    // Un bloc dont la valeur correspond est considéré "actuel" → gras + droit,
+    // même si CURRENT_ERA elle-même n'est pas dans la fenêtre visible.
+    // → Exemple : un bureau qui s'appelle "École Massiou" de 1996 à 2026 reste
+    //   en gras quand on zoome sur 1996-2007 (sa valeur est toujours l'actuelle).
+    const currentValue = eraInfo[CURRENT_ERA] ? getValue(eraInfo[CURRENT_ERA]) : null;
+
     const blocks = []; let cur = null;
     presentEras.forEach(era => {
       const info = eraInfo[era] || {};
@@ -3472,7 +3479,8 @@ function drawFrise(bid, xScaleOverride, previewWindow) {
       } else {
         if (cur) blocks.push(cur);
         cur = { val, pct, changed: !!cur, agg, eras: [era], eraPcts: [pct], ids,
-                alt: eraAlt[era] !== undefined ? eraAlt[era] : 0 };
+                alt: eraAlt[era] !== undefined ? eraAlt[era] : 0,
+                isCurrent: currentValue !== null && val === currentValue };
       }
     });
     if (cur) blocks.push(cur);
@@ -3488,8 +3496,14 @@ function drawFrise(bid, xScaleOverride, previewWindow) {
       const altCls = `alt-${b.alt}`;
       const cls = ['frise-block', altCls, 'has-tooltip', b.changed ? 'changed' : '', b.agg ? 'agg' : ''].filter(Boolean).join(' ');
       const style = `width:${b.pct.toFixed(3)}%`;
-      const isLatest = i === blocks.length - 1;
-      const spanStyle = isLatest ? ' style="font-weight:700;font-style:normal"' : ' style="font-weight:normal;font-style:italic"';
+      // Le flag b.isCurrent est calculé dans buildBlocks : true si la valeur du
+      // bloc (nom ou numéro) correspond à la valeur de CURRENT_ERA — même si
+      // CURRENT_ERA n'est pas dans la fenêtre visible. Ainsi un bureau qui a
+      // gardé son nom de 1996 à aujourd'hui reste en gras quand on zoome sur
+      // n'importe quelle période depuis 1996.
+      const spanStyle = b.isCurrent
+        ? ' style="font-weight:700;font-style:normal"'
+        : ' style="font-weight:normal;font-style:italic"';
       const era = b.eras[b.eras.length - 1];
       h += `<div class="${cls}" style="${style}" data-tooltip="${b.val}" data-era="${era}" data-eras="${b.eras.join(',')}" data-era-pcts="${b.eraPcts.join(',')}"
         onclick="openFrisePanel(this,event)"><span${spanStyle}>${b.val}</span></div>`;
