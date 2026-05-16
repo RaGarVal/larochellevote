@@ -40,6 +40,11 @@ const PROBA = {
   global:   0.07,
 };
 
+// Cooldown anti-doublons (en jours) : une combinaison niveau/élection/tour/bureau/quartier
+// déjà publiée dans cette fenêtre est exclue du tirage aléatoire.
+// L'historique est stocké dans daily-tweet/history.json (versionné).
+const COOLDOWN_DAYS = 90;
+
 // ══ LES 12 CANEVAS ═══════════════════════════════════════════════════════════
 
 const C = {
@@ -255,6 +260,40 @@ function getDate(electionLabel, tour) {
   return entry[tour] || entry.TU || entry.T1 || Object.values(entry)[0];
 }
 
+// ── Historique anti-doublons ────────────────────────────────────────────────
+// Construit la signature unique d'un tweet selon sa combinaison niveau/élection/tour/...
+// Les valeurs nulles sont normalisées pour que la signature reste comparable
+// d'un run à l'autre (par ex. tour='TU' pour les scrutins à tour unique).
+function computeSignature(niveau, election, tour, bureau, quartier) {
+  const niv = String(niveau || 'global').split(' ')[0]; // retire "(forcé)" éventuel
+  if (niv === 'bureau'   && bureau)   return `bureau|${election}|${tour}|${bureau}`;
+  if (niv === 'quartier' && quartier) return `quartier|${election}|${tour}|${quartier}`;
+  if (niv === 'carte')                return `carte|${election}|${tour}`;
+  return `global|${election}|${tour}`;
+}
+
+// Charge history.json et retourne l'ensemble des signatures publiées dans la
+// fenêtre de cooldown. Le fichier peut ne pas exister (premier run), auquel
+// cas on retourne un Set vide.
+function loadBannedSignatures(todayStr) {
+  const histPath = path.join(__dirname, 'daily-tweet', 'history.json');
+  if (!fs.existsSync(histPath)) return { banned: new Set(), history: [] };
+  let history;
+  try { history = JSON.parse(fs.readFileSync(histPath, 'utf8')); }
+  catch { return { banned: new Set(), history: [] }; }
+  if (!Array.isArray(history)) return { banned: new Set(), history: [] };
+
+  const today    = new Date(todayStr + 'T00:00:00Z');
+  const cutoffMs = today.getTime() - COOLDOWN_DAYS * 86400 * 1000;
+  const banned   = new Set();
+  history.forEach(e => {
+    if (!e.date || !e.signature) return;
+    const d = new Date(e.date + 'T00:00:00Z');
+    if (d.getTime() >= cutoffMs) banned.add(e.signature);
+  });
+  return { banned, history };
+}
+
 // ══ PROGRAMME ÉDITORIAL ══════════════════════════════════════════════════════
 
 const today = (process.env.TWEET_DATE || new Date().toISOString().split('T')[0]).trim();
@@ -360,43 +399,79 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
 
   // ── 3. Choisir le contenu du jour ─────────────────────────────────────────
   // Env vars de debug : NIVEAU=, ELECTION=, TOUR=, BUREAU=, QUARTIER= forcent un cas précis.
-  let niveau   = process.env.NIVEAU   || rdv?.type     || pickWeighted(PROBA);
-  let election = process.env.ELECTION || rdv?.election || pickRandom(elections.filter(el => (bureauxParElection[el]||[]).length > 0));
-  let tour     = process.env.TOUR     || rdv?.tour     || null;
-  let bureau   = process.env.BUREAU   || rdv?.bureau   || null;
-  let quartier = process.env.QUARTIER || rdv?.quartier || null;
+  // Les forçages (env + rdv) sont stables entre les essais ; le reste est re-tiré
+  // si la signature obtenue est encore dans la fenêtre de cooldown.
+  const forcedNiveau   = process.env.NIVEAU   || rdv?.type     || null;
+  const forcedElection = process.env.ELECTION || rdv?.election || null;
+  const forcedTour     = process.env.TOUR     || rdv?.tour     || null;
+  const forcedBureau   = process.env.BUREAU   || rdv?.bureau   || null;
+  const forcedQuartier = process.env.QUARTIER || rdv?.quartier || null;
 
-  // Normaliser 'fiche' (alias dans schedule.json) → bureau/quartier/global selon les params
-  if (niveau === 'fiche') {
-    if (bureau)        niveau = 'bureau';
-    else if (quartier) niveau = 'quartier';
-    else               niveau = pickWeighted({ bureau: 0.6, quartier: 0.3, global: 0.1 });
-  }
+  // Charge l'historique et calcule l'ensemble des signatures interdites (≤ COOLDOWN_DAYS jours).
+  const { banned: bannedSignatures, history: tweetHistory } = loadBannedSignatures(today);
+  console.log(`🚫 Cooldown ${COOLDOWN_DAYS}j → ${bannedSignatures.size} signatures interdites`);
 
-  // Déterminer le tour
-  if (!tour) {
-    const availTours = await page.evaluate(el => Object.keys(ELECTIONS?.[el]?.sheets || {}), election);
-    tour = availTours.includes('T1') ? 'T1' : availTours.includes('TU') ? 'TU' : availTours[0];
-  }
+  let niveau, election, tour, bureau, quartier;
+  let era, bureauxInfoEra, quartiersBureauxEra, quartiersEra;
+  let signature;
+  const MAX_RETRIES = 30;
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    niveau   = forcedNiveau   || pickWeighted(PROBA);
+    election = forcedElection || pickRandom(elections.filter(el => (bureauxParElection[el]||[]).length > 0));
+    tour     = forcedTour;
+    bureau   = forcedBureau;
+    quartier = forcedQuartier;
 
-  // L'ère du découpage utilisé pour cette élection (1988, 1995, ..., 2026)
-  const era = electionEra[election] || '2026';
-  const bureauxInfoEra = bureauxByEra[era] || {};
-  const quartiersBureauxEra = quartiersByEra[era] || {};
-  const quartiersEra = Object.keys(quartiersBureauxEra);
+    // Normaliser 'fiche' (alias dans schedule.json) → bureau/quartier/global selon les params
+    if (niveau === 'fiche') {
+      if (bureau)        niveau = 'bureau';
+      else if (quartier) niveau = 'quartier';
+      else               niveau = pickWeighted({ bureau: 0.6, quartier: 0.3, global: 0.1 });
+    }
 
-  // Sélections aléatoires selon le niveau (en se basant sur l'ère de l'élection)
-  if (niveau === 'bureau' && !bureau) {
-    const candidats = (bureauxParElection[election] || []).filter(n => bureauxInfoEra[n]);
-    bureau = pickRandom(candidats);
-  }
-  if ((niveau === 'quartier' || (niveau === 'bureau' && !bureau)) && !quartier) {
-    quartier = pickRandom(quartiersEra);
+    // Déterminer le tour
+    if (!tour) {
+      const availTours = await page.evaluate(el => Object.keys(ELECTIONS?.[el]?.sheets || {}), election);
+      tour = availTours.includes('T1') ? 'T1' : availTours.includes('TU') ? 'TU' : availTours[0];
+    }
+
+    // L'ère du découpage utilisé pour cette élection (1988, 1995, ..., 2026)
+    era = electionEra[election] || '2026';
+    bureauxInfoEra = bureauxByEra[era] || {};
+    quartiersBureauxEra = quartiersByEra[era] || {};
+    quartiersEra = Object.keys(quartiersBureauxEra);
+
+    // Sélections aléatoires selon le niveau (en se basant sur l'ère de l'élection)
+    if (niveau === 'bureau' && !bureau) {
+      const candidats = (bureauxParElection[election] || []).filter(n => bureauxInfoEra[n]);
+      bureau = pickRandom(candidats);
+    }
+    if ((niveau === 'quartier' || (niveau === 'bureau' && !bureau)) && !quartier) {
+      quartier = pickRandom(quartiersEra);
+    }
+
+    signature = computeSignature(niveau, election, tour, bureau, quartier);
+    if (!bannedSignatures.has(signature)) {
+      if (attempt > 1) console.log(`✅ Signature libre trouvée à l'essai ${attempt}/${MAX_RETRIES}`);
+      break;
+    }
+    console.log(`🔁 Essai ${attempt}/${MAX_RETRIES} — signature déjà publiée : ${signature}`);
+
+    // Si tout est forcé (env vars ou rdv complet), inutile de retenter : la signature est figée.
+    if (forcedNiveau && forcedElection && (forcedBureau || forcedQuartier || forcedNiveau === 'global' || forcedNiveau === 'carte')) {
+      console.warn(`⚠️  Combinaison entièrement forcée — on accepte la duplication.`);
+      break;
+    }
+
+    if (attempt === MAX_RETRIES) {
+      console.warn(`⚠️  Aucun tweet libre trouvé après ${MAX_RETRIES} essais — on accepte la duplication.`);
+    }
   }
 
   const suffix = electionSuffix(election);
   const isRef  = suffix === 'referendum';
   console.log(`📌 Niveau : ${niveau} | ${election} | Tour : ${tour} | Bureau : ${bureau||'—'} | Quartier : ${quartier||'—'}`);
+  console.log(`🔖 Signature : ${signature}`);
 
   // ── 4. Extraire les données électorales ───────────────────────────────────
   const elecData = await page.evaluate((el, tr, bur, qrt, bureausDuQuartier, isRef) => {
@@ -725,8 +800,30 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
   fs.writeFileSync(path.join(outDir, 'tweet.txt'),  tweetText, 'utf8');
   fs.writeFileSync(path.join(outDir, 'meta.json'),  JSON.stringify({
     date: today, niveau: niveauFinal, election, tour, bureau, quartier,
+    signature,
     chars: twitterLen(tweetText), generated_at: new Date().toISOString(),
   }, null, 2), 'utf8');
+
+  // ── 11. Mise à jour de l'historique anti-doublons ─────────────────────────
+  // On retire d'éventuelles entrées du jour (re-run manuel) avant d'ajouter
+  // la nouvelle, pour éviter qu'une même date apparaisse deux fois.
+  const histPath = path.join(outDir, 'history.json');
+  const updatedHistory = (tweetHistory || []).filter(e => e.date !== today);
+  // On stocke le niveau *initial* (celui qui sert à calculer la signature),
+  // pas niveauFinal qui peut différer après la cascade de repli (bureau → global
+  // si le tweet niveau bureau dépassait 280 chars). Cohérence avec la signature.
+  updatedHistory.push({
+    date: today,
+    signature,
+    niveau,
+    election,
+    tour,
+    bureau:   bureau   || null,
+    quartier: quartier || null,
+  });
+  updatedHistory.sort((a, b) => a.date.localeCompare(b.date));
+  fs.writeFileSync(histPath, JSON.stringify(updatedHistory, null, 2) + '\n', 'utf8');
+  console.log(`📚 history.json mis à jour (${updatedHistory.length} entrées)`);
 
   console.log('\n🎉 Prêt pour Make.com !');
 

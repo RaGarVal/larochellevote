@@ -110,7 +110,7 @@ jobs:
         run: |
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add daily-tweet/image.png daily-tweet/tweet.txt daily-tweet/meta.json
+          git add daily-tweet/image.png daily-tweet/tweet.txt daily-tweet/meta.json daily-tweet/history.json
           # Ne commiter que s'il y a des changements
           git diff --staged --quiet && echo "Rien à commiter" || (
             git commit -m "📊 Tweet du $(date -u +%Y-%m-%d)"

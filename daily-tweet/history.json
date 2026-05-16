@@ -1,0 +1,101 @@
+[
+  {
+    "date": "2026-05-01",
+    "signature": "bureau|Municipales 1995|T1|0011",
+    "niveau": "bureau",
+    "election": "Municipales 1995",
+    "tour": "T1",
+    "bureau": "0011",
+    "quartier": null
+  },
+  {
+    "date": "2026-05-07",
+    "signature": "bureau|Présidentielle 2022|T2|0021",
+    "niveau": "bureau",
+    "election": "Présidentielle 2022",
+    "tour": "T2",
+    "bureau": "0021",
+    "quartier": null
+  },
+  {
+    "date": "2026-05-08",
+    "signature": "quartier|Législatives 1988|T1|Lafond",
+    "niveau": "quartier",
+    "election": "Législatives 1988",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": "Lafond"
+  },
+  {
+    "date": "2026-05-09",
+    "signature": "global|Européennes 2014|TU",
+    "niveau": "global",
+    "election": "Européennes 2014",
+    "tour": "TU",
+    "bureau": null,
+    "quartier": null
+  },
+  {
+    "date": "2026-05-10",
+    "signature": "quartier|Européennes 2004|TU|Laleu/La Pallice",
+    "niveau": "quartier",
+    "election": "Européennes 2004",
+    "tour": "TU",
+    "bureau": null,
+    "quartier": "Laleu/La Pallice"
+  },
+  {
+    "date": "2026-05-11",
+    "signature": "quartier|Régionales 2010|T1|Villeneuve-les-Salines",
+    "niveau": "quartier",
+    "election": "Régionales 2010",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": "Villeneuve-les-Salines"
+  },
+  {
+    "date": "2026-05-12",
+    "signature": "global|Européennes 1999|TU",
+    "niveau": "global",
+    "election": "Européennes 1999",
+    "tour": "TU",
+    "bureau": null,
+    "quartier": null
+  },
+  {
+    "date": "2026-05-13",
+    "signature": "global|Régionales 2010|T1",
+    "niveau": "global",
+    "election": "Régionales 2010",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null
+  },
+  {
+    "date": "2026-05-14",
+    "signature": "quartier|Législatives 2007|T1|La Genette",
+    "niveau": "quartier",
+    "election": "Législatives 2007",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": "La Genette"
+  },
+  {
+    "date": "2026-05-15",
+    "signature": "bureau|Régionales 2015|T1|0030",
+    "niveau": "bureau",
+    "election": "Régionales 2015",
+    "tour": "T1",
+    "bureau": "0030",
+    "quartier": null
+  },
+  {
+    "date": "2026-05-16",
+    "signature": "global|Européennes 1999|TU",
+    "niveau": "global",
+    "election": "Européennes 1999",
+    "tour": "TU",
+    "bureau": null,
+    "quartier": null
+  }
+]
