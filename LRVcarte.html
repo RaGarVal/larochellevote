@@ -2236,12 +2236,16 @@ function loadMap(){
     onEachFeature:(feature,layer)=>{
       const ns=numStr(feature);
       const info=bureauInfo(feature);
-      layer.bindTooltip('',{sticky:true,opacity:1,className:'map-tooltip'});
       // Détection "vrai pointeur fin" (souris/trackpad) vs tactile. Sur touch-only
       // (mobile/tablette), le hover est une simulation de touchend → on l'ignore
       // pour ne pas afficher le tooltip et la preview sidebar de façon inattendue
       // après un swipe-down ou un tap.
       const hasHover = () => window.matchMedia && window.matchMedia('(hover: hover)').matches;
+      // On ne crée même pas le tooltip Leaflet sur touch : sinon une bulle vide
+      // apparaît brièvement à chaque mouseover simulé (post-touchend).
+      if (hasHover()) {
+        layer.bindTooltip('',{sticky:true,opacity:1,className:'map-tooltip'});
+      }
       layer.on({
         mouseover:e=>{
           if (!hasHover()) return;
