@@ -32,16 +32,28 @@ const BASE_URL = process.env.LOCAL === '1'
 const SITE_URL = 'https://larochellevote.fr'; // URL publique citée dans les tweets (compté 23 chars par Twitter)
 const CHAPEAU  = '📊 La Rochelle Vote — La donnée du jour';
 
-// Probabilités de tirage (doivent sommer à 1)
+// Probabilités cibles du tirage (doivent sommer à 1).
+// Ce sont les proportions visées sur la fenêtre de COOLDOWN_DAYS — les vraies
+// probabilités utilisées à chaque tirage sont ajustées dynamiquement par
+// rebalanceProba() pour corriger les déséquilibres récents.
 const PROBA = {
-  carte:    0.30,
-  bureau:   0.42,
-  quartier: 0.21,
-  global:   0.07,
+  carte:    0.25,
+  bureau:   0.50,
+  quartier: 0.20,
+  global:   0.05,
+};
+
+// Sous-tirage au sein du niveau "carte" :
+//   gagnants → carte mosaïque classique, sujet = gagnant ville
+//   candidat → carte heatmap d'un seul candidat (tiré pondéré par son score ville)
+const SUB_CARTE = {
+  gagnants: 0.40,
+  candidat: 0.60,
 };
 
 // Cooldown anti-doublons (en jours) : une combinaison niveau/élection/tour/bureau/quartier
 // déjà publiée dans cette fenêtre est exclue du tirage aléatoire.
+// La même fenêtre sert au rééquilibrage auto-correctif des proba (axes niveau, scrutin, sub-carte).
 // L'historique est stocké dans daily-tweet/history.json (versionné).
 const COOLDOWN_DAYS = 90;
 
@@ -214,6 +226,68 @@ function pickWeighted(proba) {
   return Object.keys(proba).pop();
 }
 
+// Tirage pondéré dans un tableau d'objets {key, weight}. Renvoie la key.
+function pickWeightedFromList(items) {
+  const total = items.reduce((s, it) => s + Math.max(0, it.weight || 0), 0);
+  if (total <= 0) return items[Math.floor(Math.random() * items.length)]?.key;
+  let r = Math.random() * total;
+  for (const it of items) {
+    r -= Math.max(0, it.weight || 0);
+    if (r <= 0) return it.key;
+  }
+  return items[items.length - 1].key;
+}
+
+// ── Rééquilibrage auto-correctif ────────────────────────────────────────────
+// Formule : poids[k] = max(epsilon, 2 × cible[k] − proportion_actuelle[k])
+// Effets :
+//   • si proportion_actuelle == cible → poids = cible (tirage cible)
+//   • si proportion_actuelle == 0     → poids = 2 × cible (chances doublées)
+//   • si proportion_actuelle ≥ 2×cible → poids ≈ epsilon (gel quasi-total)
+// On retourne un objet probabilités normalisées (somme = 1).
+// Cold start : si totalCount < minCount, on renvoie la cible brute sans correction.
+function rebalanceProba(target, counts, opts = {}) {
+  const minCount = opts.minCount ?? 10;
+  const epsilon  = opts.epsilon  ?? 0.01;
+  const totalCount = Object.values(counts).reduce((s, v) => s + (v || 0), 0);
+  if (totalCount < minCount) {
+    // Renvoyer la cible normalisée telle quelle (au cas où elle ne somme pas exactement à 1)
+    const s = Object.values(target).reduce((a, b) => a + b, 0) || 1;
+    const out = {};
+    Object.keys(target).forEach(k => out[k] = target[k] / s);
+    return out;
+  }
+  const weights = {};
+  Object.keys(target).forEach(k => {
+    const actualProp = (counts[k] || 0) / totalCount;
+    weights[k] = Math.max(epsilon, 2 * target[k] - actualProp);
+  });
+  const sum = Object.values(weights).reduce((a, b) => a + b, 0) || 1;
+  Object.keys(weights).forEach(k => weights[k] /= sum);
+  return weights;
+}
+
+// Compte les entrées d'history dans la fenêtre [today − days, today] selon une fonction de clé.
+function countByKey(history, today, days, keyFn) {
+  const cutoffMs = new Date(today + 'T00:00:00Z').getTime() - days * 86400 * 1000;
+  const counts = {};
+  (history || []).forEach(e => {
+    if (!e?.date) return;
+    if (new Date(e.date + 'T00:00:00Z').getTime() < cutoffMs) return;
+    const k = keyFn(e);
+    if (k) counts[k] = (counts[k] || 0) + 1;
+  });
+  return counts;
+}
+
+// Détermine le sous-type carte d'une entrée d'historique (gagnants/candidat).
+// La signature carte_candidat contient "|cand:" — gagnants ne l'a pas.
+function subtypeOfHistoryEntry(e) {
+  if (e?.niveau !== 'carte') return null;
+  if (e?.subtype) return e.subtype;
+  return (e?.signature || '').includes('|cand:') ? 'candidat' : 'gagnants';
+}
+
 function fillCaneva(tpl, vars) {
   return tpl.replace(/\{(\w+)\}/g, (_, k) => vars[k] !== undefined ? vars[k] : '');
 }
@@ -235,6 +309,18 @@ function formatElectionLabel(label) {
 function electionSuffix(label) {
   if (/présidentielle/i.test(label)) return 'presidentielle';
   if (/référendum/i.test(label))     return 'referendum';
+  return 'autres';
+}
+
+// Type de scrutin canonique (axe utilisé par le rééquilibrage auto-correctif).
+// 6 catégories distinctes, indépendamment de l'année.
+function electionScrutin(label) {
+  if (/présidentielle/i.test(label)) return 'presidentielle';
+  if (/référendum/i.test(label))     return 'referendum';
+  if (/législative/i.test(label))    return 'legislatives';
+  if (/municipale/i.test(label))     return 'municipales';
+  if (/régionale/i.test(label))      return 'regionales';
+  if (/européenne/i.test(label))     return 'europeennes';
   return 'autres';
 }
 
@@ -264,11 +350,16 @@ function getDate(electionLabel, tour) {
 // Construit la signature unique d'un tweet selon sa combinaison niveau/élection/tour/...
 // Les valeurs nulles sont normalisées pour que la signature reste comparable
 // d'un run à l'autre (par ex. tour='TU' pour les scrutins à tour unique).
-function computeSignature(niveau, election, tour, bureau, quartier) {
+// Pour le niveau 'carte', subCarte ∈ {'gagnants', 'candidat'} permet de distinguer
+// la carte mosaïque classique de la carte heatmap d'un candidat précis (suffixé "|cand:<nom>").
+function computeSignature(niveau, election, tour, bureau, quartier, subCarte, candidatName) {
   const niv = String(niveau || 'global').split(' ')[0]; // retire "(forcé)" éventuel
   if (niv === 'bureau'   && bureau)   return `bureau|${election}|${tour}|${bureau}`;
   if (niv === 'quartier' && quartier) return `quartier|${election}|${tour}|${quartier}`;
-  if (niv === 'carte')                return `carte|${election}|${tour}`;
+  if (niv === 'carte') {
+    if (subCarte === 'candidat' && candidatName) return `carte|${election}|${tour}|cand:${candidatName}`;
+    return `carte|${election}|${tour}`;
+  }
   return `global|${election}|${tour}`;
 }
 
@@ -355,6 +446,14 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
       electionEra[el] = String(ELECTIONS[el]?.my || '2026');
     });
 
+    // map : election → liste des tours disponibles (['T1','T2'] ou ['TU'])
+    // Sert au calcul des cibles dynamiques par type de scrutin (option B :
+    // proportionnel au nombre d'instances election × tour dans la base).
+    const electionTours = {};
+    elections.forEach(el => {
+      electionTours[el] = Object.keys(ELECTIONS[el]?.sheets || {});
+    });
+
     const bureauxParElection = {};
     elections.forEach(el => {
       const sheets = ELECTIONS[el]?.sheets || {};
@@ -386,10 +485,31 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
       });
     });
 
-    return { elections, electionEra, bureauxParElection, bureauxByEra, quartiersByEra };
+    return { elections, electionEra, electionTours, bureauxParElection, bureauxByEra, quartiersByEra };
   });
 
-  const { elections, electionEra, bureauxParElection, bureauxByEra, quartiersByEra } = siteData;
+  const { elections, electionEra, electionTours, bureauxParElection, bureauxByEra, quartiersByEra } = siteData;
+
+  // ── 2bis. Cibles dynamiques par type de scrutin (option B) ────────────────
+  // Pour chaque scrutin, on compte les instances (élection × tour) disponibles ;
+  // la cible est la part normalisée. Si plus tard tu ajoutes des scrutins en base,
+  // les pondérations s'ajustent automatiquement.
+  const scrutinTargets = (() => {
+    const counts = {};
+    elections.forEach(el => {
+      if (!(bureauxParElection[el] || []).length) return; // élection sans données → ignorée
+      const s = electionScrutin(el);
+      const n = (electionTours[el] || []).length || 1;
+      counts[s] = (counts[s] || 0) + n;
+    });
+    const total = Object.values(counts).reduce((a, b) => a + b, 0) || 1;
+    const out = {};
+    Object.keys(counts).forEach(k => out[k] = counts[k] / total);
+    return out;
+  })();
+  console.log(`🎯 Cibles scrutin (dynamiques) :`, Object.fromEntries(
+    Object.entries(scrutinTargets).map(([k, v]) => [k, (v * 100).toFixed(1) + '%'])
+  ));
   // Pour les besoins du tirage aléatoire d'un quartier (qui doit exister pour l'élection
   // tirée), on consultera les quartiersByEra à la volée. Pour l'affichage du count log,
   // on utilise l'ère 2026 comme référence.
@@ -411,13 +531,52 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
   const { banned: bannedSignatures, history: tweetHistory } = loadBannedSignatures(today);
   console.log(`🚫 Cooldown ${COOLDOWN_DAYS}j → ${bannedSignatures.size} signatures interdites`);
 
-  let niveau, election, tour, bureau, quartier;
+  // Rééquilibrage auto-correctif : on calcule les probas effectives à partir de la cible
+  // et de la proportion réelle observée dans les COOLDOWN_DAYS derniers jours.
+  const niveauCounts = countByKey(tweetHistory, today, COOLDOWN_DAYS, e => e.niveau);
+  const niveauProba  = rebalanceProba(PROBA, niveauCounts);
+
+  const scrutinCounts = countByKey(tweetHistory, today, COOLDOWN_DAYS, e => electionScrutin(e.election));
+  const scrutinProba  = rebalanceProba(scrutinTargets, scrutinCounts);
+
+  const subCarteCounts = countByKey(tweetHistory, today, COOLDOWN_DAYS, subtypeOfHistoryEntry);
+  const subCarteProba  = rebalanceProba(SUB_CARTE, subCarteCounts);
+
+  console.log(`⚖️  Niveau   (cible → effectif) :`, Object.fromEntries(
+    Object.entries(niveauProba).map(([k, v]) => [k, (v * 100).toFixed(1) + '%'])
+  ));
+  console.log(`⚖️  Scrutin  (cible → effectif) :`, Object.fromEntries(
+    Object.entries(scrutinProba).map(([k, v]) => [k, (v * 100).toFixed(1) + '%'])
+  ));
+  console.log(`⚖️  SubCarte (cible → effectif) :`, Object.fromEntries(
+    Object.entries(subCarteProba).map(([k, v]) => [k, (v * 100).toFixed(1) + '%'])
+  ));
+
+  let niveau, election, tour, bureau, quartier, subCarte, candidatPicked;
   let era, bureauxInfoEra, quartiersBureauxEra, quartiersEra;
   let signature;
   const MAX_RETRIES = 30;
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    niveau   = forcedNiveau   || pickWeighted(PROBA);
-    election = forcedElection || pickRandom(elections.filter(el => (bureauxParElection[el]||[]).length > 0));
+    // ── Étape 1 : niveau (rééquilibré)
+    niveau = forcedNiveau || pickWeighted(niveauProba);
+
+    // ── Étape 2 : élection (via tirage du scrutin rééquilibré, puis uniforme dans le scrutin)
+    if (forcedElection) {
+      election = forcedElection;
+    } else {
+      // Filtrer les scrutins qui ont au moins une élection disponible (defensive)
+      const availableScrutins = Object.keys(scrutinProba).filter(s =>
+        elections.some(el => electionScrutin(el) === s && (bureauxParElection[el] || []).length > 0)
+      );
+      const proba = {};
+      availableScrutins.forEach(s => proba[s] = scrutinProba[s] || 0);
+      const chosenScrutin = pickWeighted(proba);
+      const electionsOfScrutin = elections.filter(el =>
+        electionScrutin(el) === chosenScrutin && (bureauxParElection[el] || []).length > 0
+      );
+      election = pickRandom(electionsOfScrutin);
+    }
+
     tour     = forcedTour;
     bureau   = forcedBureau;
     quartier = forcedQuartier;
@@ -431,7 +590,7 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
 
     // Déterminer le tour
     if (!tour) {
-      const availTours = await page.evaluate(el => Object.keys(ELECTIONS?.[el]?.sheets || {}), election);
+      const availTours = electionTours[election] || [];
       tour = availTours.includes('T1') ? 'T1' : availTours.includes('TU') ? 'TU' : availTours[0];
     }
 
@@ -450,7 +609,52 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
       quartier = pickRandom(quartiersEra);
     }
 
-    signature = computeSignature(niveau, election, tour, bureau, quartier);
+    // ── Étape 3 : sous-type carte (rééquilibré) + tirage candidat pondéré si "candidat"
+    subCarte = null;
+    candidatPicked = null;
+    if (niveau === 'carte') {
+      // Référendum : pas de "carte candidat" (Oui/Non n'est pas un candidat à mettre en heatmap),
+      // on retombe systématiquement sur "gagnants".
+      if (electionSuffix(election) === 'referendum') {
+        subCarte = 'gagnants';
+      } else {
+        subCarte = pickWeighted(subCarteProba);
+      }
+
+      if (subCarte === 'candidat') {
+        // Récupère les scores ville pour (election, tour) et tire un candidat pondéré
+        // par son score (option D). Les pseudo-candidats "Autres X listes" sont filtrés.
+        const cityScores = await page.evaluate((el, tr) => {
+          const sheets = ELECTIONS?.[el]?.sheets || {};
+          const sheet  = sheets[tr] || sheets.TU || sheets[Object.keys(sheets)[0]];
+          if (!sheet) return [];
+          const nums = Object.keys(sheet).filter(n => sheet[n]?.c && Object.keys(sheet[n].c).length > 0);
+          const totalExp = nums.reduce((s, n) => s + (sheet[n]?.e || 0), 0);
+          const scores = {};
+          nums.forEach(n => {
+            const bd = sheet[n];
+            if (!bd?.c || !bd.e) return;
+            Object.entries(bd.c).forEach(([cand, pct]) => {
+              if (/^Autres /.test(cand)) return;
+              scores[cand] = (scores[cand] || 0) + (pct / 100) * bd.e;
+            });
+          });
+          return Object.entries(scores).map(([cand, v]) => ({
+            cand, pct: totalExp > 0 ? (v / totalExp) * 100 : 0
+          })).sort((a, b) => b.pct - a.pct);
+        }, election, tour);
+
+        if (cityScores.length === 0) {
+          // Aucun candidat exploitable → on retombe en "gagnants"
+          subCarte = 'gagnants';
+        } else {
+          // Tirage pondéré par le score ville (un candidat à 30 % est 6× plus probable qu'un à 5 %)
+          candidatPicked = pickWeightedFromList(cityScores.map(s => ({ key: s.cand, weight: s.pct })));
+        }
+      }
+    }
+
+    signature = computeSignature(niveau, election, tour, bureau, quartier, subCarte, candidatPicked);
     if (!bannedSignatures.has(signature)) {
       if (attempt > 1) console.log(`✅ Signature libre trouvée à l'essai ${attempt}/${MAX_RETRIES}`);
       break;
@@ -470,11 +674,15 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
 
   const suffix = electionSuffix(election);
   const isRef  = suffix === 'referendum';
-  console.log(`📌 Niveau : ${niveau} | ${election} | Tour : ${tour} | Bureau : ${bureau||'—'} | Quartier : ${quartier||'—'}`);
+  console.log(`📌 Niveau : ${niveau}${subCarte ? '/' + subCarte : ''} | ${election} | Tour : ${tour} | Bureau : ${bureau||'—'} | Quartier : ${quartier||'—'}${candidatPicked ? ' | Candidat : ' + candidatPicked : ''}`);
   console.log(`🔖 Signature : ${signature}`);
 
   // ── 4. Extraire les données électorales ───────────────────────────────────
-  const elecData = await page.evaluate((el, tr, bur, qrt, bureausDuQuartier, isRef) => {
+  // Note : si subjectCandidate est fourni (niveau carte_candidat), on remplace
+  // cityWinner par les données de CE candidat précis, et bestBureau pointe vers
+  // son meilleur bureau personnel (pas celui du gagnant ville). Le texte du tweet
+  // utilise ainsi les mêmes canevas, juste avec un sujet différent.
+  const elecData = await page.evaluate((el, tr, bur, qrt, bureausDuQuartier, isRef, subjectCandidate) => {
     const sheets = ELECTIONS?.[el]?.sheets || {};
     const sheet  = sheets[tr] || sheets.TU || sheets[Object.keys(sheets)[0]];
     if (!sheet) return null;
@@ -505,15 +713,26 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
 
     const allNums     = Object.keys(sheet).filter(n => sheet[n]?.c && Object.keys(sheet[n].c).length > 0);
     const cityData    = aggregate(allNums);
-    const cityWinner  = cityData.ranked[0];
 
-    // Meilleur bureau du gagnant ville
-    let bestBureau = null, bestBureauPct = 0;
+    // Sujet principal du tweet "carte" :
+    //   • sans subjectCandidate → le gagnant ville (comportement historique)
+    //   • avec subjectCandidate → ce candidat précis, même s'il n'a pas gagné
+    let cityWinner;
+    if (subjectCandidate) {
+      const found = cityData.ranked.find(r => r.cand === subjectCandidate);
+      cityWinner = found || { cand: subjectCandidate, pct: 0 };
+    } else {
+      cityWinner = cityData.ranked[0];
+    }
+
+    // Meilleur bureau du sujet (gagnant ville OU candidat tiré)
+    let bestBureau = null, bestBureauPct = -1;
     if (cityWinner) {
       allNums.forEach(n => {
-        const p = sheet[n]?.c?.[cityWinner.cand] || 0;
-        if (p > bestBureauPct) { bestBureauPct = p; bestBureau = n; }
+        const p = sheet[n]?.c?.[cityWinner.cand];
+        if (typeof p === 'number' && p > bestBureauPct) { bestBureauPct = p; bestBureau = n; }
       });
+      if (bestBureauPct < 0) bestBureauPct = 0;
     }
 
     // Gagnant dans un bureau précis (en excluant les pseudo-candidats)
@@ -561,7 +780,7 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
 
     return { cityWinner, bestBureau, bestBureauPct, bureauWinner, quartierWinner };
 
-  }, election, tour, bureau, quartier, bureau ? null : (quartiersBureauxEra[quartier] || null), isRef);
+  }, election, tour, bureau, quartier, bureau ? null : (quartiersBureauxEra[quartier] || null), isRef, candidatPicked);
 
   if (!elecData) {
     console.error('❌ Données introuvables. Abandon.');
@@ -617,6 +836,10 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
     if (niv === 'bureau'   && bureau) params.set('bureau',   bureau);
     if (niv === 'quartier' && quartier) params.set('quartier', quartier);
     if (niv === 'global')             params.set('tab',      'global');
+    // Carte candidat : précharger la heatmap du bon candidat
+    if (niv === 'carte' && subCarte === 'candidat' && candidatPicked) {
+      params.set('selection', candidatPicked);
+    }
     return SITE_URL + '/LRVcarte.html#' + params.toString();
   }
 
@@ -706,6 +929,11 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
   if (niveau === 'bureau'   && bureau)   params.set('bureau',   bureau);
   if (niveau === 'quartier' && quartier) params.set('quartier', quartier);
   if (niveau === 'global')               params.set('tab',      'global');
+  // Carte candidat : sélectionne le bon candidat pour que la heatmap s'affiche
+  // (mode 'candidat' est déjà le défaut côté LRVcarte.html — pas besoin de mode=)
+  if (niveau === 'carte' && subCarte === 'candidat' && candidatPicked) {
+    params.set('selection', candidatPicked);
+  }
   // PAS de params.set('mode', 'export') — on évite l'IIFE auto-export de la page
   // qui a un timing fragile et un override de downloadCanvas qui peut nous échapper.
 
@@ -800,6 +1028,8 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
   fs.writeFileSync(path.join(outDir, 'tweet.txt'),  tweetText, 'utf8');
   fs.writeFileSync(path.join(outDir, 'meta.json'),  JSON.stringify({
     date: today, niveau: niveauFinal, election, tour, bureau, quartier,
+    subtype: subCarte || null,
+    candidat: candidatPicked || null,
     signature,
     chars: twitterLen(tweetText), generated_at: new Date().toISOString(),
   }, null, 2), 'utf8');
@@ -812,6 +1042,8 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
   // On stocke le niveau *initial* (celui qui sert à calculer la signature),
   // pas niveauFinal qui peut différer après la cascade de repli (bureau → global
   // si le tweet niveau bureau dépassait 280 chars). Cohérence avec la signature.
+  // subtype + candidat permettent au rééquilibrage auto-correctif de compter
+  // précisément les sous-types carte sans avoir à parser la signature.
   updatedHistory.push({
     date: today,
     signature,
@@ -820,6 +1052,8 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
     tour,
     bureau:   bureau   || null,
     quartier: quartier || null,
+    subtype:  subCarte || null,
+    candidat: candidatPicked || null,
   });
   updatedHistory.sort((a, b) => a.date.localeCompare(b.date));
   fs.writeFileSync(histPath, JSON.stringify(updatedHistory, null, 2) + '\n', 'utf8');
