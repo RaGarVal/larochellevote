@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🏙️ Le 11 juin 1995, pour les municipales (1er tour), Michel Crépeau (Radical) arrive en tête avec 58,0 % à La Rochelle.
+🏙️ Le 9 mars 2008, pour les municipales (1er tour), Dominique Morvant (UMP) arrive en tête avec 46,2 % dans le bureau n°24 · Sécurité sociale à La Genette.
 
-Les résultats de ce scrutin, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Municipales+1995&tour=T1&tab=global
+Les résultats de ce bureau, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Municipales+2008&tour=T1&bureau=0024

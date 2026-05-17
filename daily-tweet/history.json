@@ -99,5 +99,16 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "Crépeau MRG"
+  },
+  {
+    "date": "2026-05-17",
+    "signature": "bureau|Municipales 2008|T1|0024",
+    "niveau": "bureau",
+    "election": "Municipales 2008",
+    "tour": "T1",
+    "bureau": "0024",
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
   }
 ]
