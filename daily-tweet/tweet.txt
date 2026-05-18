@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🏛️ Le 10 juin 2012, pour les législatives (1er tour), Ségolène Royal (PS) arrive en tête avec 35,2 % dans le bureau n°4 · Pierre-Loti–Missy à Saint-Maurice.
+🏙️ Le 15 mars 2026, pour les municipales (1er tour), Maryline Simoné (PS) arrive en tête avec 21,4 % à La Rochelle.
 
-Les résultats de ce bureau, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=L%C3%A9gislatives+2012&tour=T1&bureau=0004
+Les résultats de ce scrutin, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Municipales+2026&tour=T1&tab=global
