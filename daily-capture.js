@@ -714,22 +714,29 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
     const allNums     = Object.keys(sheet).filter(n => sheet[n]?.c && Object.keys(sheet[n].c).length > 0);
     const cityData    = aggregate(allNums);
 
-    // Sujet principal du tweet "carte" :
-    //   • sans subjectCandidate → le gagnant ville (comportement historique)
-    //   • avec subjectCandidate → ce candidat précis, même s'il n'a pas gagné
-    let cityWinner;
+    // cityWinner = TOUJOURS le vrai gagnant ville (utilisé par les canvas global_*).
+    // Indépendant de subjectCandidate, sinon une cascade carte/candidat → global
+    // afficherait "X arrive en tête à La Rochelle" pour un candidat qui n'a pas gagné.
+    let cityWinner = cityData.ranked[0] || null;
+
+    // carteSubject = sujet du canva carte_* (peut différer du gagnant ville).
+    // En mode subCarte='candidat', on profile un candidat tiré pondéré par son score,
+    // pas forcément le gagnant. Le texte carte_* dit "X a obtenu Y % à La Rochelle"
+    // ce qui reste factuellement correct même si X n'a pas gagné.
+    let carteSubject = cityWinner;
     if (subjectCandidate) {
       const found = cityData.ranked.find(r => r.cand === subjectCandidate);
-      cityWinner = found || { cand: subjectCandidate, pct: 0 };
-    } else {
-      cityWinner = cityData.ranked[0];
+      carteSubject = found || { cand: subjectCandidate, pct: 0 };
     }
 
-    // Meilleur bureau du sujet (gagnant ville OU candidat tiré)
+    // Meilleur bureau du sujet carte (= carteSubject, pas cityWinner). Sert au canva
+    // carte_* qui mentionne "📍 Meilleur score dans le bureau n°…". Si on est sur
+    // subCarte='candidat' avec Simoné, on veut SON meilleur bureau personnel, pas
+    // celui du vrai gagnant ville.
     let bestBureau = null, bestBureauPct = -1;
-    if (cityWinner) {
+    if (carteSubject) {
       allNums.forEach(n => {
-        const p = sheet[n]?.c?.[cityWinner.cand];
+        const p = sheet[n]?.c?.[carteSubject.cand];
         if (typeof p === 'number' && p > bestBureauPct) { bestBureauPct = p; bestBureau = n; }
       });
       if (bestBureauPct < 0) bestBureauPct = 0;
@@ -766,6 +773,10 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
       cityWinner   && Object.assign(cityWinner,    toRef(cityWinner,    allNums));
       bureauWinner && Object.assign(bureauWinner,  toRef(bureauWinner,  bur ? [bur] : []));
       quartierWinner && Object.assign(quartierWinner, toRef(quartierWinner, bureausDuQuartier || []));
+      // Sur référendum, pas de subCarte='candidat' (cf. ligne ~618), donc
+      // carteSubject === cityWinner par construction. On le réaligne après
+      // mutation par toRef pour éviter toute divergence accidentelle.
+      carteSubject = cityWinner;
 
       // Meilleur bureau pour la réponse gagnante (référendum)
       if (cityWinner) {
@@ -778,7 +789,7 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
       }
     }
 
-    return { cityWinner, bestBureau, bestBureauPct, bureauWinner, quartierWinner };
+    return { cityWinner, carteSubject, bestBureau, bestBureauPct, bureauWinner, quartierWinner };
 
   }, election, tour, bureau, quartier, bureau ? null : (quartiersBureauxEra[quartier] || null), isRef, candidatPicked);
 
@@ -851,7 +862,9 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
 
     let winner, extra = {};
     if (niv === 'carte') {
-      winner = elecData.cityWinner;
+      // Sujet du canva carte_* : peut être le gagnant ville OU un candidat tiré
+      // pondéré (subCarte='candidat'). Cf. carteSubject dans elecData.
+      winner = elecData.carteSubject;
       extra  = { ...carteVars };
     } else if (niv === 'bureau') {
       winner = elecData.bureauWinner;
@@ -860,6 +873,9 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
       winner = elecData.quartierWinner;
       extra  = { quartier: quartier || bInfo.quartier || '?' };
     } else { // global
+      // ATTENTION : on utilise cityWinner (vrai gagnant ville), pas carteSubject.
+      // Sinon une cascade carte/candidat → global afficherait "X arrive en tête à
+      // La Rochelle" pour un candidat qui n'a pas réellement gagné.
       winner = elecData.cityWinner;
       extra  = {};
     }
