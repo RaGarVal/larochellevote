@@ -110,5 +110,16 @@
     "quartier": null,
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-05-18",
+    "signature": "bureau|Législatives 2012|T1|0004",
+    "niveau": "bureau",
+    "election": "Législatives 2012",
+    "tour": "T1",
+    "bureau": "0004",
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
   }
 ]
