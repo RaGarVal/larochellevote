@@ -4363,8 +4363,18 @@ function updateAnalyseLink() {
     renderMapLegend();
     if (bid) {
       const gj = getMapGeoJSON();
-      const feat = gj.features.find(f => (f.properties.b2026 || numStr(f)) === bid)
-                || gj.features.find(f => numStr(f) === bid);
+      // Priorité au match DIRECT dans l'ère affichée : `bureau=XXXX` dans le hash
+      // désigne le numéro de bureau dans l'ère de l'élection courante (c'est ce
+      // que produisent daily-capture et l'analyse). Le fallback via `b2026`
+      // (projection vers la numérotation 2026) ne sert que quand quelqu'un partage
+      // un lien construit avec un numéro 2026 vers une élection d'une autre ère.
+      // ──
+      // Avant : on essayait b2026 d'abord, ce qui ouvrait le MAUVAIS bureau quand
+      // l'hash venait de daily-capture sur une élection ancienne (ex. bureau=0003
+      // pour Législatives 2012 ouvrait le bureau qui était n°4 en 2012 mais
+      // renuméroté 0003 en 2026, donc texte du tweet ≠ image générée).
+      const feat = gj.features.find(f => numStr(f) === bid)
+                || gj.features.find(f => f.properties.b2026 === bid);
       if (feat) {
         currentFeature = feat;
         overlayTab = 'bureau';

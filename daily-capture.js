@@ -923,15 +923,25 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
   });
 
   // ── 9. Naviguer vers l'URL avec les params (sans mode=export — on contrôle nous-mêmes) ──
+  // IMPORTANT : on utilise niveauFinal (le niveau REEL utilisé pour le texte après
+  // éventuelle cascade de repli > 280 chars), pas niveau (le niveau initialement
+  // tiré). Sans ça, si le texte cascadait p. ex. de "bureau" vers "global" parce
+  // qu'il dépassait 280 chars, on continuait d'ouvrir la fiche du bureau initial
+  // alors que le texte parlait de la ville → image incohérente avec le texte.
+  // La normalisation `' (forcé)'` gère le cas de dernier recours (cf. ligne ~900
+  // où niveauFinal devient 'global (forcé)' si aucun niveau ne tient en 280 chars).
+  const urlNiveau = (niveauFinal || niveau).replace(' (forcé)', '');
   const params = new URLSearchParams();
   params.set('election', election);
   if (tour && tour !== 'TU') params.set('tour', tour);
-  if (niveau === 'bureau'   && bureau)   params.set('bureau',   bureau);
-  if (niveau === 'quartier' && quartier) params.set('quartier', quartier);
-  if (niveau === 'global')               params.set('tab',      'global');
+  if (urlNiveau === 'bureau'   && bureau)   params.set('bureau',   bureau);
+  if (urlNiveau === 'quartier' && quartier) params.set('quartier', quartier);
+  if (urlNiveau === 'global')               params.set('tab',      'global');
   // Carte candidat : sélectionne le bon candidat pour que la heatmap s'affiche
-  // (mode 'candidat' est déjà le défaut côté LRVcarte.html — pas besoin de mode=)
-  if (niveau === 'carte' && subCarte === 'candidat' && candidatPicked) {
+  // (mode 'candidat' est déjà le défaut côté LRVcarte.html — pas besoin de mode=).
+  // Pas appliqué si on a cascadé vers 'global' : le tab global ouvre la fiche
+  // ville, pas la heatmap candidat, donc selection= n'aurait pas de sens.
+  if (urlNiveau === 'carte' && subCarte === 'candidat' && candidatPicked) {
     params.set('selection', candidatPicked);
   }
   // PAS de params.set('mode', 'export') — on évite l'IIFE auto-export de la page
@@ -1004,7 +1014,10 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
     console.log(`✅ Export natif réussi (${(screenshotBuffer.length / 1024).toFixed(0)} KB)`);
   } catch (err) {
     console.warn(`⚠️  Export natif échoué (${err.message}) — fallback screenshot`);
-    const selector = niveau === 'carte' ? '#main' : '#overlay';
+    // Le selector doit suivre le niveau RÉEL navigué (urlNiveau), pas le niveau
+    // initialement tiré : si on a cascadé vers 'global', la page affiche le
+    // #overlay (fiche globale), pas la #main (carte).
+    const selector = urlNiveau === 'carte' ? '#main' : '#overlay';
     try {
       const el  = await page.$(selector);
       const box = el && await el.boundingBox();
