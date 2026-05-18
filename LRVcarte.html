@@ -64,7 +64,7 @@
     "mainEntity": {
       "@type": "Dataset",
       "name": "Archives électorales de La Rochelle, 1988-2026",
-      "description": "Résultats par bureau de vote pour 33 élections et 2 référendums organisés à La Rochelle entre 1988 et 2026.",
+      "description": "Résultats par bureau de vote pour 34 élections et 2 référendums organisés à La Rochelle entre 1988 et 2026.",
       "url": "https://larochellevote.fr/",
       "creator": {
         "@type": "Person",
@@ -1548,6 +1548,7 @@ input:focus-visible,
         <option value="Européennes 2009">Européennes 2009</option>
         <option value="Européennes 2004">Européennes 2004</option>
         <option value="Européennes 1999">Européennes 1999</option>
+        <option value="Européennes 1994">Européennes 1994</option>
       </optgroup>
       <optgroup label="Régionales">
         <option value="Régionales 2021">Régionales 2021</option>
@@ -1669,7 +1670,7 @@ const HAS_T2 = new Set(['Présidentielle 1988','Présidentielle 1995','Présiden
   'Législatives 2012','Législatives 2017','Législatives 2022','Législatives 2024',
   'Municipales 2014','Municipales 2020','Municipales 2026',
   'Régionales 2004','Régionales 2010','Régionales 2015','Régionales 2021']);
-const HAS_TU = new Set(['Régionales 1998','Européennes 1999','Européennes 2004','Européennes 2009','Européennes 2014','Européennes 2019','Européennes 2024']);
+const HAS_TU = new Set(['Régionales 1998','Européennes 1994','Européennes 1999','Européennes 2004','Européennes 2009','Européennes 2014','Européennes 2019','Européennes 2024']);
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 let currentElection = 'Municipales 2026';
@@ -1846,13 +1847,104 @@ function getExtremesByQuartier() {
 
 // ── COLORS ────────────────────────────────────────────────────────────────────
 
+// Cache parti → couleur, calculé à la demande. Quand un candidat n'a pas de
+// couleur propre dans CAND_DATA, on cherche un AUTRE candidat du même parti
+// qui en a une et on prend la sienne. Si aucun candidat de ce parti n'a de
+// couleur, on retombe sur le gris. C'est cohérent avec la convention de
+// l'éditeur de candidats (un parti = une couleur, héritée).
+let _partiColorCache = null;
+function getPartiColor(pa) {
+  if (!pa) return null;
+  if (!_partiColorCache) {
+    _partiColorCache = {};
+    Object.values(CAND_DATA).forEach(ci => {
+      if (ci && ci.pa && ci.c && !_partiColorCache[ci.pa]) {
+        _partiColorCache[ci.pa] = ci.c;
+      }
+    });
+  }
+  return _partiColorCache[pa] || null;
+}
+
 function candInfo(name) {
   return CAND_DATA[name + '|' + currentElection + '|' + currentSheet]
       || CAND_DATA[name + '|' + currentElection]
       || CAND_DATA[name] || {};
 }
-function colorOfCandidate(name) { return candInfo(name).c || '#bbbbbb'; }
+function colorOfCandidate(name) {
+  const ci = candInfo(name);
+  return ci.c || getPartiColor(ci.pa) || '#bbbbbb';
+}
 function winnerColor(data) { if (!data || !data.w) return '#ccc'; return colorOfCandidate(data.w); }
+
+// ── EX-AEQUO : hachures diagonales pour les bureaux où plusieurs candidats sont
+// strictement à égalité en tête. Convention cartographique classique pour
+// "valeur partagée". On détecte sur _voix (entiers, précis), pas sur c (pct
+// flottants potentiellement entachés d'arrondis).
+function tieCandidatesForBureau(data) {
+  if (!data || !data._voix) return null;
+  const entries = Object.entries(data._voix);
+  if (entries.length < 2) return null;
+  const maxV = Math.max(...entries.map(([,v]) => v));
+  if (maxV <= 0) return null;
+  const tied = entries.filter(([,v]) => v === maxV).map(([k]) => k);
+  return tied.length > 1 ? tied : null;
+}
+
+// Cache des IDs de pattern déjà injectés dans le <defs> de la carte.
+const _tiePatternCache = new Set();
+
+// Crée (ou réutilise) un <pattern> SVG de hachures diagonales aux couleurs
+// passées. Les patterns sont stockés dans un SVG global invisible attaché au
+// <body>, partagé entre TOUTES les maps Leaflet (principale et minimaps).
+// Les <path> Leaflet référencent les patterns via fill="url(#id)" qui résout
+// par rapport au document, donc un host global suffit.
+function ensureTiePattern(colors) {
+  if (!colors || colors.length < 2) return null;
+  const norm = c => (c || '#ccc').replace('#','').toUpperCase().slice(0,6);
+  const id = 'tie-' + colors.map(norm).join('-');
+  if (_tiePatternCache.has(id) && document.getElementById(id)) return id;
+  // SVG host global (créé une seule fois, jamais détruit)
+  let host = document.getElementById('lrv-tie-patterns');
+  if (!host) {
+    host = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    host.id = 'lrv-tie-patterns';
+    host.setAttribute('width', '0');
+    host.setAttribute('height', '0');
+    host.setAttribute('aria-hidden', 'true');
+    host.style.position = 'absolute';
+    host.style.pointerEvents = 'none';
+    document.body.appendChild(host);
+  }
+  let defs = host.querySelector('defs');
+  if (!defs) {
+    defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    host.appendChild(defs);
+  }
+  if (defs.querySelector('#' + id)) { _tiePatternCache.add(id); return id; }
+  // Pattern : N bandes verticales égales, le tout pivoté à 45°. Largeur de
+  // bande = 8 px en espace SVG (équivaut à ~8 px visuels, userSpaceOnUse).
+  const bandW = 8;
+  const totalW = bandW * colors.length;
+  const NS = 'http://www.w3.org/2000/svg';
+  const pattern = document.createElementNS(NS, 'pattern');
+  pattern.setAttribute('id', id);
+  pattern.setAttribute('width', String(totalW));
+  pattern.setAttribute('height', String(totalW));
+  pattern.setAttribute('patternUnits', 'userSpaceOnUse');
+  pattern.setAttribute('patternTransform', 'rotate(45)');
+  colors.forEach((col, i) => {
+    const r = document.createElementNS(NS, 'rect');
+    r.setAttribute('x', String(i * bandW));
+    r.setAttribute('width', String(bandW));
+    r.setAttribute('height', String(totalW));
+    r.setAttribute('fill', col || '#ccc');
+    pattern.appendChild(r);
+  });
+  defs.appendChild(pattern);
+  _tiePatternCache.add(id);
+  return id;
+}
 // Voile dynamique dans la couleur du gagnant — remplace la barre verticale colorée des fiches.
 // L'attribut --i (index) contrôle le stagger de l'animation reveal.
 function ficheSail(color, mini) {
@@ -2227,6 +2319,14 @@ function featureStyle(feature) {
     fillColor = blendToWhite(baseColor, Math.max(0.08, Math.min(1, t)));
   } else if (currentMapMode === 'candidat') {
     fillColor = winnerColor(data);
+    // Ex-aequo : remplacer la couleur unique par un pattern de hachures
+    // diagonales aux couleurs des candidats à égalité en tête.
+    const tied = tieCandidatesForBureau(data);
+    if (tied) {
+      const cols = tied.map(name => colorOfCandidate(name));
+      const pid = ensureTiePattern(cols);
+      if (pid) fillColor = 'url(#' + pid + ')';
+    }
   } else if (currentMapMode === 'bloc') {
     const blocs = computeBlocs(data);
     const dom = Object.entries(blocs).sort((a,b)=>b[1]-a[1])[0];
@@ -2355,6 +2455,12 @@ function loadMap(){
     selectedLayer=null; currentFeature=null; renderGlobal();
   });
   renderMapLegend();
+  // 2e passe de style juste après l'ajout au map : à ce moment-là le SVG du
+  // renderer existe dans le DOM, donc ensureTiePattern() peut injecter ses
+  // <pattern> de hachures. Sans ça, les bureaux ex-aequo n'auraient pas
+  // leur fill="url(#...)" tant qu'un changement de mode n'aurait pas
+  // déclenché une re-stylisation.
+  setTimeout(() => { if (mainLayer) mainLayer.setStyle(featureStyle); }, 0);
 }
 
 function onFeatureClick(feature, layer) {
@@ -3031,7 +3137,16 @@ function initGlobalMinimap(winCol) {
       var ns = numStr(feature);
       var data = getBureauData(ns);
       if (!data) return { fillColor:'#ddd', fillOpacity:0.2, color:'#fff', weight:1 };
-      return { fillColor: winnerColor(data), fillOpacity:0.85, color:'#fff', weight:1 };
+      var fillColor = winnerColor(data);
+      // Ex-aequo : même traitement hachuré que sur la carte principale.
+      // Le pattern est partagé via le SVG host global (lrv-tie-patterns).
+      var tied = tieCandidatesForBureau(data);
+      if (tied) {
+        var cols = tied.map(function(name) { return colorOfCandidate(name); });
+        var pid = ensureTiePattern(cols);
+        if (pid) fillColor = 'url(#' + pid + ')';
+      }
+      return { fillColor: fillColor, fillOpacity:0.85, color:'#fff', weight:1 };
     }
   }).addTo(mmMap);
   mmMap.fitBounds(layer.getBounds().pad(0.06));
@@ -3939,10 +4054,18 @@ function renderMapLegend() {
   if (!el) return;
   const shData = getSheetData();
   if (currentMapMode === 'candidat') {
-    const wins = {}, totals = {}, counts = {};
+    const wins = {}, ties = {}, totals = {}, counts = {};
     Object.entries(shData).forEach(([ns,d]) => {
       if (!d || ns==='0057') return;
-      if (d.w) wins[d.w] = (wins[d.w]||0)+1;
+      // Ex-aequo : tous les candidats à égalité en tête comptent +1 chacun
+      // (le bureau "appartient" autant à chacun). Sans ce traitement, seul le
+      // d.w déclaré serait compté → sous-comptage des autres candidats à égalité.
+      const tied = tieCandidatesForBureau(d);
+      if (tied) {
+        tied.forEach(t => { wins[t] = (wins[t]||0)+1; ties[t] = (ties[t]||0)+1; });
+      } else if (d.w) {
+        wins[d.w] = (wins[d.w]||0)+1;
+      }
       Object.entries(d.c||{}).forEach(([n,v]) => { totals[n]=(totals[n]||0)+v; counts[n]=(counts[n]||0)+1; });
     });
     const avgs = {}; Object.keys(totals).forEach(n => avgs[n] = totals[n]/(counts[n]||1));
@@ -3955,8 +4078,13 @@ function renderMapLegend() {
       const label = (ci.n || name.replace(/\s*\([^)]*\)$/,'').split(/\s+/).pop());
       const coal = name.match(/\(([^)]+)\)$/); const pa = ci.pa || (coal&&coal[1]) || '';
       const nb = wins[name]||0;
+      const tieN = ties[name]||0;
       const isSel = currentMapSelection === name;
-      const burLabel = nb > 0 ? nb+' bur.' : '<span style="color:#ccc">–</span>';
+      // Si ex-aequo : on ajoute un petit ▤ après le compteur, avec tooltip détaillé
+      const tieMark = tieN > 0
+        ? '<span style="color:#888;font-size:0.66em;margin-left:3px;letter-spacing:-1px" title="dont '+tieN+' bureau'+(tieN>1?'x':'')+' à égalité (hachures sur la carte)">▤</span>'
+        : '';
+      const burLabel = nb > 0 ? nb+' bur.'+tieMark : '<span style="color:#ccc">–</span>';
       return '<div class="leg-row leg-row-click'+(isSel?' leg-row-sel':'')+'" onclick="selectMapItem(\''+name.replace(/'/g,"\\'")+'\')" title="Choroplèthe : '+label+'">'
         +'<div class="leg-dot" style="background:'+col+';'+(isSel?'box-shadow:0 0 0 2px #fff,0 0 0 4px '+col:'')+'"></div>'
         +'<span class="leg-label">'+label+(pa?'<span style="color:#aaa;font-size:0.58rem;margin-left:3px">'+pa+'</span>':'')+'</span>'
