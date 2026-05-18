@@ -1,13 +1,13 @@
 {
-  "date": "2026-05-17",
+  "date": "2026-05-18",
   "niveau": "bureau",
-  "election": "Municipales 2008",
+  "election": "Législatives 2012",
   "tour": "T1",
-  "bureau": "0024",
+  "bureau": "0004",
   "quartier": null,
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Municipales 2008|T1|0024",
-  "chars": 274,
-  "generated_at": "2026-05-17T06:00:40.360Z"
+  "signature": "bureau|Législatives 2012|T1|0004",
+  "chars": 275,
+  "generated_at": "2026-05-18T06:00:51.655Z"
 }
