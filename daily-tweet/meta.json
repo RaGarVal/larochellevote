@@ -1,13 +1,13 @@
 {
-  "date": "2026-05-18",
-  "niveau": "global",
-  "election": "Municipales 2026",
+  "date": "2026-05-19",
+  "niveau": "bureau",
+  "election": "Législatives 2012",
   "tour": "T1",
-  "bureau": null,
+  "bureau": "0039",
   "quartier": null,
-  "subtype": "candidat",
-  "candidat": "Simoné PS",
-  "signature": "carte|Municipales 2026|T1|cand:Simoné PS",
-  "chars": 235,
-  "generated_at": "2026-05-18T16:50:54.084Z"
+  "subtype": null,
+  "candidat": null,
+  "signature": "bureau|Législatives 2012|T1|0039",
+  "chars": 261,
+  "generated_at": "2026-05-19T06:01:08.058Z"
 }

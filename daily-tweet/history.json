@@ -121,5 +121,16 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "Simoné PS"
+  },
+  {
+    "date": "2026-05-19",
+    "signature": "bureau|Législatives 2012|T1|0039",
+    "niveau": "bureau",
+    "election": "Législatives 2012",
+    "tour": "T1",
+    "bureau": "0039",
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
   }
 ]
