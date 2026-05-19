@@ -2334,10 +2334,10 @@ function fitMapToCity(animate) {
   const sbW = (!isMobile && sidebar) ? sidebar.offsetWidth : 0;
   // Décalage horizontal progressif : sur grand écran, on pousse la ville plus à
   // gauche pour qu'elle ne se retrouve pas centrée loin de la sidebar.
-  // - Dans la fourchette 1300 px : 80 px de padding droit (= valeur actuelle)
-  // - Au-delà : on ajoute 1 px par 10 px de largeur supplémentaire.
+  // - Dans la fourchette 1300 px : 80 px de padding droit
+  // - Au-delà : on ajoute 4 px de padding par tranche de 10 px de largeur (coef 0.4).
   const vw = window.innerWidth;
-  const rightPad = isMobile ? 16 : Math.round(80 + Math.max(0, (vw - 1300) * 0.1));
+  const rightPad = isMobile ? 16 : Math.round(80 + Math.max(0, (vw - 1300) * 0.4));
   map.fitBounds(LR_BOUNDS, {
     paddingTopLeft: [sbW + 12, 30],
     paddingBottomRight: [rightPad, isMobile ? 90 : 30],
