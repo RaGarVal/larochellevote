@@ -698,17 +698,29 @@ select#el-select {
 .blist-denom,.blist-sub{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .blist-sub{font-size:0.58rem;color:var(--text-meta);font-weight:400;}
 .blist-pct{font-size:0.74rem;font-weight:700;color:var(--text-modal-muted);flex-shrink:0;}
-#map-legend{position:absolute;top:10px;right:58px;z-index:800;background:var(--bg-card);border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,0.18);border:1px solid var(--border-modal);padding:8px 10px;min-width:200px;max-width:380px;color:var(--text-modal);}
-#map-mode-btns{display:grid;grid-template-columns:repeat(4,minmax(min-content,1fr));gap:3px;margin-bottom:7px;}
+#map-legend{position:absolute;top:10px;right:58px;z-index:800;background:var(--bg-card);border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,0.18);border:1px solid var(--border-modal);padding:8px 10px;min-width:200px;max-width:380px;color:var(--text-modal);display:flex;flex-wrap:wrap;align-items:stretch;}
+/* Ordre desktop : modes (1) + chevron (2) sur la 1re ligne, body (3) en dessous.
+   Le mobile redéfinit ces ordres pour mettre le body au-dessus (cf. @media). */
+#map-mode-btns{display:grid;grid-template-columns:repeat(4,minmax(min-content,1fr));gap:3px;margin-bottom:7px;order:1;flex:1;min-width:0;}
 .mmbtn{font-family:inherit;font-size:0.67rem;font-weight:700;line-height:1.2;padding:4px 6px;border:1px solid var(--border-modal);border-radius:4px;background:var(--bg-modal-hover);color:var(--text-modal-muted);cursor:pointer;transition:all 0.15s;white-space:nowrap;}
 .mmbtn.on{background:var(--bg-active);border-color:var(--bg-active);color:var(--text-active);}
 .mmbtn:hover:not(.on){background:var(--bg-modal-accent);}
-#map-legend-body{font-size:0.69rem;line-height:1.5;}
-/* Bouton chevron pour escamoter la légende — invisible par défaut, visible sur mobile (≤720px) */
-#legend-toggle{display:none;position:absolute;top:3px;right:3px;width:30px;height:30px;border:1px solid var(--border-modal);background:var(--bg-modal);cursor:pointer;color:var(--text-modal);font-size:1rem;line-height:1;padding:0;border-radius:4px;z-index:2;font-weight:700;}
+#map-legend-body{font-size:0.69rem;line-height:1.5;order:3;flex-basis:100%;}
+/* Bouton chevron pour escamoter la légende — visible sur desktop ET mobile.
+   En flow normal (flex item du #map-legend) pour s'aligner automatiquement à
+   hauteur des boutons modes via align-self:stretch. */
+/* Hauteur calquée sur celle des .mmbtn (~22.9 px : font 0.67rem × 1.2 + 4+4 padding + 1+1 border).
+   On utilise 23 px explicite plutôt que align-self:stretch qui se comportait mal
+   ici (chevron étiré verticalement au-delà des boutons modes). Le mobile @media
+   override en `height:auto; align-self:stretch` pour matcher les gros tap-targets. */
+#legend-toggle{display:flex;align-items:center;justify-content:center;width:28px;height:23px;flex-shrink:0;border:1px solid var(--border-modal);background:var(--bg-modal);cursor:pointer;color:var(--text-modal);font-size:0.9rem;line-height:1;padding:0;border-radius:4px;font-weight:700;order:2;margin-left:4px;}
 #legend-toggle:hover{color:var(--text-modal);background:var(--bg-modal-hover);}
 .legend-toggle-chev{display:inline-block;transition:transform .18s ease;}
 #map-legend.expanded #legend-toggle .legend-toggle-chev{transform:rotate(180deg);}
+/* Quand la légende n'est PAS expanded, on cache le body et on enlève le margin-bottom
+   des boutons modes (sinon vide visuel sous la barre des modes). */
+#map-legend:not(.expanded) #map-legend-body{display:none;}
+#map-legend:not(.expanded) #map-mode-btns{margin-bottom:0;}
 .leg-row{display:flex;align-items:center;gap:6px;padding:1px 0;}
 .leg-row-click{cursor:pointer;border-radius:4px;padding:2px 3px;margin:0 -3px;transition:background 0.1s;}
 .leg-row-click:hover{background:var(--bg-modal-hover);}
@@ -836,6 +848,9 @@ select#el-select {
     display: flex;
     gap: 2px;
     align-items: stretch;
+    /* Sur mobile, le chevron est un flex item à côté des boutons → on annule
+       le padding-right qu'on a en desktop (pour réserver la place du chevron absolu). */
+    padding-right: 0;
   }
   #map-mode-btns .mmbtn {
     flex: 1 1 0;
@@ -2295,10 +2310,52 @@ function fmtCanton(c) { if (!c || c === '') return ''; return 'La Rochelle-' + 
 // ── MAP ───────────────────────────────────────────────────────────────────────
 
 const map = L.map('map', {
-  // B8 phase 3 : centre décalé vers l'ouest (lng plus négative) pour que La Rochelle
-  // apparaisse dans la zone visible à droite du panneau flottant (qui couvre ~470px à gauche).
+  // Centre + zoom de fallback (valeurs réécrites immédiatement par fitMapToCity).
+  // Servent uniquement si fitBounds échoue pour une raison rare.
   center: [46.1597, -1.190], zoom: 13.5, zoomSnap: 0.1, zoomControl: false
 });
+
+// Bornes géographiques approximatives de La Rochelle (englobe tous les bureaux,
+// y compris Laleu à l'ouest et Villeneuve à l'est). Hardcoded car robustes :
+// indépendantes de l'ère cartographique en cours.
+const LR_BOUNDS = L.latLngBounds(L.latLng(46.133, -1.230), L.latLng(46.193, -1.135));
+
+// Cadre la carte sur La Rochelle, en tenant compte de l'espace visuel pris par
+// la sidebar (à gauche, sur desktop) et la légende (en bas, sur mobile).
+// Appelé au load + à chaque resize, donc le zoom s'adapte à la largeur dispo.
+// Ajustements fins :
+//  - paddingBottomRight asymétrique (plus grand que paddingTopLeft hors sidebar)
+//    → la ville se décale légèrement vers la gauche dans la zone visible.
+//  - setZoom(-0.3) après fitBounds → dézoom modéré (~25 % d'étendue en plus)
+//    pour aérer le cadrage sur desktop.
+function fitMapToCity(animate) {
+  const isMobile = window.matchMedia && window.matchMedia('(max-width: 720px)').matches;
+  const sidebar = document.getElementById('sidebar');
+  const sbW = (!isMobile && sidebar) ? sidebar.offsetWidth : 0;
+  // Décalage horizontal progressif : sur grand écran, on pousse la ville plus à
+  // gauche pour qu'elle ne se retrouve pas centrée loin de la sidebar.
+  // - Dans la fourchette 1300 px : 80 px de padding droit (= valeur actuelle)
+  // - Au-delà : on ajoute 1 px par 10 px de largeur supplémentaire.
+  const vw = window.innerWidth;
+  const rightPad = isMobile ? 16 : Math.round(80 + Math.max(0, (vw - 1300) * 0.1));
+  map.fitBounds(LR_BOUNDS, {
+    paddingTopLeft: [sbW + 12, 30],
+    paddingBottomRight: [rightPad, isMobile ? 90 : 30],
+    animate: !!animate,
+  });
+  if (!isMobile) {
+    // Dézoom progressif : nul sur grands écrans (≥ 1600 px → on profite de la
+    // place), modéré sur écrans étroits (jusqu'à -0.25 vers 950 px) pour ne
+    // pas perdre la ville de vue dans une zone visible plus petite.
+    const vw = window.innerWidth;
+    const dezoom = vw >= 1600 ? 0 : Math.min(0.25, (1600 - vw) / 2600);
+    if (dezoom > 0.01) {
+      map.setZoom(map.getZoom() - dezoom, { animate: false });
+    }
+  }
+}
+fitMapToCity(false);
+
 // Le loader (#map-loader) est visible depuis le parse HTML. Une fois Leaflet
 // prêt (whenReady fire après le premier layout), on le masque en douceur.
 map.whenReady(() => {
@@ -2310,11 +2367,31 @@ map.whenReady(() => {
     setTimeout(() => _ldr.remove(), 400);
   }
 });
-// Sur mobile (≤ 720 px) : pas de panneau flottant, on recentre sur le vrai centre de
-// La Rochelle et on dézoome un peu pour voir l'ensemble de la ville.
-if (window.matchMedia && window.matchMedia('(max-width: 720px)').matches) {
-  map.setView([46.157, -1.170], 12.3);
-}
+
+// Resize : recadrer la carte (debounce 150 ms). Cela permet au zoom de suivre
+// les changements de largeur de viewport (passage 1920 → 1280 → 1024 par ex.)
+// et de breakpoint mobile↔desktop sans perdre La Rochelle de vue.
+// On ne recadre que si l'utilisateur n'a pas encore manipulé la carte (zoom/pan).
+let _userInteracted = false;
+['zoomstart', 'movestart'].forEach(ev => {
+  map.on(ev, e => {
+    // Ne pas marquer comme interaction utilisateur si c'est nous qui faisons
+    // l'animation (e.flyTo, e.fitBounds programmatique). Heuristique : si l'event
+    // est synthétique (déclenché par notre fitBounds), on l'ignore via un flag.
+    if (!_inProgrammaticMove) _userInteracted = true;
+  });
+});
+let _inProgrammaticMove = false;
+let _resizeT;
+window.addEventListener('resize', () => {
+  clearTimeout(_resizeT);
+  _resizeT = setTimeout(() => {
+    if (_userInteracted) return;  // respecte le pan/zoom de l'utilisateur
+    _inProgrammaticMove = true;
+    fitMapToCity(false);
+    setTimeout(() => { _inProgrammaticMove = false; }, 50);
+  }, 150);
+}, { passive: true });
 // Tile layer adaptable au thème (light_all / dark_all CartoCDN)
 let _currentTileLayer = null;
 function applyMapTheme(){
@@ -4170,6 +4247,27 @@ function setMapMode(mode) {
   renderMapLegend();
   if (typeof writeURLState === 'function') writeURLState();
 }
+// Légende carte : sur desktop, ouverte par défaut (la classe .expanded est
+// ajoutée au load). Sur mobile (≤720 px), elle reste fermée par défaut
+// (l'utilisateur déploie via le chevron). Le HTML n'a pas .expanded à la base
+// pour éviter de pré-déployer la légende sur mobile.
+(function initLegendDefaultExpanded(){
+  function init() {
+    const leg = document.getElementById('map-legend');
+    if (!leg) return;
+    if (!window.matchMedia('(max-width: 720px)').matches) {
+      leg.classList.add('expanded');
+      const btn = document.getElementById('legend-toggle');
+      if (btn) btn.setAttribute('aria-expanded', 'true');
+    }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+
 function renderMapLegend() {
   const el = document.getElementById('map-legend-body');
   if (!el) return;
