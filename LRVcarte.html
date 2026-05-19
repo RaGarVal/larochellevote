@@ -266,7 +266,10 @@ body {
 #sidebar {
   position: absolute;
   top: 12px; left: 12px;
-  width: 430px;
+  /* Largeur responsive : 430 px sur grand écran, descend jusqu'à 340 px
+     sur écrans plus modestes. Le plancher 340 garde le dropdown élections
+     lisible. La sidebar disparaît complètement en < 720 px (cf. mobile rule). */
+  width: clamp(340px, 28%, 430px);
   /* topbar (66) + marge haut (12) + footer fixe (~28) + marge bas (12) = 118 */
   max-height: calc(100vh - 118px);
   max-height: calc(100dvh - 118px);
