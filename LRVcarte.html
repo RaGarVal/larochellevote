@@ -403,14 +403,14 @@ select#el-select {
   /* Repère "moyenne ville" sur les barres par candidat */
   .bar-mark {
     border-left: 0 !important;
-    width: 2.5px !important;
+    width: 1.5px !important;
     background: repeating-linear-gradient(to bottom,
       var(--bar-mark) 0 3px, transparent 3px 5px) !important;
   }
   /* Ligne 50 % au milieu des barres de blocs (inline style dans le template) */
   div[style*="border-left:1.5px dashed rgba(255,255,255,0.65)"] {
     border-left: 0 !important;
-    width: 2.5px !important;
+    width: 1.5px !important;
     background: repeating-linear-gradient(to bottom,
       rgba(255,255,255,0.92) 0 3px, transparent 3px 5px) !important;
   }
@@ -2161,8 +2161,20 @@ function applyAbbrevIfMultiline(elements, abbrevClass) {
 // Approche correcte : sub est sur la ligne suivante ssi son top est au moins
 // au niveau (ou en-dessous) du bottom du name. 4 px de tolérance pour les
 // arrondis sub-pixels.
+// ──
+// Cas particulier MOBILE : sur mobile, .cand-row-namepart passe en
+// flex-direction:column → name et sub sont stackés PAR CONSTRUCTION (pas par
+// wrap manque-de-place). Détecter "sub sur ligne suivante" reviendrait à
+// déclencher la cascade tout le temps, ce qui n'a pas de sens : sub a déjà
+// toute la largeur du parent. On retourne false dans ce cas pour désactiver
+// la cascade et garder l'affichage complet.
 function isSubOnNextLine(nameEl, subEl) {
   if (!nameEl || !subEl) return false;
+  const parent = nameEl.parentElement;
+  if (parent) {
+    const dir = getComputedStyle(parent).flexDirection;
+    if (dir === 'column' || dir === 'column-reverse') return false;
+  }
   return subEl.offsetTop >= nameEl.offsetTop + nameEl.offsetHeight - 4;
 }
 
