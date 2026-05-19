@@ -136,8 +136,9 @@ Pas rare en saisie manuelle. Lister les bureaux concernés et demander à l'user
 
 ### Hachures ex-aequo
 - Géré automatiquement par `tieCandidatesForBureau()` (basé sur `_voix` entiers).
-- SVG `<pattern>` injecté dans `<svg id="lrv-tie-patterns">` (host global au body, partagé entre toutes les maps).
+- SVG `<pattern>` injecté dans `<svg id="lrv-tie-patterns">` (host global au body, partagé entre toutes les maps Leaflet).
 - Côté légende : chaque candidat à égalité compte +1, signalé par `▤` avec tooltip.
+- **Export image (canvas)** : Canvas2D ne lit pas `url(#tie-...)`. `drawCarteVisual()` détecte le préfixe `url(#tie-` dans `style.fillColor` et le traduit en `CanvasPattern` via `getCanvasTiePattern()` (tile pré-rendu + `pattern.setTransform(new DOMMatrix().rotate(45))`). Si tu ajoutes une nouvelle visu canvas qui utilise `featureStyle`, applique la même traduction.
 
 ### Candidat sans couleur propre
 Fallback automatique via `getPartiColor(pa)` : on hérite de la couleur du 1er candidat connu du même parti. Si aucun candidat du parti n'a de couleur → gris `#bbbbbb`. À éviter en demandant à l'user de définir une couleur via l'éditeur.
