@@ -134,6 +134,9 @@
   --bar-mark: #999999;             /* repère vertical "moyenne ville" — visible en clair */
   --bg-tab-active: rgba(0,0,0,0.07);  /* onglet actif dans la tête des fiches */
   --abst-tag-bg: #1A1A2E;          /* cartouche abstention dans la bulle hover */
+  /* Largeur du panneau flottant (sidebar) — partagée par #sidebar et #overlay
+     pour qu'ils s'ajustent ensemble quand la fenêtre rétrécit. */
+  --sidebar-w: clamp(340px, 28%, 430px);
   --bv-tag-bg: rgb(90,60,120);     /* cartouche blancs/nuls */
 }
 
@@ -266,10 +269,10 @@ body {
 #sidebar {
   position: absolute;
   top: 12px; left: 12px;
-  /* Largeur responsive : 430 px sur grand écran, descend jusqu'à 340 px
-     sur écrans plus modestes. Le plancher 340 garde le dropdown élections
-     lisible. La sidebar disparaît complètement en < 720 px (cf. mobile rule). */
-  width: clamp(340px, 28%, 430px);
+  /* Largeur responsive partagée avec #overlay via --sidebar-w (cf. :root).
+     430 px sur grand écran, descend jusqu'à 340 px sur écrans plus modestes.
+     La sidebar disparaît complètement en < 720 px (cf. mobile rule). */
+  width: var(--sidebar-w);
   /* topbar (66) + marge haut (12) + footer fixe (~28) + marge bas (12) = 118 */
   max-height: calc(100vh - 118px);
   max-height: calc(100dvh - 118px);
@@ -385,19 +388,31 @@ select#el-select {
 /* Variante haute (fiche bureau/quartier) : même couleur dashed que la sidebar — bornes verticales ajustées */
 .bar-bg.bar-tall .bar-mark { top: 0; bottom: 0; }
 
-/* Mobile (≤720 px) : les pointillés à 1.5 px sont trop fins et trop transparents
-   sur les écrans à pixel élevé / petites tailles → on les renforce.
-   - .bar-mark : passe à 2.5 px (var(--bar-mark) ajusté en plus contrasté).
-   - Ligne 50 % au milieu des barres de blocs : on cible l'inline style via
-     sélecteur d'attribut + !important (l'inline n'a pas !important, donc on
-     l'emporte sur l'épaisseur et la couleur, sans toucher au reste du style). */
+/* Mobile (≤720 px) : sur Chrome mobile, un `border-left: dashed` rend mal
+   quand la hauteur du conteneur est faible (barres ~14 px) : le navigateur
+   calcule la longueur du tiret en proportion de l'épaisseur du border, et
+   un seul tiret rentre dans la hauteur visible → les autres sont rognés.
+   ──
+   Solution : remplacer le border-dashed par un `repeating-linear-gradient`
+   qui donne un contrôle pixel-précis du pattern (tiret 3 px + gap 2 px),
+   indépendant de la hauteur du conteneur. Garanti d'afficher plusieurs
+   tirets même sur les barres les plus courtes. */
 @media (max-width: 720px) {
   :root { --bar-mark: #666; }
   [data-theme="dark"] { --bar-mark: rgba(236,230,221,0.95); }
-  .bar-mark { border-left-width: 2.5px !important; }
+  /* Repère "moyenne ville" sur les barres par candidat */
+  .bar-mark {
+    border-left: 0 !important;
+    width: 2.5px !important;
+    background: repeating-linear-gradient(to bottom,
+      var(--bar-mark) 0 3px, transparent 3px 5px) !important;
+  }
+  /* Ligne 50 % au milieu des barres de blocs (inline style dans le template) */
   div[style*="border-left:1.5px dashed rgba(255,255,255,0.65)"] {
-    border-left-width: 2.5px !important;
-    border-left-color: rgba(255,255,255,0.92) !important;
+    border-left: 0 !important;
+    width: 2.5px !important;
+    background: repeating-linear-gradient(to bottom,
+      rgba(255,255,255,0.92) 0 3px, transparent 3px 5px) !important;
   }
 }
 .dp  { color: #2a9d5c; font-weight: 700; }
@@ -440,8 +455,10 @@ select#el-select {
 ══════════════════════════════════════════════════ */
 #overlay {
   position: absolute; right: 0; top: 0;
-  /* Laisse le panneau flottant visible à gauche : 12 (gauche) + 450 (panneau) + 10 (gap) = 472 */
-  width: calc(100% - 452px); height: 100%;
+  /* Laisse le panneau flottant visible à gauche : 12 (gauche) + sidebar + 10 (gap) = 22 + sidebar.
+     Comme --sidebar-w est responsif (clamp), l'overlay suit automatiquement les
+     variations de largeur de la sidebar : pas de gap béant entre les deux. */
+  width: calc(100% - var(--sidebar-w) - 22px); height: 100%;
   background: var(--bg-card); z-index: 200;
   display: none; flex-direction: column;
 }
@@ -470,16 +487,28 @@ select#el-select {
 .cand-name .cn-prenom-short { display: none; }
 .cand-name.prenom-abbrev .cn-prenom-full  { display: none; }
 .cand-name.prenom-abbrev .cn-prenom-short { display: inline; }
+/* Palier ultime de la cascade : masquer totalement le prénom (initiales comprises).
+   Ne reste que le nom de famille. Ajouté par JS quand .cand-sub déborde encore
+   après abréviation prénom + abréviation parti. */
+.cand-name.prenom-hidden .cn-prenom-full,
+.cand-name.prenom-hidden .cn-prenom-short { display: none; }
 
-/* Nom de parti : cascade à 3 niveaux selon la place disponible (gérée par JS) :
-     0. défaut          → "Mouvement Démocrate (LREM + UDI) ▲ meilleur bureau"
-     1. .parti-abbrev   → "MoDem (LREM + UDI) ▲ meilleur bureau"
-     2. .allies-hidden  → "MoDem ▲ meilleur bureau"   (masque les alliés)
-   Le JS essaie 0, puis 1, puis 2 jusqu'à ce que le contenu tienne sur 1 ligne. */
+/* Nom de parti : cascade à 5 niveaux selon la place disponible (gérée par JS
+   dans applyCandTruncationCascade, déclenchée par "sub passe en 2e ligne") :
+     0. défaut                → "Jean-Luc Mélenchon" + "Mouvement Démocrate (LREM + UDI) ▲ meilleur bureau"
+     1. .prenom-abbrev        → "J.-L. Mélenchon"    + "Mouvement Démocrate (LREM + UDI) ▲ meilleur bureau"
+     2. .parti-abbrev         → "J.-L. Mélenchon"    + "MoDem (LREM + UDI) ▲ meilleur bureau"
+     3. .extr-short           → "J.-L. Mélenchon"    + "MoDem (LREM + UDI) ▲ meilleur"
+     4. .prenom-hidden        → "Mélenchon"          + "MoDem (LREM + UDI) ▲ meilleur"
+     5. .allies-hidden        → "Mélenchon"          + "MoDem ▲ meilleur"
+   Le JS essaie 0, puis 1, puis 2... jusqu'à ce que sub revienne sur la ligne du nom. */
 .cand-sub .cand-parti-short { display: none; }
 .cand-sub.parti-abbrev .cand-parti-full  { display: none; }
 .cand-sub.parti-abbrev .cand-parti-short { display: inline; }
 .cand-sub.allies-hidden .cand-allies { display: none; }
+/* Palier additionnel de la cascade : tronquer le badge meilleur/pire à juste
+   "meilleur" ou "pire" (sans " bureau" / " quartier"). */
+.cand-sub.extr-short .extr-suffix { display: none; }
 #ov-tabs { display: none; }
 .otab { padding: 5px 12px; font-size: 0.83rem; font-weight: 600; border: none; border-radius: 5px; cursor: pointer; color: var(--text-meta); background: none; transition: all 0.12s; }
 .otab.on { color: var(--text-modal); background: var(--bg-tab-active); }
@@ -663,7 +692,11 @@ select#el-select {
 .blist-row:hover{background:var(--bg-modal-hover);}.blist-row.cur{background:var(--bg-modal-accent);}
 .blist-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
 .blist-num{font-size:0.67rem;color:var(--text-meta);font-weight:700;width:22px;flex-shrink:0;}
-.blist-name{flex:1;font-size:0.78rem;color:var(--text-modal);font-weight:500;line-height:1.2;}
+.blist-name{flex:1;min-width:0;font-size:0.78rem;color:var(--text-modal);font-weight:500;line-height:1.2;display:flex;flex-direction:column;}
+/* Nom de bureau (ligne 1) et sous-titre quartier/nb-bureaux (ligne 2) :
+   chacun tronqué avec ... s'il déborde, plutôt que de wrapper sur 2 lignes. */
+.blist-denom,.blist-sub{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.blist-sub{font-size:0.58rem;color:var(--text-meta);font-weight:400;}
 .blist-pct{font-size:0.74rem;font-weight:700;color:var(--text-modal-muted);flex-shrink:0;}
 #map-legend{position:absolute;top:10px;right:58px;z-index:800;background:var(--bg-card);border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,0.18);border:1px solid var(--border-modal);padding:8px 10px;min-width:200px;max-width:380px;color:var(--text-modal);}
 #map-mode-btns{display:grid;grid-template-columns:repeat(4,minmax(min-content,1fr));gap:3px;margin-bottom:7px;}
@@ -2117,20 +2150,55 @@ function applyAbbrevIfMultiline(elements, abbrevClass) {
   });
 }
 
-// Cascade à 2 paliers sur .cand-sub :
-//   1. on essaie l'abréviation du parti (paFull → paCode)
-//   2. si ça déborde encore, on masque aussi les alliés "(LREM + UDI)"
-// Le HTML rend tous les éléments ; les classes contrôlent uniquement
-// la visibilité via CSS.
-function applyCandSubCascade(elements) {
-  elements.forEach(el => {
-    el.classList.remove('parti-abbrev', 'allies-hidden');
-    if (!isMultiline(el)) return;
-    // Palier 1 : raccourcir le nom de parti
-    el.classList.add('parti-abbrev');
-    if (!isMultiline(el)) return;
-    // Palier 2 : masquer les alliés
-    el.classList.add('allies-hidden');
+// Détecte si .cand-sub est passé sur une ligne DIFFÉRENTE de .cand-name dans
+// leur parent flex-wrap.
+// ⚠️ Subtilité : .cand-name (font ~1.3rem) et .cand-sub (font ~0.66rem) sont
+// alignés sur leur baseline (parent flex avec align-items:baseline). Comme leurs
+// hauteurs de boîte diffèrent, leur offsetTop diffère TOUJOURS (~8 px d'écart)
+// même sur la même ligne — sub se positionne plus bas dans la line-box pour
+// que sa baseline matche celle de name. On ne peut donc PAS comparer
+// directement offsetTop avec une petite tolérance.
+// Approche correcte : sub est sur la ligne suivante ssi son top est au moins
+// au niveau (ou en-dessous) du bottom du name. 4 px de tolérance pour les
+// arrondis sub-pixels.
+function isSubOnNextLine(nameEl, subEl) {
+  if (!nameEl || !subEl) return false;
+  return subEl.offsetTop >= nameEl.offsetTop + nameEl.offsetHeight - 4;
+}
+
+// Cascade unifiée : déclenchée par "le parti passe en 2e ligne" (signe que la
+// place est trop juste). Tente progressivement d'abréger le contenu jusqu'à
+// récupérer une seule ligne ; s'arrête dès que sub revient sur la ligne du nom.
+//   Palier 1 — prénom complet → initiales (.prenom-abbrev sur .cand-name)
+//   Palier 2 — parti long → code court (.parti-abbrev sur .cand-sub)
+//   Palier 3 — badge "meilleur bureau" → "meilleur" (.extr-short sur .cand-sub)
+//   Palier 4 — initiales du prénom totalement masquées (.prenom-hidden sur .cand-name)
+//   Palier 5 — alliés "(LREM + UDI)" masqués (.allies-hidden sur .cand-sub)
+// À chaque palier, on re-mesure : si OK on s'arrête, sinon palier suivant.
+function applyCandTruncationCascade(rootEl) {
+  const containers = (rootEl || document).querySelectorAll('.cand-row-namepart');
+  containers.forEach(np => {
+    const nameEl = np.querySelector('.cand-name');
+    const subEl  = np.querySelector('.cand-sub');
+    if (!nameEl || !subEl) return;
+    // Reset les 5 classes — état "tout long"
+    nameEl.classList.remove('prenom-abbrev', 'prenom-hidden');
+    subEl.classList.remove('parti-abbrev', 'extr-short', 'allies-hidden');
+    if (!isSubOnNextLine(nameEl, subEl)) return;
+    // Palier 1
+    nameEl.classList.add('prenom-abbrev');
+    if (!isSubOnNextLine(nameEl, subEl)) return;
+    // Palier 2
+    subEl.classList.add('parti-abbrev');
+    if (!isSubOnNextLine(nameEl, subEl)) return;
+    // Palier 3
+    subEl.classList.add('extr-short');
+    if (!isSubOnNextLine(nameEl, subEl)) return;
+    // Palier 4
+    nameEl.classList.add('prenom-hidden');
+    if (!isSubOnNextLine(nameEl, subEl)) return;
+    // Palier 5 (dernier recours)
+    subEl.classList.add('allies-hidden');
   });
 }
 
@@ -2159,15 +2227,12 @@ function formatDenomination(name) {
   }).join('');
 }
 
-// Détecte les noms de candidats ET les labels de parti qui débordent
-// (wrap sur 2 lignes) et applique le bon niveau d'abréviation :
-//   .cand-name → "Jean-Luc Mélenchon" → "J.-L. Mélenchon" (binaire)
-//   .cand-sub  → cascade à 2 paliers (cf. applyCandSubCascade)
+// Déclenche la cascade unifiée d'abréviation. Trigger principal : le parti
+// (.cand-sub) déborde sur une 2e ligne dans le flex parent — c'est le signe
+// que la place est trop juste. Cf. applyCandTruncationCascade pour les paliers.
 // Appelée après chaque rendu de fiche, et au resize de la fenêtre.
 function adjustCandNameAbbreviation(scope) {
-  const root = scope || document;
-  applyAbbrevIfMultiline(root.querySelectorAll('.cand-name'), 'prenom-abbrev');
-  applyCandSubCascade(root.querySelectorAll('.cand-sub'));
+  applyCandTruncationCascade(scope);
 }
 
 // Re-mesure tous les noms au resize de la fenêtre (debounced 150 ms pour
@@ -2710,8 +2775,10 @@ function renderCandidates(data, ns, cityAvg, extr, compact, extrLabel) {
     const isWorst=extr.worst[name]&&extr.worst[name].num===ns;
     const arrowCompact=isBest?' <span style="color:#1a7a4a;font-size:0.7rem;font-weight:900">&#9650;</span>'
       :isWorst?' <span style="color:#b91c1c;font-size:0.7rem;font-weight:900">&#9660;</span>':'';
-    const arrowFull=isBest?' <span style="color:#1a7a4a;font-size:0.68rem;font-weight:700">&#9650; meilleur '+_xLab+'</span>'
-      :isWorst?' <span style="color:#b91c1c;font-size:0.68rem;font-weight:700">&#9660; pire '+_xLab+'</span>':'';
+    // Le suffixe " bureau" / " quartier" est encapsulé dans <span class="extr-suffix">
+    // pour pouvoir le masquer via la classe .extr-short de la cascade d'abréviation.
+    const arrowFull=isBest?' <span style="color:#1a7a4a;font-size:0.68rem;font-weight:700">&#9650; meilleur<span class="extr-suffix"> '+_xLab+'</span></span>'
+      :isWorst?' <span style="color:#b91c1c;font-size:0.68rem;font-weight:700">&#9660; pire<span class="extr-suffix"> '+_xLab+'</span></span>':'';
     const ci=candInfo(name);
     const mCoal=name.match(/\(([^)]+)\)$/);
     const coal=mCoal?mCoal[1]:(name.trim().split(/\s+/).length>1?name.trim().split(/\s+/).pop():'');
@@ -3468,12 +3535,21 @@ function updateAccentColor(){
 }
 function openCandFloat(btn,titleStr,bodyHtml){
   var fl=document.getElementById('cand-float');
-  document.getElementById('cand-float-body').innerHTML=bodyHtml;
+  var body=document.getElementById('cand-float-body');
+  body.innerHTML=bodyHtml;
   var sig=btn.closest?btn.closest('.sig-block'):null;
   if(!sig){var t=btn;while(t&&!t.classList.contains('sig-block'))t=t.parentNode;sig=t;}
   if(sig){var sr=sig.getBoundingClientRect();fl.style.position='fixed';fl.style.left=sr.left+'px';fl.style.top=sr.top+'px';fl.style.width=sr.width+'px';fl.style.height=sr.height+'px';fl.style.maxHeight=sr.height+'px';}
   fl.style.display='flex';
   document.getElementById('cand-float-overlay').style.display='block';
+  // #cand-float est hors de #ov-body, donc le MutationObserver de
+  // adjustCandNameAbbreviation ne le voit pas. On appelle la cascade
+  // explicitement (après l'affichage, sinon les éléments ont offsetTop/Height
+  // à 0 et la détection wrap rate). requestAnimationFrame suffit : à ce point
+  // le layout est posé.
+  requestAnimationFrame(() => {
+    if (typeof adjustCandNameAbbreviation === 'function') adjustCandNameAbbreviation(body);
+  });
 }
 function closeCandFloat(){
   document.getElementById('cand-float').style.display='none';
@@ -3585,8 +3661,9 @@ function renderBureauList(){
     var cur=ns2===curNs;
     h+='<div class="blist-row'+(cur?' cur':'')+'" data-ns="'+ns2+'">'
       +'<span class="blist-num">'+numLabel+'</span>'
-      +'<span class="blist-name">'+denom
-      +(!isAgg2&&quartier?'<br><span style="font-size:0.58rem;color:#bbb;font-weight:400">'+quartier+'</span>':'')
+      +'<span class="blist-name">'
+        +'<span class="blist-denom" title="'+denom.replace(/"/g,'&quot;')+'">'+denom+'</span>'
+        +(!isAgg2&&quartier?'<span class="blist-sub">'+quartier+'</span>':'')
       +'</span>'
       +tag
       +'</div>';
@@ -3638,7 +3715,10 @@ function renderQuartierList(){
     var tag=winner?('<span style="background:'+col+';color:#fff;font-size:0.6rem;font-weight:700;padding:2px 6px;border-radius:3px;white-space:nowrap;flex-shrink:0">'+candName+' '+pct+'</span>'):'';
     var cur=qp===curQ;
     h+='<div class="blist-row'+(cur?' cur':'')+'" data-q="'+qp.replace(/"/g,'&quot;')+'">'
-      +'<span class="blist-name">'+qp+'<br><span style="font-size:0.58rem;color:var(--text-meta);font-weight:400">'+ag.nb+' bureau'+(ag.nb>1?'x':'')+'</span></span>'
+      +'<span class="blist-name">'
+        +'<span class="blist-denom" title="'+qp.replace(/"/g,'&quot;')+'">'+qp+'</span>'
+        +'<span class="blist-sub">'+ag.nb+' bureau'+(ag.nb>1?'x':'')+'</span>'
+      +'</span>'
       +tag
       +'</div>';
   });
