@@ -5337,6 +5337,36 @@ function updateAnalyseLink() {
     ctx.restore();
   }
 
+  // Cache de CanvasPattern par contexte canvas → par paire/triplet de couleurs.
+  // Équivalent côté <canvas> du <pattern> SVG utilisé par la carte Leaflet pour
+  // les bureaux ex-aequo. Canvas2D ne sait pas lire `url(#tie-XXX)`, il faut
+  // construire un CanvasPattern via un tile pré-rendu + setTransform(rotation).
+  const _canvasTiePatternCache = new WeakMap();
+  function getCanvasTiePattern(ctx, colors) {
+    if (!colors || colors.length < 2) return null;
+    let cache = _canvasTiePatternCache.get(ctx);
+    if (!cache) { cache = {}; _canvasTiePatternCache.set(ctx, cache); }
+    const id = colors.map(c => (c || '#CCC').toUpperCase()).join('|');
+    if (cache[id]) return cache[id];
+    // Tile : N bandes verticales (8 px chacune), puis on appliquera une rotation
+    // de 45° via pattern.setTransform pour obtenir des hachures diagonales.
+    const bandW = 8;
+    const size = bandW * colors.length;
+    const tile = document.createElement('canvas');
+    tile.width = size; tile.height = size;
+    const tctx = tile.getContext('2d');
+    colors.forEach((col, i) => {
+      tctx.fillStyle = col || '#cccccc';
+      tctx.fillRect(i * bandW, 0, bandW, size);
+    });
+    const pattern = ctx.createPattern(tile, 'repeat');
+    if (pattern && typeof pattern.setTransform === 'function' && typeof DOMMatrix !== 'undefined') {
+      pattern.setTransform(new DOMMatrix().rotate(45));
+    }
+    cache[id] = pattern;
+    return pattern;
+  }
+
   // Dessine la carte choroplèthe sur le canvas
   function drawCarteVisual(ctx, x, y, w, h) {
     if (typeof getMapGeoJSON !== 'function') return null;
@@ -5399,7 +5429,21 @@ function updateAnalyseLink() {
       if (ns === '0057') return;
       if (!f.geometry) return;
       const style = featureStyle(f);
-      ctx.fillStyle = style.fillColor || '#ddd';
+      let fill = style.fillColor || '#ddd';
+      // Ex-aequo : featureStyle renvoie 'url(#tie-XXX)' qui ne marche pas
+      // en Canvas2D → on remplace par un CanvasPattern de hachures diagonales.
+      if (typeof fill === 'string' && fill.startsWith('url(#tie-')) {
+        const data = getBureauData(ns);
+        const tied = tieCandidatesForBureau(data);
+        if (tied) {
+          const cols = tied.map(name => colorOfCandidate(name));
+          const pat = getCanvasTiePattern(ctx, cols);
+          fill = pat || colorOfCandidate(tied[0]);  // fallback couleur unique si pattern KO
+        } else {
+          fill = '#ddd';
+        }
+      }
+      ctx.fillStyle = fill;
       ctx.strokeStyle = style.color || '#fff';
       ctx.lineWidth = (style.weight || 1) * 0.7;
       ctx.globalAlpha = style.fillOpacity != null ? style.fillOpacity : 1;
