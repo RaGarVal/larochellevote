@@ -381,6 +381,22 @@ select#el-select {
 .bar-mark { position: absolute; top: -2px; bottom: -2px; width: 0; border-left: 1.5px dashed var(--bar-mark) !important; pointer-events: none; z-index: 3; }
 /* Variante haute (fiche bureau/quartier) : même couleur dashed que la sidebar — bornes verticales ajustées */
 .bar-bg.bar-tall .bar-mark { top: 0; bottom: 0; }
+
+/* Mobile (≤720 px) : les pointillés à 1.5 px sont trop fins et trop transparents
+   sur les écrans à pixel élevé / petites tailles → on les renforce.
+   - .bar-mark : passe à 2.5 px (var(--bar-mark) ajusté en plus contrasté).
+   - Ligne 50 % au milieu des barres de blocs : on cible l'inline style via
+     sélecteur d'attribut + !important (l'inline n'a pas !important, donc on
+     l'emporte sur l'épaisseur et la couleur, sans toucher au reste du style). */
+@media (max-width: 720px) {
+  :root { --bar-mark: #666; }
+  [data-theme="dark"] { --bar-mark: rgba(236,230,221,0.95); }
+  .bar-mark { border-left-width: 2.5px !important; }
+  div[style*="border-left:1.5px dashed rgba(255,255,255,0.65)"] {
+    border-left-width: 2.5px !important;
+    border-left-color: rgba(255,255,255,0.92) !important;
+  }
+}
 .dp  { color: #2a9d5c; font-weight: 700; }
 .dn  { color: #e04040; font-weight: 700; }
 .xtag {
@@ -514,9 +530,19 @@ select#el-select {
   filter: drop-shadow(0 0 1.5px rgba(236,230,221,0.35));
 }
 
-/* Split layout: map | signature */
+/* Split layout: map | signature
+   La largeur de la minimap était fixée à 504 px → sur un écran < ~1280 px
+   la colonne de droite (résultats) devenait étriquée. On passe à un clamp
+   qui fait varier la minimap entre 300 et 504 px selon la largeur dispo :
+   - ≥ 1575 px : 504 px (équivalent à l'ancien fixe)
+   - ~1280 px  : ≈ 410 px
+   - ~ 940 px  : ≈ 300 px (plancher)
+   La colonne droite garde son `minmax(0, 1fr)` pour qu'elle ne déborde
+   jamais (sinon des contenus larges peuvent forcer la grille à s'étendre). */
 .split {
-  display: grid; grid-template-columns: 504px 1fr; gap: 12px; margin-bottom: 18px;
+  display: grid;
+  grid-template-columns: clamp(300px, 32%, 504px) minmax(0, 1fr);
+  gap: 12px; margin-bottom: 18px;
 }
 #mm-wrap {
   height: 100%; min-height: 400px; border-radius: 8px; overflow: hidden;
