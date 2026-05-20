@@ -132,5 +132,16 @@
     "quartier": null,
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-05-20",
+    "signature": "quartier|Référendum 2005|TU|Tasdon",
+    "niveau": "quartier",
+    "election": "Référendum 2005",
+    "tour": "TU",
+    "bureau": null,
+    "quartier": "Tasdon",
+    "subtype": null,
+    "candidat": null
   }
 ]

@@ -1,13 +1,13 @@
 {
-  "date": "2026-05-19",
-  "niveau": "bureau",
-  "election": "Législatives 2012",
-  "tour": "T1",
-  "bureau": "0039",
-  "quartier": null,
+  "date": "2026-05-20",
+  "niveau": "quartier",
+  "election": "Référendum 2005",
+  "tour": "TU",
+  "bureau": null,
+  "quartier": "Tasdon",
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Législatives 2012|T1|0039",
-  "chars": 261,
-  "generated_at": "2026-05-19T06:01:08.058Z"
+  "signature": "quartier|Référendum 2005|TU|Tasdon",
+  "chars": 225,
+  "generated_at": "2026-05-20T06:01:34.278Z"
 }
