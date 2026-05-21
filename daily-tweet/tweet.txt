@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🗳️ Le 29 mai 2005, pour le référendum, le Non est arrivé en tête avec 61,3 % dans le quartier de Tasdon.
+🏛️ Le 11 juin 2017, pour les législatives (1er tour), Olivier Falorni (DVG) arrive en tête avec 34,2 % dans le bureau n°18 · Stade Bouffénie–Bel-Air à Mireuil.
 
-Les résultats de ce quartier, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=R%C3%A9f%C3%A9rendum+2005&quartier=Tasdon
+Les résultats de ce bureau, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=L%C3%A9gislatives+2017&tour=T1&bureau=0018

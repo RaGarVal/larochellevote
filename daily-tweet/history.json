@@ -143,5 +143,16 @@
     "quartier": "Tasdon",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-05-21",
+    "signature": "bureau|Législatives 2017|T1|0018",
+    "niveau": "bureau",
+    "election": "Législatives 2017",
+    "tour": "T1",
+    "bureau": "0018",
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
   }
 ]
