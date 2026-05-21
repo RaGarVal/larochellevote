@@ -698,22 +698,20 @@ select#el-select {
 .blist-denom,.blist-sub{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .blist-sub{font-size:0.58rem;color:var(--text-meta);font-weight:400;}
 .blist-pct{font-size:0.74rem;font-weight:700;color:var(--text-modal-muted);flex-shrink:0;}
-#map-legend{position:absolute;top:10px;right:58px;z-index:800;background:var(--bg-card);border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,0.18);border:1px solid var(--border-modal);padding:8px 10px;min-width:200px;max-width:380px;color:var(--text-modal);display:flex;flex-wrap:wrap;align-items:stretch;}
-/* Ordre desktop : modes (1) + chevron (2) sur la 1re ligne, body (3) en dessous.
-   Le mobile redéfinit ces ordres pour mettre le body au-dessus (cf. @media). */
-#map-mode-btns{display:grid;grid-template-columns:repeat(4,minmax(min-content,1fr));gap:3px;margin-bottom:7px;order:1;flex:1;min-width:0;}
+#map-legend{position:absolute;top:10px;right:58px;z-index:800;background:var(--bg-card);border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,0.18);border:1px solid var(--border-modal);padding:8px 10px;min-width:200px;max-width:380px;color:var(--text-modal);}
+#map-mode-btns{display:grid;grid-template-columns:repeat(4,minmax(min-content,1fr));gap:3px;margin-bottom:7px;}
 .mmbtn{font-family:inherit;font-size:0.67rem;font-weight:700;line-height:1.2;padding:4px 6px;border:1px solid var(--border-modal);border-radius:4px;background:var(--bg-modal-hover);color:var(--text-modal-muted);cursor:pointer;transition:all 0.15s;white-space:nowrap;}
 .mmbtn.on{background:var(--bg-active);border-color:var(--bg-active);color:var(--text-active);}
 .mmbtn:hover:not(.on){background:var(--bg-modal-accent);}
-#map-legend-body{font-size:0.69rem;line-height:1.5;order:3;flex-basis:100%;}
+#map-legend-body{font-size:0.69rem;line-height:1.5;}
 /* Bouton chevron pour escamoter la légende — visible sur desktop ET mobile.
    En flow normal (flex item du #map-legend) pour s'aligner automatiquement à
    hauteur des boutons modes via align-self:stretch. */
-/* Hauteur calquée sur celle des .mmbtn (~22.9 px : font 0.67rem × 1.2 + 4+4 padding + 1+1 border).
-   On utilise 23 px explicite plutôt que align-self:stretch qui se comportait mal
-   ici (chevron étiré verticalement au-delà des boutons modes). Le mobile @media
-   override en `height:auto; align-self:stretch` pour matcher les gros tap-targets. */
-#legend-toggle{display:flex;align-items:center;justify-content:center;width:28px;height:23px;flex-shrink:0;border:1px solid var(--border-modal);background:var(--bg-modal);cursor:pointer;color:var(--text-modal);font-size:0.9rem;line-height:1;padding:0;border-radius:4px;font-weight:700;order:2;margin-left:4px;}
+/* Bouton chevron pour escamoter la légende — styles communs (visuels). Le
+   positionnement diffère entre desktop (cf. @media min-width:721px : flex item
+   à hauteur des boutons modes) et mobile (cf. @media max-width:720px : flex
+   item dans le flow horizontal des boutons modes). */
+#legend-toggle{display:flex;align-items:center;justify-content:center;border:1px solid var(--border-modal);background:var(--bg-modal);cursor:pointer;color:var(--text-modal);font-size:0.9rem;line-height:1;padding:0;border-radius:4px;font-weight:700;}
 #legend-toggle:hover{color:var(--text-modal);background:var(--bg-modal-hover);}
 .legend-toggle-chev{display:inline-block;transition:transform .18s ease;}
 #map-legend.expanded #legend-toggle .legend-toggle-chev{transform:rotate(180deg);}
@@ -721,6 +719,18 @@ select#el-select {
    des boutons modes (sinon vide visuel sous la barre des modes). */
 #map-legend:not(.expanded) #map-legend-body{display:none;}
 #map-legend:not(.expanded) #map-mode-btns{margin-bottom:0;}
+
+/* Layout desktop (> 720 px) : on transforme la légende en flex container pour
+   placer le chevron sur la même ligne que les boutons modes (sans se reposer
+   sur position:absolute qui s'alignait mal verticalement). Le body bascule
+   sur sa propre ligne en-dessous via flex-basis: 100%. Le mobile garde son
+   propre layout (cf. @media max-width:720px). */
+@media (min-width: 721px) {
+  #map-legend       { display: flex; flex-wrap: wrap; align-items: stretch; }
+  #map-mode-btns    { order: 1; flex: 1; min-width: 0; }
+  #legend-toggle    { order: 2; width: 28px; height: 23px; flex-shrink: 0; margin-left: 4px; }
+  #map-legend-body  { order: 3; flex-basis: 100%; }
+}
 .leg-row{display:flex;align-items:center;gap:6px;padding:1px 0;}
 .leg-row-click{cursor:pointer;border-radius:4px;padding:2px 3px;margin:0 -3px;transition:background 0.1s;}
 .leg-row-click:hover{background:var(--bg-modal-hover);}
