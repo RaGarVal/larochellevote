@@ -132,5 +132,27 @@
     "quartier": null,
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-05-20",
+    "signature": "quartier|Référendum 2005|TU|Tasdon",
+    "niveau": "quartier",
+    "election": "Référendum 2005",
+    "tour": "TU",
+    "bureau": null,
+    "quartier": "Tasdon",
+    "subtype": null,
+    "candidat": null
+  },
+  {
+    "date": "2026-05-21",
+    "signature": "bureau|Législatives 2017|T1|0018",
+    "niveau": "bureau",
+    "election": "Législatives 2017",
+    "tour": "T1",
+    "bureau": "0018",
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
   }
 ]
