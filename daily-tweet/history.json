@@ -154,5 +154,16 @@
     "quartier": null,
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-05-22",
+    "signature": "carte|Législatives 2007|T1",
+    "niveau": "carte",
+    "election": "Législatives 2007",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "gagnants",
+    "candidat": null
   }
 ]
