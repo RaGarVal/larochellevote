@@ -133,6 +133,14 @@ Le fichier xlsx standard a un bug : les colonnes % (cols 8-26 typiquement) ont �
 
 ### Bureaux avec écart voix ≠ exprimés
 Pas rare en saisie manuelle. Lister les bureaux concernés et demander à l'user de corriger l'Excel.
+**Cas non résoluble** (ex. Régionales 1992 bureau 0007) : si l'user ne peut pas corriger, convention adoptée → on force `bn=0` et `e = somme(voix)`. Cela garde la cohérence interne (somme c = 100 % par bureau) au prix d'une légère imprécision sur les blancs/nuls de ce bureau. Documenter le cas en commentaire pour qu'une meilleure source puisse corriger plus tard.
+
+### Renommage d'ère cartographique
+Si une élection plus ancienne arrive et qu'elle utilise EXACTEMENT le même découpage qu'une ère existante (mêmes bureaux, noms, quartiers) → renommer l'ère vers l'année la plus ancienne. Ex. l'ère "1993" est devenue "1992" quand on a ajouté les Régionales 1992 (qui utilisaient déjà le découpage 1993). Endroits à patcher :
+- `donnees.js` : `BUREAU_INFO[ancien]` → `[nouveau]`, `BUREAU_CORRESPONDANCES["…"][ancien]` → `[nouveau]`, `REDECOUPAGES["…|ancien"]` → `["…|nouveau"]`, `ELECTIONS[*].my === ancien` → `nouveau`.
+- `geodata.js` : `MAPS_DATA[ancien]` → `[nouveau]`.
+- `LRVanalyse.html` : notices textuelles "avant <ancien>" → "avant <nouveau>".
+- Vérifier qu'aucun autre code ne hardcode l'ancienne année (`ERAS` / `CURRENT_ERA` sont dynamiques donc s'adaptent tout seuls).
 
 ### Hachures ex-aequo
 - Géré automatiquement par `tieCandidatesForBureau()` (basé sur `_voix` entiers).

@@ -203,6 +203,7 @@ const DATES = {
   'Référendum 1992':     { TU: '20 septembre 1992'   },
   'Référendum 2000':     { TU: '24 septembre 2000'   },
   'Référendum 2005':     { TU: '29 mai 2005'         },
+  'Régionales 1992':     { TU: '22 mars 1992'        },
   'Régionales 1998':     { TU: '15 mars 1998'        },
   'Régionales 2004':     { T1: '21 mars 2004',       T2: '28 mars 2004'     },
   'Régionales 2010':     { T1: '14 mars 2010',       T2: '21 mars 2010'     },
