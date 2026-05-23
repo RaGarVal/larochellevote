@@ -559,7 +559,7 @@ function renderCand(filtered) {
       '<td><input class="inp-text" list="parti-codes" value="' + escapeAttr(parti) + '" oninput="setCand(this.closest(\'tr\').dataset.key,\'parti\',this.value);markRow(this)" style="font-family:monospace"></td>' +
       '<td>' + elecCell + '</td>' +
       '<td><span class="b-badge" style="background:' + (B_COLORS[bVal] || '#aaa') + '">' + bVal + '</span></td>' +
-      '<td><input class="inp-text" value="' + escapeAttr(tStr) + '" oninput="setCandTags(this.closest(\'tr\').dataset.key,this);markRow(this)" placeholder="ex: socialiste, écologiste"></td>' +
+      '<td>' + renderFamiliesCellInnerCand(row.key, t) + '</td>' +
       (() => {
         const partiColor = getPartiColor(parti);
         const candColor = getField(row, 'c') || partiColor;
@@ -1151,16 +1151,23 @@ function setCandidatureFamilies(cid, input) {
 // toutes les familles déjà utilisées dans les CANDIDATURES (incluant les
 // changes en cours pour découvrir les nouvelles à la volée).
 function buildFamiliesDatalist() {
-  if (typeof CANDIDATURES === 'undefined') return;
   const families = new Set();
-  Object.values(CANDIDATURES).forEach(c => {
-    (c.t || []).forEach(f => f && families.add(f));
-  });
-  // Inclure aussi les familles posées dans les changes (utile si l'utilisateur
-  // a tapé une nouvelle famille, elle s'auto-suggère sur les autres lignes).
+  // Source 1 : CANDIDATURES d'origine
+  if (typeof CANDIDATURES !== 'undefined') {
+    Object.values(CANDIDATURES).forEach(c => {
+      (c.t || []).forEach(f => f && families.add(f));
+    });
+  }
+  // Source 2 : changes en cours (timeline profil)
   Object.values(candidatureChanges).forEach(ch => {
     if (Array.isArray(ch.t)) ch.t.forEach(f => f && families.add(f));
   });
+  // Source 3 : changes en cours (onglet Candidats)
+  if (typeof changesCand !== 'undefined') {
+    Object.values(changesCand).forEach(ch => {
+      if (Array.isArray(ch.t)) ch.t.forEach(f => f && families.add(f));
+    });
+  }
   let dl = document.getElementById('fam-suggestions');
   if (!dl) {
     dl = document.createElement('datalist');
@@ -1168,6 +1175,81 @@ function buildFamiliesDatalist() {
     document.body.appendChild(dl);
   }
   dl.innerHTML = [...families].sort().map(f => '<option value="' + escapeAttr(f) + '">').join('');
+}
+
+// ─── Familles en mode tags — variantes pour l'onglet Candidats (data-key) ───
+function renderFamiliesCellInnerCand(key, t) {
+  const fams = (Array.isArray(t) ? t : []).filter(Boolean);
+  const safeKey = escapeAttr(key);
+  const chips = fams.map(f =>
+    '<span class="fam-chip" data-fam="' + escapeAttr(f) + '">'
+    +   escapeHtml(f)
+    +   '<button type="button" class="fam-chip-x" title="Retirer cette famille" '
+    +     'onclick="removeFamilyCand(\'' + safeKey + '\', this.parentNode.dataset.fam)">×</button>'
+    + '</span>'
+  ).join('');
+  const placeholder = fams.length ? '+ ajouter' : 'ajouter une famille';
+  return '<div class="fam-input" data-key="' + safeKey + '">'
+       +   chips
+       +   '<input type="text" class="fam-add" list="fam-suggestions" '
+       +     'placeholder="' + placeholder + '" '
+       +     'onkeydown="handleFamilyKeyCand(event, \'' + safeKey + '\')" '
+       +     'onchange="commitFamilyOnChangeCand(event, \'' + safeKey + '\')">'
+       + '</div>';
+}
+function handleFamilyKeyCand(e, key) {
+  if (e.key === 'Enter' || e.key === ',') {
+    e.preventDefault();
+    const val = (e.target.value || '').trim();
+    if (val) { addFamilyCand(key, val); e.target.value = ''; }
+  } else if (e.key === 'Backspace' && !e.target.value) {
+    const r = rows.find(rr => rr.key === key);
+    if (!r) return;
+    const t = (getField(r, 't') || []).slice();
+    if (t.length) { removeFamilyCand(key, t[t.length - 1]); }
+  }
+}
+function commitFamilyOnChangeCand(e, key) {
+  const val = (e.target.value || '').trim();
+  if (val) { addFamilyCand(key, val); e.target.value = ''; }
+}
+function addFamilyCand(key, fam) {
+  if (!fam) return;
+  const r = rows.find(rr => rr.key === key);
+  if (!r) return;
+  const t = (getField(r, 't') || []).slice();
+  if (t.includes(fam)) return;
+  t.push(fam);
+  setCand(key, 't', t);
+  refreshFamiliesCellCand(key, true);
+  buildFamiliesDatalist();
+}
+function removeFamilyCand(key, fam) {
+  const r = rows.find(rr => rr.key === key);
+  if (!r) return;
+  const t = (getField(r, 't') || []).slice();
+  const idx = t.indexOf(fam);
+  if (idx >= 0) t.splice(idx, 1);
+  setCand(key, 't', t);
+  refreshFamiliesCellCand(key, true);
+}
+function refreshFamiliesCellCand(key, refocus) {
+  const tr = document.querySelector('#cand-body tr[data-key="' + cssEsc(key) + '"]');
+  if (!tr) return;
+  const r = rows.find(rr => rr.key === key);
+  if (!r) return;
+  // Index colonnes : 0=Nom 1=Prénom 2=Sexe 3=Parti 4=Élections 5=Bloc 6=Familles 7=Couleur 8=bk
+  const tdFam = tr.children[6];
+  if (!tdFam) return;
+  const t = getField(r, 't') || [];
+  tdFam.innerHTML = renderFamiliesCellInnerCand(key, t);
+  // Marquer la ligne comme changée si applicable
+  const anyInput = tdFam.querySelector('input') || tr.querySelector('input');
+  if (anyInput) markRow(anyInput);
+  if (refocus) {
+    const inp = tdFam.querySelector('.fam-add');
+    if (inp) inp.focus();
+  }
 }
 
 function renderFamiliesCellInner(cid, t) {
