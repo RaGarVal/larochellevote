@@ -764,7 +764,13 @@ let personsChanges = {};      // { person_id: { p?: string, n?: string, s?: "F"/
 function setPersonField(pid, field, value) {
   if (!personsChanges[pid]) personsChanges[pid] = {};
   const orig = (typeof PERSONS !== 'undefined' && PERSONS[pid]) || {};
-  if ((orig[field] || '') === (value || '')) {
+  const origVal = orig[field];
+  // Comparaison robuste : arrays/objets via JSON.stringify, primitives via ===.
+  const isObj = v => v !== null && typeof v === 'object';
+  const eq = (isObj(origVal) && isObj(value))
+    ? JSON.stringify(origVal) === JSON.stringify(value)
+    : (origVal || '') === (value || '');
+  if (eq) {
     delete personsChanges[pid][field];
     if (!Object.keys(personsChanges[pid]).length) delete personsChanges[pid];
   } else {
@@ -1134,6 +1140,8 @@ function openProfile(id) {
           + '</tr></thead><tbody>'
           + events.map(renderRow).join('')
           + '</tbody></table>')
+    + renderBioSection(p.id)
+    + renderMandatsSection(p.id)
     + '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">'
     +   '<span id="prof-modif-count" style="margin-right:auto;color:#27AE60;font-size:.8rem;font-weight:600;align-self:center">'
     +     (nbChanges ? `📝 ${nbChanges} candidature(s) modifiée(s)` : '') + '</span>'
@@ -1341,6 +1349,117 @@ function _markCandRow(input) {
     counter.textContent = parts.length ? parts.join(' · ') + ' modifié' + ((nPers + nCand) > 1 ? 's' : '') : '';
   }
 }
+// ─── Bio + Mandats (étape 1 page candidat) ──────────────────────────────────
+// Champs optionnels dans PERSONS :
+//   bio     : string markdown (libre, présentation rédigée)
+//   mandats : [{ de: number, a: number|null, fonction: string, circo?: string, note?: string }]
+// Édition via les 2 sections "Notice biographique" et "Mandats" sous la timeline
+// dans la modale profil. Sauvegarde dans personsChanges → exporté avec PERSON_CORRECTIONS.
+
+function renderBioSection(pid) {
+  const safePid = escapeAttr(pid);
+  const bio = getPersonField(pid, 'bio') || '';
+  return '<section class="bio-section" style="margin-top:14px;border-top:1px solid #eee;padding-top:10px">'
+       +   '<div class="sec-ttl" style="font-size:.78rem;font-weight:700;color:#555;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Notice biographique</div>'
+       +   '<p style="font-size:.72rem;color:#888;margin:0 0 4px">Texte libre (markdown léger : **gras**, *italique*, [liens](url)). Optionnel.</p>'
+       +   '<textarea style="width:100%;min-height:90px;font-family:Georgia, serif;font-size:.85rem;padding:8px;border:1px solid #ddd;border-radius:5px;resize:vertical;line-height:1.45" '
+       +     'placeholder="Ex. Avocat, fondateur du PRG, maire de La Rochelle de 1971 à 1999…" '
+       +     'oninput="setPersonField(\'' + safePid + '\',\'bio\',this.value);_markProfileHeader(this)">'
+       +     escapeHtml(bio)
+       +   '</textarea>'
+       + '</section>';
+}
+
+function renderMandatsSection(pid) {
+  const safePid = escapeAttr(pid);
+  const mandats = getPersonField(pid, 'mandats') || [];
+  const rows = mandats.map((m, idx) => renderMandatRow(safePid, idx, m)).join('');
+  return '<section class="mandats-section" style="margin-top:12px;border-top:1px solid #eee;padding-top:10px">'
+       +   '<div class="sec-ttl" style="font-size:.78rem;font-weight:700;color:#555;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Mandats</div>'
+       +   '<p style="font-size:.72rem;color:#888;margin:0 0 6px">Mandats électifs / nominations. Date de fin vide = en cours.</p>'
+       +   '<table class="mandats-table" style="width:100%;font-size:.78rem;border-collapse:collapse">'
+       +     '<thead><tr style="background:#f5f5f5">'
+       +       '<th style="width:70px;padding:4px 6px;text-align:left;font-weight:600;border-bottom:1px solid #ddd">Début</th>'
+       +       '<th style="width:80px;padding:4px 6px;text-align:left;font-weight:600;border-bottom:1px solid #ddd">Fin</th>'
+       +       '<th style="padding:4px 6px;text-align:left;font-weight:600;border-bottom:1px solid #ddd">Fonction</th>'
+       +       '<th style="padding:4px 6px;text-align:left;font-weight:600;border-bottom:1px solid #ddd">Circonscription / note</th>'
+       +       '<th style="width:30px;border-bottom:1px solid #ddd"></th>'
+       +     '</tr></thead>'
+       +     '<tbody id="mandats-tbody-' + safePid + '">' + rows + '</tbody>'
+       +   '</table>'
+       +   '<button type="button" style="margin-top:6px;padding:4px 10px;font-size:.72rem;border:1px dashed #aaa;background:#fafafa;border-radius:4px;cursor:pointer;color:#555" '
+       +     'onclick="addMandat(\'' + safePid + '\')">+ Ajouter un mandat</button>'
+       + '</section>';
+}
+
+function renderMandatRow(safePid, idx, m) {
+  const de    = m.de != null ? m.de : '';
+  const a     = m.a  != null ? m.a  : '';
+  const fonc  = m.fonction || '';
+  const circo = m.circo || m.note || '';
+  return '<tr data-idx="' + idx + '">'
+       + '<td style="padding:3px 6px;border-bottom:1px solid #f0f0f0"><input type="number" min="1900" max="2100" placeholder="Année" value="' + escapeAttr(de) + '" '
+       +   'oninput="setMandatField(\'' + safePid + '\',' + idx + ',\'de\',this.value);_markProfileHeader(this)" '
+       +   'style="width:100%;padding:3px 4px;border:1px solid #ddd;border-radius:3px;font-size:.78rem"></td>'
+       + '<td style="padding:3px 6px;border-bottom:1px solid #f0f0f0"><input type="number" min="1900" max="2100" placeholder="en cours" value="' + escapeAttr(a) + '" '
+       +   'oninput="setMandatField(\'' + safePid + '\',' + idx + ',\'a\',this.value);_markProfileHeader(this)" '
+       +   'style="width:100%;padding:3px 4px;border:1px solid #ddd;border-radius:3px;font-size:.78rem"></td>'
+       + '<td style="padding:3px 6px;border-bottom:1px solid #f0f0f0"><input type="text" placeholder="ex: Maire, Député, Conseiller général" value="' + escapeAttr(fonc) + '" '
+       +   'oninput="setMandatField(\'' + safePid + '\',' + idx + ',\'fonction\',this.value);_markProfileHeader(this)" '
+       +   'style="width:100%;padding:3px 4px;border:1px solid #ddd;border-radius:3px;font-size:.78rem"></td>'
+       + '<td style="padding:3px 6px;border-bottom:1px solid #f0f0f0"><input type="text" placeholder="ex: 1re circo de Charente-Maritime" value="' + escapeAttr(circo) + '" '
+       +   'oninput="setMandatField(\'' + safePid + '\',' + idx + ',\'circo\',this.value);_markProfileHeader(this)" '
+       +   'style="width:100%;padding:3px 4px;border:1px solid #ddd;border-radius:3px;font-size:.78rem"></td>'
+       + '<td style="padding:3px 4px;border-bottom:1px solid #f0f0f0;text-align:center">'
+       +   '<button type="button" title="Retirer ce mandat" style="background:none;border:none;color:#c62828;cursor:pointer;font-size:1rem;font-weight:bold;padding:0 4px" '
+       +     'onclick="removeMandat(\'' + safePid + '\',' + idx + ')">×</button>'
+       + '</td></tr>';
+}
+
+function _getMandats(pid) {
+  // Renvoie une copie modifiable du tableau actuel (changes ou origine)
+  const cur = getPersonField(pid, 'mandats');
+  if (Array.isArray(cur)) return cur.slice();
+  return [];
+}
+function setMandatField(pid, idx, field, value) {
+  const arr = _getMandats(pid);
+  if (!arr[idx]) arr[idx] = {};
+  if (field === 'de' || field === 'a') {
+    const n = parseInt(value, 10);
+    if (Number.isFinite(n)) arr[idx][field] = n;
+    else delete arr[idx][field];
+  } else {
+    if (value && value.trim()) arr[idx][field] = value.trim();
+    else delete arr[idx][field];
+  }
+  setPersonField(pid, 'mandats', arr);
+}
+function addMandat(pid) {
+  const arr = _getMandats(pid);
+  arr.push({});
+  setPersonField(pid, 'mandats', arr);
+  // Re-render uniquement le tbody mandats pour préserver le focus ailleurs
+  const tbody = document.getElementById('mandats-tbody-' + cssEsc(pid));
+  if (tbody) {
+    const safePid = escapeAttr(pid);
+    tbody.innerHTML = arr.map((m, i) => renderMandatRow(safePid, i, m)).join('');
+    // focus sur le champ "Début" de la nouvelle ligne
+    const lastRow = tbody.querySelector('tr:last-child input');
+    if (lastRow) lastRow.focus();
+  }
+}
+function removeMandat(pid, idx) {
+  const arr = _getMandats(pid);
+  arr.splice(idx, 1);
+  setPersonField(pid, 'mandats', arr);
+  const tbody = document.getElementById('mandats-tbody-' + cssEsc(pid));
+  if (tbody) {
+    const safePid = escapeAttr(pid);
+    tbody.innerHTML = arr.map((m, i) => renderMandatRow(safePid, i, m)).join('');
+  }
+}
+
 // Surligne le header profil quand PERSONS modifiée + compteur.
 function _markProfileHeader(input) {
   const wrap = input && input.closest ? input.closest('.profile-edit-id') : null;
@@ -1877,12 +1996,15 @@ function showExport() {
     txt += 'const CANDIDATURE_CORRECTIONS = ' + JSON.stringify(candidatureChangesOut, null, 2) + ';\n\n';
   }
   if (nbPersons) {
-    txt += '// Corrections PERSONS (identité : prénom, nom, sexe) — ' + nbPersons + ' profil(s) modifié(s)\n';
-    txt += '// Pour appliquer (propage aussi à CAND_DATA + CANDIDATURES pour les candidatures individuelles) :\n';
+    txt += '// Corrections PERSONS (identité + bio + mandats) — ' + nbPersons + ' profil(s) modifié(s)\n';
+    txt += '// Pour appliquer (identité p/n/s propagée à CAND_DATA + CANDIDATURES ; bio/mandats restent dans PERSONS) :\n';
     txt += '//   Object.entries(PERSON_CORRECTIONS).forEach(([pid,v]) => {\n';
     txt += '//     Object.assign(PERSONS[pid] = PERSONS[pid] || {}, v);\n';
-    txt += '//     Object.values(CAND_DATA).forEach(c => { if (c.person === pid) Object.assign(c, v); });\n';
-    txt += '//     Object.values(CANDIDATURES).forEach(c => { if (c.person === pid) Object.assign(c, v); });\n';
+    txt += '//     const idCols = {}; ["p","n","s"].forEach(k => { if (k in v) idCols[k] = v[k]; });\n';
+    txt += '//     if (Object.keys(idCols).length) {\n';
+    txt += '//       Object.values(CAND_DATA).forEach(c => { if (c.person === pid) Object.assign(c, idCols); });\n';
+    txt += '//       Object.values(CANDIDATURES).forEach(c => { if (c.person === pid) Object.assign(c, idCols); });\n';
+    txt += '//     }\n';
     txt += '//   });\n';
     txt += 'const PERSON_CORRECTIONS = ' + JSON.stringify(personsChanges, null, 2) + ';\n\n';
   }
