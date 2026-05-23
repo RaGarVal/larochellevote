@@ -3105,6 +3105,12 @@ function computeSelectionRange() {
     if (currentMapMode === 'candidat' && currentMapSelection) {
       if (!d.c || !Object.prototype.hasOwnProperty.call(d.c, currentMapSelection)) return;
     }
+    // Mode bloc : pareil — si aucun candidat du bloc sélectionné n'est dans ce
+    // bureau, on exclut. Sinon min=0 (bureaux "pas de candidat") tire le bas
+    // de la légende à 0% alors que les vrais bureaux votent à 5-15-30 %.
+    if (currentMapMode === 'bloc' && currentMapSelection) {
+      if (!hasBlocCandidates(d, currentMapSelection)) return;
+    }
     const v = getSelectionPct(d);
     if (v > mx) mx = v;
     if (v < mn) mn = v;
