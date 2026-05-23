@@ -3149,6 +3149,21 @@ function _onCantonTitrailleLeave() {
   _prevLegendCantonForHover = null;
 }
 
+// Vrai si au moins un candidat présent dans data.c appartient au bloc demandé.
+// Sert à distinguer "0 voix dans un bloc qui avait des candidats" (= rejet réel)
+// d'"aucun candidat de ce bloc" (= choix impossible). Critique aux cantonales/
+// départementales où le panel de candidats varie selon le canton.
+function hasBlocCandidates(data, block) {
+  if (!data || !data.c) return false;
+  for (const cid of Object.keys(data.c)) {
+    const ci = candInfo(cid);
+    if (!ci || !ci.bk) continue;
+    const b = (typeof BLOC_LEGACY !== 'undefined' && BLOC_LEGACY[ci.bk]) || '?';
+    if (b === block) return true;
+  }
+  return false;
+}
+
 function featureStyle(feature) {
   const ns = numStr(feature);
   const data = getBureauData(ns);
@@ -3169,6 +3184,12 @@ function featureStyle(feature) {
     // Cas binôme cantonal hors canton : le candidat n'est pas dans data.c → on
     // affiche un style neutre "pas de donnée" plutôt qu'une couleur 0% trompeuse.
     if (currentMapMode === 'candidat' && data.c && !Object.prototype.hasOwnProperty.call(data.c, currentMapSelection)) {
+      return { fillColor: '#ddd', fillOpacity: 0.2, color: '#fff', weight: 1 };
+    }
+    // Cas bloc sans candidat dans ce bureau (typique cantonales/départementales :
+    // un canton peut n'avoir personne en exg ou exd). Style neutre plutôt qu'un
+    // dégradé proche-blanc trompeur. Tooltip explicite via buildTooltipHtml.
+    if (currentMapMode === 'bloc' && data.c && !hasBlocCandidates(data, currentMapSelection)) {
       return { fillColor: '#ddd', fillOpacity: 0.2, color: '#fff', weight: 1 };
     }
     const baseColor = currentMapMode === 'candidat'
@@ -3210,6 +3231,18 @@ function buildTooltipHtml(feature, ns, info) {
   if (!data) return header + '</div>';
   let tag = '';
   if (currentMapSelection && (currentMapMode === 'candidat' || currentMapMode === 'bloc')) {
+    // "Pas de candidat" : (1) mode candidat, candidat absent du bureau (typique
+    // binôme cantonal hors de son canton) ; (2) mode bloc, aucun candidat du bloc
+    // sélectionné dans ce bureau. Dans les 2 cas, on n'affiche pas un "0,0 %"
+    // trompeur — le tag dit "Pas de candidat" sur fond gris neutre.
+    const noCand = (currentMapMode === 'candidat' && data.c && !Object.prototype.hasOwnProperty.call(data.c, currentMapSelection))
+                || (currentMapMode === 'bloc' && !hasBlocCandidates(data, currentMapSelection));
+    if (noCand) {
+      const labelNo = currentMapMode === 'candidat'
+        ? (candInfo(currentMapSelection).n || currentMapSelection)
+        : (BLOC_CONFIG[currentMapSelection] || BLOC_CONFIG['?']).label;
+      tag = '<span style="background:#aaa;color:#fff;font-size:0.68rem;font-weight:700;padding:3px 8px;border-radius:4px;white-space:nowrap">'+labelNo+'\xa0·\xa0Pas de candidat</span>';
+    } else {
     const pct = getSelectionPct(data);
     const baseColor = currentMapMode === 'candidat'
       ? ((typeof dotBackground === 'function') ? dotBackground(currentMapSelection) : colorOfCandidate(currentMapSelection))
@@ -3234,6 +3267,7 @@ function buildTooltipHtml(feature, ns, info) {
     }
     const ordSuffix = rank>0 ? ('\xa0·\xa0'+(rank===1?'1<sup>er</sup>':rank+'<sup>e</sup>')+'/'+total) : '';
     tag = '<span style="background:'+baseColor+';color:'+pickTextColorForBg(baseColor)+';font-size:0.68rem;font-weight:700;padding:3px 8px;border-radius:4px;white-space:nowrap">'+label+'\xa0'+pct.toFixed(1)+'\xa0%'+ordSuffix+'</span>';
+    }
   } else if (currentMapMode === 'candidat') {
     const winner = data.w;
     if (winner) {
