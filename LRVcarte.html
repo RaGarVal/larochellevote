@@ -3411,8 +3411,9 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
   // border-left/right + score (linear-gradient non supporté sur ces propriétés).
   const bgL = (typeof dotBackground === 'function') ? dotBackground(nameL) : colL;
   const bgR = (typeof dotBackground === 'function') ? dotBackground(nameR) : colR;
-  const voixL = Math.round(pctL*(data.e||0)/100);
-  const voixR = Math.round(pctR*(data.e||0)/100);
+  // Voix : préfère _voix (entier exact sommé depuis bureaux) au reconstitué pct*e/100.
+  const voixL = (data._voix && data._voix[nameL] != null) ? data._voix[nameL] : Math.round(pctL*(data.e||0)/100);
+  const voixR = (data._voix && data._voix[nameR] != null) ? data._voix[nameR] : Math.round(pctR*(data.e||0)/100);
   // Binôme paritaire : compact = "Nom1 / Nom2" (sans prénom), full = "Prénom1 Nom1<br>Prénom2 Nom2".
   const isBinomeL = Array.isArray(ciL.binome) && ciL.binome.length === 2;
   const isBinomeR = Array.isArray(ciR.binome) && ciR.binome.length === 2;
@@ -3732,7 +3733,13 @@ function renderCandidates(data, ns, cityAvg, extr, compact, extrLabel) {
     // Binôme à partis hétérogènes : background bicolore (split diagonal 135°) pour
     // la barre de progression. Pour candidat simple : couleur unique = col.
     const dotBg = (typeof dotBackground === 'function') ? dotBackground(name) : col;
-    const voix=Math.round(pct*(data.e||0)/100);
+    // Voix : si data._voix[name] est défini (= valeur entière exacte sommée depuis les
+    // _voix des bureaux), on l'utilise directement. Sinon fallback reconstitution
+    // depuis le pct arrondi (perte de précision : peut donner 782 au lieu de 781
+    // sur les agrégations canton/quartier/ville).
+    const voix = (data._voix && data._voix[name] != null)
+      ? data._voix[name]
+      : Math.round(pct*(data.e||0)/100);
     const isBest=extr.best[name]&&extr.best[name].num===ns;
     const isWorst=extr.worst[name]&&extr.worst[name].num===ns;
     const arrowCompact=isBest?' <span style="color:#1a7a4a;font-size:0.7rem;font-weight:900">&#9650;</span>'
@@ -3886,15 +3893,22 @@ function buildCantonsPreviewHTML() {
   cids.forEach(cid => {
     const bureauNums = Object.keys(yearInfo).filter(ns => String(yearInfo[ns].c || '') === cid);
     let totI=0, totE=0, totAbst=0, totBn=0;
-    const candTotV = {};
+    const candTotV = {}; const candTotVoix = {};
     bureauNums.forEach(ns2 => {
       const d = shData[ns2]; if (!d) return;
       const abst_nb = Math.round((d.i||0)*(d.a||0)/100);
       totI += d.i||0; totE += d.e||0; totAbst += abst_nb; totBn += d.bn||0;
       Object.entries(d.c || {}).forEach(([k,v]) => { candTotV[k] = (candTotV[k]||0) + v*(d.e||0)/100; });
+      if (d._voix) {
+        Object.entries(d._voix).forEach(([k,v]) => { candTotVoix[k] = (candTotVoix[k]||0) + v; });
+      }
     });
     if (!totE) return; // skip canton sans données
-    const cAvg = {}; Object.entries(candTotV).forEach(([k,v]) => { cAvg[k] = +(v/Math.max(totE,1)*100).toFixed(1); });
+    const cAvg = {};
+    Object.entries(candTotV).forEach(([k,v]) => {
+      const vExact = candTotVoix[k];
+      cAvg[k] = vExact != null ? +(vExact/Math.max(totE,1)*100).toFixed(1) : +(v/Math.max(totE,1)*100).toFixed(1);
+    });
     const cWinner = Object.entries(cAvg).sort((a,b) => b[1]-a[1])[0];
     const cWinCol = cWinner ? colorOfCandidate(cWinner[0]) : '#ccc';
     const cantonName = (cantonsMeta[cid] || {}).name || ('La Rochelle-' + cid);
@@ -4012,20 +4026,25 @@ function buildBureauPreviewHTML(feature) {
     }
     const shData = getSheetData();
     let totI = 0, totE = 0, totAbst = 0, totBn = 0;
-    const candTotV = {};
+    const candTotV = {}; const candTotVoix = {};
     Object.values(shData).forEach(d => {
       if (!d) return;
       const abst_nb = Math.round((d.i||0)*(d.a||0)/100);
       totI += d.i||0; totE += d.e||0; totAbst += abst_nb; totBn += d.bn||0;
       Object.entries(d.c||{}).forEach(([k,v]) => { candTotV[k] = (candTotV[k]||0) + v*(d.e||0)/100; });
+      if (d._voix) Object.entries(d._voix).forEach(([k,v]) => { candTotVoix[k] = (candTotVoix[k]||0) + v; });
     });
     if (!totE) return '<div style="color:#aaa;font-style:italic;padding:16px 0;font-size:0.82rem">Aucune donnée disponible.</div>';
-    const avg = {}; Object.entries(candTotV).forEach(([k,v]) => { avg[k] = +(v/Math.max(totE,1)*100).toFixed(1); });
+    const avg = {};
+    Object.entries(candTotV).forEach(([k,v]) => {
+      const ve = candTotVoix[k];
+      avg[k] = ve != null ? +(ve/Math.max(totE,1)*100).toFixed(1) : +(v/Math.max(totE,1)*100).toFixed(1);
+    });
     const winner = Object.entries(avg).sort((a,b) => b[1]-a[1])[0];
     const winCol = winner ? colorOfCandidate(winner[0]) : '#ccc';
     const abst_pct = totI>0 ? +(totAbst/totI*100).toFixed(1) : 0;
     const abst_nb = Math.round(totI*abst_pct/100);
-    const gData = { c:avg, e:totE, w: winner?winner[0]:null, i:totI, a:abst_pct, bn:totBn };
+    const gData = { c:avg, _voix:candTotVoix, e:totE, w: winner?winner[0]:null, i:totI, a:abst_pct, bn:totBn };
     const votG = totI - abst_nb;
     const blancsPctG = votG>0 ? +(totBn*100/votG).toFixed(1) : 0;
     let h = '<div class="fiche-id-link" style="border-left:5px solid '+winCol+'" onclick="openGlobalOverlay()">'
@@ -4536,7 +4555,7 @@ function renderGlobalFiche() {
   var shData = getSheetData();
   var sheetLabel = currentSheet === 'TU' ? 'Tour unique' : currentSheet === 'T2' ? '2e tour' : '1er tour';
   var totI=0, totE=0, totAbst=0, totBn=0;
-  var candTotV = {};
+  var candTotV = {}; var candTotVoix = {};
   Object.values(shData).forEach(function(d) {
     if (!d) return;
     var an = Math.round((d.i||0)*(d.a||0)/100);
@@ -4544,15 +4563,21 @@ function renderGlobalFiche() {
     Object.entries(d.c||{}).forEach(function(kv) {
       candTotV[kv[0]] = (candTotV[kv[0]]||0) + kv[1]*(d.e||0)/100;
     });
+    if (d._voix) Object.entries(d._voix).forEach(function(kv) {
+      candTotVoix[kv[0]] = (candTotVoix[kv[0]]||0) + kv[1];
+    });
   });
   var avg = {};
-  Object.entries(candTotV).forEach(function(kv) { avg[kv[0]] = +(kv[1]/Math.max(totE,1)*100).toFixed(1); });
+  Object.entries(candTotV).forEach(function(kv) {
+    var ve = candTotVoix[kv[0]];
+    avg[kv[0]] = ve != null ? +(ve/Math.max(totE,1)*100).toFixed(1) : +(kv[1]/Math.max(totE,1)*100).toFixed(1);
+  });
   var winner = Object.entries(avg).sort(function(a,b){return b[1]-a[1];})[0];
   var winCol = winner ? colorOfCandidate(winner[0]) : '#ccc';
   var abst_pct = totI > 0 ? +(totAbst/totI*100).toFixed(1) : 0;
   var abst_nb = Math.round(totI*abst_pct/100);
   var blancsPct = (totI-abst_nb) > 0 ? +(totBn*100/(totI-abst_nb)).toFixed(1) : 0;
-  var gData = { c:avg, e:totE, w:winner?winner[0]:null, i:totI, a:abst_pct, bn:totBn };
+  var gData = { c:avg, _voix:candTotVoix, e:totE, w:winner?winner[0]:null, i:totI, a:abst_pct, bn:totBn };
   var cityAvg = cityAverage();
 
   // Header — même style que bureau
@@ -5577,12 +5602,13 @@ function renderQuartier(){
   if(!q){document.getElementById('ov-body').innerHTML='<div style="padding:20px;color:var(--text-meta)">Ce bureau n\'est pas rattaché à un quartier identifié.</div>';return;}
   const bureauNums=getBureausByQuartier(q);const shData=getSheetData();const cityAvg=cityAverage();
   const sheetLabel=currentSheet==='TU'?'Tour unique':currentSheet==='T2'?'2e tour':'1er tour';
-  let totI=0,totE=0,totAbst=0,totBn=0;const candTotV={};
+  let totI=0,totE=0,totAbst=0,totBn=0;const candTotV={};const candTotVoix={};
   bureauNums.forEach(ns2=>{const d=shData[ns2];if(!d)return;
     const abst_nb=Math.round((d.i||0)*(d.a||0)/100);
     totI+=d.i||0;totE+=d.e||0;totAbst+=abst_nb;totBn+=d.bn||0;
-    Object.entries(d.c||{}).forEach(([k,v])=>{candTotV[k]=(candTotV[k]||0)+v*(d.e||0)/100;});});
-  const qAvg={};Object.entries(candTotV).forEach(([k,v])=>{qAvg[k]=+(v/Math.max(totE,1)*100).toFixed(1);});
+    Object.entries(d.c||{}).forEach(([k,v])=>{candTotV[k]=(candTotV[k]||0)+v*(d.e||0)/100;});
+    if(d._voix){Object.entries(d._voix).forEach(([k,v])=>{candTotVoix[k]=(candTotVoix[k]||0)+v;});}});
+  const qAvg={};Object.entries(candTotV).forEach(([k,v])=>{const ve=candTotVoix[k];qAvg[k]=ve!=null?+(ve/Math.max(totE,1)*100).toFixed(1):+(v/Math.max(totE,1)*100).toFixed(1);});
   const qWinner=Object.entries(qAvg).sort((a,b)=>b[1]-a[1])[0];
   const qWinCol=qWinner?colorOfCandidate(qWinner[0]):'#ccc';
   const abst_pct=totI>0?+(totAbst/totI*100).toFixed(1):0;
@@ -5600,7 +5626,7 @@ function renderQuartier(){
     + '</div>'
     + '</div>';
   if(totE>0){
-    const qData={c:qAvg,e:totE,w:qWinner?qWinner[0]:null,i:totI,a:abst_pct,bn:totBn};
+    const qData={c:qAvg,_voix:candTotVoix,e:totE,w:qWinner?qWinner[0]:null,i:totI,a:abst_pct,bn:totBn};
     let sig='<div class="sig-block">';
     // Encart "question soumise au vote" pour les référendums (au-dessus du duel)
     if (typeof isReferendum === 'function' && isReferendum(currentElection)) {
@@ -5687,14 +5713,25 @@ function renderCanton(){
   // Pour les élections non-cantonales, on garde la comparaison canton vs ville (pertinente).
   const cityAvg = (typeof isCantonalElection === 'function' && isCantonalElection(currentElection)) ? {} : cityAverage();
   let totI=0, totE=0, totAbst=0, totBn=0;
-  const candTotV = {};
+  const candTotV = {};       // float accumulé via pct*e/100 (legacy, gardé pour cAvg)
+  const candTotVoix = {};    // entier exact sommé depuis _voix par bureau
   bureauNums.forEach(ns2 => {
     const d = shData[ns2]; if (!d) return;
     const abst_nb = Math.round((d.i||0)*(d.a||0)/100);
     totI += d.i||0; totE += d.e||0; totAbst += abst_nb; totBn += d.bn||0;
     Object.entries(d.c || {}).forEach(([k,v]) => { candTotV[k] = (candTotV[k]||0) + v*(d.e||0)/100; });
+    if (d._voix) {
+      Object.entries(d._voix).forEach(([k,v]) => { candTotVoix[k] = (candTotVoix[k]||0) + v; });
+    }
   });
-  const cAvg = {}; Object.entries(candTotV).forEach(([k,v]) => { cAvg[k] = +(v/Math.max(totE,1)*100).toFixed(1); });
+  const cAvg = {};
+  // Recalcule cAvg depuis les voix entières quand disponibles (précis), sinon depuis candTotV.
+  Object.entries(candTotV).forEach(([k,v]) => {
+    const vExact = candTotVoix[k];
+    cAvg[k] = vExact != null
+      ? +(vExact/Math.max(totE,1)*100).toFixed(1)
+      : +(v/Math.max(totE,1)*100).toFixed(1);
+  });
   const cWinner = Object.entries(cAvg).sort((a,b) => b[1]-a[1])[0];
   const cWinCol = cWinner ? colorOfCandidate(cWinner[0]) : '#ccc';
   const abst_pct = totI > 0 ? +(totAbst/totI*100).toFixed(1) : 0;
@@ -5731,7 +5768,7 @@ function renderCanton(){
       + '</div>';
   }
   if (totE > 0) {
-    const cData = { c: cAvg, e: totE, w: cWinner ? cWinner[0] : null, i: totI, a: abst_pct, bn: totBn };
+    const cData = { c: cAvg, _voix: candTotVoix, e: totE, w: cWinner ? cWinner[0] : null, i: totI, a: abst_pct, bn: totBn };
     let sig = '<div class="sig-block">';
     if (typeof isReferendum === 'function' && isReferendum(currentElection)) {
       const qRef = (ELECTIONS[currentElection] || {}).q || '';
