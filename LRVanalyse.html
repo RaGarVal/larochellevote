@@ -1917,9 +1917,13 @@ function writeURLState() {
     if (chartType && chartType !== 'courbes') params.set('chartType', chartType);
     // Échelle
     if (chartScale && chartScale !== 'pct') params.set('scale', chartScale);
-    // Filtres types d'élection
-    const onTypes = [...document.querySelectorAll('.type-toggle.on')].map(el => el.dataset.type);
-    const offTypes = [...document.querySelectorAll('.type-toggle:not(.on)')].map(el => el.dataset.type);
+    // Filtres types d'élection. flatMap pour exploser les data-type multi-valeurs
+    // (toggle mutualisé "Cantonales,Départementales" → 2 tokens dans l'URL).
+    // Sinon la virgule interne se confondrait avec le séparateur CSV → round-trip cassé.
+    const onTypes = [...document.querySelectorAll('.type-toggle.on')]
+      .flatMap(el => el.dataset.type.split(',').map(t => t.trim()));
+    const offTypes = [...document.querySelectorAll('.type-toggle:not(.on)')]
+      .flatMap(el => el.dataset.type.split(',').map(t => t.trim()));
     if (offTypes.length > 0 && onTypes.length > 0) {
       params.set('types', onTypes.join(','));
     }
@@ -2086,12 +2090,15 @@ function applyHashSelection() {
     if (bv) bv.classList.toggle('on', sc === 'voix');
   }
 
-  // Filtres types
+  // Filtres types — gérer le toggle mutualisé "Cantonales,Départementales" :
+  // chaque toggle a `data-type` potentiellement multi-valeurs (séparées par virgule).
+  // Le toggle est ON si AU MOINS UN de ses sous-types est dans l'URL.
   const types = params.get('types');
   if (types) {
-    const onSet = new Set(types.split(','));
+    const onSet = new Set(types.split(',').map(t => t.trim()));
     document.querySelectorAll('.type-toggle').forEach(el => {
-      el.classList.toggle('on', onSet.has(el.dataset.type));
+      const myTypes = el.dataset.type.split(',').map(t => t.trim());
+      el.classList.toggle('on', myTypes.some(t => onSet.has(t)));
     });
   }
 
