@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Éditeur de mappings — La Rochelle électorale</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 13px; background: #f7f7f7; color: #222; }
+  header { background: #1a1a2e; color: #fff; padding: 12px 20px; display: flex; align-items: center; gap: 16px; position: sticky; top: 0; z-index: 10; }
+  header h1 { font-size: 1rem; font-weight: 700; white-space: nowrap; }
+  .tabs { display: flex; gap: 4px; }
+  .tabs button { background: transparent; color: #aaa; border: none; padding: 6px 14px; border-radius: 6px; font-size: .85rem; font-weight: 600; cursor: pointer; }
+  .tabs button.on { background: rgba(255,255,255,.12); color: #fff; }
+  .tabs button:hover:not(.on) { color: #ddd; }
+  .count { font-size: .75rem; color: #aaa; white-space: nowrap; flex: 1; text-align: right; }
+  .btn-export { background: #27AE60; color: #fff; border: none; padding: 7px 14px; border-radius: 6px; font-weight: 700; font-size: .8rem; cursor: pointer; white-space: nowrap; }
+  .btn-export:hover { background: #1e8449; }
+  .btn-add { background: #1a73e8; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: .78rem; cursor: pointer; }
+  .btn-add:hover { background: #1557b0; }
+
+  .section { display: none; }
+  .section.on { display: block; }
+
+  .filters { background: #fff; padding: 10px 16px; display: flex; gap: 10px; border-bottom: 1px solid #e0e0e0; position: sticky; top: 49px; z-index: 8; align-items: center; }
+  .filters input[type=search] { flex: 1; padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 12px; }
+  .filters select { padding: 6px 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 12px; background: #fff; }
+
+  table { width: 100%; border-collapse: collapse; background: #fff; }
+  th { background: #f0f0f0; padding: 8px 10px; text-align: left; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: #888; position: sticky; top: 89px; z-index: 5; border-bottom: 2px solid #e0e0e0; user-select: none; cursor: pointer; }
+  th:hover { background: #e8e8e8; color: #555; }
+  th.no-sort { cursor: default; }
+  th.no-sort:hover { background: #f0f0f0; color: #888; }
+  th .sort-arrow { display: inline-block; width: 10px; margin-left: 3px; font-size: .8rem; }
+  td { padding: 5px 8px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+  tr:hover td { background: #fafafa; }
+  tr.missing td { background: #fff8e1; }
+  tr.changed td { background: #f0fff4; }
+  tr.new td { background: #e3f2fd; }
+
+  td .inp-text, td .inp-select { width: 100%; padding: 4px 6px; border: 1px solid transparent; background: transparent; border-radius: 4px; font-size: .8rem; font-family: inherit; }
+  td .inp-text:hover, td .inp-select:hover { border-color: #ddd; background: #fff; }
+  td .inp-text:focus, td .inp-select:focus { outline: none; border-color: #1a73e8; background: #fff; }
+  td .inp-color { width: 32px; height: 24px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; padding: 0; vertical-align: middle; }
+  td .col-swatch { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: middle; margin-right: 6px; border: 1px solid rgba(0,0,0,.1); }
+
+  .bk-select { padding: 3px 6px; border: 1.5px solid #ddd; border-radius: 5px; font-size: .8rem; font-weight: 600; cursor: pointer; }
+  .elec-badge { font-size: .7rem; background: #e8f0fe; color: #1a73e8; padding: 2px 6px; border-radius: 3px; }
+  .elec-years { font-size: .7rem; color: #888; font-family: 'SF Mono', 'Menlo', monospace; }
+  .b-badge { font-size: .75rem; font-weight: 700; padding: 2px 7px; border-radius: 4px; color: #fff; }
+  .parti-code { font-family: monospace; font-weight: 700; color: #1a1a2e; }
+  .new-badge { font-size: .65rem; background: #1a73e8; color: #fff; padding: 1px 5px; border-radius: 3px; margin-left: 4px; vertical-align: middle; }
+  .nb-cands { font-size: .7rem; color: #888; }
+
+  #export-area { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 100; align-items: center; justify-content: center; }
+  #export-area.show { display: flex; }
+  .export-box { background: #fff; border-radius: 10px; padding: 24px; width: 800px; max-width: 95vw; max-height: 85vh; display: flex; flex-direction: column; gap: 12px; }
+  .export-box h2 { font-size: 1rem; }
+  .export-box textarea { flex: 1; min-height: 380px; font-family: monospace; font-size: .75rem; border: 1px solid #ddd; border-radius: 6px; padding: 10px; resize: vertical; }
+  .export-box .row { display: flex; gap: 8px; }
+  .export-box button { padding: 8px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; border: none; }
+  .btn-copy { background: #1a1a2e; color: #fff; }
+  .btn-close { background: #eee; color: #333; }
+
+  .empty-state, .loading { padding: 40px; text-align: center; color: #888; font-style: italic; }
+
+  /* ─────────────── PROFILS ─────────────── */
+  #profile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; padding: 16px; }
+  .profile-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px 14px; cursor: pointer; transition: all .12s; display: flex; flex-direction: column; gap: 8px; }
+  .profile-card:hover { border-color: #1a73e8; box-shadow: 0 2px 8px rgba(26,115,232,.12); transform: translateY(-1px); }
+  .profile-card.flag-incomplete { background: #fff8e1; border-color: #ffe082; }
+  .prof-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .prof-name { font-size: .92rem; color: #333; }
+  .prof-name strong { font-weight: 700; }
+  .prof-sexe { font-size: 1.1rem; color: #888; }
+  .prof-partis { display: flex; flex-wrap: wrap; gap: 4px; }
+  .parti-chip { font-size: .68rem; font-weight: 700; color: #fff; padding: 2px 7px; border-radius: 10px; font-family: monospace; }
+  .parti-chip.no-color { background: #aaa; color: #333; }
+  .prof-meta { display: flex; gap: 6px; align-items: center; font-size: .72rem; color: #888; }
+  .prof-meta-warn { color: #c08000; font-weight: 600; }
+
+  #profile-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 100; align-items: center; justify-content: center; }
+  #profile-modal.show { display: flex; }
+  .profile-detail { background: #fff; border-radius: 10px; padding: 20px 24px; width: 850px; max-width: 95vw; max-height: 85vh; overflow: auto; display: flex; flex-direction: column; gap: 14px; }
+  .profile-detail header { background: none; color: #222; padding: 0; position: static; display: block; }
+  .profile-detail h2 { font-size: 1.15rem; margin-bottom: 4px; }
+  .profile-detail .sub-id { font-size: .8rem; color: #666; }
+  .profile-detail .sub-id .badge-sexe { font-size: .95rem; color: #888; margin-right: 6px; }
+  .timeline { width: 100%; border-collapse: collapse; font-size: .82rem; }
+  .timeline th { position: static; background: #f5f5f5; padding: 7px 10px; font-size: .68rem; color: #777; border-bottom: 1px solid #e0e0e0; }
+  .timeline td { padding: 7px 10px; border-bottom: 1px solid #f0f0f0; }
+  .timeline tr.override-row td { background: #f0fff4; }
+  .timeline .yr { font-family: monospace; font-weight: 700; color: #555; }
+  .timeline .ovr-tag { font-size: .65rem; background: #d6f0e3; color: #1e8449; padding: 1px 6px; border-radius: 3px; margin-left: 4px; }
+  .profile-detail .close-btn { align-self: flex-end; padding: 7px 14px; background: #eee; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+  .profile-detail .close-btn:hover { background: #ddd; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Éditeur de mappings</h1>
+  <div class="tabs">
+    <button id="tab-cand" class="on" onclick="showSection('cand')">Candidats</button>
+    <button id="tab-profil" onclick="showSection('profil')">Profils</button>
+    <button id="tab-parti" onclick="showSection('parti')">Partis</button>
+  </div>
+  <span class="count" id="count-label"></span>
+  <button class="btn-export" onclick="showExport()">Exporter →</button>
+</header>
+
+<!-- ─────────────── SECTION CANDIDATS ─────────────── -->
+<section id="section-cand" class="section on">
+  <div class="filters">
+    <input type="search" id="search-cand" placeholder="Rechercher un candidat, un parti, une élection…" oninput="filterCand()">
+    <select id="filter-b" onchange="filterCand()">
+      <option value="">Tous blocs</option>
+      <option value="G">G</option>
+      <option value="C">C</option>
+      <option value="D">D</option>
+      <option value="EXD">EXD</option>
+      <option value="?">?</option>
+    </select>
+    <select id="filter-bk" onchange="filterCand()">
+      <option value="">Toutes clés</option>
+      <option value="exg">exg</option>
+      <option value="grg">grg</option>
+      <option value="g">g</option>
+      <option value="eco">eco</option>
+      <option value="c">c</option>
+      <option value="d">d</option>
+      <option value="ds">ds</option>
+      <option value="exd">exd</option>
+      <option value="?">?</option>
+    </select>
+  </div>
+  <table>
+    <thead>
+      <tr id="cand-head">
+        <th data-col="nom">Nom <span class="sort-arrow"></span></th>
+        <th data-col="prenom">Prénom <span class="sort-arrow"></span></th>
+        <th data-col="sexe" class="no-sort" style="width:60px">Sexe</th>
+        <th data-col="parti">Parti <span class="sort-arrow"></span></th>
+        <th data-col="elec">Élections <span class="sort-arrow"></span></th>
+        <th data-col="b" class="no-sort">Bloc</th>
+        <th data-col="t">Familles <span class="sort-arrow"></span></th>
+        <th data-col="c" class="no-sort" style="width:80px">Couleur</th>
+        <th data-col="al" class="no-sort">Alliances</th>
+        <th data-col="bk" style="width:200px">Clé fine ✏️ <span class="sort-arrow"></span></th>
+      </tr>
+    </thead>
+    <tbody id="cand-body"><tr><td colspan="10" class="loading">Chargement…</td></tr></tbody>
+  </table>
+</section>
+
+<!-- ─────────────── SECTION PROFILS ─────────────── -->
+<section id="section-profil" class="section">
+  <div class="filters">
+    <input type="search" id="search-profil" placeholder="Rechercher une personne (nom, prénom, parti)…" oninput="filterProfil()">
+    <select id="filter-profil-parti" onchange="filterProfil()">
+      <option value="">Tous partis</option>
+    </select>
+    <label style="font-size:.78rem;color:#666;display:flex;align-items:center;gap:5px">
+      <input type="checkbox" id="filter-profil-multi" onchange="filterProfil()">
+      Plusieurs candidatures
+    </label>
+  </div>
+  <div id="profile-grid"><div class="loading">Chargement…</div></div>
+</section>
+
+<!-- ─────────────── PROFILE MODAL ─────────────── -->
+<div id="profile-modal" onclick="if(event.target===this)closeProfile()">
+  <div class="profile-detail"></div>
+</div>
+
+<!-- ─────────────── SECTION PARTIS ─────────────── -->
+<section id="section-parti" class="section">
+  <div class="filters">
+    <input type="search" id="search-parti" placeholder="Rechercher un parti (code ou nom)…" oninput="filterParti()">
+    <button class="btn-add" onclick="addParti()">+ Ajouter un parti</button>
+  </div>
+  <table>
+    <thead>
+      <tr id="parti-head">
+        <th data-col="code" style="width:130px">Code <span class="sort-arrow"></span></th>
+        <th data-col="color" class="no-sort" style="width:90px">Couleur ✏️</th>
+        <th data-col="name">Nom complet ✏️ <span class="sort-arrow"></span></th>
+        <th data-col="nbCands" style="width:110px">Candidats <span class="sort-arrow"></span></th>
+      </tr>
+    </thead>
+    <tbody id="parti-body"><tr><td colspan="4" class="loading">Chargement…</td></tr></tbody>
+  </table>
+</section>
+
+<!-- ─────────────── EXPORT MODAL ─────────────── -->
+<div id="export-area">
+  <div class="export-box">
+    <h2>Corrections à coller dans le HTML</h2>
+    <p style="font-size:.8rem;color:#666">Colle les blocs voulus dans <code>LRVcarte.html</code> et <code>LRVanalyse.html</code>, puis re-génère <code>donnees.js</code>.</p>
+    <textarea id="export-text" readonly></textarea>
+    <div class="row">
+      <button class="btn-copy" onclick="copyExport()">Copier</button>
+      <button class="btn-close" onclick="closeExport()">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Données partagées -->
+<script src="donnees.js"></script>
+
+<script>
+// ─────────────── CONFIG ───────────────
+const BK_COLORS = { exg:'#6B0000', grg:'#C0392B', g:'#CC0100', eco:'#27AE60', c:'#E8A020', d:'#3C78D8', ds:'#1A237E', exd:'#20124D', '?':'#aaa' };
+const B_COLORS  = { G:'#CC0100', C:'#E8A020', D:'#3C78D8', EXD:'#20124D', '?':'#aaa' };
+const BK_OPTIONS = [
+  ['exg','exg — Extrême gauche'], ['grg','grg — Gauche radicale'], ['g','g — Gauche'],
+  ['eco','eco — Écologie'], ['c','c — Centre'], ['d','d — Droite'],
+  ['ds','ds — Droite souverainiste'], ['exd','exd — Extrême droite'], ['?','? — Divers']
+];
+
+// ─────────────── ÉTAT ───────────────
+let rows = [];
+let partiList = [];               // { code, name, color, nbCands }
+let changesCand = {};             // key → { p?, n?, pa?, t?, al?, bk? }
+let changesPartiName = {};        // code → newName
+let changesPartiColor = {};       // code → newColor (propagé à TOUS les candidats du parti à l'export)
+let newPartis = new Set();
+let candElections = {};           // key candidat → array d'années (string)
+let sortCand = { col: 'nom', asc: true };
+let sortParti = { col: 'code', asc: true };
+let currentSection = 'cand';
+
+// ─────────────── HELPERS ───────────────
+function guessBkFromB(b) {
+  if (!b || typeof BLOC_LEGACY === 'undefined') return '?';
+  const found = Object.entries(BLOC_LEGACY).find(([_, bb]) => bb === b);
+  return found ? found[0] : '?';
+}
+function bkToB(bk) {
+  if (!bk || typeof BLOC_LEGACY === 'undefined') return '?';
+  return BLOC_LEGACY[bk] || '?';
+}
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function escapeAttr(s) { return escapeHtml(s); }
+
+function getField(row, field) {
+  const ch = changesCand[row.key];
+  if (ch && ch[field] !== undefined) return ch[field];
+  return row[field];
+}
+function getBk(row) {
+  const ch = changesCand[row.key];
+  if (ch && ch.bk !== undefined) return ch.bk;
+  return row.bk;
+}
+function getB(row) { return bkToB(getBk(row)); }
+function isCandChanged(row) {
+  return changesCand[row.key] && Object.keys(changesCand[row.key]).length > 0;
+}
+
+// Couleur courante du parti (en tenant compte des modifs en cours dans l'onglet Partis)
+function getPartiColor(code) {
+  if (!code) return '#cccccc';
+  if (changesPartiColor[code] !== undefined) return changesPartiColor[code];
+  const p = partiList.find(p => p.code === code);
+  return p ? p.color : '#cccccc';
+}
+
+// Bascule entre couleur héritée du parti et couleur spécifique pour un candidat.
+// Astuce : pour qu'une couleur "personnalisée" soit distincte côté logique (isSpecific = c ≠ partiColor),
+// on décale d'1 unité sur le canal bleu si la couleur courante est exactement celle du parti.
+// L'utilisateur pourra ensuite choisir librement la teinte voulue via le color picker.
+function toggleCandColor(key, cb) {
+  const row = rows.find(r => r.key === key);
+  if (!row) return;
+  const partiColor = getPartiColor(getField(row, 'parti'));
+  if (cb.checked) {
+    let c = getField(row, 'c') || partiColor;
+    if (c.toLowerCase() === partiColor.toLowerCase()) {
+      // Décalage minimal sur le canal bleu (B) pour rendre la couleur strictement différente.
+      const m = c.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+      if (m) {
+        const r = m[1], g = m[2];
+        let b = parseInt(m[3], 16);
+        b = b > 0 ? b - 1 : 1;
+        c = '#' + r + g + b.toString(16).padStart(2, '0').toUpperCase();
+      }
+    }
+    setCand(key, 'c', c);
+  } else {
+    // remet la couleur du parti (= "héritée")
+    setCand(key, 'c', partiColor);
+  }
+  filterCand();
+}
+
+function setCand(key, field, value) {
+  if (!changesCand[key]) changesCand[key] = {};
+  const original = rows.find(r => r.key === key);
+  const orig = original[field];
+  const equals = Array.isArray(orig) && Array.isArray(value)
+    ? JSON.stringify(orig) === JSON.stringify(value)
+    : orig === value;
+  if (equals) {
+    delete changesCand[key][field];
+    if (Object.keys(changesCand[key]).length === 0) delete changesCand[key];
+  } else {
+    changesCand[key][field] = value;
+  }
+}
+
+// ─────────────── CONSTRUCTION ───────────────
+function buildRows() {
+  rows = Object.entries(CAND_DATA).map(([key, c]) => {
+    const pipe = key.indexOf('|');
+    const elec = pipe >= 0 ? key.slice(pipe + 1) : '';
+    return {
+      key, elec,
+      nom:    c.n  || '',
+      prenom: c.p  || '',
+      sexe:   c.s  || '',
+      parti:  c.pa || '',
+      t:      Array.isArray(c.t) ? c.t.slice() : [],
+      c:      c.c  || '',
+      al:     c.al || '',
+      b:      c.b  || '?',
+      bk:     c.bk || guessBkFromB(c.b)
+    };
+  });
+}
+
+// Pré-calcul : pour chaque clé candidat, années où il apparaît dans ELECTIONS
+function buildCandElections() {
+  candElections = {};
+  if (typeof ELECTIONS === 'undefined') return;
+  Object.entries(ELECTIONS).forEach(([elecLabel, e]) => {
+    // extraire l'année : "Présidentielle 1988" → "1988"
+    const yearMatch = elecLabel.match(/(\d{4})/);
+    const year = yearMatch ? yearMatch[1] : elecLabel;
+    Object.values(e.sheets || {}).forEach(sheet => {
+      Object.values(sheet).forEach(b => {
+        Object.keys(b.c || {}).forEach(candKey => {
+          if (!candElections[candKey]) candElections[candKey] = new Set();
+          candElections[candKey].add(year);
+        });
+      });
+    });
+  });
+  // convert sets → sorted arrays
+  Object.keys(candElections).forEach(k => {
+    candElections[k] = Array.from(candElections[k]).sort();
+  });
+}
+
+function buildPartiList() {
+  if (typeof PARTI_NAMES === 'undefined') { partiList = []; return; }
+  // calcul de la couleur principale par parti et du nombre de candidats
+  const colorByParti = {};
+  const nbByParti = {};
+  rows.forEach(r => {
+    if (!r.parti) return;
+    nbByParti[r.parti] = (nbByParti[r.parti] || 0) + 1;
+    if (r.c && !colorByParti[r.parti]) colorByParti[r.parti] = r.c;
+  });
+  partiList = Object.keys(PARTI_NAMES).sort().map(code => ({
+    code,
+    name: PARTI_NAMES[code],
+    color: colorByParti[code] || '#cccccc',
+    nbCands: nbByParti[code] || 0
+  }));
+  // partis qui ont des candidats mais pas d'entrée PARTI_NAMES
+  Object.keys(nbByParti).forEach(code => {
+    if (!PARTI_NAMES[code]) {
+      partiList.push({ code, name: '(non défini)', color: colorByParti[code] || '#cccccc', nbCands: nbByParti[code] });
+    }
+  });
+}
+
+// ─────────────── TRI ───────────────
+function applySort(arr, sort) {
+  return arr.slice().sort((a, b) => {
+    // Pour les colonnes candidats, tenir compte des modifications en cours
+    let va = (sort.col === 'nom' || sort.col === 'prenom' || sort.col === 'parti' || sort.col === 't' || sort.col === 'al')
+      ? getField(a, sort.col) : a[sort.col];
+    let vb = (sort.col === 'nom' || sort.col === 'prenom' || sort.col === 'parti' || sort.col === 't' || sort.col === 'al')
+      ? getField(b, sort.col) : b[sort.col];
+    if (typeof va === 'number' && typeof vb === 'number') {
+      return sort.asc ? va - vb : vb - va;
+    }
+    // Les tableaux (ex: familles) sont joints pour la comparaison
+    if (Array.isArray(va)) va = va.join(', ');
+    if (Array.isArray(vb)) vb = vb.join(', ');
+    va = String(va == null ? '' : va).toLowerCase();
+    vb = String(vb == null ? '' : vb).toLowerCase();
+    if (va < vb) return sort.asc ? -1 : 1;
+    if (va > vb) return sort.asc ? 1 : -1;
+    return 0;
+  });
+}
+function updateSortIndicators(headEl, sort) {
+  headEl.querySelectorAll('th').forEach(th => {
+    const arrow = th.querySelector('.sort-arrow');
+    if (!arrow) return;
+    arrow.textContent = (th.dataset.col === sort.col) ? (sort.asc ? '↑' : '↓') : '';
+  });
+}
+function setSortCand(col) {
+  if (sortCand.col === col) sortCand.asc = !sortCand.asc;
+  else { sortCand.col = col; sortCand.asc = true; }
+  filterCand();
+}
+function setSortParti(col) {
+  if (sortParti.col === col) sortParti.asc = !sortParti.asc;
+  else { sortParti.col = col; sortParti.asc = true; }
+  filterParti();
+}
+
+// ─────────────── RENDU CANDIDATS ───────────────
+function renderCand(filtered) {
+  const tbody = document.getElementById('cand-body');
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="9" class="empty-state">Aucun candidat ne correspond.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.map(row => {
+    const nom = getField(row, 'nom'), prenom = getField(row, 'prenom');
+    const parti = getField(row, 'parti'), t = getField(row, 't'), al = getField(row, 'al');
+    const bkVal = getBk(row), bVal = getB(row);
+    const isMissing = bVal === '?';
+    const isChanged = isCandChanged(row);
+    const rowClass = isMissing ? 'missing' : (isChanged ? 'changed' : '');
+    const safeKey = escapeAttr(row.key);
+    const bkOpts = '<option value="">— choisir —</option>' + BK_OPTIONS.map(([v, label]) =>
+      '<option value="' + v + '"' + (v === bkVal ? ' selected' : '') + '>' + label + '</option>'
+    ).join('');
+    const tStr = (t || []).join(', ');
+
+    // Cellule "Élections" : badge override OU années où il apparaît dans les votes
+    let elecCell;
+    if (row.elec) {
+      elecCell = '<span class="elec-badge">' + escapeHtml(row.elec) + '</span>';
+    } else {
+      // chercher candElections[row.key] — la clé peut contenir | si override, sinon clé pure
+      const years = candElections[row.key] || candElections[row.key.split('|')[0]] || [];
+      elecCell = years.length
+        ? '<span class="elec-years">' + escapeHtml(years.join(', ')) + '</span>'
+        : '<span style="color:#ccc">—</span>';
+    }
+
+    const sexeVal = getField(row, 'sexe') || '';
+    return '<tr class="' + rowClass + '" data-key="' + safeKey + '">' +
+      '<td><input class="inp-text" value="' + escapeAttr(nom) + '" oninput="setCand(this.closest(\'tr\').dataset.key,\'nom\',this.value);markRow(this)"></td>' +
+      '<td><input class="inp-text" value="' + escapeAttr(prenom) + '" oninput="setCand(this.closest(\'tr\').dataset.key,\'prenom\',this.value);markRow(this)"></td>' +
+      '<td><select class="inp-select" onchange="setCand(this.closest(\'tr\').dataset.key,\'sexe\',this.value);markRow(this)" style="text-align:center;font-weight:600">' +
+        '<option value=""' + (sexeVal === '' ? ' selected' : '') + '>—</option>' +
+        '<option value="F"' + (sexeVal === 'F' ? ' selected' : '') + '>♀ F</option>' +
+        '<option value="H"' + (sexeVal === 'H' ? ' selected' : '') + '>♂ H</option>' +
+      '</select></td>' +
+      '<td><input class="inp-text" list="parti-codes" value="' + escapeAttr(parti) + '" oninput="setCand(this.closest(\'tr\').dataset.key,\'parti\',this.value);markRow(this)" style="font-family:monospace"></td>' +
+      '<td>' + elecCell + '</td>' +
+      '<td><span class="b-badge" style="background:' + (B_COLORS[bVal] || '#aaa') + '">' + bVal + '</span></td>' +
+      '<td><input class="inp-text" value="' + escapeAttr(tStr) + '" oninput="setCandTags(this.closest(\'tr\').dataset.key,this);markRow(this)" placeholder="ex: socialiste, écologiste"></td>' +
+      (() => {
+        const partiColor = getPartiColor(parti);
+        const candColor = getField(row, 'c') || partiColor;
+        const isSpecific = candColor !== partiColor;
+        const hexUp = candColor.toUpperCase();
+        return '<td><div style="display:flex;gap:5px;align-items:center;">' +
+          '<input type="checkbox"' + (isSpecific ? ' checked' : '') +
+            ' title="' + (isSpecific ? 'Couleur spécifique au candidat' : 'Hérite du parti') + '"' +
+            ' onchange="toggleCandColor(this.closest(\'tr\').dataset.key, this)">' +
+          '<input class="inp-text inp-hex" type="text" value="' + escapeAttr(hexUp) + '" maxlength="7"' +
+            (!isSpecific ? ' disabled' : '') +
+            ' oninput="syncCandHex(this)"' +
+            ' style="width:74px;font-family:monospace;font-size:.78rem;text-transform:uppercase">' +
+          '<input class="inp-color" type="color" value="' + escapeAttr(candColor) + '"' +
+            (!isSpecific ? ' disabled' : '') +
+            ' oninput="syncCandPicker(this)">' +
+          '</div></td>';
+      })() +
+      '<td><input class="inp-text" value="' + escapeAttr(al) + '" oninput="setCand(this.closest(\'tr\').dataset.key,\'al\',this.value);markRow(this)"></td>' +
+      '<td><select class="bk-select" style="border-color:' + (BK_COLORS[bkVal] || '#ddd') + ';color:' + (BK_COLORS[bkVal] || '#333') +
+        '" onchange="setCandBk(this.closest(\'tr\').dataset.key, this)">' + bkOpts + '</select></td>' +
+      '</tr>';
+  }).join('');
+}
+
+function setCandTags(key, input) {
+  const arr = input.value.split(',').map(s => s.trim()).filter(Boolean);
+  setCand(key, 't', arr);
+}
+function setCandBk(key, sel) {
+  setCand(key, 'bk', sel.value);
+  sel.style.borderColor = BK_COLORS[sel.value] || '#ddd';
+  sel.style.color = BK_COLORS[sel.value] || '#333';
+  filterCand();
+}
+function markRow(input) {
+  const tr = input.closest('tr');
+  const key = tr.dataset.key;
+  tr.classList.toggle('changed', isCandChanged(rows.find(r => r.key === key)));
+}
+
+function filterCand() {
+  const q = document.getElementById('search-cand').value.toLowerCase();
+  const fb = document.getElementById('filter-b').value;
+  const fbk = document.getElementById('filter-bk').value;
+  const filtered = rows.filter(r => {
+    const text = (r.key + ' ' + getField(r,'nom') + ' ' + getField(r,'prenom') + ' ' + getField(r,'parti') + ' ' + r.elec + ' ' + (getField(r,'t')||[]).join(' ')).toLowerCase();
+    if (q && !text.includes(q)) return false;
+    if (fb && getB(r) !== fb) return false;
+    if (fbk && getBk(r) !== fbk) return false;
+    return true;
+  });
+  renderCand(applySort(filtered, sortCand));
+  updateSortIndicators(document.getElementById('cand-head'), sortCand);
+  refreshPartiCodesDatalist();
+  if (currentSection === 'cand') updateCount(filtered.length, 'candidat');
+}
+
+function refreshPartiCodesDatalist() {
+  const dl = document.getElementById('parti-codes');
+  if (!dl) return;
+  dl.innerHTML = partiList.map(p => '<option value="' + escapeAttr(p.code) + '">' + escapeAttr(p.code) + ' — ' + escapeAttr(p.name) + '</option>').join('');
+}
+
+// ─────────────── RENDU PARTIS ───────────────
+function renderParti(filtered) {
+  const tbody = document.getElementById('parti-body');
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Aucun parti ne correspond.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.map(p => {
+    const currentName = changesPartiName[p.code] !== undefined ? changesPartiName[p.code] : p.name;
+    const currentColor = changesPartiColor[p.code] !== undefined ? changesPartiColor[p.code] : p.color;
+    const isChangedName = changesPartiName[p.code] !== undefined && changesPartiName[p.code] !== p.name;
+    const isChangedColor = changesPartiColor[p.code] !== undefined && changesPartiColor[p.code] !== p.color;
+    const isNew = newPartis.has(p.code);
+    const cls = isNew ? 'new' : ((isChangedName || isChangedColor) ? 'changed' : '');
+    const safeCode = escapeAttr(p.code);
+    return '<tr class="' + cls + '" data-code="' + safeCode + '">' +
+      '<td><span class="parti-code">' + escapeHtml(p.code) + '</span>' + (isNew ? '<span class="new-badge">NOUVEAU</span>' : '') + '</td>' +
+      '<td><div style="display:flex;gap:5px;align-items:center;">' +
+        '<span class="col-swatch" style="background:' + escapeAttr(currentColor) + '"></span>' +
+        '<input class="inp-text inp-hex" type="text" value="' + escapeAttr(currentColor.toUpperCase()) + '" maxlength="7"' +
+          ' oninput="syncPartiHex(this)"' +
+          ' style="width:74px;font-family:monospace;font-size:.78rem;text-transform:uppercase">' +
+        '<input class="inp-color" type="color" value="' + escapeAttr(currentColor) + '" oninput="syncPartiPicker(this)">' +
+        '</div></td>' +
+      '<td><input class="inp-text" value="' + escapeAttr(currentName) + '" oninput="setPartiName(this.closest(\'tr\').dataset.code, this)"></td>' +
+      '<td><span class="nb-cands">' + p.nbCands + '</span></td>' +
+      '</tr>';
+  }).join('');
+}
+// ── Synchronisation hex texte ↔ color picker ─────────────────────────────────
+// L'utilisateur peut taper directement la valeur hex (ex "#3C78D8") ou utiliser le picker ;
+// les deux inputs restent en phase.
+
+function _normalizeHex(v) {
+  v = (v || '').trim();
+  if (!v.startsWith('#')) v = '#' + v;
+  if (!/^#[0-9a-f]{6}$/i.test(v)) return null;
+  return v.toUpperCase();
+}
+
+// Candidat : hex texte → picker + setCand
+function syncCandHex(input) {
+  const v = _normalizeHex(input.value);
+  if (!v) return; // valeur incomplète/invalide, on ne propage pas
+  const picker = input.closest('td').querySelector('input[type="color"]');
+  if (picker) picker.value = v;
+  setCand(input.closest('tr').dataset.key, 'c', v);
+  markRow(input);
+}
+// Candidat : picker → hex texte + setCand
+function syncCandPicker(picker) {
+  const v = (picker.value || '').toUpperCase();
+  const hex = picker.closest('td').querySelector('.inp-hex');
+  if (hex) hex.value = v;
+  setCand(picker.closest('tr').dataset.key, 'c', v);
+  markRow(picker);
+}
+// Parti : hex texte → picker + setPartiColor
+function syncPartiHex(input) {
+  const v = _normalizeHex(input.value);
+  if (!v) return;
+  const picker = input.closest('td').querySelector('input[type="color"]');
+  if (!picker) return;
+  picker.value = v;
+  setPartiColor(input.closest('tr').dataset.code, picker);
+}
+// Parti : picker → hex texte + setPartiColor
+function syncPartiPicker(picker) {
+  const v = (picker.value || '').toUpperCase();
+  const hex = picker.closest('td').querySelector('.inp-hex');
+  if (hex) hex.value = v;
+  setPartiColor(picker.closest('tr').dataset.code, picker);
+}
+
+function setPartiName(code, input) {
+  const original = partiList.find(p => p.code === code);
+  if (!original) return;
+  if (newPartis.has(code) || input.value !== original.name) {
+    changesPartiName[code] = input.value;
+  } else {
+    delete changesPartiName[code];
+  }
+  const tr = input.closest('tr');
+  if (newPartis.has(code)) tr.className = 'new';
+  else tr.className = (changesPartiName[code] !== undefined || changesPartiColor[code] !== undefined) ? 'changed' : '';
+}
+function setPartiColor(code, input) {
+  const original = partiList.find(p => p.code === code);
+  if (!original) return;
+  if (newPartis.has(code) || input.value !== original.color) {
+    changesPartiColor[code] = input.value;
+  } else {
+    delete changesPartiColor[code];
+  }
+  const tr = input.closest('tr');
+  // mettre à jour le swatch à côté
+  const swatch = tr.querySelector('.col-swatch');
+  if (swatch) swatch.style.background = input.value;
+  if (newPartis.has(code)) tr.className = 'new';
+  else tr.className = (changesPartiName[code] !== undefined || changesPartiColor[code] !== undefined) ? 'changed' : '';
+}
+function filterParti() {
+  const q = document.getElementById('search-parti').value.toLowerCase();
+  const filtered = partiList.filter(p => {
+    if (!q) return true;
+    return p.code.toLowerCase().includes(q) || p.name.toLowerCase().includes(q);
+  });
+  renderParti(applySort(filtered, sortParti));
+  updateSortIndicators(document.getElementById('parti-head'), sortParti);
+  if (currentSection === 'parti') updateCount(filtered.length, 'parti');
+}
+
+function addParti() {
+  const code = prompt('Code du nouveau parti (ex : LR, RN, etc.) :');
+  if (!code) return;
+  const codeT = code.trim();
+  if (!codeT) return;
+  if (partiList.some(p => p.code === codeT)) {
+    alert('Le parti "' + codeT + '" existe déjà.');
+    return;
+  }
+  const name = prompt('Nom complet de "' + codeT + '" :') || '';
+  partiList.push({ code: codeT, name: name.trim(), color: '#cccccc', nbCands: 0 });
+  newPartis.add(codeT);
+  changesPartiName[codeT] = name.trim();
+  filterParti();
+  refreshPartiCodesDatalist();
+}
+
+// ─────────────── PROFILS ───────────────
+// Regroupement des entrées CAND_DATA par "personne" via heuristique slug(prénom+nom).
+// Les overrides "|Élection" sont rattachés au profil de la générique. Les binômes
+// (entries avec binome:[k1,k2]) sont exclus de cette vue (gérés en Phase 3).
+let profiles = [];
+
+function slugifyName(s) {
+  return (s || '').toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/[^a-z0-9]+/g,'-')
+    .replace(/^-+|-+$/g,'');
+}
+
+function buildProfiles() {
+  const map = new Map();
+  rows.forEach(row => {
+    const ent = CAND_DATA[row.key];
+    if (!ent) return;
+    // Skip les entrées binôme (= la clé parent "Nom1/Nom2 PARTI") → Phase 3
+    if (Array.isArray(ent.binome) && ent.binome.length === 2) return;
+    let p = row.prenom || '';
+    let n = row.nom || '';
+    let s = row.sexe || '';
+    // Override partiel "|Élection" sans nom : récupérer depuis la générique.
+    // Sinon les overrides type {al:"PS"} étaient skip → la carte profil sous-comptait
+    // les candidatures (visible sur Bucherie / Mandroux 2008 / etc.).
+    if (row.elec && (!n || !p)) {
+      const baseKey = row.key.split('|')[0];
+      const baseRow = rows.find(r => r.key === baseKey);
+      if (baseRow) {
+        n = n || baseRow.nom;
+        p = p || baseRow.prenom;
+        s = s || baseRow.sexe;
+      }
+    }
+    if (!n) return; // pas de nom → on ne peut toujours pas grouper
+    const profileId = slugifyName(p + '-' + n);
+    if (!map.has(profileId)) {
+      map.set(profileId, {
+        id: profileId,
+        p, n, s,
+        candidates: [],
+        partis: new Set(),
+        yearMin: Infinity, yearMax: -Infinity,
+        nbAppearances: 0,
+        incomplete: false
+      });
+    }
+    const prof = map.get(profileId);
+    // Si une variante a un sexe défini et le profil pas encore → on l'adopte
+    if (!prof.s && s) prof.s = s;
+    // Récupérer les années réelles d'apparition dans les sheets
+    const years = candElections[row.key] || candElections[row.key.split('|')[0]] || [];
+    years.forEach(y => {
+      const yi = parseInt(y);
+      if (!isNaN(yi)) {
+        if (yi < prof.yearMin) prof.yearMin = yi;
+        if (yi > prof.yearMax) prof.yearMax = yi;
+      }
+    });
+    // Si la clé est un override |Élection, extraire l'année du suffixe (les overrides
+    // n'apparaissent pas dans candElections car la résolution dans les sheets utilise
+    // toujours la clé pure)
+    if (row.elec) {
+      const m = row.elec.match(/(\d{4})/);
+      if (m) {
+        const yi = parseInt(m[1]);
+        if (yi < prof.yearMin) prof.yearMin = yi;
+        if (yi > prof.yearMax) prof.yearMax = yi;
+      }
+    }
+    prof.candidates.push({
+      key: row.key,
+      elec: row.elec,           // suffix |Élection si override, sinon ''
+      parti: row.parti,
+      t: row.t,
+      al: row.al,
+      c: row.c,
+      b: row.b,
+      bk: row.bk,
+      years: years.slice()
+    });
+    prof.nbAppearances += years.length;
+    if (row.parti) prof.partis.add(row.parti);
+    // Incompletion : on évalue uniquement sur les entrées génériques (les overrides
+    // partiels n'ont pas forcément b/bk, ce qui est normal — la générique fournit la valeur).
+    if (!row.elec && (row.b === '?' || !row.bk)) prof.incomplete = true;
+  });
+  profiles = Array.from(map.values()).sort((a,b) => {
+    if (a.n !== b.n) return a.n.localeCompare(b.n);
+    return (a.p || '').localeCompare(b.p || '');
+  });
+}
+
+function renderProfiles(filtered) {
+  const grid = document.getElementById('profile-grid');
+  if (!filtered.length) {
+    grid.innerHTML = '<div class="empty-state">Aucun profil ne correspond.</div>';
+    return;
+  }
+  grid.innerHTML = filtered.map(p => {
+    const partisChips = [...p.partis].sort().map(code => {
+      const col = getPartiColor(code);
+      // Si couleur grise par défaut, marqueur visuel "no-color"
+      const isDefault = !col || col.toLowerCase() === '#cccccc';
+      return '<span class="parti-chip' + (isDefault ? ' no-color' : '') + '" style="' + (isDefault ? '' : 'background:' + col) + '">'
+        + escapeHtml(code) + '</span>';
+    }).join('');
+    let period = '—';
+    if (p.yearMin !== Infinity) {
+      period = (p.yearMin === p.yearMax) ? String(p.yearMin) : (p.yearMin + ' → ' + p.yearMax);
+    }
+    // Nombre de candidatures effectives = apparitions réelles dans les sheets
+    // ELECTIONS (et pas nombre d'entrées CAND_DATA, qui inclut les overrides).
+    const nCand = p.nbAppearances;
+    const sexeIcon = p.s === 'F' ? '♀' : p.s === 'H' ? '♂' : '';
+    const fullName = p.p ? (p.p + ' ') : '<em style="color:#bbb">[sans prénom] </em>';
+    const cls = 'profile-card' + (p.incomplete ? ' flag-incomplete' : '');
+    const warn = p.incomplete ? '<span class="prof-meta-warn">à compléter</span> · ' : '';
+    const candLabel = nCand === 0
+      ? '<span style="color:#bbb">aucune candidature</span>'
+      : nCand + ' candidature' + (nCand > 1 ? 's' : '');
+    return '<div class="' + cls + '" onclick="openProfile(\'' + escapeAttr(p.id) + '\')">'
+      + '<div class="prof-head">'
+      +   '<span class="prof-name">' + fullName + '<strong>' + escapeHtml(p.n) + '</strong></span>'
+      +   (sexeIcon ? '<span class="prof-sexe">' + sexeIcon + '</span>' : '')
+      + '</div>'
+      + '<div class="prof-partis">' + partisChips + '</div>'
+      + '<div class="prof-meta">' + warn + '<span>' + candLabel
+      +   '</span><span>·</span><span>' + period + '</span></div>'
+      + '</div>';
+  }).join('');
+}
+
+function filterProfil() {
+  const q = (document.getElementById('search-profil').value || '').toLowerCase();
+  const fp = document.getElementById('filter-profil-parti').value;
+  const multi = document.getElementById('filter-profil-multi').checked;
+  const filtered = profiles.filter(p => {
+    if (multi && p.candidates.length < 2) return false;
+    if (fp && !p.partis.has(fp)) return false;
+    if (q) {
+      const txt = (p.p + ' ' + p.n + ' ' + [...p.partis].join(' ')).toLowerCase();
+      if (!txt.includes(q)) return false;
+    }
+    return true;
+  });
+  renderProfiles(filtered);
+  if (currentSection === 'profil') updateCount(filtered.length, 'profil');
+}
+
+function refreshProfilPartiFilter() {
+  const sel = document.getElementById('filter-profil-parti');
+  if (!sel) return;
+  const current = sel.value;
+  const allPartis = new Set();
+  profiles.forEach(p => p.partis.forEach(c => allPartis.add(c)));
+  const opts = ['<option value="">Tous partis</option>']
+    .concat([...allPartis].sort().map(c => '<option value="' + escapeAttr(c) + '"' + (c === current ? ' selected' : '') + '>' + escapeHtml(c) + '</option>'));
+  sel.innerHTML = opts.join('');
+}
+
+function openProfile(id) {
+  const p = profiles.find(x => x.id === id);
+  if (!p) return;
+  // Construire les événements timeline : pour chaque candidature et chaque année
+  // d'apparition, une ligne. Les overrides apparaissent sur leur élection spécifique.
+  const events = [];
+  // 1) Pour chaque entrée générique (sans suffix |), créer 1 événement par année où elle apparaît
+  // 2) Pour les overrides, ils sont attachés à l'élection précise (pas l'année)
+  const ovrByElec = {};
+  p.candidates.forEach(c => {
+    if (c.elec) ovrByElec[c.elec] = c; // override sur cette élection
+  });
+  // Génériques : 1 événement par (parti, année), en utilisant l'override si présent pour cette élection
+  p.candidates.forEach(c => {
+    if (c.elec) return; // skip les overrides ici (intégrés via merge plus bas)
+    if (c.years.length === 0) {
+      events.push({
+        year: '?', elecLabel: '(aucune trace dans les sheets)',
+        ...c, isOverride: false
+      });
+      return;
+    }
+    // Pour chaque année, retrouver l'élection précise (parti X année année)
+    c.years.forEach(y => {
+      // Trouver toutes les élections de cette année où c.key apparaît
+      Object.entries(ELECTIONS || {}).forEach(([elabel, e]) => {
+        if (!elabel.match(new RegExp('(\\b)' + y + '(\\b)'))) return;
+        // chercher si c.key apparaît dans cette élection
+        let foundHere = false;
+        Object.values(e.sheets || {}).forEach(sheet => {
+          if (foundHere) return;
+          Object.values(sheet).forEach(b => {
+            if (b.c && b.c[c.key] !== undefined) foundHere = true;
+          });
+        });
+        if (!foundHere) return;
+        // override pour cette élection ?
+        const ovrKey = c.key + '|' + elabel;
+        const ovr = p.candidates.find(cc => cc.key === ovrKey);
+        const merged = ovr ? Object.assign({}, c, ovr, { _ovrFields: Object.keys(CAND_DATA[ovrKey] || {}) }) : c;
+        events.push({
+          year: parseInt(y),
+          elecLabel: elabel,
+          ...merged,
+          isOverride: !!ovr,
+        });
+      });
+    });
+  });
+  events.sort((a, b) => {
+    const ya = (typeof a.year === 'number') ? a.year : 9999;
+    const yb = (typeof b.year === 'number') ? b.year : 9999;
+    if (ya !== yb) return ya - yb;
+    return a.elecLabel.localeCompare(b.elecLabel);
+  });
+
+  const fullName = (p.p ? p.p + ' ' : '') + p.n;
+  const sexeBadge = p.s === 'F' ? '<span class="badge-sexe">♀</span>' : p.s === 'H' ? '<span class="badge-sexe">♂</span>' : '';
+  const detail = document.querySelector('#profile-modal .profile-detail');
+  detail.innerHTML = '<h2>' + escapeHtml(fullName) + '</h2>'
+    + '<div class="sub-id">' + sexeBadge
+    +   '<span>' + p.candidates.length + ' entrée(s) CAND_DATA · '
+    +   events.length + ' candidature(s) effective(s)</span>'
+    + '</div>'
+    + (events.length === 0
+        ? '<p style="color:#888;font-style:italic;padding:20px">Aucune candidature retrouvée dans les sheets ELECTIONS.</p>'
+        : '<table class="timeline"><thead><tr>'
+          + '<th style="width:60px">Année</th>'
+          + '<th>Élection</th>'
+          + '<th style="width:80px">Parti</th>'
+          + '<th>Alliance</th>'
+          + '<th style="width:60px">Bloc</th>'
+          + '<th style="width:60px">bk</th>'
+          + '<th>Familles</th>'
+          + '</tr></thead><tbody>'
+          + events.map(e => {
+            const bg = B_COLORS[e.b] || '#aaa';
+            const bkBg = BK_COLORS[e.bk] || '#aaa';
+            return '<tr' + (e.isOverride ? ' class="override-row"' : '') + '>'
+              + '<td class="yr">' + e.year + '</td>'
+              + '<td>' + escapeHtml(e.elecLabel) + (e.isOverride ? '<span class="ovr-tag">override</span>' : '') + '</td>'
+              + '<td><span style="font-family:monospace;font-weight:700">' + escapeHtml(e.parti || '') + '</span></td>'
+              + '<td>' + escapeHtml(e.al || '') + '</td>'
+              + '<td><span class="b-badge" style="background:' + bg + '">' + (e.b || '?') + '</span></td>'
+              + '<td><span class="b-badge" style="background:' + bkBg + '">' + (e.bk || '?') + '</span></td>'
+              + '<td style="font-size:.75rem;color:#666">' + escapeHtml((e.t || []).join(', ')) + '</td>'
+              + '</tr>';
+          }).join('')
+          + '</tbody></table>')
+    + '<button class="close-btn" onclick="closeProfile()">Fermer</button>';
+  document.getElementById('profile-modal').classList.add('show');
+}
+function closeProfile() {
+  document.getElementById('profile-modal').classList.remove('show');
+}
+
+// ─────────────── ONGLETS ───────────────
+function showSection(name) {
+  currentSection = name;
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('on'));
+  document.getElementById('section-' + name).classList.add('on');
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('on'));
+  document.getElementById('tab-' + name).classList.add('on');
+  if (name === 'cand') filterCand();
+  else if (name === 'profil') filterProfil();
+  else filterParti();
+}
+function updateCount(n, label) {
+  document.getElementById('count-label').textContent = n + ' ' + (n > 1 ? label + 's' : label);
+}
+
+// ─────────────── EXPORT ───────────────
+function showExport() {
+  // BK_CORRECTIONS
+  const bkOnly = {};
+  Object.entries(changesCand).forEach(([key, ch]) => {
+    if (ch.bk !== undefined) bkOnly[key] = ch.bk;
+  });
+  // CAND_CORRECTIONS — autres champs candidat
+  const candOther = {};
+  Object.entries(changesCand).forEach(([key, ch]) => {
+    const out = {};
+    if (ch.nom    !== undefined) out.n  = ch.nom;
+    if (ch.prenom !== undefined) out.p  = ch.prenom;
+    if (ch.sexe   !== undefined) out.s  = ch.sexe;
+    if (ch.parti  !== undefined) out.pa = ch.parti;
+    if (ch.t      !== undefined) out.t  = ch.t;
+    if (ch.al     !== undefined) out.al = ch.al;
+    if (ch.c      !== undefined) out.c  = ch.c;
+    if (Object.keys(out).length) candOther[key] = out;
+  });
+  // Couleur du parti : propage à TOUS les candidats du parti sauf ceux qui ont
+  // déjà une couleur OVERRIDE (= une couleur définie ET différente de celle du
+  // parti). Si le candidat n'a pas de couleur (r.c vide), on propage aussi —
+  // ce qui couvre le cas d'un parti nouvellement créé sans couleur préexistante.
+  // ──
+  // Avant : on sautait dès que `r.c !== oldColor`, ce qui sautait aussi les candidats
+  // sans couleur (r.c = '' ≠ '#cccccc' par défaut) → la modif de couleur dans
+  // l'onglet Partis était silencieusement perdue à l'export pour les nouveaux partis.
+  Object.entries(changesPartiColor).forEach(([code, color]) => {
+    const partiOrig = partiList.find(p => p.code === code);
+    if (!partiOrig) return;
+    const oldColor = partiOrig.color;
+    rows.forEach(r => {
+      if (r.parti !== code) return;
+      // Override custom : on respecte (couleur définie ET différente de celle du parti)
+      if (r.c && r.c.toLowerCase() !== oldColor.toLowerCase()) return;
+      if (!candOther[r.key]) candOther[r.key] = {};
+      if (candOther[r.key].c !== undefined) return;          // l'utilisateur a déjà choisi une couleur dans l'onglet Candidats
+      candOther[r.key].c = color;
+    });
+  });
+  // PARTI_CORRECTIONS — noms (incluant nouveaux partis)
+  const nbBk = Object.keys(bkOnly).length;
+  const nbCand = Object.keys(candOther).length;
+  const nbPartiName = Object.keys(changesPartiName).length;
+  const nbPartiColor = Object.keys(changesPartiColor).length;
+
+  let txt = '';
+  if (nbBk) {
+    txt += '// Corrections bk — ' + nbBk + ' modification(s)\n';
+    txt += 'const BK_CORRECTIONS = ' + JSON.stringify(bkOnly, null, 2) + ';\n\n';
+  }
+  if (nbCand) {
+    txt += '// Corrections candidats — ' + nbCand + ' candidat(s)';
+    if (nbPartiColor) txt += ' (couleur de parti propagée)';
+    txt += '\n// Pour appliquer : Object.entries(CAND_CORRECTIONS).forEach(([k,v]) => Object.assign(CAND_DATA[k] = CAND_DATA[k] || {}, v));\n';
+    txt += 'const CAND_CORRECTIONS = ' + JSON.stringify(candOther, null, 2) + ';\n\n';
+  }
+  if (nbPartiName) {
+    txt += '// Corrections noms de partis — ' + nbPartiName + ' modification(s)' + (newPartis.size ? ' (dont ' + newPartis.size + ' nouveau(x))' : '') + '\n';
+    txt += '// Pour appliquer : Object.assign(PARTI_NAMES, PARTI_CORRECTIONS);\n';
+    txt += 'const PARTI_CORRECTIONS = ' + JSON.stringify(changesPartiName, null, 2) + ';\n\n';
+  }
+  if (!nbBk && !nbCand && !nbPartiName) txt = '// Aucune modification à exporter.\n';
+
+  document.getElementById('export-text').value = txt;
+  document.getElementById('export-area').classList.add('show');
+}
+function copyExport() {
+  const ta = document.getElementById('export-text');
+  ta.select();
+  document.execCommand('copy');
+  alert('Copié !');
+}
+function closeExport() {
+  document.getElementById('export-area').classList.remove('show');
+}
+
+// ─────────────── INIT ───────────────
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof CAND_DATA === 'undefined') {
+    document.getElementById('cand-body').innerHTML =
+      '<tr><td colspan="9" class="empty-state">Erreur : <code>donnees.js</code> introuvable ou invalide.</td></tr>';
+    return;
+  }
+  buildRows();
+  buildCandElections();
+  buildPartiList();
+  buildProfiles();
+  refreshProfilPartiFilter();
+
+  const dl = document.createElement('datalist');
+  dl.id = 'parti-codes';
+  document.body.appendChild(dl);
+  refreshPartiCodesDatalist();
+
+  document.getElementById('cand-head').querySelectorAll('th').forEach(th => {
+    if (th.classList.contains('no-sort')) return;
+    const col = th.dataset.col;
+    if (col) th.addEventListener('click', () => setSortCand(col));
+  });
+  document.getElementById('parti-head').querySelectorAll('th').forEach(th => {
+    if (th.classList.contains('no-sort')) return;
+    const col = th.dataset.col;
+    if (col) th.addEventListener('click', () => setSortParti(col));
+  });
+
+  filterCand();
+  filterParti();
+});
+</script>
+</body>
+</html>

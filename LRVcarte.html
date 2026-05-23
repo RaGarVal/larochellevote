@@ -64,7 +64,7 @@
     "mainEntity": {
       "@type": "Dataset",
       "name": "Archives électorales de La Rochelle, 1988-2026",
-      "description": "Résultats par bureau de vote pour 37 élections et 2 référendums organisés à La Rochelle entre 1988 et 2026.",
+      "description": "Résultats par bureau de vote pour 40 élections et 2 référendums organisés à La Rochelle entre 1988 et 2026.",
       "url": "https://larochellevote.fr/",
       "creator": {
         "@type": "Person",
@@ -705,6 +705,22 @@ select#el-select {
 .q-brow:hover { background:var(--bg-modal-hover); }
 .q-brow.active { background:var(--bg-modal-accent); }
 .sidebar-elec:hover { opacity: 0.6 !important; transition: opacity 0.15s; }
+/* Tooltip CSS générique (au lieu du title natif moche).
+   Usage : <el class="has-tooltip" data-tooltip="Mon texte"> ... </el>
+   La bulle se positionne AU-DESSUS de l'élément, centrée. visibility hidden →
+   visible (et non opacity 0 → 1) parce qu'un parent avec opacity propage la
+   transparence à ses descendants/pseudos ; visibility n'a pas ce problème. */
+.has-tooltip { position: relative; }
+.has-tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  background: var(--bg-tooltip); color: var(--text-tooltip);
+  padding: 5px 9px; border-radius: 4px;
+  font-size: 0.7rem; font-weight: 500; white-space: nowrap;
+  visibility: hidden; pointer-events: none; z-index: 10000;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.22);
+}
+.has-tooltip:hover::after, .has-tooltip:focus-visible::after { visibility: visible; }
 /* Tooltip blocs (inversé : clair en sombre) */
 #bloc-tip {
   position: fixed; z-index: 9999; pointer-events: none;
@@ -1783,9 +1799,12 @@ input:focus-visible,
         <option value="Régionales 1998">Régionales 1998</option>
         <option value="Régionales 1992">Régionales 1992</option>
       </optgroup>
-      <optgroup label="Départementales">
+      <optgroup label="Cantonales / Départementales">
         <option value="Départementales 2021">Départementales 2021</option>
         <option value="Départementales 2015">Départementales 2015</option>
+        <option value="Cantonales 2011">Cantonales 2011</option>
+        <option value="Cantonales 2008">Cantonales 2008</option>
+        <option value="Cantonales 2004">Cantonales 2004</option>
       </optgroup>
       <optgroup label="Référendums">
         <option value="Référendum 2005">Référendum 2005 — TCE</option>
@@ -1922,7 +1941,7 @@ const HAS_T2 = new Set(['Présidentielle 1988','Présidentielle 1995','Présiden
   'Législatives 2012','Législatives 2017','Législatives 2022','Législatives 2024',
   'Municipales 2014','Municipales 2020','Municipales 2026',
   'Régionales 2004','Régionales 2010','Régionales 2015','Régionales 2021',
-  'Départementales 2015','Départementales 2021']);
+  'Cantonales 2004','Cantonales 2008','Cantonales 2011','Départementales 2015','Départementales 2021']);
 const HAS_TU = new Set(['Régionales 1992','Régionales 1998','Européennes 1994','Européennes 1999','Européennes 2004','Européennes 2009','Européennes 2014','Européennes 2019','Européennes 2024']);
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
@@ -2224,9 +2243,15 @@ function getPartiColor(pa) {
 }
 
 function candInfo(name) {
-  return CAND_DATA[name + '|' + currentElection + '|' + currentSheet]
-      || CAND_DATA[name + '|' + currentElection]
-      || CAND_DATA[name] || {};
+  // Merge en cascade : générique ← override |Élection ← override |Élection|Tour.
+  // Permet aux overrides d'être PARTIELS (ex. juste {al:"PRG"} pour ajuster une
+  // alliance) sans avoir à recopier toute la fiche. Les overrides "fiche complète"
+  // existants (héritage de l'éditeur) continuent de fonctionner — le spread les
+  // écrase juste de manière équivalente.
+  const generic = CAND_DATA[name] || {};
+  const elec    = CAND_DATA[name + '|' + currentElection] || {};
+  const tour    = CAND_DATA[name + '|' + currentElection + '|' + currentSheet] || {};
+  return { ...generic, ...elec, ...tour };
 }
 
 // ── BINÔMES (Départementales/Cantonales) ───────────────────────────────────
@@ -2446,16 +2471,21 @@ function syncFicheSails() {
 window.addEventListener('DOMContentLoaded', () => {
   const targets = ['sb-info', 'ov-body'].map(id => document.getElementById(id)).filter(Boolean);
   if (!targets.length) return;
-  let _t;
-  // Throttle 120 ms : suffisant pour rattraper le contenu en fin d'injection
-  // sans saturer le main thread quand un append touche la fiche en boucle.
+  // Throttle via requestAnimationFrame : un seul appel par frame (≤16 ms), mais
+  // l'exécution se fait AVANT le prochain paint, donc pas de FOUC visible sur
+  // l'injection de la fiche (titraille puis voile). Un setTimeout(120) laissait
+  // au browser le temps de peindre l'état "sans sail-rows" avant le sync.
+  let _raf = 0;
+  const _flush = () => { _raf = 0; syncFicheSails(); setupFicheMapHint(); };
   const mo = new MutationObserver(() => {
-    clearTimeout(_t);
-    _t = setTimeout(() => { syncFicheSails(); setupFicheMapHint(); }, 120);
+    if (_raf) return;
+    _raf = requestAnimationFrame(_flush);
   });
   targets.forEach(t => mo.observe(t, { childList: true, subtree: true }));
-  // resize → re-sync (fonts loading, layout reflow)
-  window.addEventListener('resize', () => { clearTimeout(_t); _t = setTimeout(syncFicheSails, 50); });
+  // resize → re-sync (fonts loading, layout reflow) — délai plus long acceptable ici
+  // car aucun nouveau contenu n'est injecté pendant un resize.
+  let _tResize;
+  window.addEventListener('resize', () => { clearTimeout(_tResize); _tResize = setTimeout(syncFicheSails, 50); });
 });
 
 // Bouton flottant "Voir la carte" : observe le #mm-wrap de la fiche courante et cache le bouton
@@ -2508,16 +2538,22 @@ function computeBlocs(data) {
   return blocs;
 }
 // Calcule les blocs pour un scrutin adjacent (contexte d'élection explicite, indépendant de currentElection)
+// Merge cascade générique → override |Élection (comme candInfo), pour que les
+// overrides partiels (ex. CAND_DATA["Mandroux PS|Cantonales 2008"]={al:"PRG"})
+// n'écrasent pas la fiche entière → sinon le candidat perd son `b` et tombe en `?`.
 function computeBlocsAdj(data, elecLabel) {
+  const _merge = name => ({
+    ...(CAND_DATA[name] || {}),
+    ...(CAND_DATA[name+'|'+elecLabel] || {})
+  });
   const blocs = {};
   Object.entries(data.c || {}).forEach(([name, pct]) => {
-    const info = CAND_DATA[name+'|'+elecLabel] || CAND_DATA[name] || {};
+    const info = _merge(name);
     let b = info.b || '';
-    // Binôme : déduire des membres (même logique que blocOfCandidate, mais sans
-    // dépendre de currentElection pour candInfo).
+    // Binôme : déduire des membres avec le même merge cascade.
     if (!b && Array.isArray(info.binome) && info.binome.length === 2) {
-      const m1 = CAND_DATA[info.binome[0]+'|'+elecLabel] || CAND_DATA[info.binome[0]] || {};
-      const m2 = CAND_DATA[info.binome[1]+'|'+elecLabel] || CAND_DATA[info.binome[1]] || {};
+      const m1 = _merge(info.binome[0]);
+      const m2 = _merge(info.binome[1]);
       const b1 = m1.b || '', b2 = m2.b || '';
       b = (b1 && b1 === b2) ? b1 : (b1 || b2 || '');
     }
@@ -3226,7 +3262,15 @@ function loadMap(){
             if (sbNav) sbNav.innerHTML = '';
           }
         },
-        click:(e)=>{L.DomEvent.stopPropagation(e);onFeatureClick(feature,layer);},
+        click:(e)=>{
+          L.DomEvent.stopPropagation(e);
+          // Bureau inerte : (a) canton absent de l'élection ; (b) en T2 d'une
+          // cantonale, canton pourvu dès le T1. Dans les 2 cas, clic ignoré.
+          // stopPropagation déjà appelé : le map.click ne fermera pas non plus
+          // l'overlay si une fiche est déjà ouverte.
+          if (typeof _bureauInerte === 'function' && _bureauInerte(ns)) return;
+          onFeatureClick(feature,layer);
+        },
       });
     }
   }).addTo(map);
@@ -3849,6 +3893,15 @@ function buildCantonsPreviewHTML() {
           : '<div class="fiche-sub" style="visibility:hidden">-</div><div class="fiche-sub" style="visibility:hidden">-</div>')
       + '</div>'
       + '<span class="fiche-id-chevron">›</span></div>';
+    // Avertissement spécifique aux cantons historiques (ère 1985) qui débordaient
+    // sur des communes voisines : 5 (Puilboreau, St-Xandre, Marsilly, Esnandes),
+    // 8 (Périgny, Dompierre), 9 (L'Houmeau, Lagord, Nieul). Version courte
+    // uniformisée pour la sidebar étroite ; détails dans la fiche (renderCanton).
+    if (String(cantonEra) === '1985' && ['5','8','9'].includes(cid)) {
+      html += '<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:6px;padding:7px 10px;margin:-4px 0 10px;font-size:0.68rem;color:#7a6000;line-height:1.45">'
+        + '<strong>Avertissement</strong> — Partie rochelaise uniquement.'
+        + '</div>';
+    }
   });
   html += '</div>';
   // Si aucun canton n'avait de données, html contient juste le wrapper vide → fallback.
@@ -3856,6 +3909,59 @@ function buildCantonsPreviewHTML() {
     return '<div style="color:#aaa;font-style:italic;padding:16px 0;font-size:0.82rem">Aucune donnée disponible.</div>';
   }
   return html;
+}
+
+// Distingue "bureau non concerné" (élection cantonale partielle, ex. Cantonales
+// 2011 où seuls 5 cantons sur 9 ont voté) de "données manquantes" (cas
+// pathologique). Retourne true si le bureau ns appartient à un canton absent
+// de l'élection courante.
+function _bureauNonConcerne(ns) {
+  if (typeof isCantonalElection !== 'function' || !isCantonalElection(currentElection)) return false;
+  const el0 = ELECTIONS[currentElection];
+  if (!el0) return false;
+  const mapYear = String(el0.my || CURRENT_ERA);
+  const yearInfo = BUREAU_INFO[mapYear] || {};
+  const c = String((yearInfo[ns] || {}).c || '');
+  if (!c) return false;
+  let avail;
+  if (el0.par_canton && Object.keys(el0.par_canton).length) {
+    avail = new Set(Object.keys(el0.par_canton));
+  } else {
+    // Fallback legacy : inférer depuis les bureaux ayant des données
+    avail = new Set();
+    const sh = (el0.sheets && (el0.sheets.T1 || el0.sheets.TU)) || {};
+    Object.keys(sh).forEach(b => {
+      const cc = String((yearInfo[b] || {}).c || '');
+      if (cc) avail.add(cc);
+    });
+  }
+  return !avail.has(c);
+}
+// Le bureau est dans un canton qui A participé à l'élection, mais le canton a
+// été pourvu dès le T1 (candidat élu d'office ≥50% + ≥25% inscrits). En T2 on
+// affiche un message dédié et on désactive le clic, sinon ça ressemble à
+// "données manquantes" alors que c'est un cas légitime.
+function _cantonPourvuAuT1(ns) {
+  if (currentSheet !== 'T2') return false;
+  if (typeof isCantonalElection !== 'function' || !isCantonalElection(currentElection)) return false;
+  const el0 = ELECTIONS[currentElection];
+  if (!el0 || !el0.par_canton) return false;
+  const mapYear = String(el0.my || CURRENT_ERA);
+  const yearInfo = BUREAU_INFO[mapYear] || {};
+  const c = String((yearInfo[ns] || {}).c || '');
+  if (!c) return false;
+  const cantonData = el0.par_canton[c];
+  if (!cantonData || !cantonData.sheets) return false;
+  return !!cantonData.sheets.T1 && !cantonData.sheets.T2;
+}
+// Helper unifié : clic et fiche détaillée inhibés.
+function _bureauInerte(ns) {
+  return _bureauNonConcerne(ns) || _cantonPourvuAuT1(ns);
+}
+function _noDataMsg(ns) {
+  if (_bureauNonConcerne(ns)) return 'Bureau de vote non concerné par ce scrutin.';
+  if (_cantonPourvuAuT1(ns))  return 'Bureau de vote d\'un canton pourvu au premier tour.';
+  return 'Données non disponibles pour ce bureau.';
 }
 
 function buildBureauPreviewHTML(feature) {
@@ -3938,7 +4044,7 @@ function buildBureauPreviewHTML(feature) {
       + '<div class="pbox" style="flex-direction:row;align-items:baseline;justify-content:center;gap:6px"><span class="pbox-lbl">Blancs et nuls</span><span class="pbox-val">'+blancsPctS.toFixed(1)+' %</span></div></div>';
     h += renderCandidates(data, ns, refAverageForBureau(ns), getExtremes(), true);
   } else {
-    h += '<div style="color:#aaa;font-style:italic;padding:10px 0">Données non disponibles pour ce bureau.</div>';
+    h += '<div style="color:#aaa;font-style:italic;padding:10px 0">'+_noDataMsg(ns)+'</div>';
   }
   // B8 phase 4 : section "Aller plus loin" retirée — accès quartier via la fiche elle-même.
   return h;
@@ -4026,6 +4132,12 @@ function closeOverlay() {
   document.getElementById('ov-tabs').style.display='flex';
   overlayTab='bureau';
   if (mmMap) { mmMap.remove(); mmMap = null; }
+  // Fermer manuellement tous les tooltips Leaflet : sinon celui du bureau
+  // d'origine reste affiché tant que la souris ne bouge pas hors du polygone
+  // (Leaflet ne déclenche mouseout que sur mouvement réel du curseur).
+  if (typeof mainLayer !== 'undefined' && mainLayer) {
+    try { mainLayer.eachLayer(l => l.closeTooltip && l.closeTooltip()); } catch(_) {}
+  }
   hideBureauListSidebar();
   // B8 phase 2 : on retire la surbrillance "selected" sur le polygone à la fermeture.
   // Avec la nouvelle UX (click direct → fiche), il n'y a plus de bureau "sélectionné"
@@ -4034,7 +4146,11 @@ function closeOverlay() {
     try { mainLayer.resetStyle(selectedLayer); } catch(_) {}
     selectedLayer = null;
   }
-  if(currentFeature)showBureauSidebar(currentFeature); else renderGlobal();
+  // Reset complet : on oublie le bureau précédemment ciblé et la sidebar bascule
+  // en mode global (ville). Cohérent avec le commentaire ci-dessus — sans ça, la
+  // sidebar restait en mode "preview du bureau" alors que la carte était vierge.
+  currentFeature = null;
+  renderGlobal();
   if (typeof writeURLState === 'function') writeURLState();
 }
 
@@ -4215,13 +4331,35 @@ function renderBlocTriptych(data, histoKey) {
     return '<div style="position:relative;opacity:0.38'+(clickable?';cursor:pointer':'')+'" class="'+(clickable?'sidebar-elec':'')+'" '+(clickable?'onclick="setElection(\''+elec+'\')"':'')+'>'+inner+'<span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:0.58rem;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5);letter-spacing:0.03em;pointer-events:none">'+label+'</span></div>';
   }
   function mainBar(blocs,elec){return '<div style="position:relative"><div style="display:flex;height:72px;width:100%">'+barSegs(blocs,elec)+'</div><div style="position:absolute;top:0;bottom:0;left:50%;width:0;border-left:1.5px dashed rgba(255,255,255,0.65);pointer-events:none;z-index:2"></div></div>';}
+  // Fiche BUREAU : on enchaîne Cantonales et Départementales pour suivre le
+  // même bureau à travers la réforme 2015. Au lieu de prendre juste le scrutin
+  // chronologiquement adjacent, on itère pour trouver le plus proche AVEC des
+  // données effectives — utile pour les cantonales partielles (série A vs B :
+  // un bureau du canton 7 sauté en 2011 doit remonter à Cantonales 2008).
+  const CANTONAL_FAMILY = new Set(['Cantonales', 'Départementales']);
   const curType = elecType(currentElection);
   const curYear = parseInt(currentElection.match(/\d{4}$/) || [0]);
-  const sameType = allElecOfType(curType).filter(l => l !== currentElection);
-  const prev = sameType.filter(l => parseInt(l.match(/\d{4}$/)) < curYear).pop();
-  const next = sameType.find(l => parseInt(l.match(/\d{4}$/)) > curYear);
-  const prevBlocs = prev ? getBlocsForAdj(prev, histoKey) : null;
-  const nextBlocs = next ? getBlocsForAdj(next, histoKey) : null;
+  let family;
+  if (CANTONAL_FAMILY.has(curType)) {
+    family = Object.keys(ELECTIONS)
+      .filter(l => CANTONAL_FAMILY.has(elecType(l)))
+      .sort((a, b) => parseInt(a.match(/\d{4}$/)) - parseInt(b.match(/\d{4}$/)));
+  } else {
+    family = allElecOfType(curType);
+  }
+  const myIdx = family.indexOf(currentElection);
+  // Cherche le 1er précédent dans family avec des données pour ce bureau
+  let prev = null, prevBlocs = null;
+  for (let i = myIdx - 1; i >= 0; i--) {
+    const b = getBlocsForAdj(family[i], histoKey);
+    if (b) { prev = family[i]; prevBlocs = b; break; }
+  }
+  // Cherche le 1er suivant dans family avec des données pour ce bureau
+  let next = null, nextBlocs = null;
+  for (let i = myIdx + 1; i < family.length; i++) {
+    const b = getBlocsForAdj(family[i], histoKey);
+    if (b) { next = family[i]; nextBlocs = b; break; }
+  }
   const curBlocs  = computeBlocs(data);
   let h = '<div style="border-radius:6px;overflow:hidden">';
   if (next) h += sideBar(nextBlocs, 20, 'Scrutin suivant', next);
@@ -4251,15 +4389,19 @@ function renderBlocTriptychQuartier(qData,bureauNums){
     const clickable=blocs&&elec;
     return '<div style="position:relative;opacity:0.38'+(clickable?';cursor:pointer':'')+'" class="'+(clickable?'sidebar-elec':'')+'" '+(clickable?'onclick="setElection(\''+elec+'\')"':'')+'>'+inner+'<span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:0.58rem;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5);pointer-events:none">'+label+'</span></div>';}
   function mainBar(blocs,elec){return '<div style="position:relative"><div style="display:flex;height:72px;width:100%">'+barSegs(blocs,elec)+'</div><div style="position:absolute;top:0;bottom:0;left:50%;width:0;border-left:1.5px dashed rgba(255,255,255,0.65);pointer-events:none;z-index:2"></div></div>';}
-  const curType=elecType(currentElection);const curYear=parseInt(currentElection.match(/\d{4}$/)||[0]);
-  const sameTypeQ=allElecOfType(curType).filter(l=>l!==currentElection);
-  const prevLabel=sameTypeQ.filter(l=>parseInt(l.match(/\d{4}$/))<curYear).pop();
-  const nextLabel=sameTypeQ.find(l=>parseInt(l.match(/\d{4}$/))>curYear);
+  const { prev: prevLabel, next: nextLabel } = _adjacentElections(currentElection);
   const curBlocs=qData.bp?remapBlocs(qData.bp):computeBlocs(qData);
+  // On précalcule les agrégats adjacents : si l'agrégat est null (aucun des
+  // bureaux du quartier/canton n'a de données dans le scrutin adjacent), on
+  // n'affiche pas le sideBar (sinon placeholder gris trompeur). _adjacentElections
+  // filtre déjà sur la même série pour les cantonales, donc ce double check est
+  // surtout utile pour les quartiers qui peuvent chevaucher plusieurs cantons.
+  const nextAgg = nextLabel ? aggregateBlocs(nextLabel) : null;
+  const prevAgg = prevLabel ? aggregateBlocs(prevLabel) : null;
   let h='<div style="border-radius:6px;overflow:hidden">';
-  if(nextLabel)h+=sideBar(aggregateBlocs(nextLabel),20,'Scrutin suivant',nextLabel);
+  if(nextAgg) h+=sideBar(nextAgg,20,'Scrutin suivant',nextLabel);
   h+=mainBar(curBlocs,currentElection);
-  if(prevLabel)h+=sideBar(aggregateBlocs(prevLabel),20,'Scrutin précédent',prevLabel);
+  if(prevAgg) h+=sideBar(prevAgg,20,'Scrutin précédent',prevLabel);
   return h+'</div>';
 }
 
@@ -4443,16 +4585,17 @@ function renderGlobalFiche() {
   }
   // Section "Blocs politiques" skippée pour les référendums (incohérente avec Oui/Non).
   if (!(typeof isReferendum === 'function' && isReferendum(currentElection))) {
-    var curType=elecType(currentElection);
-    var curYear=parseInt(currentElection.match(/\d{4}$/)||[0]);
-    var sameTypeG=allElecOfType(curType).filter(function(l){return l!==currentElection;});
-    var prev=sameTypeG.filter(function(l){return parseInt(l.match(/\d{4}$/))<curYear;}).pop();
-    var next=sameTypeG.find(function(l){return parseInt(l.match(/\d{4}$/))>curYear;});
+    var _adj = _adjacentElections(currentElection);
+    var prev = _adj.prev, next = _adj.next;
     var curBlocs=computeBlocs(gData);
+    // Précalcule pour pouvoir skipper si l'agrégat ville est vide (rare en ville
+    // globale mais sécurise les cas où l'élection adj. ne couvre aucun bureau).
+    var nextBlocsG = next ? globalHistoBlocs(next) : null;
+    var prevBlocsG = prev ? globalHistoBlocs(prev) : null;
     var triptych='<div style="border-radius:6px;overflow:hidden">';
-    if (next) triptych += sideBarG(globalHistoBlocs(next),20,'Scrutin suivant',next);
+    if (nextBlocsG) triptych += sideBarG(nextBlocsG,20,'Scrutin suivant',next);
     triptych += '<div style="position:relative"><div style="display:flex;height:72px;width:100%">'+barSegsG(curBlocs,currentElection)+'</div><div style="position:absolute;top:0;bottom:0;left:50%;width:0;border-left:1.5px dashed rgba(255,255,255,0.65);pointer-events:none;z-index:2"></div></div>';
-    if (prev) triptych += sideBarG(globalHistoBlocs(prev),20,'Scrutin précédent',prev);
+    if (prevBlocsG) triptych += sideBarG(prevBlocsG,20,'Scrutin précédent',prev);
     triptych += '</div>';
     h += '<div class="fiche-section-blocs" style="margin-bottom:18px"><div class="sec-ttl">Blocs politiques</div>'+triptych+'</div>';
   }
@@ -5171,6 +5314,26 @@ function particiHTML(i, abst_pct, abst_nb, blancs_pct, blancs_nb, e) {
 }
 
 function elecType(label) { return label.split(' ')[0]; }
+// Helper : retourne {prev, next} pour la navigation entre scrutins du même type.
+// Si l'élection courante a une `serie` (cantonales avec renouvellement partiel,
+// série A = cantons 1/3/4/5/6 ; série B = 2/7/8/9), on filtre pour rester dans
+// la même série — sinon la nav pointerait vers un scrutin où les cantons en
+// jeu sont disjoints (placeholder gris trompeur).
+function _adjacentElections(currentLabel) {
+  const curType = elecType(currentLabel);
+  const curYear = parseInt(currentLabel.match(/\d{4}$/) || [0]);
+  const curEl = ELECTIONS[currentLabel] || {};
+  const curSerie = curEl.serie || null;
+  let sameType = allElecOfType(curType).filter(l => l !== currentLabel);
+  if (curSerie) sameType = sameType.filter(l => (ELECTIONS[l] || {}).serie === curSerie);
+  return {
+    prev: sameType.filter(l => parseInt(l.match(/\d{4}$/)) < curYear).pop(),
+    next: sameType.find(l => parseInt(l.match(/\d{4}$/)) > curYear),
+  };
+}
+// Note : pour la fiche BUREAU, la nav prev/next est inlinée dans renderBlocTriptych
+// (avec recherche du 1er voisin valide qui a des données pour CE bureau), pas via
+// ce helper — d'où l'absence d'une variante _adjacentElectionsForBureau ici.
 function allElecOfType(type) {
   const s = new Set(Object.keys(ELECTIONS).filter(l => elecType(l) === type));
   Object.values(HISTORIQUE).forEach(arr => arr.forEach(r => { if(elecType(r.l)===type) s.add(r.l); }));
@@ -5191,12 +5354,41 @@ function fmtAggNums(nums) {
   if (nums.length <= 1) return String(nums[0]);
   return nums.slice(0,-1).join(', ') + ' et ' + nums[nums.length-1];
 }
+// Cache pour la résolution inverse (era + bureauId historique → b2026).
+// BUREAU_CORRESPONDANCES est la source de vérité (donnees.js), pas le champ
+// b2026 des GeoJSON (qui peut être faussement identique au numéro historique
+// pour les anciens fichiers — cf. bug Cité des Géraniums 1992).
+const _b2026Cache = new Map();
+function _resolveB2026FromHist(bureauId, era) {
+  const key = era + '|' + bureauId;
+  if (_b2026Cache.has(key)) return _b2026Cache.get(key);
+  let found = bureauId; // fallback : on garde l'ID brut si pas de mapping
+  if (typeof BUREAU_CORRESPONDANCES !== 'undefined') {
+    for (const b2026 of Object.keys(BUREAU_CORRESPONDANCES)) {
+      const corr = BUREAU_CORRESPONDANCES[b2026];
+      if (!corr || typeof corr !== 'object') continue;
+      const ref = corr[era];
+      if (ref === bureauId) { found = b2026; break; }
+      if (Array.isArray(ref)) {
+        const hit = ref.some(r => (typeof r === 'string' ? r : r && r.id) === bureauId);
+        if (hit) { found = b2026; break; }
+      }
+    }
+  }
+  _b2026Cache.set(key, found);
+  return found;
+}
+
 function renderFiche(feature) {
   const ns     = numStr(feature);
   const info   = bureauInfo(feature);
   const data   = getBureauData(ns);
   const winCol = winnerColor(data);
-  const histoKey = (feature.properties.b2026) || ns;
+  // histoKey = ID 2026 du bureau, source de vérité = BUREAU_CORRESPONDANCES
+  // (lookup inverse), pas feature.properties.b2026 qui peut être faux pour les
+  // anciennes ères (geodata.js généré sans tenir compte des renumérotations).
+  const _curEra = String((ELECTIONS[currentElection] || {}).my || CURRENT_ERA);
+  const histoKey = _resolveB2026FromHist(ns, _curEra);
   const sheetLabel = currentSheet === 'TU' ? 'Tour unique' : currentSheet === 'T2' ? '2e tour' : '1er tour';
   // En cantonale : moyenne canton du bureau (chaque binôme n'est candidat que dans son canton).
   const cityAvg = refAverageForBureau(ns);
@@ -5232,7 +5424,7 @@ function renderFiche(feature) {
   }
 
   if (!data) {
-    h += '<div style="padding:16px;color:#aaa;font-style:italic">Données non disponibles pour ce bureau dans ce scrutin.</div>';
+    h += '<div style="padding:16px;color:#aaa;font-style:italic">'+_noDataMsg(ns)+'</div>';
     document.getElementById('ov-body').innerHTML = h; document.getElementById('ov-body').scrollTop = 0;
     initMinimap(feature, winCol);
     return;
@@ -5487,6 +5679,19 @@ function renderCanton(){
     + '</div>'
     + '</div>'
     + '</div>';
+  // Avertissement spécifique aux cantons historiques (ère 1985) qui débordaient
+  // sur les communes voisines. Les chiffres affichés ne couvrent que la partie
+  // rochelaise (bureaux La Rochelle).
+  const _alertes1985 = {
+    '5': 'Le canton La Rochelle-5 (1985) comprenait aussi les communes de Puilboreau, Saint-Xandre, Marsilly et Esnandes. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
+    '8': 'Le canton La Rochelle-8 (1985) comprenait aussi les communes de Périgny et Dompierre-sur-Mer. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
+    '9': 'Le canton La Rochelle-9 (1985) comprenait aussi les communes de L\'Houmeau, Lagord et Nieul-sur-Mer. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
+  };
+  if (String(cantonEra) === '1985' && _alertes1985[String(cid)]) {
+    h += '<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:0.72rem;color:#7a6000;line-height:1.5">'
+      + '<strong>Avertissement</strong> — ' + _alertes1985[String(cid)]
+      + '</div>';
+  }
   if (totE > 0) {
     const cData = { c: cAvg, e: totE, w: cWinner ? cWinner[0] : null, i: totI, a: abst_pct, bn: totBn };
     let sig = '<div class="sig-block">';
@@ -5726,6 +5931,14 @@ let legendCantonFilter = '1';
 
 function setLegendCanton(cid) {
   legendCantonFilter = String(cid);
+  // Si un candidat était choroplèthé (mode candidat avec sélection), on revient
+  // au rendu "gagnants par bureau" : la sélection précédente porte sur un autre
+  // canton et n'aurait plus de sens dans la nouvelle vue.
+  if (currentMapMode === 'candidat' && currentMapSelection) {
+    clearMapSelection();
+    if (mainLayer) mainLayer.setStyle(featureStyle);
+    if (typeof writeURLState === 'function') writeURLState();
+  }
   renderMapLegend();
 }
 
@@ -5744,19 +5957,62 @@ function renderMapLegend() {
       const el0 = ELECTIONS[currentElection];
       const mapYear = String(el0 ? el0.my : CURRENT_ERA);
       const yearInfo = BUREAU_INFO[mapYear] || BUREAU_INFO[CURRENT_ERA] || {};
-      // Sécurité : si pas de canton sélectionné, prendre "1" par défaut
-      if (!['1','2','3'].includes(legendCantonFilter)) legendCantonFilter = '1';
+      // Liste DYNAMIQUE des cantons disponibles : pour les Départementales modernes
+      // (ère canton 2015) ce sera ['1','2','3'] ; pour les Cantonales 2011 (ère
+      // canton 1985, partielle), on ne montre que les cantons effectivement
+      // renouvelés (extraits de par_canton, sinon inférés depuis les bureaux).
+      let availableCantons = [];
+      if (el0 && el0.par_canton && Object.keys(el0.par_canton).length) {
+        availableCantons = Object.keys(el0.par_canton).sort((a,b) => parseInt(a) - parseInt(b));
+      } else {
+        // Fallback legacy : déduire des bureaux du sheet (utile pour les anciens
+        // formats multi-entrées qui n'ont pas par_canton).
+        const set = new Set();
+        Object.keys(shData).forEach(ns => {
+          const c = (yearInfo[ns]||{}).c;
+          if (c != null && c !== '') set.add(String(c));
+        });
+        availableCantons = [...set].sort((a,b) => parseInt(a) - parseInt(b));
+      }
+      // Cantons "pourvus au T1" : en T2, ils n'ont pas de sheet T2 (élu d'office).
+      // On les affiche grisés dans les tabs, désactivés, avec tooltip explicatif.
+      const cantonsPourvus = new Set();
+      if (currentSheet === 'T2' && el0 && el0.par_canton) {
+        Object.keys(el0.par_canton).forEach(c => {
+          const cd = el0.par_canton[c];
+          if (cd && cd.sheets && cd.sheets.T1 && !cd.sheets.T2) cantonsPourvus.add(String(c));
+        });
+      }
+      // Sécurité : le filtre ne peut pas pointer vers un canton absent OU un
+      // canton pourvu au T1 (sinon la liste candidats serait vide). On bascule
+      // sur le 1er canton valide.
+      const _validCantons = availableCantons.filter(c => !cantonsPourvus.has(c));
+      if (!availableCantons.includes(legendCantonFilter) || cantonsPourvus.has(legendCantonFilter)) {
+        legendCantonFilter = _validCantons[0] || availableCantons[0] || '1';
+      }
       // Tabs UI — sur mobile, placés en BAS de la légende (cf. ordre concat plus bas),
       // donc on remplace margin-bottom par margin-top pour préserver l'espacement.
       const _isMobLeg = window.matchMedia && window.matchMedia('(max-width: 720px)').matches;
       const _tabsMg = _isMobLeg ? 'margin-top:8px' : 'margin-bottom:6px';
-      cantonTabsHtml = '<div class="leg-canton-tabs" style="display:flex;gap:4px;'+_tabsMg+'">';
-      ['1','2','3'].forEach(cid => {
-        const sel = cid === legendCantonFilter;
-        cantonTabsHtml += '<button onclick="setLegendCanton(\''+cid+'\')" '
-          + 'style="flex:1;padding:3px 6px;border:1px solid '+(sel?'#1a1a2e':'#ccc')+';border-radius:4px;'
-          + 'background:'+(sel?'#1a1a2e':'#fff')+';color:'+(sel?'#fff':'#333')+';'
-          + 'cursor:pointer;font-size:0.7rem;font-weight:'+(sel?'700':'500')+';">Canton '+cid+'</button>';
+      // flex-wrap au cas où 5+ cantons (ex. Cantonales 2011) : on autorise un retour
+      // à la ligne plutôt que des boutons écrasés et illisibles.
+      cantonTabsHtml = '<div class="leg-canton-tabs" style="display:flex;flex-wrap:wrap;gap:4px;'+_tabsMg+'">';
+      availableCantons.forEach(c => {
+        const sel = c === legendCantonFilter;
+        const disabled = cantonsPourvus.has(c);
+        // Grisage par COULEUR (pas opacity) : sinon l'opacity du <button> se
+        // propage au pseudo ::after du tooltip → bulle illisible.
+        const _border = disabled ? '#e3e3e3' : (sel ? '#1a1a2e' : '#ccc');
+        const _bg     = disabled ? '#f5f5f5' : (sel ? '#1a1a2e' : '#fff');
+        const _fg     = disabled ? '#a8a8a8' : (sel ? '#fff'    : '#333');
+        const _cursor = disabled ? 'not-allowed' : 'pointer';
+        const _click  = disabled ? '' : ' onclick="setLegendCanton(\''+c+'\')"';
+        const _tip    = disabled ? ' class="has-tooltip" data-tooltip="Canton pourvu au premier tour"' : '';
+        const _dis    = disabled ? ' disabled' : '';
+        cantonTabsHtml += '<button'+_dis+_click+_tip+' '
+          + 'style="flex:1 0 auto;min-width:64px;padding:3px 6px;border:1px solid '+_border+';border-radius:4px;'
+          + 'background:'+_bg+';color:'+_fg+';cursor:'+_cursor+';'
+          + 'font-size:0.7rem;font-weight:'+(sel?'700':'500')+';">Canton '+c+'</button>';
       });
       cantonTabsHtml += '</div>';
       // Filtrer shData sur les bureaux du canton sélectionné
