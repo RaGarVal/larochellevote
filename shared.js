@@ -103,6 +103,11 @@ function elecTypePriority(label) {
   if (label.startsWith('Présidentielle')) return 1;
   if (label.startsWith('Législatives'))  return 2;
   if (label.startsWith('Municipales'))   return 3;
+  // Cantonales/Départementales : typiquement en mars, donc entre Municipales (3)
+  // et Européennes (4). Pour 2015, les Départementales (mars) précèdent ainsi
+  // les Régionales (décembre, priorité 5).
+  if (label.startsWith('Cantonales'))    return 3.5;
+  if (label.startsWith('Départementales')) return 3.5;
   if (label.startsWith('Européennes'))   return 4;
   if (label.startsWith('Régionales'))    return 5;
   if (label.startsWith('Référendum'))    return 6;
@@ -307,6 +312,111 @@ function setupAppMenu(opts) {
   window.ERAS = keys.length ? keys : ['2026'];
   window.CURRENT_ERA = window.ERAS[window.ERAS.length - 1];
 })();
+
+// ───────────────────────────────────────────────────────────────
+//  ÈRES CANTON — calculées dynamiquement depuis CANTON_INFO
+// ───────────────────────────────────────────────────────────────
+//  ERAS_CANTON          = liste des ères canton présentes en base, triées
+//                         (ex. ['1985','2015'] avec les données actuelles)
+//  CURRENT_ERA_CANTON   = la plus récente (= découpage cantonal actif)
+//
+//  Conventions :
+//   • CANTON_INFO[era].era_start = string année (= la clé era)
+//   • CANTON_INFO[era].era_end   = string année dernière OU null si actif
+//   • CANTON_INFO[era].cantons   = { id: { name, ... } }
+//
+//  Pré-requis : shared.js DOIT être chargé APRÈS donnees.js (qui définit CANTON_INFO).
+//  Si CANTON_INFO est absent (vieille version de donnees.js) : on retombe sur
+//  une ère unique "2015" avec les 3 cantons modernes, pour ne rien casser.
+(function () {
+  if (typeof CANTON_INFO === 'undefined' || !CANTON_INFO) {
+    window.ERAS_CANTON = ['2015'];
+    window.CURRENT_ERA_CANTON = '2015';
+    return;
+  }
+  const keys = Object.keys(CANTON_INFO).filter(k => /^\d{4}$/.test(k)).sort();
+  window.ERAS_CANTON = keys.length ? keys : ['2015'];
+  window.CURRENT_ERA_CANTON = window.ERAS_CANTON[window.ERAS_CANTON.length - 1];
+})();
+
+// ───────────────────────────────────────────────────────────────
+//  HELPERS CANTON
+// ───────────────────────────────────────────────────────────────
+
+// Retourne l'ère canton applicable à une ère bureau donnée.
+// Règle : on prend la plus récente ère canton dont era_start ≤ era_bureau.
+// Ex. era_bureau "1996" → era_canton "1985" (1985 ≤ 1996).
+// Ex. era_bureau "2026" → era_canton "2015" (2015 ≤ 2026).
+function getCantonEraForBureauEra(era_bureau) {
+  if (!era_bureau || typeof CANTON_INFO === 'undefined') return window.CURRENT_ERA_CANTON;
+  const eras = (window.ERAS_CANTON || []).slice().sort();
+  // On itère du plus récent au plus ancien : la 1re ère ≤ era_bureau est la bonne.
+  for (let i = eras.length - 1; i >= 0; i--) {
+    if (eras[i] <= era_bureau) return eras[i];
+  }
+  return eras[0] || window.CURRENT_ERA_CANTON;
+}
+
+// Retourne l'ère canton applicable à une élection.
+// Priorité : le champ ELECTIONS[label].my_canton s'il existe (explicite).
+// Sinon : on dérive depuis ELECTIONS[label].my (l'ère bureau) via getCantonEraForBureauEra.
+function getCantonEraForElection(electionLabel) {
+  if (typeof ELECTIONS === 'undefined' || !ELECTIONS[electionLabel]) return window.CURRENT_ERA_CANTON;
+  const e = ELECTIONS[electionLabel];
+  if (e.my_canton) return String(e.my_canton);
+  if (e.my) return getCantonEraForBureauEra(String(e.my));
+  return window.CURRENT_ERA_CANTON;
+}
+
+// Retourne l'id canton d'un bureau pour une ère bureau donnée (ou null si non
+// affecté — cas du bureau 0057 "Français de l'étranger" qui n'a pas de canton).
+function getCantonOfBureau(bureau, era_bureau) {
+  if (typeof BUREAU_INFO === 'undefined') return null;
+  const era = era_bureau || window.CURRENT_ERA;
+  const b = (BUREAU_INFO[era] || {})[bureau];
+  return (b && b.c) ? String(b.c) : null;
+}
+
+// Retourne tous les bureaux appartenant à un canton pour une ère bureau donnée.
+function getBureauxOfCanton(canton_id, era_bureau) {
+  if (typeof BUREAU_INFO === 'undefined') return [];
+  const era = era_bureau || window.CURRENT_ERA;
+  const out = [];
+  Object.entries(BUREAU_INFO[era] || {}).forEach(([bid, b]) => {
+    if (b && String(b.c) === String(canton_id)) out.push(bid);
+  });
+  return out;
+}
+
+// Vrai si une ère canton est encore active une année donnée (ou en cours).
+// Utilisé par l'analyse pour tronquer les courbes des cantons "morts".
+function isCantonEraAlive(era_canton, year) {
+  if (typeof CANTON_INFO === 'undefined' || !CANTON_INFO[era_canton]) return false;
+  const info = CANTON_INFO[era_canton];
+  const start = info.era_start ? parseInt(info.era_start, 10) : null;
+  const end = info.era_end ? parseInt(info.era_end, 10) : null;
+  const y = parseInt(year, 10);
+  if (start && y < start) return false;
+  if (end && y > end) return false;
+  return true;
+}
+
+// Vrai si une élection est de type cantonal/départemental.
+// Sécurité : utilise regex sur le label pour ne pas dépendre d'une convention
+// spécifique (ex. ELECTIONS[label].scrutin_type).
+function isCantonalElection(electionLabel) {
+  if (!electionLabel) return false;
+  return /^(Cantonales|Départementales)\b/i.test(electionLabel);
+}
+
+// Pour une élection cantonale dont le label se termine par "— La Rochelle-N",
+// retourne le cid ("1", "2", "3", ...). Sinon null.
+// Exemple : "Départementales 2015 — La Rochelle-1" → "1"
+function getCantonOfElection(electionLabel) {
+  if (!electionLabel) return null;
+  const m = String(electionLabel).match(/—\s*La Rochelle-(\d+)\s*$/);
+  return m ? m[1] : null;
+}
 
 // ───────────────────────────────────────────────────────────────
 //  VALIDATION DES DONNÉES — warnings console au démarrage

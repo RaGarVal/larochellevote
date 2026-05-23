@@ -39,7 +39,8 @@ const CHAPEAU  = '📊 La Rochelle Vote — La donnée du jour';
 const PROBA = {
   carte:    0.25,
   bureau:   0.50,
-  quartier: 0.20,
+  quartier: 0.15,
+  canton:   0.05,
   global:   0.05,
 };
 
@@ -133,6 +134,30 @@ Les résultats de ce quartier, et tous les autres, sur {site_url}`,
 
 Les résultats de ce quartier, et tous les autres, sur {site_url}`,
 
+  // ── FICHE CANTON ───────────────────────────────────────────────────────────
+  // Vue panneau d'un canton moderne (2015→). Texte : gagnant dans ce canton.
+
+  canton_presidentielle:
+`${CHAPEAU}
+
+{emoji} Le {date_election}, pour la {election} {tour}, {prenom_nom} ({parti}) arrive en tête avec {score} % dans le canton de {canton_nom}.
+
+Les résultats de ce canton, et tous les autres, sur {site_url}`,
+
+  canton_referendum:
+`${CHAPEAU}
+
+{emoji} Le {date_election}, pour le {election}, le {reponse} est arrivé en tête avec {score} % dans le canton de {canton_nom}.
+
+Les résultats de ce canton, et tous les autres, sur {site_url}`,
+
+  canton_autres:
+`${CHAPEAU}
+
+{emoji} Le {date_election}, pour les {election} {tour}, {prenom_nom} ({parti}) arrive en tête avec {score} % dans le canton de {canton_nom}.
+
+Les résultats de ce canton, et tous les autres, sur {site_url}`,
+
   // ── FICHE GLOBAL ───────────────────────────────────────────────────────────
   // Vue résultats ville entière. Texte : gagnant à La Rochelle.
 
@@ -163,6 +188,7 @@ const FALLBACK = {
   carte:    ['carte', 'global'],
   bureau:   ['bureau', 'quartier', 'global'],
   quartier: ['quartier', 'global'],
+  canton:   ['canton', 'global'],
   global:   ['global'],
 };
 
@@ -203,6 +229,8 @@ const DATES = {
   'Référendum 1992':     { TU: '20 septembre 1992'   },
   'Référendum 2000':     { TU: '24 septembre 2000'   },
   'Référendum 2005':     { TU: '29 mai 2005'         },
+  'Départementales 2015': { T1: '22 mars 2015', T2: '29 mars 2015' },
+  'Départementales 2021': { T1: '20 juin 2021', T2: '27 juin 2021'  },
   'Régionales 1992':     { TU: '22 mars 1992'        },
   'Régionales 1998':     { TU: '15 mars 1998'        },
   'Régionales 2004':     { T1: '21 mars 2004',       T2: '28 mars 2004'     },
@@ -314,23 +342,27 @@ function electionSuffix(label) {
 }
 
 // Type de scrutin canonique (axe utilisé par le rééquilibrage auto-correctif).
-// 6 catégories distinctes, indépendamment de l'année.
+// 7 catégories distinctes, indépendamment de l'année.
 function electionScrutin(label) {
-  if (/présidentielle/i.test(label)) return 'presidentielle';
-  if (/référendum/i.test(label))     return 'referendum';
-  if (/législative/i.test(label))    return 'legislatives';
-  if (/municipale/i.test(label))     return 'municipales';
-  if (/régionale/i.test(label))      return 'regionales';
-  if (/européenne/i.test(label))     return 'europeennes';
+  if (/présidentielle/i.test(label))             return 'presidentielle';
+  if (/référendum/i.test(label))                 return 'referendum';
+  if (/législative/i.test(label))                return 'legislatives';
+  if (/municipale/i.test(label))                 return 'municipales';
+  // "Départementales" / "Cantonales" : avant "regionales" pour ne pas
+  // que le match "régionale" remonte sur "départementales régionale" par accident.
+  if (/^(d[ée]partementales|cantonales)/i.test(label)) return 'departementales';
+  if (/régionale/i.test(label))                  return 'regionales';
+  if (/européenne/i.test(label))                 return 'europeennes';
   return 'autres';
 }
 
 function electionEmoji(label) {
-  if (/présidentielle/i.test(label))       return '👤';
-  if (/référendum/i.test(label))           return '🗳️';
-  if (/législative/i.test(label))          return '🏛️';
-  if (/municipale|régionale/i.test(label)) return '🏙️';
-  if (/européenne/i.test(label))           return '🇪🇺';
+  if (/présidentielle/i.test(label))                   return '👤';
+  if (/référendum/i.test(label))                       return '🗳️';
+  if (/législative/i.test(label))                      return '🏛️';
+  if (/^(d[ée]partementales|cantonales)/i.test(label)) return '🧩';
+  if (/municipale|régionale/i.test(label))             return '🏙️';
+  if (/européenne/i.test(label))                       return '🇪🇺';
   return '🗳️';
 }
 
@@ -353,10 +385,11 @@ function getDate(electionLabel, tour) {
 // d'un run à l'autre (par ex. tour='TU' pour les scrutins à tour unique).
 // Pour le niveau 'carte', subCarte ∈ {'gagnants', 'candidat'} permet de distinguer
 // la carte mosaïque classique de la carte heatmap d'un candidat précis (suffixé "|cand:<nom>").
-function computeSignature(niveau, election, tour, bureau, quartier, subCarte, candidatName) {
+function computeSignature(niveau, election, tour, bureau, quartier, subCarte, candidatName, canton) {
   const niv = String(niveau || 'global').split(' ')[0]; // retire "(forcé)" éventuel
   if (niv === 'bureau'   && bureau)   return `bureau|${election}|${tour}|${bureau}`;
   if (niv === 'quartier' && quartier) return `quartier|${election}|${tour}|${quartier}`;
+  if (niv === 'canton'   && canton)   return `canton|${election}|${tour}|${canton}`;
   if (niv === 'carte') {
     if (subCarte === 'candidat' && candidatName) return `carte|${election}|${tour}|cand:${candidatName}`;
     return `carte|${election}|${tour}`;
@@ -486,10 +519,19 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
       });
     });
 
-    return { elections, electionEra, electionTours, bureauxParElection, bureauxByEra, quartiersByEra };
+    // Cantons modernes (ère 2015 uniquement pour les tweets) — 3 cantons.
+    // On ne tire pas sur les anciens cantons (1985:N) : trop techniques pour un tweet public.
+    const cantonsModernes = {}; // { cid: name }
+    if (typeof CANTON_INFO !== 'undefined' && CANTON_INFO['2015']) {
+      Object.entries(CANTON_INFO['2015'].cantons || {}).forEach(([cid, meta]) => {
+        cantonsModernes[cid] = meta.name || ('La Rochelle-' + cid);
+      });
+    }
+
+    return { elections, electionEra, electionTours, bureauxParElection, bureauxByEra, quartiersByEra, cantonsModernes };
   });
 
-  const { elections, electionEra, electionTours, bureauxParElection, bureauxByEra, quartiersByEra } = siteData;
+  const { elections, electionEra, electionTours, bureauxParElection, bureauxByEra, quartiersByEra, cantonsModernes } = siteData;
 
   // ── 2bis. Cibles dynamiques par type de scrutin (option B) ────────────────
   // Pour chaque scrutin, on compte les instances (élection × tour) disponibles ;
@@ -527,6 +569,7 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
   const forcedTour     = process.env.TOUR     || rdv?.tour     || null;
   const forcedBureau   = process.env.BUREAU   || rdv?.bureau   || null;
   const forcedQuartier = process.env.QUARTIER || rdv?.quartier || null;
+  const forcedCanton   = process.env.CANTON   || rdv?.canton   || null;
 
   // Charge l'historique et calcule l'ensemble des signatures interdites (≤ COOLDOWN_DAYS jours).
   const { banned: bannedSignatures, history: tweetHistory } = loadBannedSignatures(today);
@@ -553,7 +596,7 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
     Object.entries(subCarteProba).map(([k, v]) => [k, (v * 100).toFixed(1) + '%'])
   ));
 
-  let niveau, election, tour, bureau, quartier, subCarte, candidatPicked;
+  let niveau, election, tour, bureau, quartier, canton, subCarte, candidatPicked;
   let era, bureauxInfoEra, quartiersBureauxEra, quartiersEra;
   let signature;
   const MAX_RETRIES = 30;
@@ -581,12 +624,14 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
     tour     = forcedTour;
     bureau   = forcedBureau;
     quartier = forcedQuartier;
+    canton   = forcedCanton;
 
-    // Normaliser 'fiche' (alias dans schedule.json) → bureau/quartier/global selon les params
+    // Normaliser 'fiche' (alias dans schedule.json) → bureau/quartier/canton/global selon les params
     if (niveau === 'fiche') {
       if (bureau)        niveau = 'bureau';
       else if (quartier) niveau = 'quartier';
-      else               niveau = pickWeighted({ bureau: 0.6, quartier: 0.3, global: 0.1 });
+      else if (canton)   niveau = 'canton';
+      else               niveau = pickWeighted({ bureau: 0.6, quartier: 0.25, canton: 0.10, global: 0.05 });
     }
 
     // Déterminer le tour
@@ -608,6 +653,13 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
     }
     if ((niveau === 'quartier' || (niveau === 'bureau' && !bureau)) && !quartier) {
       quartier = pickRandom(quartiersEra);
+    }
+    // Canton : on tire uniquement parmi les cantons modernes (3 cantons ère 2015).
+    // Ces 3 cantons s'appliquent à toutes les élections (rétro-agrégées via
+    // CANTON_CORRESPONDANCES pour les élections antérieures à 2015).
+    if (niveau === 'canton' && !canton) {
+      const availableCidsCanton = Object.keys(cantonsModernes || {});
+      if (availableCidsCanton.length) canton = pickRandom(availableCidsCanton);
     }
 
     // ── Étape 3 : sous-type carte (rééquilibré) + tirage candidat pondéré si "candidat"
@@ -655,7 +707,7 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
       }
     }
 
-    signature = computeSignature(niveau, election, tour, bureau, quartier, subCarte, candidatPicked);
+    signature = computeSignature(niveau, election, tour, bureau, quartier, subCarte, candidatPicked, canton);
     if (!bannedSignatures.has(signature)) {
       if (attempt > 1) console.log(`✅ Signature libre trouvée à l'essai ${attempt}/${MAX_RETRIES}`);
       break;
@@ -663,7 +715,7 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
     console.log(`🔁 Essai ${attempt}/${MAX_RETRIES} — signature déjà publiée : ${signature}`);
 
     // Si tout est forcé (env vars ou rdv complet), inutile de retenter : la signature est figée.
-    if (forcedNiveau && forcedElection && (forcedBureau || forcedQuartier || forcedNiveau === 'global' || forcedNiveau === 'carte')) {
+    if (forcedNiveau && forcedElection && (forcedBureau || forcedQuartier || forcedCanton || forcedNiveau === 'global' || forcedNiveau === 'carte')) {
       console.warn(`⚠️  Combinaison entièrement forcée — on accepte la duplication.`);
       break;
     }
@@ -675,7 +727,7 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
 
   const suffix = electionSuffix(election);
   const isRef  = suffix === 'referendum';
-  console.log(`📌 Niveau : ${niveau}${subCarte ? '/' + subCarte : ''} | ${election} | Tour : ${tour} | Bureau : ${bureau||'—'} | Quartier : ${quartier||'—'}${candidatPicked ? ' | Candidat : ' + candidatPicked : ''}`);
+  console.log(`📌 Niveau : ${niveau}${subCarte ? '/' + subCarte : ''} | ${election} | Tour : ${tour} | Bureau : ${bureau||'—'} | Quartier : ${quartier||'—'} | Canton : ${canton||'—'}${candidatPicked ? ' | Candidat : ' + candidatPicked : ''}`);
   console.log(`🔖 Signature : ${signature}`);
 
   // ── 4. Extraire les données électorales ───────────────────────────────────
@@ -683,7 +735,20 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
   // cityWinner par les données de CE candidat précis, et bestBureau pointe vers
   // son meilleur bureau personnel (pas celui du gagnant ville). Le texte du tweet
   // utilise ainsi les mêmes canevas, juste avec un sujet différent.
-  const elecData = await page.evaluate((el, tr, bur, qrt, bureausDuQuartier, isRef, subjectCandidate) => {
+  // Bureaux composant le canton choisi à l'ère de l'élection (pour les modernes,
+  // rétro-agrégés via CANTON_CORRESPONDANCES pour les ères < 2015).
+  const cantonBureaux = canton ? await page.evaluate((cid, eraB) => {
+    const eraNum = parseInt(eraB);
+    if (eraNum >= 2015) {
+      return Object.entries(BUREAU_INFO[eraB] || {})
+        .filter(([, b]) => String(b.c || '') === String(cid))
+        .map(([id]) => id);
+    }
+    if (typeof CANTON_CORRESPONDANCES === 'undefined') return [];
+    return (CANTON_CORRESPONDANCES['2015:' + cid] || {})[eraB] || [];
+  }, canton, era) : null;
+
+  const elecData = await page.evaluate((el, tr, bur, qrt, bureausDuQuartier, bureausDuCanton, isRef, subjectCandidate) => {
     const sheets = ELECTIONS?.[el]?.sheets || {};
     const sheet  = sheets[tr] || sheets.TU || sheets[Object.keys(sheets)[0]];
     if (!sheet) return null;
@@ -760,6 +825,13 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
       quartierWinner = qData.ranked[0] || null;
     }
 
+    // Gagnant dans un canton (agrégation des bureaux du canton)
+    let cantonWinner = null;
+    if (bureausDuCanton?.length) {
+      const cData = aggregate(bureausDuCanton.filter(n => sheet[n]));
+      cantonWinner = cData.ranked[0] || null;
+    }
+
     // Cas référendum : remplacer le candidat par Oui/Non
     function toRef(winner, nums) {
       if (!winner) return null;
@@ -774,6 +846,7 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
       cityWinner   && Object.assign(cityWinner,    toRef(cityWinner,    allNums));
       bureauWinner && Object.assign(bureauWinner,  toRef(bureauWinner,  bur ? [bur] : []));
       quartierWinner && Object.assign(quartierWinner, toRef(quartierWinner, bureausDuQuartier || []));
+      cantonWinner   && Object.assign(cantonWinner,   toRef(cantonWinner,   bureausDuCanton   || []));
       // Sur référendum, pas de subCarte='candidat' (cf. ligne ~618), donc
       // carteSubject === cityWinner par construction. On le réaligne après
       // mutation par toRef pour éviter toute divergence accidentelle.
@@ -790,9 +863,9 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
       }
     }
 
-    return { cityWinner, carteSubject, bestBureau, bestBureauPct, bureauWinner, quartierWinner };
+    return { cityWinner, carteSubject, bestBureau, bestBureauPct, bureauWinner, quartierWinner, cantonWinner };
 
-  }, election, tour, bureau, quartier, bureau ? null : (quartiersBureauxEra[quartier] || null), isRef, candidatPicked);
+  }, election, tour, bureau, quartier, bureau ? null : (quartiersBureauxEra[quartier] || null), cantonBureaux, isRef, candidatPicked);
 
   if (!elecData) {
     console.error('❌ Données introuvables. Abandon.');
@@ -840,13 +913,14 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
     quartier:     bInfo.quartier || '',
   };
 
-  // Construit l'URL profonde vers la vue exacte du tweet (carte/bureau/quartier/global)
+  // Construit l'URL profonde vers la vue exacte du tweet (carte/bureau/quartier/canton/global)
   function buildDeepLink(niv) {
     const params = new URLSearchParams();
     params.set('election', election);
     if (tour && tour !== 'TU')        params.set('tour',     tour);
     if (niv === 'bureau'   && bureau) params.set('bureau',   bureau);
     if (niv === 'quartier' && quartier) params.set('quartier', quartier);
+    if (niv === 'canton'   && canton) params.set('canton',   canton);
     if (niv === 'global')             params.set('tab',      'global');
     // Carte candidat : précharger la heatmap du bon candidat
     if (niv === 'carte' && subCarte === 'candidat' && candidatPicked) {
@@ -873,6 +947,10 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
     } else if (niv === 'quartier') {
       winner = elecData.quartierWinner;
       extra  = { quartier: quartier || bInfo.quartier || '?' };
+    } else if (niv === 'canton') {
+      winner = elecData.cantonWinner;
+      // Le nom du canton (ex. "La Rochelle-1") vient de cantonsModernes calculé plus haut.
+      extra  = { canton_nom: (cantonsModernes && canton) ? (cantonsModernes[canton] || ('La Rochelle-' + canton)) : '?' };
     } else { // global
       // ATTENTION : on utilise cityWinner (vrai gagnant ville), pas carteSubject.
       // Sinon une cascade carte/candidat → global afficherait "X arrive en tête à
@@ -953,6 +1031,7 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
   if (tour && tour !== 'TU') params.set('tour', tour);
   if (urlNiveau === 'bureau'   && bureau)   params.set('bureau',   bureau);
   if (urlNiveau === 'quartier' && quartier) params.set('quartier', quartier);
+  if (urlNiveau === 'canton'   && canton)   params.set('canton',   canton);
   if (urlNiveau === 'global')               params.set('tab',      'global');
   // Carte candidat : sélectionne le bon candidat pour que la heatmap s'affiche
   // (mode 'candidat' est déjà le défaut côté LRVcarte.html — pas besoin de mode=).
@@ -1057,7 +1136,7 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
   fs.writeFileSync(path.join(outDir, 'image.png'),  screenshotBuffer);
   fs.writeFileSync(path.join(outDir, 'tweet.txt'),  tweetText, 'utf8');
   fs.writeFileSync(path.join(outDir, 'meta.json'),  JSON.stringify({
-    date: today, niveau: niveauFinal, election, tour, bureau, quartier,
+    date: today, niveau: niveauFinal, election, tour, bureau, quartier, canton,
     subtype: subCarte || null,
     candidat: candidatPicked || null,
     signature,

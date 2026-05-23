@@ -45,6 +45,49 @@ La fonction `candInfo(name)` dans LRVcarte essaie dans cet ordre :
 ### Bureau `0057`
 Bureau non-géographique (Français de l'étranger / détenus). Exclu de la plupart des calculs via `NON_GEO = new Set(['0057'])`.
 
+### Cantons (cf. roadmap cantonales/départementales)
+- **`BUREAU_INFO[era][bureau].c`** : id canton du bureau pour cette ère (string `"1"` à `"9"` selon ère).
+- **`CANTON_INFO[era_canton]`** : 2 ères actuellement présentes :
+  - `"1985"` (era_start `"1985"`, era_end `"2014"`) : 9 cantons (couvre 1988-2014).
+  - `"2015"` (era_start `"2015"`, era_end `null`) : 3 cantons modernes.
+  - Pas de données < 1988 → ères canton `"1973"` et `"1982"` non encore peuplées.
+- **`fmtCanton(c)`** dans LRVcarte : retourne `"La Rochelle-" + c` (convention nom = numéro).
+- **Helpers shared.js** :
+  - `ERAS_CANTON` / `CURRENT_ERA_CANTON` (dynamiques)
+  - `getCantonEraForBureauEra(era_bureau)` — règle "la plus récente ère canton ≤ era_bureau"
+  - `getCantonEraForElection(label)` — utilise `ELECTIONS[label].my_canton` si présent, sinon inférence
+  - `getCantonOfBureau(bureau, era)` / `getBureauxOfCanton(canton_id, era)`
+  - `isCantonEraAlive(era_canton, year)` — true si year ∈ [era_start, era_end]. Sert à tronquer les courbes des cantons disparus en mode analyse.
+  - `isCantonalElection(label)` — regex sur `Cantonales|Départementales`.
+  - `getCantonOfElection(label)` — extrait le cid depuis un label `"Départementales YYYY — La Rochelle-N"` → `"N"`. Retourne `null` si le label n'a pas ce suffixe.
+- **`CANTON_CORRESPONDANCES["2015:<cid>"][era]`** : pour chaque canton moderne (1/2/3), la liste des bureaux historiques agrégés rétroactivement à l'ère donnée. Permet d'afficher les courbes "canton moderne" pour les élections antérieures à 2015. Inféré automatiquement (5 cas ambigus résolus au majoritaire), corrigeable via la modal d'édition de LRVanalyse (mode admin → niveau Canton → bouton "Vérifier les correspondances"). Un bureau peut appartenir à plusieurs cantons simultanément (comptage entier dans chacun, comme les quartiers partagés `"A/B"`).
+- **Convention analyse** : on met en avant les 3 cantons modernes (ère 2015) qui agrègent rétroactivement toutes les élections, mais on garde l'accès aux 9 cantons historiques (ère 1985) avec leur courbe tronquée à 2014.
+- **Convention carte** : fidèle à l'historique. Une cantonale 1988 affiche les cantons de l'ère 1985 ; une départementale 2026 affiche les 3 cantons modernes.
+
+### Élections cantonales / départementales (multi-circonscription)
+Les Départementales (et anciennes Cantonales) sont enregistrées comme **une seule entrée** ELECTIONS avec une structure `par_canton` :
+```js
+ELECTIONS["Départementales 2015"] = {
+  my: "2015",
+  my_canton: "2015",
+  par_canton: {
+    "1": { sheets: { T1: { "0001": {...}, ... }, T2: {...} } },
+    "2": { sheets: { ... } },
+    "3": { sheets: { ... } }
+  }
+}
+```
+Un IIFE en queue de `donnees.js` (avant celui de conversion voix→pct) "applatit" `par_canton[cid].sheets` dans `el.sheets` au chargement. Le reste du code lit `el.sheets[tour][bureau]` comme pour une élection normale — chaque bureau ne figure que dans le canton auquel il appartient, donc pas de collision.
+
+- **Détection** via `isCantonalElection(label)` (regex `^(Cantonales|Départementales)\b`).
+- **`getCantonOfElection(label)`** : retourne le cid si le label contient `— La Rochelle-N` (format legacy multi-entrées), sinon `null` (format `par_canton` actuel).
+- **Fiche globale ville désactivée** : `openGlobalOverlay` / `refreshOverlayIfOpen` redirigent automatiquement vers `selectCantonFromList(cid)` avec cid déterminé par : (1) suffix label si présent, sinon (2) canton du `currentFeature`, sinon (3) fallback canton 1.
+- **LRVanalyse — niveau Ville** : `getVilleData` exclut les élections cantonales.
+- **LRVanalyse — niveau Canton** : `getCantonData` lit `el.sheets` (fusionnée) en filtrant par les bureaux dont `BUREAU_INFO[era].c === cid`. Pour le format legacy à suffix, on vérifie aussi que `getCantonOfElection(label) === cid`.
+- **HAS_T2** : la départementale (label sans suffix) est dans `HAS_T2`.
+- **Daily-capture** : `electionScrutin` retourne `'departementales'`, `electionEmoji` retourne 🧩, `DATES` contient une seule entrée.
+- **Tweet** : pour une élection cantonale, le niveau "global" doit logiquement basculer en "canton" (à surveiller, non-bloquant tant que les sheets sont vides).
+
 ---
 
 ## ➕ Procédure complète : Ajouter une élection
@@ -127,6 +170,8 @@ Script Node qui charge donnees.js et vérifie :
 **À l'écriture** dans `donnees.js` : VOIX entières.
 **Au runtime** après l'IIFE : pct floats + `_voix` en sauvegarde.
 Si on stocke par erreur en pct, l'IIFE re-divise → valeurs aberrantes. Symptôme : sommes des c par bureau = 20% au lieu de 100%.
+
+**⚠️ PIÈGE MAJEUR — modifier ELECTIONS via Node** : ne JAMAIS faire `require('donnees.js')` puis `JSON.stringify(ELECTIONS)` pour réécrire le fichier — le require exécute l'IIFE de conversion qui transforme les voix en pct, et la sérialisation persiste les PCT comme si c'étaient des voix. Au prochain reload, l'IIFE re-divise → toutes les valeurs sont écrasées par des microscores ~0.01%. Toujours éditer le source en **mode textuel** (regex / Edit avec contexte exact / insertion ciblée) sans passer par require().
 
 ### Excel : colonnes % désynchronisées
 Le fichier xlsx standard a un bug : les colonnes % (cols 8-26 typiquement) ont été triées par valeur sans que les headers le soient → l'association cand↔pct est cassée. **Toujours utiliser les colonnes voix** (cols 30-48) et recalculer les pct.

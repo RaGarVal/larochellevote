@@ -64,7 +64,7 @@
     "mainEntity": {
       "@type": "Dataset",
       "name": "Archives électorales de La Rochelle, 1988-2026",
-      "description": "Résultats par bureau de vote pour 35 élections et 2 référendums organisés à La Rochelle entre 1988 et 2026.",
+      "description": "Résultats par bureau de vote pour 37 élections et 2 référendums organisés à La Rochelle entre 1988 et 2026.",
       "url": "https://larochellevote.fr/",
       "creator": {
         "@type": "Person",
@@ -374,6 +374,30 @@ select#el-select {
 /* Grid 2 colonnes × 2 lignes : aligne nom/% et parti/voix par ligne, baselines respectées */
 .cand-top  { display: grid; grid-template-columns: 1fr auto; column-gap: 10px; margin-bottom: 3px; align-items: baseline; }
 .cand-name { font-size: 0.84rem; font-weight: 700; color: var(--text-modal); min-width: 0; }
+/* Binôme paritaire en mode liste (sidebar compact) : tronque le label "Nom1 / Nom2"
+   avec ellipsis quand il dépasse la largeur disponible.
+   - On garde le flex défaut (0 1 auto) : le nom prend sa largeur NATURELLE quand
+     ça rentre, ce qui laisse le parti juste à côté du nom (séparé par le gap:8px
+     du parent) — et pas accolé au score à droite.
+   - min-width:0 : autorise le shrink sous la largeur de contenu pour activer
+     text-overflow:ellipsis. Sans ça, le min flex item = min-content empêche
+     l'ellipsis et la wrap-line se déclenche à la place.
+   - display:block : text-overflow:ellipsis ne fonctionne pas sur inline.
+   - Le full reste accessible via le title HTML (tooltip natif au survol). */
+.cand-name.cand-name-binome {
+  min-width: 0;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Container parent (nom + parti) en mode binôme : force flex-wrap:nowrap pour
+   GARANTIR que le parti ne passe jamais en 2e ligne même quand le navigateur
+   hésite entre shrink et wrap. Le shrink du .cand-name.cand-name-binome (via
+   min-width:0) est alors le seul mécanisme d'adaptation → ellipsis sur le nom. */
+.cand-namesub-binome {
+  flex-wrap: nowrap !important;
+}
 .cand-sub  { font-size: 0.66rem; color: var(--text-meta); margin-top: 2px; display: flex; flex-wrap: wrap; gap: 0 8px; }
 .cand-pct  { font-size: 0.84rem; font-weight: 800; color: var(--text-modal); text-align: right; }
 .cand-voix { font-size: 0.66rem; color: var(--text-modal-muted); text-align: right; }
@@ -469,6 +493,20 @@ select#el-select {
   flex-shrink: 0; box-sizing: border-box;
   border-bottom: 3px solid transparent; transition: background 0.3s, border-color 0.3s;
   box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  position: relative; /* permet le ::after bicolor pour binôme à 2 vrais partis */
+}
+/* Barre bicolore du topbar de fiche quand winner = binôme à 2 vrais partis.
+   ::after couvre la border-bottom area (3px en bas × largeur du topbar) avec
+   un split horizontal gauche/droite — orientation lisible sur une bande longue
+   et fine (~plusieurs centaines de px de large × 3px de haut). */
+#ov-topbar.ov-topbar-bicolor::after {
+  content: '';
+  position: absolute;
+  bottom: -3px; /* recouvre exactement la border-bottom (transparent dans ce cas) */
+  left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(to right, var(--ov-acc-c1) 50%, var(--ov-acc-c2) 50%);
+  pointer-events: none;
 }
 #ov-back {
   background: var(--bg-modal-hover); border: none; color: var(--text-modal);
@@ -483,8 +521,10 @@ select#el-select {
 /* Noms de candidats : par défaut on affiche le prénom complet ("Jean-Luc").
    La version courte ("J.-L.") n'apparaît QUE si le JS a détecté que le nom
    complet déborde de son conteneur, auquel cas il ajoute la classe
-   "prenom-abbrev" sur le .cand-name parent (cf. adjustCandNameAbbreviation). */
-.cand-name .cn-prenom-short { display: none; }
+   "prenom-abbrev" sur le .cand-name parent (cf. adjustCandNameAbbreviation).
+   Règle globale : le short est TOUJOURS masqué par défaut. Activé par .prenom-abbrev
+   sur un parent (.cand-name dans le mode liste, .duel-nom-host en duel). */
+.cn-prenom-short { display: none; }
 .cand-name.prenom-abbrev .cn-prenom-full  { display: none; }
 .cand-name.prenom-abbrev .cn-prenom-short { display: inline; }
 /* Palier ultime de la cascade : masquer totalement le prénom (initiales comprises).
@@ -516,6 +556,9 @@ select#el-select {
 #ov-body { flex: 1; overflow-y: auto; padding: 20px 24px; position: relative; }
 /* Languette d'accès à la fiche globale (mobile uniquement, sur la map). */
 #global-tab { display: none; }
+/* Languettes par canton (mobile uniquement, en cantonale/départementale).
+   Remplacent #global-tab quand body.is-cantonal est posé. */
+#cantons-tabs { display: none; }
 
 /* Languette d'accès à la liste de nav (mobile uniquement, sur fiche bureau/quartier). */
 #nav-tab { display: none; }
@@ -554,6 +597,11 @@ select#el-select {
   transition-delay: calc(var(--i, 0) * 90ms);
 }
 .fiche-sail.reveal .sail-row { clip-path: inset(0 0 0 0); }
+/* Voile bicolore (binôme à 2 vrais partis) : 5 premières rows (du haut) en --c1,
+   5 dernières en --c2. Le --c reste défini comme fallback (= --c1) pour les
+   transitions / themes existants. */
+.fiche-sail.bicolor .sail-row:nth-child(-n+5) { background-color: var(--c1); }
+.fiche-sail.bicolor .sail-row:nth-child(n+6)  { background-color: var(--c2); }
 
 /* Mode sombre : très léger halo clair autour des voiles (logo topbar + fiches)
    pour les détacher du fond sombre tout en préservant les couleurs partis. */
@@ -677,16 +725,16 @@ select#el-select {
 .fiche-sub{font-size:0.77rem;color:var(--text-modal-muted);margin-top:2px}
 /* Bureau list (mode fiche ouverte) — flex:1 = remplit toute la hauteur dispo de la sidebar */
 /* Listes déroulables (bureaux + quartiers) en mode fiche ouverte */
-#sb-bureau-list,#sb-quartier-list{min-height:0;display:none;flex-direction:column;overflow:hidden;}
-#sb-bureau-list.expanded,#sb-quartier-list.expanded{flex:1 1 0;min-height:0;}
+#sb-bureau-list,#sb-quartier-list,#sb-canton-list{min-height:0;display:none;flex-direction:column;overflow:hidden;}
+#sb-bureau-list.expanded,#sb-quartier-list.expanded,#sb-canton-list.expanded{flex:1 1 0;min-height:0;}
 /* En mode fiche, le sidebar prend toute la hauteur dispo (pour permettre le 50/50 strict des listes) */
 #sidebar.fiche-list-mode{height:calc(100vh - 118px); height:calc(100dvh - 118px);}
-#sb-bureau-list.collapsed,#sb-quartier-list.collapsed{flex:0 0 auto;}
-#sb-bureau-list.expanded .sb-list-body,#sb-quartier-list.expanded .sb-list-body{flex:1 1 auto;overflow-y:auto;display:block;}
-#sb-bureau-list.collapsed .sb-list-body,#sb-quartier-list.collapsed .sb-list-body{display:none;}
+#sb-bureau-list.collapsed,#sb-quartier-list.collapsed,#sb-canton-list.collapsed{flex:0 0 auto;}
+#sb-bureau-list.expanded .sb-list-body,#sb-quartier-list.expanded .sb-list-body,#sb-canton-list.expanded .sb-list-body{flex:1 1 auto;overflow-y:auto;display:block;}
+#sb-bureau-list.collapsed .sb-list-body,#sb-quartier-list.collapsed .sb-list-body,#sb-canton-list.collapsed .sb-list-body{display:none;}
 .sb-list-toggle{cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between;gap:8px;}
 .sb-list-toggle .chevron{transition:transform 0.15s;font-size:0.85rem;color:var(--text-meta);}
-.sb-list-container.collapsed .sb-list-toggle .chevron,#sb-bureau-list.collapsed .sb-list-toggle .chevron,#sb-quartier-list.collapsed .sb-list-toggle .chevron{transform:rotate(-90deg);}
+.sb-list-container.collapsed .sb-list-toggle .chevron,#sb-bureau-list.collapsed .sb-list-toggle .chevron,#sb-quartier-list.collapsed .sb-list-toggle .chevron,#sb-canton-list.collapsed .sb-list-toggle .chevron{transform:rotate(-90deg);}
 .blist-hdr{padding:8px 16px;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-meta);border-bottom:1px solid var(--border-soft);background:var(--bg-card-header);flex-shrink:0;}
 .blist-row{display:flex;align-items:center;gap:8px;padding:6px 16px;cursor:pointer;border-bottom:1px solid var(--border-soft);transition:background 0.1s;}
 .blist-row:hover{background:var(--bg-modal-hover);}.blist-row.cur{background:var(--bg-modal-accent);}
@@ -1073,6 +1121,44 @@ select#el-select {
   /* Cachée dès qu'une fiche est ouverte (sinon recouvre la fiche) */
   body:has(#overlay.show) #global-tab { display: none; }
 
+  /* Languettes par canton (cantonale/départementale mobile) : stack vertical à
+     mi-hauteur du viewport, mêmes styles que #global-tab. Visible UNIQUEMENT
+     quand body.is-cantonal (et automatiquement #global-tab masqué). */
+  body.is-cantonal #global-tab { display: none !important; }
+  body.is-cantonal #cantons-tabs {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: fixed;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 250;
+  }
+  #cantons-tabs .canton-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    background: var(--bg-card);
+    color: var(--text-modal);
+    border: 1px solid var(--border-modal);
+    border-left: none;
+    border-radius: 0 8px 8px 0;
+    padding: 8px 5px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    box-shadow: 2px 3px 10px rgba(0,0,0,0.18);
+  }
+  #cantons-tabs .canton-tab:hover { background: var(--bg-modal-hover); }
+  #cantons-tabs .canton-tab:active { transform: scale(0.96); }
+  /* Cachée dès qu'une fiche est ouverte (cohérent avec #global-tab). */
+  body:has(#overlay.show) #cantons-tabs { display: none !important; }
+
   /* Languette gauche minimaliste : "Liste" vertical + chevron, visible UNIQUEMENT sur fiche bureau ou quartier */
   #nav-tab {
     flex-direction: column;
@@ -1393,6 +1479,12 @@ select#el-select {
     transition: clip-path 0.7s cubic-bezier(0.25, 0.1, 0.25, 1);
   }
   .fiche-sail.reveal { clip-path: inset(0 0 0 0); }   /* révélé : top → bottom */
+  /* Voile mobile bicolore (binôme à 2 vrais partis) : sail-rows masquées en mobile,
+     on remplace donc le background uni par un linear-gradient vertical (moitié haute
+     c1, moitié basse c2). Spécificité .fiche-sail.bicolor > .fiche-sail. */
+  .fiche-sail.bicolor {
+    background: linear-gradient(to bottom, var(--c1) 50%, var(--c2) 50%);
+  }
 
   /* ─────────────────────────────────────────────────────────────────
      TAP TARGETS — confort tactile (cible WCAG : 44×44 px)
@@ -1501,14 +1593,60 @@ input:focus-visible,
    blocs alignés à gauche, positif pour les blocs alignés à droite).
    ───────────────────────────────────────────────────────────────── */
 .duel-nom-host {
-  display: block;
+  display: flex;
   overflow: hidden;
   white-space: nowrap;
+  /* line-height généreux pour ne pas clipper les descendantes (j, g, y, p, q)
+     malgré le overflow:hidden qui clippe aussi verticalement. */
+  line-height: 1.15;
 }
+/* Caler l'inner à droite ou gauche selon le côté du duel via flexbox (text-align
+   ne fonctionne pas de manière fiable sur un inline-block plus large que son host). */
+.duel-nom-host[data-align="right"] { justify-content: flex-end; }
+.duel-nom-host[data-align="left"]  { justify-content: flex-start; }
 .duel-nom-host .duel-nom-inner {
   display: inline-block;
   white-space: nowrap;
+  flex-shrink: 0; /* l'inner garde sa largeur naturelle même s'il déborde */
+  /* Empêche le navigateur de scinder un mot au tiret malgré white-space:nowrap
+     (cas observé en flex : "Fleuret-Pagnoux" → "Fleuret-" + "Pagnoux"). */
+  overflow-wrap: normal;
+  word-break: keep-all;
 }
+/* Binôme : espace entre les 2 lignes (1er sous-host pas de marge, 2e a 5px). */
+.duel-nom-host + .duel-nom-host { margin-top: 5px; }
+/* Bordure verticale bicolore (binôme à 2 vrais partis) — utilisée pour :
+   - bloc loser du duel (border-left/right)
+   - titraille canton dans la sidebar (border-left)
+   Deux pseudo-éléments distincts : ::before = moitié HAUTE en c1, ::after =
+   moitié BASSE en c2. Fond solide (pas de gradient) pour lisibilité maximale
+   sur bandelette étroite. Variables CSS --duel-loser-bcb-c1/-c2/-w injectées
+   inline. (Prefixe duel-loser-bcb conservé pour compat ; la classe est en fait
+   générique et réutilisable partout où on a une bordure verticale.) */
+.duel-loser-bcb { position: relative; }
+.duel-loser-bcb::before,
+.duel-loser-bcb::after {
+  content: '';
+  position: absolute;
+  width: var(--duel-loser-bcb-w, 5px);
+  height: 50%;
+  pointer-events: none;
+}
+.duel-loser-bcb::before { top: 0;    background: var(--duel-loser-bcb-c1); }
+.duel-loser-bcb::after  { bottom: 0; background: var(--duel-loser-bcb-c2); }
+.duel-loser-bcb.bcb-left::before,
+.duel-loser-bcb.bcb-left::after  { left: 0; }
+.duel-loser-bcb.bcb-right::before,
+.duel-loser-bcb.bcb-right::after { right: 0; }
+/* Cascade d'abréviation prénom pour les binômes en duel (cohérence avec
+   .cand-name dans le mode liste). Activée par JS si le nom déborde du host.
+   Par défaut le short est masqué partout (.cn-prenom-short règle globale,
+   identique à celle de .cand-name) ; les classes .prenom-abbrev / .prenom-hidden
+   sur un parent .duel-nom-host font le swap. */
+.duel-nom-host.prenom-abbrev .cn-prenom-full  { display: none; }
+.duel-nom-host.prenom-abbrev .cn-prenom-short { display: inline; }
+.duel-nom-host.prenom-hidden .cn-prenom-full,
+.duel-nom-host.prenom-hidden .cn-prenom-short { display: none; }
 .duel-nom-host.has-marquee .duel-nom-inner {
   will-change: transform;
   animation: duelNomMarquee 9s ease-in-out infinite;
@@ -1645,6 +1783,10 @@ input:focus-visible,
         <option value="Régionales 1998">Régionales 1998</option>
         <option value="Régionales 1992">Régionales 1992</option>
       </optgroup>
+      <optgroup label="Départementales">
+        <option value="Départementales 2021">Départementales 2021</option>
+        <option value="Départementales 2015">Départementales 2015</option>
+      </optgroup>
       <optgroup label="Référendums">
         <option value="Référendum 2005">Référendum 2005 — TCE</option>
         <option value="Référendum 2000">Référendum 2000 — quinquennat</option>
@@ -1659,6 +1801,7 @@ input:focus-visible,
   <div id="sb-nav"></div>
   <div id="sb-bureau-list"></div>
   <div id="sb-quartier-list"></div>
+  <div id="sb-canton-list"></div>
 </div>
 <!-- Footer détaché : posé en bas du viewport, au-dessus de la map -->
 <div id="sb-footer">Municipales 2026 · La Rochelle</div>
@@ -1679,11 +1822,30 @@ input:focus-visible,
   <div id="map-legend-body"></div>
 </div>
 
-<!-- Languette mobile : accès à la fiche globale (la sidebar desktop le propose autrement) -->
+<!-- Languette mobile : accès à la fiche globale (la sidebar desktop le propose autrement).
+     Cachée en élection cantonale (cf. body.is-cantonal) → remplacée par #cantons-tabs. -->
 <button id="global-tab" type="button" onclick="openGlobalOverlay()" aria-label="Voir le résultat global">
   <span class="gtab-icon" aria-hidden="true">📊</span>
   <span class="gtab-label">Global</span>
 </button>
+
+<!-- Languettes mobile pour les cantonales/départementales : 3 boutons empilés
+     (un par canton) qui remplacent la languette "Global" (qui n'a pas de sens
+     puisqu'on a 3 fiches canton distinctes). Activées via body.is-cantonal. -->
+<div id="cantons-tabs" aria-label="Voir le résultat par canton">
+  <button class="canton-tab" type="button" onclick="selectCantonFromList('1')" aria-label="Canton 1">
+    <span class="gtab-icon" aria-hidden="true">🧩</span>
+    <span class="gtab-label">Canton 1</span>
+  </button>
+  <button class="canton-tab" type="button" onclick="selectCantonFromList('2')" aria-label="Canton 2">
+    <span class="gtab-icon" aria-hidden="true">🧩</span>
+    <span class="gtab-label">Canton 2</span>
+  </button>
+  <button class="canton-tab" type="button" onclick="selectCantonFromList('3')" aria-label="Canton 3">
+    <span class="gtab-icon" aria-hidden="true">🧩</span>
+    <span class="gtab-label">Canton 3</span>
+  </button>
+</div>
 
 <!-- Languette mobile : accès à la liste de navigation (bureaux / quartiers) — visible uniquement quand une fiche bureau/quartier est ouverte -->
 <button id="nav-tab" type="button" onclick="openNavSheet()" aria-label="Liste des bureaux et quartiers">
@@ -1699,12 +1861,14 @@ input:focus-visible,
       <div class="nav-sheet-tabs">
         <button class="nav-sheet-tab is-current" data-nav-type="bureau" onclick="switchNavSheetTab('bureau')">Bureaux</button>
         <button class="nav-sheet-tab" data-nav-type="quartier" onclick="switchNavSheetTab('quartier')">Quartiers</button>
+        <button class="nav-sheet-tab" data-nav-type="canton" onclick="switchNavSheetTab('canton')">Cantons</button>
       </div>
       <button class="nav-sheet-close" onclick="closeNavSheet()" aria-label="Fermer">×</button>
     </div>
     <div class="nav-sheet-body">
       <div id="nav-sheet-bureaux" class="nav-sheet-list"></div>
       <div id="nav-sheet-quartiers" class="nav-sheet-list" style="display:none"></div>
+      <div id="nav-sheet-cantons" class="nav-sheet-list" style="display:none"></div>
     </div>
   </div>
 </div>
@@ -1757,7 +1921,8 @@ const HAS_T2 = new Set(['Présidentielle 1988','Présidentielle 1995','Présiden
   'Législatives 1988','Législatives 1993','Législatives 1997','Législatives 2002','Législatives 2007',
   'Législatives 2012','Législatives 2017','Législatives 2022','Législatives 2024',
   'Municipales 2014','Municipales 2020','Municipales 2026',
-  'Régionales 2004','Régionales 2010','Régionales 2015','Régionales 2021']);
+  'Régionales 2004','Régionales 2010','Régionales 2015','Régionales 2021',
+  'Départementales 2015','Départementales 2021']);
 const HAS_TU = new Set(['Régionales 1992','Régionales 1998','Européennes 1994','Européennes 1999','Européennes 2004','Européennes 2009','Européennes 2014','Européennes 2019','Européennes 2024']);
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
@@ -1768,6 +1933,7 @@ let mainLayer       = null;
 let selectedLayer   = null;
 let overlayTab      = 'bureau';
 let currentQuartier = null;
+let currentCanton = null;   // id du canton actif (ex. "1", "2", ...) quand overlayTab === 'canton'
 let mmMap           = null;  // minimap Leaflet instance
 let currentMapMode  = 'candidat'; // 'candidat' | 'bloc' | 'abstention'
 let currentMapSelection = null;   // candidateName | blocKey | null (choroplèthe)
@@ -1884,6 +2050,39 @@ function cityAverage() {
   return avg;
 }
 
+// Moyenne de référence pour comparer un bureau ("vs X") :
+//   - Élections cantonales (Départementales/Cantonales) : moyenne du canton du bureau
+//     (chaque binôme n'est candidat que dans son canton, comparer à la ville n'a pas de sens).
+//   - Sinon : moyenne ville (cityAverage classique).
+function refAverageForBureau(bureauNs) {
+  if (typeof isCantonalElection === 'function' && isCantonalElection(currentElection)) {
+    const el0 = ELECTIONS[currentElection];
+    const mapYear = String(el0 ? el0.my : CURRENT_ERA);
+    const yearInfo = BUREAU_INFO[mapYear] || {};
+    const cid = bureauNs ? String((yearInfo[bureauNs] || {}).c || '') : '';
+    if (cid) {
+      let totE = 0; const totals = {};
+      Object.entries(getSheetData()).forEach(([n, d]) => {
+        if (!d) return;
+        if (String((yearInfo[n] || {}).c || '') !== cid) return;
+        totE += d.e || 0;
+        Object.entries(d.c || {}).forEach(([k, v]) => {
+          totals[k] = (totals[k] || 0) + v * (d.e || 0) / 100;
+        });
+      });
+      const avg = {};
+      if (totE > 0) Object.entries(totals).forEach(([k, v]) => { avg[k] = +(v / totE * 100).toFixed(1); });
+      return avg;
+    }
+  }
+  return cityAverage();
+}
+
+// Label affiché dans "vs X" : "canton" pour cantonale, "ville" sinon.
+function refLabelForCurrent() {
+  return (typeof isCantonalElection === 'function' && isCantonalElection(currentElection)) ? 'canton' : 'ville';
+}
+
 // Best/worst bureau per candidate
 function getExtremes() {
   const best = {}, worst = {};
@@ -1931,6 +2130,37 @@ function getExtremesByQuartier() {
   return { best, worst };
 }
 
+// Extrêmes par CANTON : pour chaque candidat, retourne le canton où il a fait
+// le meilleur/pire score. Calque getExtremesByQuartier mais agrège par .c.
+function getExtremesByCanton() {
+  const best = {}, worst = {};
+  const shData = getSheetData();
+  const el0 = ELECTIONS[currentElection];
+  const mapYear = String(el0 ? el0.my : CURRENT_ERA);
+  const yearInfo = BUREAU_INFO[mapYear] || BUREAU_INFO[CURRENT_ERA] || {};
+  const cAg = {};
+  Object.keys(yearInfo).forEach(ns => {
+    const c = yearInfo[ns].c;
+    if (!c) return;
+    const cid = String(c);
+    const d = shData[ns]; if (!d) return;
+    if (!cAg[cid]) cAg[cid] = { totE: 0, candTotV: {} };
+    cAg[cid].totE += d.e || 0;
+    Object.entries(d.c || {}).forEach(([k, pct]) => {
+      cAg[cid].candTotV[k] = (cAg[cid].candTotV[k] || 0) + pct * (d.e || 0) / 100;
+    });
+  });
+  Object.entries(cAg).forEach(([cid, ag]) => {
+    if (ag.totE <= 0) return;
+    Object.entries(ag.candTotV).forEach(([k, v]) => {
+      const pct = +(v / ag.totE * 100).toFixed(1);
+      if (!best[k]  || pct > best[k].pct)  best[k]  = { pct, num: cid };
+      if (!worst[k] || pct < worst[k].pct) worst[k] = { pct, num: cid };
+    });
+  });
+  return { best, worst };
+}
+
 // Candidates sharing same quartier as given bureau
 
 // ── COLORS ────────────────────────────────────────────────────────────────────
@@ -1958,6 +2188,104 @@ function candInfo(name) {
   return CAND_DATA[name + '|' + currentElection + '|' + currentSheet]
       || CAND_DATA[name + '|' + currentElection]
       || CAND_DATA[name] || {};
+}
+
+// ── BINÔMES (Départementales/Cantonales) ───────────────────────────────────
+// Si CAND_DATA[name].binome est défini, le candidat est un binôme paritaire
+// (ex. "Gonnet/Lesauvage PCF") composé de 2 membres individuels. On expose
+// 2 formats d'affichage : full (avec prénoms, en fiche) et short (noms seuls,
+// en légende/tooltip étroits). Convention : femme devant puis homme (selon `s`).
+function binomeMembers(name) {
+  const ci = candInfo(name);
+  if (!Array.isArray(ci.binome) || ci.binome.length !== 2) return null;
+  const m1 = candInfo(ci.binome[0]);
+  const m2 = candInfo(ci.binome[1]);
+  // Tri : femme devant. On inverse dès que m2 est F et m1 ne l'est pas (couvre
+  // les cas où le sexe de m1 est inconnu/H et celui de m2 explicitement F).
+  if (m1.s !== 'F' && m2.s === 'F') return [m2, m1];
+  return [m1, m2];
+}
+function binomeFullLabel(name) {
+  const ms = binomeMembers(name);
+  if (!ms) return null;
+  return ms.map(m => ((m.p ? m.p + ' ' : '') + (m.n || '')).trim()).join(' / ');
+}
+function binomeShortLabel(name) {
+  const ms = binomeMembers(name);
+  if (!ms) return null;
+  return ms.map(m => m.n || '').join(' / ');
+}
+// Alliés (`al`) : pour un binôme, l'entrée binôme n'a généralement pas de `al`,
+// on dérive depuis les 2 membres. Pour un candidat simple, retourne ci.al direct.
+//  - Même `al` sur les 2 membres → "Falorniste"
+//  - `al` différents → "Falorniste / Fountainiste"
+//  - Un seul a `al` → "Falorniste"
+//  - Aucun → ""
+function binomeAllies(name) {
+  const ci = candInfo(name);
+  if (ci.al) return ci.al;
+  if (!Array.isArray(ci.binome) || ci.binome.length !== 2) return '';
+  const ms = binomeMembers(name);
+  if (!ms) return '';
+  const als = ms.map(m => (m && m.al) ? m.al : '').filter(Boolean);
+  if (!als.length) return '';
+  if (als.length === 2 && als[0] === als[1]) return als[0];
+  return als.join(' / ');
+}
+// ── BINÔMES À PARTIS HÉTÉROGÈNES ───────────────────────────────────────────
+// "Divers" (pattern élargi : tout pa qui commence par DV — DVG/DVD/DVC/DVE/DVP/...).
+// Quand un binôme associe un parti déclaré à un divers, le parti déclaré passe
+// devant (ex. UMP+DVD plutôt que DVD+UMP). À égalité de statut, ordre des membres
+// (= ordre binomeMembers, femme devant).
+function isDiversParti(pa) {
+  return typeof pa === 'string' && /^DV/i.test(pa.trim());
+}
+// Renvoie le couple [pa1, pa2] dans l'ordre d'affichage (parti déclaré devant
+// divers, sinon ordre des membres). Null si binôme homogène ou non-binôme.
+function _orderedBinomePartis(name) {
+  const ci = candInfo(name);
+  if (!Array.isArray(ci.binome) || ci.binome.length !== 2) return null;
+  const ms = binomeMembers(name);
+  if (!ms) return null;
+  const pa1 = (ms[0].pa || '').trim();
+  const pa2 = (ms[1].pa || '').trim();
+  if (!pa1 || !pa2 || pa1 === pa2) return null;
+  // Priorité parti déclaré devant divers
+  if (isDiversParti(pa1) && !isDiversParti(pa2)) return [pa2, pa1, ms[1], ms[0]];
+  return [pa1, pa2, ms[0], ms[1]];
+}
+// Étiquette parti à afficher pour un binôme : "PS+PRG" si mixte, "PS" sinon.
+// Pour un non-binôme : retourne le pa simple via candInfo.
+function binomePartiLabel(name) {
+  const ord = _orderedBinomePartis(name);
+  if (!ord) return (candInfo(name).pa || '');
+  return ord[0] + '+' + ord[1];
+}
+// Couleurs des 2 partis pour le visuel bicolore (dot/carré split diagonal).
+// Retourne [c1, c2] UNIQUEMENT si les 2 partis sont des "vrais partis" (= pas DV*).
+// Sinon (homogène, non-binôme, OU mixte vrai parti + divers) → null = couleur unique.
+// Rationnel : un binôme PRG + DVG, c'est une seule famille politique avec un membre
+// non-encarté sous une étiquette administrative DVG → bicoloriser donnerait
+// l'impression trompeuse de 2 forces politiques distinctes. Le label "PRG+DVG"
+// reste affiché en texte (informatif), mais visuellement la couleur reste unique.
+function binomePartiColors(name) {
+  const ord = _orderedBinomePartis(name);
+  if (!ord) return null;
+  const [pa1, pa2, m1, m2] = ord;
+  // Restreindre la bicolorisation aux binômes à DEUX vrais partis (= pas de divers).
+  if (isDiversParti(pa1) || isDiversParti(pa2)) return null;
+  const c1 = (m1.c) || (typeof getPartiColor === 'function' && getPartiColor(m1.pa)) || '#bbbbbb';
+  const c2 = (m2.c) || (typeof getPartiColor === 'function' && getPartiColor(m2.pa)) || '#bbbbbb';
+  return [c1, c2];
+}
+// Helper de style inline pour un dot/carré bicolore. Retourne un string CSS
+// (background) prêt à injecter en inline. Pour binôme homogène ou non-binôme,
+// retourne juste la couleur simple. Angle 135deg = split du coin haut-gauche au
+// coin bas-droit (diagonale "split" classique).
+function dotBackground(name) {
+  const cs = binomePartiColors(name);
+  if (!cs) return colorOfCandidate(name);
+  return 'linear-gradient(135deg,' + cs[0] + ' 50%,' + cs[1] + ' 50%)';
 }
 function colorOfCandidate(name) {
   const ci = candInfo(name);
@@ -2036,9 +2364,23 @@ function ensureTiePattern(colors) {
 // Voile dynamique dans la couleur du gagnant — remplace la barre verticale colorée des fiches.
 // L'attribut --i (index) contrôle le stagger de l'animation reveal.
 function ficheSail(color, mini) {
-  let s = '<div class="fiche-sail'+(mini?' mini':'')+'" style="--c:'+(color||'#ccc')+'">';
+  // Accepte color = string (uni) ou [c1, c2] (bicolor : 5 rows haut = c1, 5 bas = c2).
+  // Convention utilisée pour les binômes à 2 vrais partis (binomePartiColors).
+  const isBicolor = Array.isArray(color);
+  const c1 = isBicolor ? (color[0] || '#ccc') : (color || '#ccc');
+  const c2 = isBicolor ? (color[1] || '#ccc') : null;
+  const cls = 'fiche-sail' + (mini ? ' mini' : '') + (isBicolor ? ' bicolor' : '');
+  const styleVars = '--c:' + c1 + (isBicolor ? (';--c1:' + c1 + ';--c2:' + c2) : '');
+  let s = '<div class="' + cls + '" style="' + styleVars + '">';
   for (let k=1;k<=10;k++) s += '<div class="sail-row" style="--w:'+(k*10)+'%;--i:'+(10-k)+'"></div>';
   return s + '</div>';
+}
+// Helper : retourne la couleur à passer à ficheSail pour le winner d'un bureau /
+// canton / quartier. Bicolor [c1, c2] si binôme à 2 vrais partis, couleur unique sinon.
+function sailColorForWinner(winnerName) {
+  if (!winnerName) return '#ccc';
+  const cs = (typeof binomePartiColors === 'function') ? binomePartiColors(winnerName) : null;
+  return cs || colorOfCandidate(winnerName);
 }
 // Synchronise la taille des voiles avec la hauteur du bloc-texte voisin.
 // Pour préserver l'angle 45° avec un gap de 1 px entre les 10 rangs,
@@ -2101,7 +2443,22 @@ function setupFicheMapHint() {
   }, { root: scrollRoot, threshold: 0, rootMargin: '0px 0px 200px 0px' });   // fire ~200 px avant l'entrée réelle dans le viewport
   _ficheMapHintObserver.observe(mm);
 }
-function blocOfCandidate(name) { return candInfo(name).b || '?'; }
+function blocOfCandidate(name) {
+  const ci = candInfo(name);
+  if (ci.b) return ci.b;
+  // Binôme : déduire du bloc des membres (mêmes blocs → ce bloc ; sinon premier
+  // membre dont le bloc est défini, sinon "?").
+  if (Array.isArray(ci.binome) && ci.binome.length === 2 && typeof binomeMembers === 'function') {
+    const ms = binomeMembers(name);
+    if (ms) {
+      const b1 = ms[0].b || '';
+      const b2 = ms[1].b || '';
+      if (b1 && b1 === b2) return b1;
+      return b1 || b2 || '?';
+    }
+  }
+  return '?';
+}
 function computeBlocs(data) {
   const blocs = {};
   Object.entries(data.c || {}).forEach(([name, pct]) => {
@@ -2114,7 +2471,16 @@ function computeBlocsAdj(data, elecLabel) {
   const blocs = {};
   Object.entries(data.c || {}).forEach(([name, pct]) => {
     const info = CAND_DATA[name+'|'+elecLabel] || CAND_DATA[name] || {};
-    const b = info.b || '?';
+    let b = info.b || '';
+    // Binôme : déduire des membres (même logique que blocOfCandidate, mais sans
+    // dépendre de currentElection pour candInfo).
+    if (!b && Array.isArray(info.binome) && info.binome.length === 2) {
+      const m1 = CAND_DATA[info.binome[0]+'|'+elecLabel] || CAND_DATA[info.binome[0]] || {};
+      const m2 = CAND_DATA[info.binome[1]+'|'+elecLabel] || CAND_DATA[info.binome[1]] || {};
+      const b1 = m1.b || '', b2 = m2.b || '';
+      b = (b1 && b1 === b2) ? b1 : (b1 || b2 || '');
+    }
+    b = b || '?';
     blocs[b] = (blocs[b] || 0) + pct;
   });
   return blocs;
@@ -2138,6 +2504,25 @@ function abbreviatePrenom(prenom) {
 // Pas de rerender JS au resize.
 function candDisplayNameHtml(rawName) {
   const d = candInfo(rawName);
+  // Binôme paritaire : on génère DEUX paires de spans cn-prenom-full / cn-prenom-short
+  // (une par membre), pour que la cascade .cand-name.prenom-abbrev / .prenom-hidden
+  // puisse réduire les prénoms des 2 membres simultanément (palier 1 → initiales,
+  // palier 4 → masqués). Tirets ASCII → U+2011 dans les noms pour empêcher tout
+  // break interne lors de la troncature.
+  if (Array.isArray(d.binome) && d.binome.length === 2 && typeof binomeMembers === 'function') {
+    const ms = binomeMembers(rawName);
+    if (ms) {
+      const parts = ms.map(m => {
+        const nomNB = (m.n || '').replace(/-/g, '‑');
+        if (!m.p) return nomNB;
+        const short = (typeof abbreviatePrenom === 'function') ? abbreviatePrenom(m.p) : '';
+        return '<span class="cn-prenom-full">' + m.p + ' </span>'
+             + '<span class="cn-prenom-short">' + short + ' </span>'
+             + nomNB;
+      });
+      return parts.join(' / ');
+    }
+  }
   let prenom, nom;
   if (d.p && d.n) { prenom = d.p; nom = d.n; }
   else if (d.p) { prenom = d.p; nom = rawName.replace(/\s*\([^)]*\)\s*$/, '').replace(/\s+\S+$/, '').trim(); }
@@ -2222,6 +2607,40 @@ function applyCandTruncationCascade(rootEl) {
     // Reset les 5 classes — état "tout long"
     nameEl.classList.remove('prenom-abbrev', 'prenom-hidden');
     subEl.classList.remove('parti-abbrev', 'extr-short', 'allies-hidden');
+    // Mode mobile : .cand-row-namepart passe en flex-direction:column → name et sub
+    // sont stackés sur leur propre ligne. isSubOnNextLine retourne false par
+    // construction (cf. garde dans isSubOnNextLine). On utilise alors la détection
+    // de débordement HORIZONTAL individuelle pour appliquer la cascade.
+    const parentDir = getComputedStyle(np).flexDirection;
+    const isColumn = (parentDir === 'column' || parentDir === 'column-reverse');
+    if (isColumn) {
+      // En mobile column, le nom et le sub wrappent naturellement (pas de nowrap) :
+      // scrollWidth == clientWidth → on détecte le multi-ligne via isMultiline.
+      // void offsetHeight force un reflow synchrone pour offsetHeight fiable après
+      // classList.add/remove.
+      function nameOverflows() { void nameEl.offsetHeight; return isMultiline(nameEl); }
+      function subOverflows()  { void subEl.offsetHeight;  return isMultiline(subEl);  }
+      // Cascade nom : prenom complet → initiales → masqué
+      if (nameOverflows()) {
+        nameEl.classList.add('prenom-abbrev');
+        if (nameOverflows()) {
+          nameEl.classList.remove('prenom-abbrev');
+          nameEl.classList.add('prenom-hidden');
+        }
+      }
+      // Cascade sub : parti long → court ; "meilleur bureau" → "meilleur" ; alliés masqués
+      if (subOverflows()) {
+        subEl.classList.add('parti-abbrev');
+        if (subOverflows()) {
+          subEl.classList.add('extr-short');
+          if (subOverflows()) {
+            subEl.classList.add('allies-hidden');
+          }
+        }
+      }
+      return;
+    }
+    // Mode desktop : cascade unifiée déclenchée par "le sub passe sur la ligne d'après".
     if (!isSubOnNextLine(nameEl, subEl)) return;
     // Palier 1
     nameEl.classList.add('prenom-abbrev');
@@ -2310,6 +2729,12 @@ function adjustCandNameAbbreviation(scope) {
 
 function candDisplayName(rawName) {
   const d = candInfo(rawName);
+  // Binôme paritaire (Départementales/Cantonales) : "Prénom1 Nom1 / Prénom2 Nom2"
+  // avec femme devant (selon `s` des 2 membres). Construit dynamiquement via binomeFullLabel.
+  if (Array.isArray(d.binome) && d.binome.length === 2) {
+    const full = (typeof binomeFullLabel === 'function') ? binomeFullLabel(rawName) : null;
+    if (full) return full;
+  }
   if (d.p && d.n) return d.p + ' ' + d.n;
   if (d.p) return d.p + ' ' + rawName.replace(/\s*\([^)]*\)\s*$/, '').replace(/\s+\S+$/, '').trim();
   return rawName.replace(/\s*\([^)]*\)\s*$/, '').trim();
@@ -2331,6 +2756,10 @@ const map = L.map('map', {
 // indépendantes de l'ère cartographique en cours.
 const LR_BOUNDS = L.latLngBounds(L.latLng(46.133, -1.230), L.latLng(46.193, -1.135));
 
+// Note : les verrous pan/zoom (setMaxBounds, setMinZoom, maxBoundsViscosity) sont
+// appliqués APRÈS fitMapToCity (plus bas), pour éviter qu'un éventuel snap de
+// position cause un mouvement visible juste après le fit initial.
+
 // Cadre la carte sur La Rochelle, en tenant compte de l'espace visuel pris par
 // la sidebar (à gauche, sur desktop) et la légende (en bas, sur mobile).
 // Appelé au load + à chaque resize, donc le zoom s'adapte à la largeur dispo.
@@ -2348,7 +2777,15 @@ function fitMapToCity(animate) {
   // - Dans la fourchette 1300 px : 80 px de padding droit
   // - Au-delà : on ajoute 4 px de padding par tranche de 10 px de largeur (coef 0.4).
   const vw = window.innerWidth;
-  const rightPad = isMobile ? 16 : Math.round(80 + Math.max(0, (vw - 1300) * 0.4));
+  // Mobile : pad droit progressif selon la largeur (la ville se décale plus à
+  // gauche sur les petits écrans, type iPhone SE) — formule symétrique de celle
+  // utilisée sur desktop, dans les bornes mobiles.
+  //   720 px : 30 px  (frontière mobile)
+  //   375 px : ~50 px (iPhone SE)
+  //   320 px : ~53 px (minimum supporté)
+  const rightPad = isMobile
+    ? Math.round(30 + Math.max(0, (720 - vw) / 17))
+    : Math.round(80 + Math.max(0, (vw - 1300) * 0.4));
   map.fitBounds(LR_BOUNDS, {
     paddingTopLeft: [sbW + 12, 30],
     paddingBottomRight: [rightPad, isMobile ? 90 : 30],
@@ -2363,9 +2800,33 @@ function fitMapToCity(animate) {
     if (dezoom > 0.01) {
       map.setZoom(map.getZoom() - dezoom, { animate: false });
     }
+  } else {
+    // Mobile : dézoom progressif (symétrique au desktop, dans les bornes mobiles).
+    //   720 px : ~0    (frontière mobile, pas de dézoom)
+    //   500 px : ~0.18
+    //   375 px : ~0.29 (iPhone SE)
+    //   320 px : ~0.33 (minimum)
+    // Bornage à 0.4 max pour éviter un dézoom excessif sur les très petits écrans.
+    const dezoomM = Math.min(0.4, Math.max(0, (720 - vw) / 1200));
+    if (dezoomM > 0.01) {
+      map.setZoom(map.getZoom() - dezoomM, { animate: false });
+    }
   }
 }
+// Fit initial : on appelle invalidateSize() AVANT fitMapToCity pour forcer Leaflet
+// à re-mesurer le container #map avec ses dimensions finales.
+map.invalidateSize(false);
 fitMapToCity(false);
+
+// Verrous pan + zoom APRÈS le fit initial pour ne pas perturber le cadrage.
+//  - maxBounds : pad(0.3) = ~30 % d'élargissement, on peut un peu déborder mais
+//    pas se retrouver à Bordeaux ou Paris en draguant.
+//  - maxBoundsViscosity 1.0 : le pan est strict (la carte rebondit au bord).
+//  - minZoom 11.5 : on peut dézoomer un poil pour le contexte, mais pas voir
+//    toute la France.
+map.setMaxBounds(LR_BOUNDS.pad(0.3));
+map.options.maxBoundsViscosity = 1.0;
+map.setMinZoom(11.5);
 
 // Le loader (#map-loader) est visible depuis le parse HTML. Une fois Leaflet
 // prêt (whenReady fire après le premier layout), on le masque en douceur.
@@ -2403,14 +2864,34 @@ window.addEventListener('resize', () => {
     setTimeout(() => { _inProgrammaticMove = false; }, 50);
   }, 150);
 }, { passive: true });
-// Tile layer adaptable au thème (light_all / dark_all CartoCDN)
+// Tile layer adaptable au thème (light_all / dark_all CartoCDN).
+// Deux couches : base SANS labels en dessous des choroplèthes (overlayPane),
+// labels SEULS au-dessus des choroplèthes via un pane custom à zIndex 650.
+// Effet : on voit les noms de rues, quartiers, POI MÊME sur les polygones colorés.
 let _currentTileLayer = null;
+let _currentLabelsLayer = null;
 function applyMapTheme(){
   const dark = document.documentElement.getAttribute('data-theme') === 'dark';
   if (_currentTileLayer) { try { map.removeLayer(_currentTileLayer); } catch(_) {} }
+  if (_currentLabelsLayer) { try { map.removeLayer(_currentLabelsLayer); } catch(_) {} }
+  // 1. Base : light_nolabels / dark_nolabels (polygones du fond uniquement)
   _currentTileLayer = L.tileLayer(
-    'https://{s}.basemaps.cartocdn.com/' + (dark ? 'dark_all' : 'light_all') + '/{z}/{x}/{y}{r}.png',
+    'https://{s}.basemaps.cartocdn.com/' + (dark ? 'dark_nolabels' : 'light_nolabels') + '/{z}/{x}/{y}{r}.png',
     { attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 19 }
+  ).addTo(map);
+  // 2. Labels overlay : pane custom à zIndex 425. Juste AU-DESSUS de overlayPane
+  //    (400, où vivent les polygones SVG GeoJSON) mais SOUS shadowPane (500),
+  //    markerPane (600), tooltipPane (650) et popupPane (700). Garantit que les
+  //    labels apparaissent sur les polygones mais N'OCCULTENT PAS les tooltips
+  //    et popups Leaflet. pointer-events: none → ne capture pas les clics.
+  if (!map.getPane('labelsPane')) {
+    map.createPane('labelsPane');
+    map.getPane('labelsPane').style.zIndex = 425;
+    map.getPane('labelsPane').style.pointerEvents = 'none';
+  }
+  _currentLabelsLayer = L.tileLayer(
+    'https://{s}.basemaps.cartocdn.com/' + (dark ? 'dark_only_labels' : 'light_only_labels') + '/{z}/{x}/{y}{r}.png',
+    { pane: 'labelsPane', attribution: '', maxZoom: 19 }
   ).addTo(map);
 }
 applyMapTheme();
@@ -2484,7 +2965,18 @@ function getSelectionPct(data) {
 }
 function computeSelectionRange() {
   const shData = getSheetData(); let mn = Infinity, mx = 0;
-  Object.entries(shData).forEach(([ns,d]) => { if(ns==='0057')return; const v = getSelectionPct(d); if(v > mx) mx = v; if(v < mn) mn = v; });
+  Object.entries(shData).forEach(([ns,d]) => {
+    if (ns === '0057' || !d) return;
+    // Mode candidat : si le candidat n'est pas présent dans data.c (cas typique d'un
+    // binôme cantonal hors de son canton), on n'inclut pas ce bureau dans le calcul
+    // du range — sinon le min = 0 (bureaux hors canton) fausse le gradient.
+    if (currentMapMode === 'candidat' && currentMapSelection) {
+      if (!d.c || !Object.prototype.hasOwnProperty.call(d.c, currentMapSelection)) return;
+    }
+    const v = getSelectionPct(d);
+    if (v > mx) mx = v;
+    if (v < mn) mn = v;
+  });
   return [mn === Infinity ? 0 : mn, mx];
 }
 function selectMapItem(key) {
@@ -2498,12 +2990,49 @@ function selectMapItem(key) {
 function clearMapSelection() {
   currentMapSelection = null; currentSelectionMin = 0; currentSelectionMax = 0;
 }
+// Hover preview canton : id du canton survolé dans la sidebar (titraille canton),
+// null sinon. Quand non-null, featureStyle grise les bureaux hors de ce canton et
+// la légende mode "candidat" bascule sur le filtre canton correspondant.
+let previewCantonId = null;
+let _prevLegendCantonForHover = null;
+function _onCantonTitrailleEnter(cid) {
+  previewCantonId = String(cid);
+  if (typeof mainLayer !== 'undefined' && mainLayer) mainLayer.setStyle(featureStyle);
+  // Mémoriser le filtre légende courant pour le restaurer au mouseleave.
+  _prevLegendCantonForHover = (typeof legendCantonFilter !== 'undefined') ? legendCantonFilter : null;
+  if (typeof setLegendCanton === 'function') setLegendCanton(cid);
+}
+function _onCantonTitrailleLeave() {
+  previewCantonId = null;
+  if (typeof mainLayer !== 'undefined' && mainLayer) mainLayer.setStyle(featureStyle);
+  if (typeof setLegendCanton === 'function' && _prevLegendCantonForHover != null) {
+    setLegendCanton(_prevLegendCantonForHover);
+  }
+  _prevLegendCantonForHover = null;
+}
+
 function featureStyle(feature) {
   const ns = numStr(feature);
   const data = getBureauData(ns);
+  // Hover preview canton (sidebar titrailles canton) : on grise tous les bureaux
+  // hors-canton pour ne mettre en évidence que ceux du canton survolé.
+  // previewCantonId est posé par _onCantonTitrailleEnter et retiré au mouseleave.
+  if (previewCantonId) {
+    const el0 = ELECTIONS[currentElection];
+    const mapYear = String(el0 ? el0.my : CURRENT_ERA);
+    const yi = BUREAU_INFO[mapYear] || BUREAU_INFO[CURRENT_ERA] || {};
+    if (String((yi[ns] || {}).c || '') !== previewCantonId) {
+      return { fillColor: '#e8e8e8', fillOpacity: 0.15, color: '#fff', weight: 0.5 };
+    }
+  }
   if (!data) return { fillColor:'#ddd', fillOpacity:0.2, color:'#fff', weight:1 };
   let fillColor = '#ccc';
   if (currentMapSelection && (currentMapMode === 'candidat' || currentMapMode === 'bloc')) {
+    // Cas binôme cantonal hors canton : le candidat n'est pas dans data.c → on
+    // affiche un style neutre "pas de donnée" plutôt qu'une couleur 0% trompeuse.
+    if (currentMapMode === 'candidat' && data.c && !Object.prototype.hasOwnProperty.call(data.c, currentMapSelection)) {
+      return { fillColor: '#ddd', fillOpacity: 0.2, color: '#fff', weight: 1 };
+    }
     const baseColor = currentMapMode === 'candidat'
       ? colorOfCandidate(currentMapSelection)
       : (BLOC_CONFIG[currentMapSelection] || BLOC_CONFIG['?']).color;
@@ -2545,10 +3074,17 @@ function buildTooltipHtml(feature, ns, info) {
   if (currentMapSelection && (currentMapMode === 'candidat' || currentMapMode === 'bloc')) {
     const pct = getSelectionPct(data);
     const baseColor = currentMapMode === 'candidat'
-      ? colorOfCandidate(currentMapSelection)
+      ? ((typeof dotBackground === 'function') ? dotBackground(currentMapSelection) : colorOfCandidate(currentMapSelection))
       : (BLOC_CONFIG[currentMapSelection] || BLOC_CONFIG['?']).color;
     const label = currentMapMode === 'candidat'
-      ? (()=>{ const ci=candInfo(currentMapSelection); return ci.n||currentMapSelection.replace(/\s*\([^)]*\)\s*$/,'').split(/\s+/).pop()||currentMapSelection; })()
+      ? (()=>{
+          const ci=candInfo(currentMapSelection);
+          // Binôme : label court "Nom1 / Nom2" (femme devant). Cohérent avec sidebar/légende.
+          if (Array.isArray(ci.binome) && ci.binome.length === 2 && typeof binomeShortLabel === 'function') {
+            return binomeShortLabel(currentMapSelection) || ci.n || currentMapSelection;
+          }
+          return ci.n||currentMapSelection.replace(/\s*\([^)]*\)\s*$/,'').split(/\s+/).pop()||currentMapSelection;
+        })()
       : (BLOC_CONFIG[currentMapSelection]||BLOC_CONFIG['?']).label;
     let rank=null, total=0;
     if (currentMapMode==='candidat' && data.c) {
@@ -2563,11 +3099,15 @@ function buildTooltipHtml(feature, ns, info) {
   } else if (currentMapMode === 'candidat') {
     const winner = data.w;
     if (winner) {
-      const col = colorOfCandidate(winner);
       const ci = candInfo(winner);
-      const label = ci.n || winner.replace(/\s*\([^)]*\)\s*$/,'').split(/\s+/).pop() || winner;
+      const isBinome = Array.isArray(ci.binome) && ci.binome.length === 2;
+      // Binôme à partis hétérogènes : background bicolore (split diagonal). Sinon couleur unique.
+      const bg = (typeof dotBackground === 'function') ? dotBackground(winner) : colorOfCandidate(winner);
+      const label = isBinome && typeof binomeShortLabel === 'function'
+        ? (binomeShortLabel(winner) || ci.n || winner)
+        : (ci.n || winner.replace(/\s*\([^)]*\)\s*$/,'').split(/\s+/).pop() || winner);
       const pct = data.c && data.c[winner] ? data.c[winner].toFixed(1)+'\xa0%' : '';
-      tag = '<span style="background:'+col+';color:#fff;font-size:0.68rem;font-weight:700;padding:3px 8px;border-radius:4px;white-space:nowrap">'+label+'\xa0'+pct+'</span>';
+      tag = '<span style="background:'+bg+';color:#fff;font-size:0.68rem;font-weight:700;padding:3px 8px;border-radius:4px;white-space:nowrap">'+label+'\xa0'+pct+'</span>';
     }
   } else if (currentMapMode === 'bloc') {
     const blocs = computeBlocs(data);
@@ -2672,6 +3212,14 @@ function onFeatureClick(feature, layer) {
 
 // compact=true → sidebar style; compact=false → full fiche style
 function partiLabel(ci, name) {
+  // Binôme à partis hétérogènes : on concatène les 2 noms longs avec " + "
+  // (ordre cohérent avec binomePartiLabel : parti déclaré devant divers).
+  if (typeof binomePartiLabel === 'function') {
+    const lbl = binomePartiLabel(name);
+    if (lbl && lbl.indexOf('+') >= 0) {
+      return lbl.split('+').map(c => PARTI_NAMES[c] || c).join(' + ');
+    }
+  }
   const pa = ci.pa || '';
   return PARTI_NAMES[pa] || (ci.t && ci.t[0]) || (name.match(/\(([^)]+)\)$/) || [])[1] || pa;
 }
@@ -2683,9 +3231,38 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
   const [nameLos, pctLos] = cands[1]; // perdant
   // Axe politique gauche→droite : G=0, C=1, D=2, EXD=3, ?=99
   const AXIS = {'G':0,'C':1,'D':2,'EXD':3,'?':99};
+  // Sub-axe par parti pour départager les candidats du même bloc (ex. PS vs PRG en G,
+  // ou UMP vs UDI en D). Valeurs ~ position conventionnelle gauche→droite.
+  const PARTI_AXIS = {
+    'LO':0,'NPA':0,'PT':0,'ANC':0,'LCR':0,'PRC':0,'NPA-R':0,'NPA-A':0,
+    'PCF':1,'LFI':1,'Gs':1,'FdG':1,'D!':1.2,'LA':1.2,'NFP':1.5,'Nupes':1.5,
+    'EELV':2,'LV':2,'Verts':2,'EE':2,'MEI':2,'LÉ':2,'ND':2,
+    'PS':3,'PP':3,'MRC':3.5,'MRG':3.5,'PRS':3.5,'Radical':3.5,'Pôle rep.':3.5,'PRG':3.7,
+    'DVG':4,'RS':4,'FP':4,'Eqx.':4,
+    'Volt':4.5,'AE':4.5,
+    'LREM':5,'EM':5,'RE':5,'MoDem':5.2,'Hor.':5.3,'DVC':5.5,'LC':5.5,
+    'DL':6,'UDF':6,'UDI':6,'LOE':6,'RCF':6,'PRV':6,'NC':6,
+    'DVD':6.5,'NE':6.5,
+    'RPR':7,'UMP':7,'SL':7,'LR':7,
+    'All. ru.':7.5,'LMR':7.5,'CPNT':7.5,'PCD':7.5,'FRS':7.5,'RPF':7.5,'Libertas':7.5,'MPF':7.5,
+    'CNIP':7.7,'CNI':7.7,
+    'DLF':8,'DLR':8,
+    'MN':9,'MNR':9,'PdF':9,
+    'FN':9.5,'RN':9.5,'Rec':9.7,
+    'Divers':5,'?':5
+  };
   const ciW = candInfo(nameW); const ciLos = candInfo(nameLos);
-  const axisW   = AXIS[ciW.b   || '?'] ?? 99;
-  const axisLos = AXIS[ciLos.b || '?'] ?? 99;
+  // Composite : bloc principal × 100 + sous-axe parti. Permet de départager
+  // au sein d'un même bloc (ex. PS=303 < PRG=303.7 → PS à gauche).
+  function _axisValue(candName) {
+    const ci = candInfo(candName);
+    const bloc = blocOfCandidate(candName) || '?';
+    const axBloc = AXIS[bloc] ?? 99;
+    const axParti = PARTI_AXIS[ci.pa] ?? 5;
+    return axBloc * 100 + axParti;
+  }
+  const axisW   = _axisValue(nameW);
+  const axisLos = _axisValue(nameLos);
   // Sur un référendum, on force toujours Oui à gauche / Non à droite (peu importe qui gagne).
   // Sinon, le candidat le plus à gauche politiquement va à gauche ; à égalité, le gagnant à gauche.
   let leftFirst;
@@ -2698,12 +3275,58 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
   const [nameR, pctR, ciR] = leftFirst ? [nameLos, pctLos, ciLos] : [nameW, pctW, ciW];
   const winLeft  = leftFirst; // le gagnant est-il à gauche ?
   const colL = colorOfCandidate(nameL); const colR = colorOfCandidate(nameR);
+  // Pour le background du bloc winner (couleur pleine) : si binôme à partis
+  // hétérogènes, on bicolore en split diagonal 135° via dotBackground (cohérent
+  // avec sidebar, légende, tooltip carte, barre de progression). Sinon couleur
+  // unie = colorOfCandidate. Le loser garde la couleur UNIE colL/R pour la
+  // border-left/right + score (linear-gradient non supporté sur ces propriétés).
+  const bgL = (typeof dotBackground === 'function') ? dotBackground(nameL) : colL;
+  const bgR = (typeof dotBackground === 'function') ? dotBackground(nameR) : colR;
   const voixL = Math.round(pctL*(data.e||0)/100);
   const voixR = Math.round(pctR*(data.e||0)/100);
-  const prenomL = ciL.p || ''; const nomL = ciL.n || nameL.replace(/\s*\([^)]*\)\s*$/,'').trim().split(/\s+/).pop() || nameL;
-  const prenomR = ciR.p || ''; const nomR = ciR.n || nameR.replace(/\s*\([^)]*\)\s*$/,'').trim().split(/\s+/).pop() || nameR;
+  // Binôme paritaire : compact = "Nom1 / Nom2" (sans prénom), full = "Prénom1 Nom1<br>Prénom2 Nom2".
+  const isBinomeL = Array.isArray(ciL.binome) && ciL.binome.length === 2;
+  const isBinomeR = Array.isArray(ciR.binome) && ciR.binome.length === 2;
+  // Version courte : noms seuls, séparés par <br> pour 2 lignes
+  // Les tirets ASCII des noms composés sont convertis en tirets insécables (U+2011)
+  // pour empêcher le browser de scinder "Fleuret-Pagnoux" en 2 lignes en flex.
+  function _binomeNomDuel(name) {
+    const ms = (typeof binomeMembers === 'function') ? binomeMembers(name) : null;
+    if (!ms) return null;
+    return ms.map(m => (m.n || '').replace(/-/g, '‑')).filter(Boolean).join('<br>');
+  }
+  // Version longue : prénom (réduit, comme pour un candidat simple) + nom par ligne.
+  // Génère 2 spans (cn-prenom-full / cn-prenom-short) pour activer la cascade
+  // d'abréviation par CSS : la classe .prenom-abbrev sur le host swap full → short,
+  // .prenom-hidden masque les deux. Le runtime JS (setupDuelMarquees) gère la cascade.
+  function _binomeNomDuelFull(name) {
+    const ms = (typeof binomeMembers === 'function') ? binomeMembers(name) : null;
+    if (!ms) return null;
+    return ms.map(m => {
+      if (!m.n) return '';
+      // Tiret insécable U+2011 dans le nom de famille pour empêcher tout wrap au tiret.
+      const nomNB = m.n.replace(/-/g, '‑');
+      const short = (typeof abbreviatePrenom === 'function' && m.p) ? abbreviatePrenom(m.p) : '';
+      const style = 'font-size:0.65em;font-weight:500;opacity:0.85;margin-right:0.25em';
+      const prenomSpans = m.p
+        ? '<span class="cn-prenom-full" style="'+style+'">'+m.p+'</span>'
+          + '<span class="cn-prenom-short" style="'+style+'">'+short+'</span>'
+        : '';
+      return prenomSpans + nomNB;
+    }).filter(Boolean).join('<br>');
+  }
+  const prenomL = isBinomeL ? '' : (ciL.p || '');
+  const nomL    = isBinomeL ? (_binomeNomDuel(nameL) || ciL.n)
+                            : (ciL.n || nameL.replace(/\s*\([^)]*\)\s*$/,'').trim().split(/\s+/).pop() || nameL);
+  const nomLFull = isBinomeL ? (_binomeNomDuelFull(nameL) || nomL) : null;
+  const prenomR = isBinomeR ? '' : (ciR.p || '');
+  const nomR    = isBinomeR ? (_binomeNomDuel(nameR) || ciR.n)
+                            : (ciR.n || nameR.replace(/\s*\([^)]*\)\s*$/,'').trim().split(/\s+/).pop() || nameR);
+  const nomRFull = isBinomeR ? (_binomeNomDuelFull(nameR) || nomR) : null;
   const partiL = partiLabel(ciL, nameL); const partiR = partiLabel(ciR, nameR);
-  const allieL = ciL.al || ''; const allieR = ciR.al || '';
+  // Alliés (`al`) : helper global binomeAllies — gère candidat simple et binôme.
+  const allieL = (typeof binomeAllies === 'function') ? binomeAllies(nameL) : (ciL.al || '');
+  const allieR = (typeof binomeAllies === 'function') ? binomeAllies(nameR) : (ciR.al || '');
   // Écart vs ville pour un candidat
   const showVsVille = cityAvg && Object.keys(cityAvg).length > 0 && ns && ns !== 'ville' && ns !== 'quartier';
   function diffLine(name, pct, onColor, align, c) {
@@ -2713,8 +3336,9 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
     const col = onColor ? 'rgba(255,255,255,0.8)' : (d >= 0 ? '#1a7a4a' : '#b91c1c');
     const size = c ? '0.58rem' : '0.68rem';
     const textCol = onColor ? 'rgba(255,255,255,0.55)' : '#bbb';
+    const lbl = (typeof refLabelForCurrent === 'function') ? refLabelForCurrent() : 'ville';
     return '<div style="font-size:'+size+';color:'+textCol+';margin-top:'+(c?'2px':'4px')+';text-align:'+align+'">'
-      + 'vs ville\xa0<span style="font-weight:700;color:'+col+'">'+sign+d.toFixed(1)+'\xa0pts</span></div>';
+      + 'vs '+lbl+'\xa0<span style="font-weight:700;color:'+col+'">'+sign+d.toFixed(1)+'\xa0pts</span></div>';
   }
   // Sur référendum (Oui/Non sans prénom ni parti), on agrandit le nom pour combler l'espace.
   const isRefDuel = (typeof isReferendum === 'function' && isReferendum(currentElection));
@@ -2738,32 +3362,62 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
   // Bloc gagnant : fond plein coloré, texte blanc
   // Bloc perdant : fond blanc, score coloré, ligne colorée côté VS
   // pa = acronyme du parti (pour compact) ; parti = nom complet (pour full)
-  function blockWinner(col, name, pct, voix, prenom, nom, parti, pa, allie, align, c) {
+  function blockWinner(col, name, pct, voix, prenom, nom, nomFull, parti, pa, allie, align, c) {
     const arrow = arrowFor(name, c, true);
-    // Mobile (full) : la flèche meilleur/pire est déplacée à côté du score, côté extérieur.
-    // Côté extérieur = opposé du VS : align='right' (bloc gauche) → flèche À GAUCHE du score.
-    //                                  align='left'  (bloc droit) → flèche À DROITE du score.
-    const arrowOnScore = (isMobileDuel && !c) ? arrow : '';
-    const arrowOnNom   = (isMobileDuel && !c) ? '' : arrow;
-    const nomHtml = align === 'right' ? (arrowOnNom ? arrowOnNom+'\xa0\xa0' : '')+nom : nom+arrowOnNom;
+    // Mobile (full) ET binôme (full) : la flèche meilleur/pire est déplacée à côté
+    // du score, côté extérieur. Côté extérieur = opposé du VS : align='right' (bloc
+    // gauche) → flèche À GAUCHE du score ; align='left' (bloc droit) → À DROITE.
+    // Pour les binômes desktop, mettre la flèche sur le nom déborderait visuellement.
+    const isBinomeBlock = !!nomFull;
+    // Pour les binômes : badge sur le score EN TOUS MODES (full + compact/sidebar).
+    // Pour les candidats simples : comportement historique (mobile full → score, sinon → nom).
+    const arrowOnScore = ((isMobileDuel && !c) || isBinomeBlock) ? arrow : '';
+    const arrowOnNom   = ((isMobileDuel && !c) || isBinomeBlock) ? '' : arrow;
+    // En mode full (!c), si nomFull est fourni (binôme avec prénoms), on l'utilise ;
+    // en compact, on garde le nom court (sans prénoms).
+    const nomToUse = (!c && nomFull) ? nomFull : nom;
+    const nomHtml = align === 'right' ? (arrowOnNom ? arrowOnNom+'\xa0\xa0' : '')+nomToUse : nomToUse+arrowOnNom;
     const scoreCore = pct.toFixed(1)+'<span style="font-size:0.5em;margin-left:0.12em">%</span>';
-    const scoreHtml = align === 'right' ? arrowOnScore + scoreCore : scoreCore + arrowOnScore;
+    // Espace insécable entre flèche et score UNIQUEMENT côté gauche (arrow + score
+    // étaient collés). Côté droit, l'écart naturel suffit.
+    const arrowSep = '\xa0\xa0';
+    const scoreHtml = align === 'right'
+      ? (arrowOnScore ? arrowOnScore + arrowSep : '') + scoreCore
+      : scoreCore + arrowOnScore;
     // Mobile : on remplace le nom complet du parti par son acronyme court (pa).
     const partiToShow = (isMobileDuel && !c) ? (pa || parti) : parti;
     // Mobile (full) : on transforme la cellule "nom" en hôte de tourniquet — le JS
     // mesurera après insertion DOM et activera l'animation si le texte déborde.
     // L'attribut data-align permet au JS de connaître le sens du défilement.
-    const nomAttrs = (isMobileDuel && !c) ? ' class="duel-nom-host" data-align="'+align+'"' : '';
-    const nomInner = (isMobileDuel && !c) ? '<span class="duel-nom-inner">'+nomHtml+'</span>' : nomHtml;
+    // Binôme : nomHtml contient un <br>, l'animation translateX d'un seul span ne marche pas.
+    // On split en 2 sous-hosts marquise indépendants (un par ligne) si mobile full.
+    const hasBr = nomHtml.indexOf('<br>') >= 0;
+    // Binôme : on génère TOUJOURS 2 sous-hosts (mobile + desktop + compact) pour
+    // que la cascade d'abréviation prénom soit applicable partout. La marquise
+    // translateX reste réservée au mobile (gérée dans applyMarquee).
+    // Candidat simple mobile : un seul host marquise classique (comportement actuel).
+    const nomAttrs = (isMobileDuel && !c && !hasBr) ? ' class="duel-nom-host" data-align="'+align+'"' : '';
+    let nomInner;
+    if (hasBr) {
+      // Sous-hosts binôme : alignement explicite (text-align) selon le côté du duel.
+      // Le sous-host display:block ne propage pas toujours fiable l'héritage.
+      nomInner = nomHtml.split('<br>').map(line =>
+        '<div class="duel-nom-host" data-align="'+align+'" style="text-align:'+align+'"><span class="duel-nom-inner">'+line+'</span></div>'
+      ).join('');
+    } else if (isMobileDuel && !c) {
+      nomInner = '<span class="duel-nom-inner">'+nomHtml+'</span>';
+    } else {
+      nomInner = nomHtml;
+    }
     // flex:1 1 0 + min-width:0 + overflow:hidden : garantit que chaque côté du duel
     // prend EXACTEMENT 50 % de l'espace disponible (le VS reste donc strictement centré),
     // même si un des noms est plus long que l'autre. Le débordement est clippé.
     return (c
       ? '<div style="flex:1 1 0;min-width:0;overflow:hidden;background:'+col+';padding:10px 12px;text-align:'+align+'">'
-        + '<div style="font-size:2.2rem;font-weight:900;color:#fff;line-height:1">'+pct.toFixed(1)+'<span style="font-size:0.5em;margin-left:0.12em">%</span></div>'
+        + '<div style="font-size:2.2rem;font-weight:900;color:#fff;line-height:1">'+scoreHtml+'</div>'
         + diffLine(name, pct, true, align, c)
         + '<div style="font-size:0.82rem;color:rgba(255,255,255,0.75);margin-top:3px">'+voix.toLocaleString('fr-FR')+' voix</div>'
-        + '<div style="font-size:'+nomSizeC+';font-weight:700;color:#fff;margin-top:8px">'+nomHtml+'</div>'
+        + '<div style="font-size:'+nomSizeC+';font-weight:700;color:#fff;margin-top:8px">'+(hasBr ? nomInner : nomHtml)+'</div>'
         + (pa ? '<div style="font-size:0.68rem;color:rgba(255,255,255,0.7);margin-top:3px">'+pa+'</div>' : '')
         + '</div>'
       : '<div style="flex:1 1 0;min-width:0;overflow:hidden;background:'+col+';padding:'+dPad+';text-align:'+align+'">'
@@ -2777,29 +3431,79 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
         + '</div>'
     );
   }
-  function blockLoser(col, name, pct, voix, prenom, nom, parti, pa, allie, align, borderSide, c) {
+  function blockLoser(col, name, pct, voix, prenom, nom, nomFull, parti, pa, allie, align, borderSide, c) {
     const bw = c ? '4px' : '5px';
     const arrow = arrowFor(name, c, false);
-    // Mobile (full) : flèche déplacée côté score, côté extérieur (cf. blockWinner).
-    const arrowOnScore = (isMobileDuel && !c) ? arrow : '';
-    const arrowOnNom   = (isMobileDuel && !c) ? '' : arrow;
-    const nomHtml = align === 'right' ? (arrowOnNom ? arrowOnNom+'\xa0\xa0' : '')+nom : nom+arrowOnNom;
+    // Mobile (full) ET binôme (full) : flèche côté score (cf. blockWinner).
+    const isBinomeBlock = !!nomFull;
+    // Pour les binômes : badge sur le score EN TOUS MODES (full + compact/sidebar).
+    // Pour les candidats simples : comportement historique (mobile full → score, sinon → nom).
+    const arrowOnScore = ((isMobileDuel && !c) || isBinomeBlock) ? arrow : '';
+    const arrowOnNom   = ((isMobileDuel && !c) || isBinomeBlock) ? '' : arrow;
+    // En mode full (!c), nomFull (binôme avec prénoms) prime sur nom (sans prénoms).
+    const nomToUse = (!c && nomFull) ? nomFull : nom;
+    const nomHtml = align === 'right' ? (arrowOnNom ? arrowOnNom+'\xa0\xa0' : '')+nomToUse : nomToUse+arrowOnNom;
     const scoreCore = pct.toFixed(1)+'<span style="font-size:0.5em;margin-left:0.12em">%</span>';
-    const scoreHtml = align === 'right' ? arrowOnScore + scoreCore : scoreCore + arrowOnScore;
+    // Espace insécable entre flèche et score UNIQUEMENT côté gauche (arrow + score
+    // étaient collés). Côté droit, l'écart naturel suffit.
+    const arrowSep = '\xa0\xa0';
+    const scoreHtml = align === 'right'
+      ? (arrowOnScore ? arrowOnScore + arrowSep : '') + scoreCore
+      : scoreCore + arrowOnScore;
     const partiToShow = (isMobileDuel && !c) ? (pa || parti) : parti;
     // Marquise mobile sur la cellule nom (cf. blockWinner pour le détail).
-    const nomAttrs = (isMobileDuel && !c) ? ' class="duel-nom-host" data-align="'+align+'"' : '';
-    const nomInner = (isMobileDuel && !c) ? '<span class="duel-nom-inner">'+nomHtml+'</span>' : nomHtml;
+    // Binôme : nomHtml contient un <br>, l'animation translateX d'un seul span ne marche pas.
+    // On split en 2 sous-hosts marquise indépendants (un par ligne) si mobile full.
+    const hasBr = nomHtml.indexOf('<br>') >= 0;
+    // Binôme : on génère TOUJOURS 2 sous-hosts (mobile + desktop + compact) pour
+    // que la cascade d'abréviation prénom soit applicable partout. La marquise
+    // translateX reste réservée au mobile (gérée dans applyMarquee).
+    // Candidat simple mobile : un seul host marquise classique (comportement actuel).
+    const nomAttrs = (isMobileDuel && !c && !hasBr) ? ' class="duel-nom-host" data-align="'+align+'"' : '';
+    let nomInner;
+    if (hasBr) {
+      // Sous-hosts binôme : alignement explicite (text-align) selon le côté du duel.
+      // Le sous-host display:block ne propage pas toujours fiable l'héritage.
+      nomInner = nomHtml.split('<br>').map(line =>
+        '<div class="duel-nom-host" data-align="'+align+'" style="text-align:'+align+'"><span class="duel-nom-inner">'+line+'</span></div>'
+      ).join('');
+    } else if (isMobileDuel && !c) {
+      nomInner = '<span class="duel-nom-inner">'+nomHtml+'</span>';
+    } else {
+      nomInner = nomHtml;
+    }
+    // Border du loser : bicolore si binôme à 2 vrais partis. Sur une bandelette
+    // verticale étroite (5px × hauteur du bloc), un gradient diagonal 135° projette
+    // sa zone de transition sur ~5px du centre, le reste apparaît uni en haut/bas.
+    // → On force un split DIAGONAL adapté en passant par un pseudo-élément ::before
+    // qui REMPLACE la border (pas qui se superpose dessus, sinon ::before est calé
+    // sur le padding-box et ne couvre pas la zone border). On retire donc la border
+    // et on convertit le bw en padding supplémentaire côté borderSide pour préserver
+    // le layout du contenu.
+    const _cs = (typeof binomePartiColors === 'function') ? binomePartiColors(name) : null;
+    const _isBicolorBorder = !!_cs;
+    // Si bicolor : pas de border, mais padding supplémentaire pour réserver les bw
+    // (= largeur originale de la border). 2 pseudo-éléments (::before haut + ::after
+    // bas) couvrent cette zone avec des fonds solides c1/c2.
+    const _borderCss = _isBicolorBorder
+      ? 'border-' + borderSide + ':0;padding-' + borderSide + ':calc(' + (c ? '12px' : dPad.split(' ').slice(-1)[0]) + ' + ' + bw + ')'
+      : 'border-' + borderSide + ':' + bw + ' solid ' + col;
+    const _bcbClass = _isBicolorBorder ? ' duel-loser-bcb bcb-' + borderSide : '';
+    const _bcbVars = _isBicolorBorder
+      ? ';--duel-loser-bcb-c1:' + _cs[0] + ';--duel-loser-bcb-c2:' + _cs[1] + ';--duel-loser-bcb-w:' + bw
+      : '';
     // Idem blockWinner : 50/50 strict, VS centré, débordement clippé.
+    // Si binôme à 2 vrais partis : la classe _bcbClass active un ::before qui couvre
+    // la border avec le linear-gradient, via les variables CSS injectées dans _bcbVars.
     return (c
-      ? '<div style="flex:1 1 0;min-width:0;overflow:hidden;padding:10px 12px;text-align:'+align+';background:var(--bg-card);border-'+borderSide+':'+bw+' solid '+col+'">'
+      ? '<div class="'+_bcbClass.trim()+'" style="flex:1 1 0;min-width:0;overflow:hidden;padding:10px 12px;text-align:'+align+';background:var(--bg-card);'+_borderCss+_bcbVars+'">'
         + '<div style="font-size:2.2rem;font-weight:900;color:'+col+';line-height:1">'+pct.toFixed(1)+'<span style="font-size:0.5em;margin-left:0.12em">%</span></div>'
         + diffLine(name, pct, false, align, c)
         + '<div style="font-size:0.82rem;color:var(--text-modal-muted);margin-top:3px">'+voix.toLocaleString('fr-FR')+' voix</div>'
-        + '<div style="font-size:'+nomSizeC+';font-weight:700;color:var(--text-modal);margin-top:8px">'+nomHtml+'</div>'
+        + '<div style="font-size:'+nomSizeC+';font-weight:700;color:var(--text-modal);margin-top:8px">'+(hasBr ? nomInner : nomHtml)+'</div>'
         + (pa ? '<div style="font-size:0.68rem;color:var(--text-modal-muted);margin-top:3px">'+pa+'</div>' : '')
         + '</div>'
-      : '<div style="flex:1 1 0;min-width:0;overflow:hidden;padding:'+dPad+';text-align:'+align+';background:var(--bg-card);border-'+borderSide+':'+bw+' solid '+col+'">'
+      : '<div class="'+_bcbClass.trim()+'" style="flex:1 1 0;min-width:0;overflow:hidden;padding:'+dPad+';text-align:'+align+';background:var(--bg-card);'+_borderCss+_bcbVars+'">'
         + '<div style="font-size:'+dScoreSize+';font-weight:900;color:'+col+';line-height:1">'+scoreHtml+'</div>'
         + diffLine(name, pct, false, align, c)
         + '<div style="font-size:'+dVoixSize+';color:var(--text-modal-muted);margin-top:'+dGapVoix+'">'+voix.toLocaleString('fr-FR')+' voix</div>'
@@ -2810,7 +3514,10 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
         + '</div>'
     );
   }
-  const paL = ciL.pa || ''; const paR = ciR.pa || '';
+  // Pour binôme à partis hétérogènes : code parti combiné "PA1+PA2"
+  // (cohérent avec sidebar liste, légende, tooltip carte). Sinon pa simple.
+  const paL = (typeof binomePartiLabel === 'function' ? binomePartiLabel(nameL) : '') || ciL.pa || '';
+  const paR = (typeof binomePartiLabel === 'function' ? binomePartiLabel(nameR) : '') || ciR.pa || '';
   // Indicateurs meilleur/pire bureau (comme dans la vue normale)
   function arrowFor(name, c, onColor) {
     if (!extr || !ns || ns === 'ville') return '';
@@ -2842,13 +3549,22 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
   const radius = compact ? '8px' : '10px';
   const margin = compact ? '12px' : (isMobileDuel ? '12px' : '18px');
   // Côté gauche : text-align:right (texte vers le VS) ; côté droit : text-align:left
+  // Cas particulier ex-aequo (50/50 EXACT en voix entières) : on affiche les
+  // DEUX côtés en blockWinner (couleur pleine de chaque côté), pas de loser visuel.
+  // tieCandidatesForBureau travaille sur _voix entiers pour éviter les faux ties
+  // dus aux arrondis pct.
+  const _tied = (typeof tieCandidatesForBureau === 'function') ? tieCandidatesForBureau(data) : null;
+  const isTieDuel = !!(_tied && _tied.length === 2 && _tied.includes(nameW) && _tied.includes(nameLos));
   let leftBlock, rightBlock;
-  if (winLeft) {
-    leftBlock  = blockWinner(colL, nameL, pctL, voixL, prenomL, nomL, partiL, paL, allieL, 'right', compact);
-    rightBlock = blockLoser (colR, nameR, pctR, voixR, prenomR, nomR, partiR, paR, allieR, 'left', 'left', compact);
+  if (isTieDuel) {
+    leftBlock  = blockWinner(bgL, nameL, pctL, voixL, prenomL, nomL, nomLFull, partiL, paL, allieL, 'right', compact);
+    rightBlock = blockWinner(bgR, nameR, pctR, voixR, prenomR, nomR, nomRFull, partiR, paR, allieR, 'left',  compact);
+  } else if (winLeft) {
+    leftBlock  = blockWinner(bgL, nameL, pctL, voixL, prenomL, nomL, nomLFull, partiL, paL, allieL, 'right', compact);
+    rightBlock = blockLoser (colR, nameR, pctR, voixR, prenomR, nomR, nomRFull, partiR, paR, allieR, 'left', 'left', compact);
   } else {
-    leftBlock  = blockLoser (colL, nameL, pctL, voixL, prenomL, nomL, partiL, paL, allieL, 'right', 'right', compact);
-    rightBlock = blockWinner(colR, nameR, pctR, voixR, prenomR, nomR, partiR, paR, allieR, 'left', compact);
+    leftBlock  = blockLoser (colL, nameL, pctL, voixL, prenomL, nomL, nomLFull, partiL, paL, allieL, 'right', 'right', compact);
+    rightBlock = blockWinner(bgR, nameR, pctR, voixR, prenomR, nomR, nomRFull, partiR, paR, allieR, 'left', compact);
   }
   // Grid minmax(0,1fr) auto minmax(0,1fr) : garantit MATHÉMATIQUEMENT que les deux
   // colonnes latérales sont strictement égales et que la colonne VS reste au centre
@@ -2870,6 +3586,9 @@ function renderCandidates(data, ns, cityAvg, extr, compact, extrLabel) {
 
   function candRow(name, pct) {
     const col=colorOfCandidate(name); const isW=name===data.w;
+    // Binôme à partis hétérogènes : background bicolore (split diagonal 135°) pour
+    // la barre de progression. Pour candidat simple : couleur unique = col.
+    const dotBg = (typeof dotBackground === 'function') ? dotBackground(name) : col;
     const voix=Math.round(pct*(data.e||0)/100);
     const isBest=extr.best[name]&&extr.best[name].num===ns;
     const isWorst=extr.worst[name]&&extr.worst[name].num===ns;
@@ -2883,25 +3602,52 @@ function renderCandidates(data, ns, cityAvg, extr, compact, extrLabel) {
     const mCoal=name.match(/\(([^)]+)\)$/);
     const coal=mCoal?mCoal[1]:(name.trim().split(/\s+/).length>1?name.trim().split(/\s+/).pop():'');
     if(compact){
-      const nomFamille=ci.n||name.replace(/\s*\([^)]*\)\s*$/,'').trim().split(/\s+/).pop()||name;
-      const partiAbr=ci.pa||coal||'';
+      // Binôme paritaire : on affiche le label court "Nom1 / Nom2" (femme devant),
+      // le parti abrégé reste à côté comme pour un candidat simple.
+      const isBinome = Array.isArray(ci.binome) && ci.binome.length === 2;
+      // Tirets ASCII → tirets insécables (U+2011) pour empêcher tout break interne
+      // ("Fleuret-Pagnoux" ne peut plus se scinder en "Fleuret-" + "Pagnoux").
+      const nomFamille = isBinome
+        ? ((binomeShortLabel(name) || ci.n || '').replace(/-/g, '‑'))
+        : (ci.n || name.replace(/\s*\([^)]*\)\s*$/,'').trim().split(/\s+/).pop() || name);
+      // Binôme à partis hétérogènes : étiquette "PA1+PA2" via binomePartiLabel
+      // (sinon pa simple, statu quo).
+      const partiAbr=(isBinome && typeof binomePartiLabel === 'function' ? binomePartiLabel(name) : '') || ci.pa || coal || '';
       // Sidebar preview : Nom (gros) + parti abrégé sur la même ligne, pct fer en bas à droite
+      // Pour les binômes, classe .cand-name-binome (ellipsis CSS) + title HTML pour le full au survol.
+      // Et classe .cand-namesub-binome sur le container parent pour forcer flex-wrap:nowrap
+      // (sinon le parti pourrait passer en 2e ligne dans certains cas limites).
+      const nameClass = isBinome ? ' cand-name-binome' : '';
+      const nameTitle = isBinome ? ' title="'+nomFamille.replace(/"/g,'&quot;')+'"' : '';
+      const subContClass = isBinome ? ' class="cand-namesub-binome"' : '';
       return '<div class="cand-row">'
         +'<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-bottom:3px">'
-        +'<div style="flex:1;min-width:0;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">'
-        +'<span class="cand-name" style="font-size:1.3rem;line-height:1;font-weight:'+(isW?'800':'700')+'">'+nomFamille+'</span>'
+        +'<div'+subContClass+' style="flex:1;min-width:0;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">'
+        +'<span class="cand-name'+nameClass+'"'+nameTitle+' style="font-size:1.3rem;line-height:1;font-weight:'+(isW?'800':'700')+'">'+nomFamille+'</span>'
         +((partiAbr||arrowCompact)?'<span class="cand-sub" style="color:var(--text-meta)">'+(partiAbr||'')+arrowCompact+'</span>':'')
         +'</div>'
         +'<div class="cand-pct" style="font-size:1.5rem;line-height:1;flex-shrink:0">'+pct.toFixed(1)+'<span style="font-size:0.5em;margin-left:2px">%</span></div>'
         +'</div>'
-        +'<div class="bar-bg"><div class="bar-fg" style="width:'+pct.toFixed(1)+'%;background:'+col+'"></div></div>'
+        +'<div class="bar-bg"><div class="bar-fg" style="width:'+pct.toFixed(1)+'%;background:'+dotBg+'"></div></div>'
         +'</div>';
     } else {
       const dV=+(pct-(cityAvg[name]||0)).toFixed(1);
       const fullName=candDisplayName(name);          // texte brut (pour tooltip)
       const fullNameHtml=candDisplayNameHtml(name);  // HTML avec spans (swap mobile)
-      const paCode=ci.pa||coal; const paFull=PARTI_NAMES[paCode]||paCode;
-      const alStr=ci.al||''; const alFull=alStr?alStr.split(',').map(a=>PARTI_NAMES[a.trim()]||a.trim()).join(' + '):'';
+      // Binôme à partis hétérogènes : paCode="PA1+PA2", paFull="Nom1 + Nom2"
+      // (cohérent avec partiLabel). Sinon comportement standard.
+      const _isBin = Array.isArray(ci.binome) && ci.binome.length === 2;
+      const _binPa = (_isBin && typeof binomePartiLabel === 'function') ? binomePartiLabel(name) : '';
+      const _isMixed = _binPa && _binPa.indexOf('+') >= 0;
+      const paCode = _isMixed ? _binPa : (ci.pa || coal);
+      const paFull = _isMixed
+        ? _binPa.split('+').map(c => PARTI_NAMES[c] || c).join(' + ')
+        : (PARTI_NAMES[paCode] || paCode);
+      // Alliés : helper global binomeAllies (gère candidat simple + binôme avec
+      // dérivation depuis les membres). Format brut = peut contenir "/" (binôme
+      // hétérogène) ou "," (alliances multiples). On garde la cascade existante.
+      const alStr = (typeof binomeAllies === 'function') ? binomeAllies(name) : (ci.al || '');
+      const alFull=alStr?alStr.split(',').map(a=>PARTI_NAMES[a.trim()]||a.trim()).join(' + '):'';
       const alShort=alStr?alStr.split(',').map(a=>a.trim()).join(' + '):'';
       const tipParts=[fullName]; if(paFull)tipParts.push(paFull); if(alFull)tipParts.push('Avec : '+alFull);
       if(ci.t&&ci.t.length)tipParts.push(ci.t.join(', '));
@@ -2923,9 +3669,9 @@ function renderCandidates(data, ns, cityAvg, extr, compact, extrLabel) {
         +'</div>'
         +'</div>'
         +'<div class="bar-bg bar-tall">'
-        +'<div class="bar-fg" style="width:'+pct.toFixed(1)+'%;background:'+col+'"></div>'
+        +'<div class="bar-fg" style="width:'+pct.toFixed(1)+'%;background:'+dotBg+'"></div>'
         +(ns!=='ville'&&(cityAvg[name]||0)>0.05?'<div class="bar-mark" style="left:'+Math.min(99.5,+(cityAvg[name]||0)).toFixed(2)+'%"></div>':'')
-        +(ns!=='ville'&&(cityAvg[name]||0)>0.05?'<div class="bar-vs">vs ville <span class="'+(dV>=0?'dp':'dn')+'">'+(dV>=0?'+':'')+dV.toFixed(1)+' pts</span></div>':'')
+        +(ns!=='ville'&&(cityAvg[name]||0)>0.05?'<div class="bar-vs">vs '+((typeof refLabelForCurrent==='function')?refLabelForCurrent():'ville')+' <span class="'+(dV>=0?'dp':'dn')+'">'+(dV>=0?'+':'')+dV.toFixed(1)+' pts</span></div>':'')
         +'</div>'
         +'</div>';
     }
@@ -2936,7 +3682,11 @@ function renderCandidates(data, ns, cityAvg, extr, compact, extrLabel) {
   visible.forEach(([name, pct]) => { h += candRow(name, pct); });
   if (hidden.length) {
     const nb = hidden.length;
-    const label = '+ ' + nb + ' autre' + (nb > 1 ? 's' : '') + ' candidat' + (nb > 1 ? 's' : '');
+    // Cantonale/départementale : on parle de "binômes" plutôt que de "candidats"
+    // (chaque entrée de la liste représente un binôme paritaire, pas un individu).
+    const _isCantNoun = (typeof isCantonalElection === 'function') && isCantonalElection(currentElection);
+    const _noun = _isCantNoun ? 'binôme' : 'candidat';
+    const label = '+ ' + nb + ' autre' + (nb > 1 ? 's' : '') + ' ' + _noun + (nb > 1 ? 's' : '');
     if (compact) {
       const uid = 'cm_' + ns + '_c';
       h += '<div id="' + uid + '" style="display:none">';
@@ -2946,7 +3696,7 @@ function renderCandidates(data, ns, cityAvg, extr, compact, extrLabel) {
     } else {
       let allHtml = '';
       hidden.forEach(([name, pct]) => { allHtml += candRow(name, pct); });
-      const tf = currentElection + ' — ' + cands.length + ' candidats';
+      const tf = currentElection + ' — ' + cands.length + ' ' + _noun + (cands.length > 1 ? 's' : '');
       h += '<button class="show-more-btn" onclick="openCandFloat(this,this.dataset.t,this.dataset.b)" data-t="' + tf.replace(/"/g,'&quot;') + '" data-b="' + allHtml.replace(/"/g,'&quot;') + '">' + label + '</button>';
     }
   }
@@ -2965,9 +3715,96 @@ function renderCandidates(data, ns, cityAvg, extr, compact, extrLabel) {
  * showBureauSidebar() et renderGlobal() afin de factoriser la logique
  * sans rien casser de l'UX actuelle.
  */
+// ── Sidebar mode normal : pour une élection cantonale/départementale, on
+// remplace la titraille unique "ville" (qui agrégerait des binômes ne se
+// croisant jamais, donc sans signification) par N titrailles superposées,
+// une par canton, dont le clic ouvre la fiche canton modale.
+// Le modèle visuel de chaque titraille est strictement aligné sur la titraille
+// ville (fiche-id-link + partici-grid + renderCandidates compact), avec juste
+// "La Rochelle-N" au lieu de "La Rochelle" et l'agrégation restreinte aux
+// bureaux du canton.
+function buildCantonsPreviewHTML() {
+  const el0 = ELECTIONS[currentElection];
+  const mapYear = String(el0 ? el0.my : CURRENT_ERA);
+  const yearInfo = BUREAU_INFO[mapYear] || BUREAU_INFO[CURRENT_ERA] || {};
+  const cantonEra = (typeof getCantonEraForElection === 'function') ? getCantonEraForElection(currentElection) : CURRENT_ERA_CANTON;
+  const cantonsMeta = ((typeof CANTON_INFO !== 'undefined' && CANTON_INFO[cantonEra]) || {}).cantons || {};
+  // Cantons présents pour l'ère bureau de l'élection (= cantons qui ont au moins
+  // un bureau renseigné dans BUREAU_INFO[mapYear]).
+  const cidsSet = new Set();
+  Object.values(yearInfo).forEach(b => { if (b && b.c) cidsSet.add(String(b.c)); });
+  const cids = [...cidsSet].sort((a,b) => parseInt(a) - parseInt(b));
+  if (!cids.length) return '<div style="color:#aaa;font-style:italic;padding:16px 0;font-size:0.82rem">Aucun canton renseigné pour cette ère.</div>';
+  const shData = getSheetData();
+  // Container parent qui gère le mouseleave GLOBAL : la souris peut passer dans
+  // les gaps entre titrailles (mouseleave des fiche-id-link individuels) sans
+  // déclencher de reset du previewCantonId. Reset uniquement à la sortie totale.
+  let html = '<div onmouseleave="_onCantonTitrailleLeave()">';
+  cids.forEach(cid => {
+    const bureauNums = Object.keys(yearInfo).filter(ns => String(yearInfo[ns].c || '') === cid);
+    let totI=0, totE=0, totAbst=0, totBn=0;
+    const candTotV = {};
+    bureauNums.forEach(ns2 => {
+      const d = shData[ns2]; if (!d) return;
+      const abst_nb = Math.round((d.i||0)*(d.a||0)/100);
+      totI += d.i||0; totE += d.e||0; totAbst += abst_nb; totBn += d.bn||0;
+      Object.entries(d.c || {}).forEach(([k,v]) => { candTotV[k] = (candTotV[k]||0) + v*(d.e||0)/100; });
+    });
+    if (!totE) return; // skip canton sans données
+    const cAvg = {}; Object.entries(candTotV).forEach(([k,v]) => { cAvg[k] = +(v/Math.max(totE,1)*100).toFixed(1); });
+    const cWinner = Object.entries(cAvg).sort((a,b) => b[1]-a[1])[0];
+    const cWinCol = cWinner ? colorOfCandidate(cWinner[0]) : '#ccc';
+    const cantonName = (cantonsMeta[cid] || {}).name || ('La Rochelle-' + cid);
+    // Binôme leader du canton, rendu comme le badge du tooltip carte (au hover) :
+    // span coloré avec background bicolore (split diagonal 135°) si binôme mixte,
+    // uni sinon — texte blanc, nom binôme + score. Cohérent avec la convention
+    // "tag candidat" utilisée partout (légende, listes leaders, hover map).
+    const cWinName = cWinner ? cWinner[0] : '';
+    const cWinCi = cWinName ? candInfo(cWinName) : {};
+    const cWinIsBin = Array.isArray(cWinCi.binome) && cWinCi.binome.length === 2;
+    const cWinLabel = cWinName
+      ? (cWinIsBin ? (binomeShortLabel(cWinName) || cWinCi.n || cWinName) : (cWinCi.n || cWinName))
+      : '';
+    const cWinBg = cWinName ? ((typeof dotBackground === 'function') ? dotBackground(cWinName) : cWinCol) : '';
+    const cWinPct = cWinner ? (cWinner[1].toFixed(1) + ' %') : '';
+    const cWinBadge = cWinName
+      ? '<span style="display:inline-block;max-width:100%;background:'+cWinBg+';color:#fff;font-size:0.88rem;font-weight:700;padding:4px 11px;border-radius:5px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle">'+cWinLabel+' '+cWinPct+'</span>'
+      : '';
+    // Titraille canton SEULE (pas de partici-grid ni de liste candidats) :
+    // l'utilisateur clique pour accéder aux résultats détaillés via la fiche
+    // canton modale. Modèle visuel identique à la titraille ville (fiche-id-link).
+    // Border-left bicolore (binôme à 2 vrais partis gagnant) : retire la border
+    // solide et utilise les pseudo-éléments .duel-loser-bcb (haut/bas) — même
+    // technique que le loser duel. Sinon, border solide classique.
+    const _cWinCs = cWinName && (typeof binomePartiColors === 'function') ? binomePartiColors(cWinName) : null;
+    const _ctBcb = _cWinCs ? ' duel-loser-bcb bcb-left' : '';
+    const _ctBorder = _cWinCs
+      ? 'padding-left:17px;--duel-loser-bcb-c1:'+_cWinCs[0]+';--duel-loser-bcb-c2:'+_cWinCs[1]+';--duel-loser-bcb-w:5px'
+      : 'border-left:5px solid '+cWinCol;
+    html += '<div class="fiche-id-link'+_ctBcb+'" style="'+_ctBorder+'" onclick="selectCantonFromList(\''+cid+'\')" onmouseenter="_onCantonTitrailleEnter(\''+cid+'\')">'
+      + '<div style="flex:1;min-width:0"><div class="fiche-num">Global</div><div class="fiche-name">'+cantonName+'</div>'
+      + (cWinBadge
+          ? '<div class="fiche-sub">'+cWinBadge+'</div><div class="fiche-sub" style="visibility:hidden;margin-top:6px;line-height:0;font-size:0">-</div>'
+          : '<div class="fiche-sub" style="visibility:hidden">-</div><div class="fiche-sub" style="visibility:hidden">-</div>')
+      + '</div>'
+      + '<span class="fiche-id-chevron">›</span></div>';
+  });
+  html += '</div>';
+  // Si aucun canton n'avait de données, html contient juste le wrapper vide → fallback.
+  if (html === '<div onmouseleave="_onCantonTitrailleLeave()"></div>') {
+    return '<div style="color:#aaa;font-style:italic;padding:16px 0;font-size:0.82rem">Aucune donnée disponible.</div>';
+  }
+  return html;
+}
+
 function buildBureauPreviewHTML(feature) {
   // ── Mode "ville globale" (pas de bureau survolé/sélectionné) ──
   if (!feature) {
+    // Élection cantonale/départementale : agrégation ville n'a pas de sens
+    // (binômes différents par canton). On bascule sur 3 titrailles canton.
+    if (typeof isCantonalElection === 'function' && isCantonalElection(currentElection)) {
+      return buildCantonsPreviewHTML();
+    }
     const shData = getSheetData();
     let totI = 0, totE = 0, totAbst = 0, totBn = 0;
     const candTotV = {};
@@ -3005,8 +3842,14 @@ function buildBureauPreviewHTML(feature) {
   const aggNums = isAgg ? aggNumList(ns) : null;
   const sbNum = isAgg ? 'Bureaux n\u00b0 ' + fmtAggNums(aggNums) : 'Bureau n\u00b0 ' + parseInt(ns);
   const sbName = isAgg ? 'Bureaux agrégés de ' + info.quartier : info.denomination;
-  // B8 phase 4 : titraille bureau non-cliquable (la fiche s\'ouvre via clic carte)
-  let h = '<div class="fiche-id-static" style="border-left:5px solid '+winCol+'">'
+  // B8 phase 4 : titraille bureau non-cliquable (la fiche s\'ouvre via clic carte).
+  // Border-left bicolore si winner = binôme à 2 vrais partis (cf. titraille canton sidebar).
+  const _bdCs = data && data.w && (typeof binomePartiColors === 'function') ? binomePartiColors(data.w) : null;
+  const _bdBcb = _bdCs ? ' duel-loser-bcb bcb-left' : '';
+  const _bdBorder = _bdCs
+    ? 'padding-left:17px;--duel-loser-bcb-c1:'+_bdCs[0]+';--duel-loser-bcb-c2:'+_bdCs[1]+';--duel-loser-bcb-w:5px'
+    : 'border-left:5px solid '+winCol;
+  let h = '<div class="fiche-id-static'+_bdBcb+'" style="'+_bdBorder+'">'
     + '<div style="flex:1">'
     + '<div class="fiche-num">'+sbNum+'</div>'
     + '<div class="fiche-name">'+formatDenomination(sbName)+'</div>'
@@ -3032,7 +3875,7 @@ function buildBureauPreviewHTML(feature) {
     h += '<div class="partici-grid" style="grid-template-columns:repeat(2,1fr);gap:5px;margin-bottom:10px">'
       + '<div class="pbox" style="flex-direction:row;align-items:baseline;justify-content:center;gap:6px"><span class="pbox-lbl">Abstention</span><span class="pbox-val">'+(data.a||0).toFixed(1)+' %</span></div>'
       + '<div class="pbox" style="flex-direction:row;align-items:baseline;justify-content:center;gap:6px"><span class="pbox-lbl">Blancs et nuls</span><span class="pbox-val">'+blancsPctS.toFixed(1)+' %</span></div></div>';
-    h += renderCandidates(data, ns, cityAverage(), getExtremes(), true);
+    h += renderCandidates(data, ns, refAverageForBureau(ns), getExtremes(), true);
   } else {
     h += '<div style="color:#aaa;font-style:italic;padding:10px 0">Données non disponibles pour ce bureau.</div>';
   }
@@ -3092,6 +3935,19 @@ function openOverlay() {
 }
 
 function openOverlayQuartierNamed(qName){
+  // Élection cantonale : pas de fiche quartier (cf. updateOverlayTabs / showBureauListSidebar).
+  // Si on arrive ici via URL ou navigation, on retombe sur la fiche canton du bureau ancre.
+  if (typeof isCantonalElection === 'function' && isCantonalElection(currentElection)) {
+    if (currentFeature) {
+      const info = bureauInfo(currentFeature);
+      const cid = info && info.canton ? String(info.canton) : null;
+      if (cid && typeof selectCantonFromList === 'function') {
+        selectCantonFromList(cid);
+        return;
+      }
+    }
+    return;
+  }
   if(!currentFeature)return;
   overlayTab='quartier'; currentQuartier=qName;
   document.getElementById('ov-title').textContent=qName?'Quartier — '+qName:'Quartier';
@@ -3128,22 +3984,38 @@ function updateOverlayTabs(){
   if (!c || !tabB) return;
   // Bouton "Ce bureau"
   tabB.className = (overlayTab === 'bureau' ? 'otab on' : 'otab');
-  // Boutons quartier (1 ou plusieurs si bureau partagé)
+  // Boutons quartier (1 ou plusieurs si bureau partagé) puis bouton canton.
+  // Deux préfixes pour chaque label : version longue desktop / version courte mobile.
+  // Le swap se fait en CSS via @media (pas de détection JS, cohérent au resize).
+  // Élections cantonales : pas d'onglet quartier (ambiguïté quartier × canton —
+  // un quartier peut chevaucher 2 cantons, agréger des binômes différents n'a pas de sens).
+  const isCantonal = (typeof isCantonalElection === 'function') && isCantonalElection(currentElection);
   let html = '';
   if (currentFeature) {
     const info = bureauInfo(currentFeature);
-    const quartiers = (typeof getQuartiersForInfo === 'function') ? getQuartiersForInfo(info) : [];
+    const quartiers = isCantonal ? [] : ((typeof getQuartiersForInfo === 'function') ? getQuartiersForInfo(info) : []);
     quartiers.forEach((q) => {
       const isActive = (overlayTab === 'quartier' && currentQuartier === q);
-      // Deux préfixes : version longue desktop ("Le quartier : ") et version
-      // compacte mobile ("Q. "). Le swap se fait en CSS via @media — pas de
-      // détection JS, donc cohérent au resize sans rerender.
       const label =
         '<span class="otab-prefix-full">Le quartier : </span>' +
         '<span class="otab-prefix-short">Q. </span>' + q;
       const safeQ = q.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
       html += '<button class="otab' + (isActive?' on':'') + '" onclick="switchTabQ(\'' + safeQ + '\')">' + label + '</button>';
     });
+    // Bouton canton : déduit du champ .c du bureau courant pour l'ère de l'élection.
+    const cid = (typeof getCantonOfBureau === 'function')
+      ? getCantonOfBureau(numStr(currentFeature), String(ELECTIONS[currentElection]?.my || CURRENT_ERA))
+      : null;
+    if (cid) {
+      const cantonEra = (typeof getCantonEraForElection === 'function') ? getCantonEraForElection(currentElection) : CURRENT_ERA_CANTON;
+      const cantonsMeta = ((typeof CANTON_INFO !== 'undefined' && CANTON_INFO[cantonEra]) || {}).cantons || {};
+      const cantonName = (cantonsMeta[cid] || {}).name || ('La Rochelle-' + cid);
+      const isActive = (overlayTab === 'canton' && currentCanton === cid);
+      const label =
+        '<span class="otab-prefix-full">Le canton : </span>' +
+        '<span class="otab-prefix-short">C. </span>' + cantonName;
+      html += '<button class="otab' + (isActive?' on':'') + '" onclick="switchTabC(\'' + cid + '\')">' + label + '</button>';
+    }
   }
   c.innerHTML = html;
 }
@@ -3152,11 +4024,22 @@ function switchTabQ(q){
   currentQuartier = q;
   switchTab('quartier');
 }
+function switchTabC(cid){
+  currentCanton = String(cid);
+  switchTab('canton');
+}
 
 function switchTab(tab){
   overlayTab=tab;
   if(tab==='bureau'){
     if(currentFeature){const info=bureauInfo(currentFeature);document.getElementById('ov-title').textContent=isAggNs(numStr(currentFeature))?'Bureaux agrégés — '+info.quartier:'Fiche bureau — '+info.denomination;renderFiche(currentFeature);updateAccentColor();}
+  } else if (tab === 'canton') {
+    const cantonEra = (typeof getCantonEraForElection === 'function') ? getCantonEraForElection(currentElection) : CURRENT_ERA_CANTON;
+    const cantonsMeta = ((typeof CANTON_INFO !== 'undefined' && CANTON_INFO[cantonEra]) || {}).cantons || {};
+    const cantonName = (cantonsMeta[currentCanton] || {}).name || ('La Rochelle-' + currentCanton);
+    document.getElementById('ov-title').textContent = 'Canton — ' + cantonName;
+    renderCanton();
+    updateAccentColor();
   } else {
     const info=bureauInfo(currentFeature);
     var qt=currentQuartier||(getQuartierParts(info.quartier||'')[0]||'');
@@ -3306,6 +4189,22 @@ function renderBlocTriptychQuartier(qData,bureauNums){
 }
 
 function openGlobalOverlay() {
+  // Élections cantonales : pas de "résultat global ville" pertinent (chaque canton a
+  // ses propres candidats binominaux). On bascule sur la fiche canton, déterminée
+  // par (1) le suffix du label "— La Rochelle-N" si présent, sinon (2) le canton du
+  // currentFeature si présent, sinon (3) le canton 1 par défaut.
+  if (typeof isCantonalElection === 'function' && isCantonalElection(currentElection)) {
+    let cid = (typeof getCantonOfElection === 'function') ? getCantonOfElection(currentElection) : null;
+    if (!cid && currentFeature) {
+      const info = (typeof bureauInfo === 'function') ? bureauInfo(currentFeature) : {};
+      cid = info && info.c ? String(info.c) : null;
+    }
+    if (!cid) cid = '1';
+    if (typeof selectCantonFromList === 'function') {
+      selectCantonFromList(cid);
+      return;
+    }
+  }
   overlayTab = 'global';
   currentFeature = null;
   document.getElementById('ov-title').textContent = 'La Rochelle — Résultats globaux';
@@ -3404,7 +4303,7 @@ function renderGlobalFiche() {
   // Header — même style que bureau
   var nbBureaux = Object.values(shData).filter(function(d){return !!d;}).length;
   var h = '<div class="fiche-id">'
-    + ficheSail(winCol, false)
+    + ficheSail(sailColorForWinner(winner && winner[0]), false)
     + '<div class="fiche-text">'
     + '<div class="fiche-num">Global</div>'
     + '<div class="fiche-name">La Rochelle</div>'
@@ -3485,6 +4384,9 @@ function renderGlobalFiche() {
 
   // Liste des quartiers
   h += renderQuartierListGlobal();
+
+  // Liste des cantons (juste après les quartiers, uniquement si l'ère canton est définie)
+  h += renderCantonListGlobal();
 
   document.getElementById('ov-body').innerHTML = h; document.getElementById('ov-body').scrollTop = 0;
   initGlobalMinimap(winCol);
@@ -3603,16 +4505,132 @@ function openQuartierFromGlobal(qName) {
 }
 
 
+// Liste des cantons dans la fiche globale (sous la liste des quartiers).
+// Calque le pattern de renderQuartierListGlobal : agrégation par canton + barre blocs/Oui-Non.
+// Clic → selectCantonFromList(cid) qui ouvre la fiche canton.
+function renderCantonListGlobal() {
+  var shData = getSheetData();
+  var el0 = ELECTIONS[currentElection];
+  var mapYear = String(el0 ? el0.my : CURRENT_ERA);
+  var yearInfo = BUREAU_INFO[mapYear] || BUREAU_INFO[CURRENT_ERA] || {};
+  var cantonEra = (typeof getCantonEraForElection === 'function') ? getCantonEraForElection(currentElection) : null;
+  if (!cantonEra) return '';
+  var cantonsMeta = ((typeof CANTON_INFO !== 'undefined' && CANTON_INFO[cantonEra]) || {}).cantons || {};
+  var LINE = '<div style="position:absolute;top:0;bottom:0;left:50%;width:0;border-left:1.5px dashed rgba(255,255,255,0.65);pointer-events:none;z-index:2"></div>';
+
+  // Aggrégation par canton (champ .c de chaque bureau dans l'ère bureau).
+  var cAgg = {};
+  Object.keys(yearInfo).forEach(function(ns) {
+    var c = yearInfo[ns].c;
+    if (!c) return;
+    var cid = String(c);
+    var d = shData[ns]; if (!d) return;
+    if (!cAgg[cid]) cAgg[cid] = { totI: 0, totE: 0, totAbst: 0, blocsAgg: {}, ouiW: 0, nonW: 0, nb: 0 };
+    var an = Math.round((d.i || 0) * (d.a || 0) / 100);
+    cAgg[cid].totI += d.i || 0;
+    cAgg[cid].totE += d.e || 0;
+    cAgg[cid].totAbst += an;
+    cAgg[cid].nb++;
+    var isRefG = (typeof isReferendum === 'function' && isReferendum(currentElection));
+    if (isRefG) {
+      if (d.c) {
+        cAgg[cid].ouiW += (d.c.Oui || 0) * (d.e || 0) / 100;
+        cAgg[cid].nonW += (d.c.Non || 0) * (d.e || 0) / 100;
+      }
+    } else {
+      var blocs = computeBlocs(d);
+      Object.entries(blocs).forEach(function(kv) {
+        cAgg[cid].blocsAgg[kv[0]] = (cAgg[cid].blocsAgg[kv[0]] || 0) + kv[1];
+      });
+    }
+  });
+
+  // Tri numérique par id canton
+  var cIds = Object.keys(cAgg).sort(function(a, b) { return parseInt(a) - parseInt(b); });
+  if (!cIds.length) return '';
+  var isRefG = (typeof isReferendum === 'function' && isReferendum(currentElection));
+
+  var h = '<div class="fiche-section-bureaux-list" data-list-type="cantons" style="margin-top:18px">';
+  h += '<div style="display:flex;align-items:center;gap:10px;padding:4px 10px;margin-bottom:2px">'
+    + '<span style="font-size:0.6rem;font-weight:700;color:var(--text-meta);flex:1">Canton</span>'
+    + '<span style="font-size:0.6rem;font-weight:700;color:var(--text-meta);width:68px;text-align:right;flex-shrink:0">Abstention</span>'
+    + '<span style="font-size:0.6rem;font-weight:700;color:var(--text-meta);flex:2;margin-left:12px">' + (isRefG ? 'Oui / Non' : 'Blocs') + '</span>'
+    + '</div>';
+
+  cIds.forEach(function(cid) {
+    var ag = cAgg[cid];
+    if (!ag.totI) return;
+    var cantonName = (cantonsMeta[cid] || {}).name || ('La Rochelle-' + cid);
+    var abst_pct = +(ag.totAbst / ag.totI * 100).toFixed(1);
+
+    var bar;
+    if (isRefG) {
+      var ouiP = ag.totE > 0 ? +(ag.ouiW / ag.totE * 100).toFixed(1) : 0;
+      var nonP = ag.totE > 0 ? +(ag.nonW / ag.totE * 100).toFixed(1) : 0;
+      var totRefP = (ouiP + nonP) || 1;
+      var ouiCol = colorOfCandidate('Oui');
+      var nonCol = colorOfCandidate('Non');
+      bar = '<div style="position:relative"><div style="display:flex;height:14px;border-radius:3px;overflow:hidden;gap:1px;width:100%">';
+      if (ouiP > 0) bar += '<div class="btip" data-color="' + ouiCol + '" data-label="Oui" data-pct="' + ouiP.toFixed(1) + ' %" style="width:' + (ouiP / totRefP * 100).toFixed(1) + '%;background:' + ouiCol + '"></div>';
+      if (nonP > 0) bar += '<div class="btip" data-color="' + nonCol + '" data-label="Non" data-pct="' + nonP.toFixed(1) + ' %" style="width:' + (nonP / totRefP * 100).toFixed(1) + '%;background:' + nonCol + '"></div>';
+      bar += '</div>' + LINE + '</div>';
+    } else {
+      // Normaliser blocs (moyenne sur nb bureaux du canton)
+      var nb = ag.nb || 1;
+      var blocsNorm = {};
+      Object.entries(ag.blocsAgg).forEach(function(kv) { blocsNorm[kv[0]] = +(kv[1] / nb).toFixed(1); });
+      var totBN = Object.values(blocsNorm).reduce(function(s, v) { return s + v; }, 0) || 1;
+      bar = '<div style="position:relative"><div style="display:flex;height:14px;border-radius:3px;overflow:hidden;gap:1px;width:100%">';
+      Object.entries(BLOC_CONFIG).forEach(function(kv) {
+        var p = blocsNorm[kv[0]] || 0; if (p <= 0) return;
+        bar += '<div class="btip" data-color="' + kv[1].color + '" data-label="' + kv[1].label + '" data-pct="' + p.toFixed(1) + ' %"'
+             + ' style="width:' + (p / totBN * 100).toFixed(1) + '%;background:' + kv[1].color + '"></div>';
+      });
+      bar += '</div>' + LINE + '</div>';
+    }
+
+    h += '<div class="q-brow" onclick="selectCantonFromList(\'' + cid.replace(/'/g, "\\'") + '\')"> '
+      + '<span style="font-size:0.74rem;font-weight:500;color:var(--text-modal);flex:1;line-height:1.35">' + cantonName + '</span>'
+      + '<span style="font-size:0.72rem;font-weight:700;color:var(--text-modal-muted);width:68px;text-align:right;flex-shrink:0;padding-top:1px">' + abst_pct.toFixed(1) + ' %</span>'
+      + '<div style="flex:2;min-width:0;margin-left:12px;padding-top:3px">' + bar + '</div>'
+      + '</div>';
+  });
+
+  h += '</div>';
+  return h;
+}
+
+
 function setOverlayAccent(color){
   var tb=document.getElementById('ov-topbar');if(!tb)return;
+  // Reset systématique de l'état bicolor (au cas où on bascule entre 2 fiches).
+  tb.classList.remove('ov-topbar-bicolor');
+  tb.style.removeProperty('--ov-acc-c1');
+  tb.style.removeProperty('--ov-acc-c2');
   if(!color){tb.style.borderBottomColor='transparent';tb.style.background='#fff';return;}
+  // Cas bicolor : array [c1, c2] (binôme à 2 vrais partis). On désactive la
+  // border-bottom uniforme et on active le pseudo-element ::after via la classe.
+  // Le tint background reste basé sur c1 pour rester sobre (un dégradé tinté serait
+  // visuellement chargé sur 44px de hauteur de topbar).
+  if (Array.isArray(color)) {
+    var c1 = color[0], c2 = color[1];
+    tb.classList.add('ov-topbar-bicolor');
+    tb.style.setProperty('--ov-acc-c1', c1);
+    tb.style.setProperty('--ov-acc-c2', c2);
+    tb.style.borderBottomColor = 'transparent';
+    var r1=parseInt(c1.slice(1,3),16),g1=parseInt(c1.slice(3,5),16),b1=parseInt(c1.slice(5,7),16);
+    tb.style.background='rgba('+r1+','+g1+','+b1+',0.08)';
+    return;
+  }
   var r=parseInt(color.slice(1,3),16),g=parseInt(color.slice(3,5),16),b=parseInt(color.slice(5,7),16);
   tb.style.borderBottomColor=color;tb.style.background='rgba('+r+','+g+','+b+',0.08)';
 }
 function updateAccentColor(){
   if(document.getElementById('overlay').style.display==='none'){setOverlayAccent(null);return;}
   if(overlayTab==='bureau'){
-    setOverlayAccent(currentFeature?winnerColor(getBureauData(numStr(currentFeature))):null);
+    // sailColorForWinner gère le cas binôme à 2 vrais partis (retourne [c1, c2]).
+    var _bdat = currentFeature ? getBureauData(numStr(currentFeature)) : null;
+    setOverlayAccent(_bdat && _bdat.w ? sailColorForWinner(_bdat.w) : null);
   } else if(overlayTab==='quartier'){
     // Agréger les bureaux du quartier pour trouver le gagnant
     var el0=ELECTIONS[currentElection];var mapYear=String(el0?el0.my:2026);
@@ -3625,12 +4643,24 @@ function updateAccentColor(){
       totE+=d.e||0;Object.entries(d.c||{}).forEach(function(kv){candTotV[kv[0]]=(candTotV[kv[0]]||0)+kv[1]*(d.e||0)/100;});
     });
     var winner=Object.entries(candTotV).sort(function(a,b){return b[1]-a[1];})[0];
-    setOverlayAccent(winner&&totE>0?colorOfCandidate(winner[0]):null);
+    setOverlayAccent(winner&&totE>0?sailColorForWinner(winner[0]):null);
   } else if(overlayTab==='global'){
     var shData2=getSheetData();var candTotV2={};var totE2=0;
     Object.values(shData2).forEach(function(d){if(!d)return;totE2+=d.e||0;Object.entries(d.c||{}).forEach(function(kv){candTotV2[kv[0]]=(candTotV2[kv[0]]||0)+kv[1]*(d.e||0)/100;});});
     var winner2=Object.entries(candTotV2).sort(function(a,b){return b[1]-a[1];})[0];
-    setOverlayAccent(winner2&&totE2>0?colorOfCandidate(winner2[0]):null);
+    setOverlayAccent(winner2&&totE2>0?sailColorForWinner(winner2[0]):null);
+  } else if(overlayTab==='canton'){
+    // Agrégation des bureaux du canton courant pour trouver le gagnant.
+    var el0c=ELECTIONS[currentElection];var mapYearC=String(el0c?el0c.my:CURRENT_ERA);
+    var yearInfoC=BUREAU_INFO[mapYearC]||BUREAU_INFO[CURRENT_ERA]||{};
+    var shDataC=getSheetData();var candTotVC={};var totEC=0;
+    Object.keys(yearInfoC).forEach(function(ns){
+      if(String(yearInfoC[ns].c||'')!==String(currentCanton))return;
+      var d=shDataC[ns];if(!d)return;
+      totEC+=d.e||0;Object.entries(d.c||{}).forEach(function(kv){candTotVC[kv[0]]=(candTotVC[kv[0]]||0)+kv[1]*(d.e||0)/100;});
+    });
+    var winnerC=Object.entries(candTotVC).sort(function(a,b){return b[1]-a[1];})[0];
+    setOverlayAccent(winnerC&&totEC>0?sailColorForWinner(winnerC[0]):null);
   }
 }
 function openCandFloat(btn,titleStr,bodyHtml){
@@ -3661,18 +4691,28 @@ function showBureauListSidebar(){
   document.getElementById('sb-nav').style.display='none';
   var elB=document.getElementById('sb-bureau-list');
   var elQ=document.getElementById('sb-quartier-list');
-  elB.style.display='flex'; elQ.style.display='flex';
-  // État initial : sur fiche bureau → liste bureaux ouverte, quartiers fermée ;
-  // sur fiche quartier → les 2 ouvertes en 50/50
-  if (overlayTab === 'quartier') {
-    elB.classList.remove('collapsed'); elB.classList.add('expanded');
-    elQ.classList.remove('collapsed'); elQ.classList.add('expanded');
-  } else {
-    elB.classList.remove('collapsed'); elB.classList.add('expanded');
-    elQ.classList.remove('expanded'); elQ.classList.add('collapsed');
+  var elC=document.getElementById('sb-canton-list');
+  // Élection cantonale : la fiche quartier est suspendue (ambiguïté quartier × canton).
+  // On cache la liste des quartiers dans la sidebar pour rester cohérent.
+  var isCantonal = (typeof isCantonalElection === 'function') && isCantonalElection(currentElection);
+  elB.style.display='flex';
+  elQ.style.display = isCantonal ? 'none' : 'flex';
+  if(elC)elC.style.display='flex';
+  // État initial selon l'onglet ouvert :
+  //   bureau   → liste bureaux ouverte, autres fermées
+  //   quartier → bureaux + quartiers ouvertes (50/50), cantons fermée
+  //   canton   → bureaux + cantons ouvertes (50/50), quartiers fermée
+  function setState(b, q, c) {
+    elB.classList.toggle('expanded', b);  elB.classList.toggle('collapsed', !b);
+    elQ.classList.toggle('expanded', q);  elQ.classList.toggle('collapsed', !q);
+    if (elC) { elC.classList.toggle('expanded', c); elC.classList.toggle('collapsed', !c); }
   }
+  if (overlayTab === 'quartier')      setState(true, true, false);
+  else if (overlayTab === 'canton')   setState(true, false, true);
+  else                                setState(true, false, false);
   renderBureauList();
-  renderQuartierList();
+  if (!isCantonal) renderQuartierList();
+  if (elC) renderCantonList();
   // Délégation : clic sur une row de bureau
   elB.onclick=function(e){
     var hdr=e.target.closest('.sb-list-toggle');
@@ -3687,6 +4727,13 @@ function showBureauListSidebar(){
     var t=e.target;while(t&&!t.classList.contains('blist-row'))t=t.parentNode;
     if(t&&t.dataset&&t.dataset.q)selectQuartierFromList(t.dataset.q);
   };
+  // Délégation : clic sur une row de canton
+  if (elC) elC.onclick=function(e){
+    var hdr=e.target.closest('.sb-list-toggle');
+    if(hdr){toggleSbList('canton');return;}
+    var t=e.target;while(t&&!t.classList.contains('blist-row'))t=t.parentNode;
+    if(t&&t.dataset&&t.dataset.c)selectCantonFromList(t.dataset.c);
+  };
 }
 function hideBureauListSidebar(){
   document.getElementById('sidebar').classList.remove('fiche-list-mode');
@@ -3694,36 +4741,37 @@ function hideBureauListSidebar(){
   document.getElementById('sb-nav').style.display='';
   document.getElementById('sb-bureau-list').style.display='none';
   document.getElementById('sb-quartier-list').style.display='none';
+  var elC=document.getElementById('sb-canton-list');
+  if(elC) elC.style.display='none';
 }
 
+// Toggle individuel d'une liste de la sidebar (bureau/quartier/canton).
+// Règle : on peut avoir 1 à 3 listes ouvertes en même temps. Si on essaie
+// de fermer la SEULE qui reste ouverte → on ouvre la suivante par défaut
+// (bureau si on ferme quartier/canton, quartier si on ferme bureau).
 function toggleSbList(type){
-  // Toggle indépendant : on peut avoir les 2 ouvertes (50/50) ou 1 seule.
-  // Garde-fou : si on tente de fermer la dernière liste ouverte, on ouvre l'autre à la place.
-  var elB=document.getElementById('sb-bureau-list');
-  var elQ=document.getElementById('sb-quartier-list');
-  var bOpen = elB.classList.contains('expanded');
-  var qOpen = elQ.classList.contains('expanded');
-  if (type === 'bureau') {
-    if (bOpen && qOpen) {
-      // 50/50 → on ferme bureau, quartier reste ouvert (plein écran)
-      elB.classList.remove('expanded'); elB.classList.add('collapsed');
-    } else if (bOpen && !qOpen) {
-      // Seule bureau ouverte → on bascule (ferme bureau, ouvre quartier)
-      elB.classList.remove('expanded'); elB.classList.add('collapsed');
-      elQ.classList.remove('collapsed'); elQ.classList.add('expanded');
-    } else {
-      // Bureau fermé → on l'ouvre (sans toucher quartier → 50/50 si quartier ouvert)
-      elB.classList.remove('collapsed'); elB.classList.add('expanded');
+  var els = {
+    bureau:   document.getElementById('sb-bureau-list'),
+    quartier: document.getElementById('sb-quartier-list'),
+    canton:   document.getElementById('sb-canton-list'),
+  };
+  if (!els[type]) return;
+  var openCount = ['bureau','quartier','canton'].filter(t => els[t] && els[t].classList.contains('expanded')).length;
+  var nowOpen = els[type].classList.contains('expanded');
+  if (nowOpen && openCount === 1) {
+    // C'est la seule ouverte → on n'autorise pas à fermer sans en réouvrir une autre
+    var fallback = type === 'bureau' ? 'quartier' : 'bureau';
+    if (els[fallback]) {
+      els[fallback].classList.remove('collapsed'); els[fallback].classList.add('expanded');
+      els[type].classList.remove('expanded'); els[type].classList.add('collapsed');
     }
+    return;
+  }
+  // Toggle normal
+  if (nowOpen) {
+    els[type].classList.remove('expanded'); els[type].classList.add('collapsed');
   } else {
-    if (bOpen && qOpen) {
-      elQ.classList.remove('expanded'); elQ.classList.add('collapsed');
-    } else if (qOpen && !bOpen) {
-      elQ.classList.remove('expanded'); elQ.classList.add('collapsed');
-      elB.classList.remove('collapsed'); elB.classList.add('expanded');
-    } else {
-      elQ.classList.remove('collapsed'); elQ.classList.add('expanded');
-    }
+    els[type].classList.remove('collapsed'); els[type].classList.add('expanded');
   }
 }
 
@@ -3755,9 +4803,13 @@ function renderBureauList(){
     var col=d?winnerColor(d):'#ccc';
     var tc=d&&d.c?Object.entries(d.c).sort(function(a,b){return b[1]-a[1];})[0]:null;
     var ci=tc?candInfo(tc[0]):{};
-    var candName=tc?(ci.n||tc[0].replace(/\s*\([^)]*\)\s*$/,'').split(/\s+/).pop()||tc[0]):'';
+    // Binôme paritaire : label court "Nom1 / Nom2" (femme devant)
+    var isBin=tc&&Array.isArray(ci.binome)&&ci.binome.length===2;
+    var candName=tc?(isBin?(binomeShortLabel(tc[0])||ci.n):(ci.n||tc[0].replace(/\s*\([^)]*\)\s*$/,'').split(/\s+/).pop()||tc[0])):'';
     var pct=tc?tc[1].toFixed(1)+'\u00a0%':'';
-    var tag=tc?('<span style="background:'+col+';color:#fff;font-size:0.6rem;font-weight:700;padding:2px 6px;border-radius:3px;white-space:nowrap;flex-shrink:0">'+candName+'\u00a0'+pct+'</span>'):'';
+    // Binôme à partis hétérogènes : background bicolore (split diagonal). Sinon couleur unique.
+    var tagBg=tc?((typeof dotBackground==='function')?dotBackground(tc[0]):col):col;
+    var tag=tc?('<span style="background:'+tagBg+';color:#fff;font-size:0.6rem;font-weight:700;padding:2px 6px;border-radius:3px;white-space:nowrap;flex-shrink:0">'+candName+'\u00a0'+pct+'</span>'):'';
     var cur=ns2===curNs;
     h+='<div class="blist-row'+(cur?' cur':'')+'" data-ns="'+ns2+'">'
       +'<span class="blist-num">'+numLabel+'</span>'
@@ -3810,9 +4862,13 @@ function renderQuartierList(){
     var winner=Object.entries(avg).sort(function(a,b){return b[1]-a[1];})[0];
     var col=winner?colorOfCandidate(winner[0]):'#ccc';
     var ci=winner?candInfo(winner[0]):{};
-    var candName=winner?(ci.n||winner[0].replace(/\s*\([^)]*\)\s*$/,'').split(/\s+/).pop()||winner[0]):'';
+    // Binôme paritaire : label court "Nom1 / Nom2" (femme devant)
+    var isBin=winner&&Array.isArray(ci.binome)&&ci.binome.length===2;
+    var candName=winner?(isBin?(binomeShortLabel(winner[0])||ci.n):(ci.n||winner[0].replace(/\s*\([^)]*\)\s*$/,'').split(/\s+/).pop()||winner[0])):'';
     var pct=winner?winner[1].toFixed(1)+' %':'';
-    var tag=winner?('<span style="background:'+col+';color:#fff;font-size:0.6rem;font-weight:700;padding:2px 6px;border-radius:3px;white-space:nowrap;flex-shrink:0">'+candName+' '+pct+'</span>'):'';
+    // Binôme à partis hétérogènes : background bicolore (split diagonal). Sinon couleur unique.
+    var tagBg=winner?((typeof dotBackground==="function")?dotBackground(winner[0]):col):col;
+    var tag=winner?('<span style="background:'+tagBg+';color:#fff;font-size:0.6rem;font-weight:700;padding:2px 6px;border-radius:3px;white-space:nowrap;flex-shrink:0">'+candName+' '+pct+'</span>'):'';
     var cur=qp===curQ;
     h+='<div class="blist-row'+(cur?' cur':'')+'" data-q="'+qp.replace(/"/g,'&quot;')+'">'
       +'<span class="blist-name">'
@@ -3827,6 +4883,72 @@ function renderQuartierList(){
   if(elQ){
     elQ.innerHTML=h;
     var curEl=elQ.querySelector('.blist-row.cur');
+    if(curEl)curEl.scrollIntoView({block:'center'});
+  }
+}
+
+// Rendu de la liste des cantons dans la sidebar (équivalent renderQuartierList).
+// Calque le pattern : agrégation par canton + .blist-row par canton avec winner.
+// L'ère canton applicable provient de l'élection courante via getCantonEraForElection.
+// Sur les élections classiques (présidentielles, etc.) avec my_canton absent,
+// l'ère canton est déduite de l'ère bureau via getCantonEraForBureauEra (toujours
+// l'ère canton la plus récente ≤ ère bureau).
+function renderCantonList(){
+  var shData=getSheetData();
+  var el0=ELECTIONS[currentElection];
+  var mapYear=String(el0?el0.my:CURRENT_ERA);
+  var yearInfo=BUREAU_INFO[mapYear]||BUREAU_INFO[CURRENT_ERA]||{};
+  var cantonEra=getCantonEraForElection(currentElection);
+  var cantonsMeta=(CANTON_INFO[cantonEra]||{}).cantons||{};
+  // Aggrégation par canton (champ .c de chaque bureau dans l'ère bureau).
+  var cAgg={};
+  Object.keys(yearInfo).forEach(function(ns){
+    var c=yearInfo[ns].c;
+    if(!c)return; // bureau sans canton (ex. 0057)
+    var cid=String(c);
+    var d=shData[ns];if(!d)return;
+    if(!cAgg[cid])cAgg[cid]={totI:0,totE:0,totAbst:0,totBn:0,candTotV:{},nb:0};
+    var an=Math.round((d.i||0)*(d.a||0)/100);
+    cAgg[cid].totI+=d.i||0; cAgg[cid].totE+=d.e||0; cAgg[cid].totAbst+=an; cAgg[cid].totBn+=d.bn||0;
+    cAgg[cid].nb++;
+    Object.entries(d.c||{}).forEach(function(kv){
+      cAgg[cid].candTotV[kv[0]]=(cAgg[cid].candTotV[kv[0]]||0)+kv[1]*(d.e||0)/100;
+    });
+  });
+  // Tri numérique par id canton (1, 2, 3, ..., 9)
+  var cIds=Object.keys(cAgg).sort(function(a,b){return parseInt(a)-parseInt(b);});
+  var curC=currentCanton;
+  var h='<div class="blist-hdr sb-list-toggle"><span>'+cIds.length+' canton'+(cIds.length>1?'s':'')+'</span><span class="chevron">▾</span></div><div class="sb-list-body">';
+  cIds.forEach(function(cid){
+    var ag=cAgg[cid];
+    if(ag.totE<=0)return;
+    var cantonName=(cantonsMeta[cid]||{}).name||('La Rochelle-'+cid);
+    var avg={};
+    Object.entries(ag.candTotV).forEach(function(kv){avg[kv[0]]=+(kv[1]/ag.totE*100).toFixed(1);});
+    var winner=Object.entries(avg).sort(function(a,b){return b[1]-a[1];})[0];
+    var col=winner?colorOfCandidate(winner[0]):'#ccc';
+    var ci=winner?candInfo(winner[0]):{};
+    // Binôme paritaire : label court "Nom1 / Nom2" (femme devant)
+    var isBin=winner&&Array.isArray(ci.binome)&&ci.binome.length===2;
+    var candName=winner?(isBin?(binomeShortLabel(winner[0])||ci.n):(ci.n||winner[0].replace(/\s*\([^)]*\)\s*$/,'').split(/\s+/).pop()||winner[0])):'';
+    var pct=winner?winner[1].toFixed(1)+' %':'';
+    // Binôme à partis hétérogènes : background bicolore (split diagonal). Sinon couleur unique.
+    var tagBg=winner?((typeof dotBackground==='function')?dotBackground(winner[0]):col):col;
+    var tag=winner?('<span style="background:'+tagBg+';color:#fff;font-size:0.6rem;font-weight:700;padding:2px 6px;border-radius:3px;white-space:nowrap;flex-shrink:0">'+candName+' '+pct+'</span>'):'';
+    var cur=cid===curC;
+    h+='<div class="blist-row'+(cur?' cur':'')+'" data-c="'+cid+'">'
+      +'<span class="blist-name">'
+        +'<span class="blist-denom" title="'+cantonName.replace(/"/g,'&quot;')+'">'+cantonName+'</span>'
+        +'<span class="blist-sub">'+ag.nb+' bureau'+(ag.nb>1?'x':'')+'</span>'
+      +'</span>'
+      +tag
+      +'</div>';
+  });
+  h+='</div>';
+  var elC=document.getElementById('sb-canton-list');
+  if(elC){
+    elC.innerHTML=h;
+    var curEl=elC.querySelector('.blist-row.cur');
     if(curEl)curEl.scrollIntoView({block:'center'});
   }
 }
@@ -3885,11 +5007,68 @@ function selectBureauFromList(ns) {
 function refreshOverlayIfOpen(){
   const ov=document.getElementById('overlay');
   if(!ov||ov.style.display==='none')return;
+  const isCantonal = (typeof isCantonalElection === 'function') && isCantonalElection(currentElection);
+  // Bascule auto : on était sur l'onglet 'quartier' mais l'élection devient cantonale
+  // → repli sur 'bureau' (les fiches quartier sont suspendues en cantonale, cf.
+  // updateOverlayTabs / showBureauListSidebar). Sans cette bascule, on garderait un
+  // overlayTab='quartier' sans onglet ni liste correspondante → état incohérent.
+  if (overlayTab === 'quartier' && isCantonal) {
+    overlayTab = 'bureau';
+    currentQuartier = null;
+  }
+  // Si l'élection courante est cantonale, la fiche globale ville n'est pas pertinente :
+  // on bascule auto sur la fiche canton (suffix label → currentFeature.c → canton 1).
+  if (overlayTab === 'global' && isCantonal) {
+    let cid = (typeof getCantonOfElection === 'function') ? getCantonOfElection(currentElection) : null;
+    if (!cid && currentFeature) {
+      const info = (typeof bureauInfo === 'function') ? bureauInfo(currentFeature) : {};
+      cid = info && info.c ? String(info.c) : null;
+    }
+    if (!cid) cid = '1';
+    if (typeof selectCantonFromList === 'function') {
+      selectCantonFromList(cid);
+      return;
+    }
+  }
   if(overlayTab==='global'){renderGlobal();renderGlobalFiche();updateAccentColor();return;}
+  if(overlayTab==='canton'){
+    // Au changement d'élection, le canton (id) reste mais l'ère bureau a pu changer.
+    // Si le canton actuel n'existe pas dans l'ère canton applicable à la nouvelle élection
+    // (ex. canton historique #7 → élection ≥ 2015 où seuls 1/2/3 existent), on retombe
+    // proprement sur la fiche globale plutôt que d'afficher une fiche vide.
+    const cantonEra = (typeof getCantonEraForElection === 'function') ? getCantonEraForElection(currentElection) : CURRENT_ERA_CANTON;
+    const cantonsMeta = ((typeof CANTON_INFO !== 'undefined' && CANTON_INFO[cantonEra]) || {}).cantons || {};
+    if (!cantonsMeta[currentCanton]) {
+      // Canton inexistant dans la nouvelle ère → bascule global
+      overlayTab = 'global';
+      currentCanton = null;
+      document.getElementById('ov-title').textContent = 'La Rochelle — Résultats globaux';
+      document.getElementById('ov-tabs').style.display = 'none';
+      renderGlobal(); renderGlobalFiche(); updateAccentColor();
+      if (typeof updateOverlayTabs === 'function') updateOverlayTabs();
+      if (typeof writeURLState === 'function') writeURLState();
+      return;
+    }
+    const cName = (cantonsMeta[currentCanton] || {}).name || ('La Rochelle-' + currentCanton);
+    document.getElementById('ov-title').textContent = 'Canton — ' + cName;
+    renderCanton();
+    updateAccentColor();
+    if (typeof updateOverlayTabs === 'function') updateOverlayTabs();
+    return;
+  }
   if(!currentFeature)return;
   if(overlayTab==='quartier'){renderQuartier();}
   else{const info=bureauInfo(currentFeature);document.getElementById('ov-title').textContent=isAggNs(numStr(currentFeature))?'Bureaux agrégés — '+info.quartier:'Fiche bureau — '+info.denomination;renderFiche(currentFeature);}
   updateAccentColor();
+  // Rafraîchit la barre d'onglets (apparition/disparition de l'onglet quartier selon
+  // que l'élection courante est cantonale ou pas) et la sidebar (display de la liste
+  // sb-quartier-list pareil). Indispensable quand on navigue entre élections via les
+  // chevrons ‹ › ou ← → en gardant la même fiche bureau ouverte.
+  if (typeof updateOverlayTabs === 'function') updateOverlayTabs();
+  const _sb = document.getElementById('sidebar');
+  if (_sb && _sb.classList.contains('fiche-list-mode') && typeof showBureauListSidebar === 'function') {
+    showBureauListSidebar();
+  }
 }
 function renderGlobal(){
   // B8 phase 1 : délègue au générateur unifié.
@@ -3944,7 +5123,8 @@ function renderFiche(feature) {
   const winCol = winnerColor(data);
   const histoKey = (feature.properties.b2026) || ns;
   const sheetLabel = currentSheet === 'TU' ? 'Tour unique' : currentSheet === 'T2' ? '2e tour' : '1er tour';
-  const cityAvg = cityAverage();
+  // En cantonale : moyenne canton du bureau (chaque binôme n'est candidat que dans son canton).
+  const cityAvg = refAverageForBureau(ns);
   const extr  = getExtremes();
 
   // Header
@@ -3953,7 +5133,7 @@ function renderFiche(feature) {
   const ficheNum = isAgg ? 'Bureaux n° ' + fmtAggNums(aggNums) : 'Bureau n° ' + parseInt(ns);
   const ficheName = isAgg ? 'Bureaux agrégés de ' + info.quartier : info.denomination;
   let h = '<div class="fiche-id">'
-    + ficheSail(winCol, false)
+    + ficheSail(sailColorForWinner(data && data.w), false)
     + '<div class="fiche-text">'
     + '<div class="fiche-num">' + ficheNum + '</div>'
     + '<div class="fiche-name">' + formatDenomination(ficheName) + '</div>'
@@ -4105,7 +5285,7 @@ function renderQuartier(){
   const eraBI0=BUREAU_INFO[mapYear0]||BUREAU_INFO[CURRENT_ERA]||{};
   const cantons=[...new Set(bureauNums.map(ns2=>{const i0=eraBI0[ns2];return i0?(i0.c||null):null;}).filter(c=>c&&c!==''&&c!=='Nul'))].sort((a,b)=>parseInt(a)-parseInt(b));
   let h='<div class="fiche-id">'
-    + ficheSail(qWinCol, false)
+    + ficheSail(sailColorForWinner(qWinner && qWinner[0]), false)
     + '<div class="fiche-text">'
     + '<div class="fiche-num">Quartier</div><div class="fiche-name">'+formatDenomination(q)+'</div>'
     + '<div class="fiche-meta"><span><strong>Bureaux</strong> '+bureauNums.length+'</span>'
@@ -4179,6 +5359,171 @@ function renderQuartier(){
     }
   }
 }
+
+// ── CANTON OVERLAY ────────────────────────────────────────────────────────────
+// Fiche canton : agrège tous les bureaux du canton sélectionné (currentCanton)
+// pour l'élection courante. Pattern calqué sur renderQuartier.
+function renderCanton(){
+  const cid = currentCanton;
+  if (!cid) {
+    document.getElementById('ov-body').innerHTML = '<div style="padding:20px;color:var(--text-meta)">Canton non sélectionné.</div>';
+    return;
+  }
+  const el0 = ELECTIONS[currentElection];
+  const mapYear = String(el0 ? el0.my : CURRENT_ERA);
+  const yearInfo = BUREAU_INFO[mapYear] || BUREAU_INFO[CURRENT_ERA] || {};
+  const cantonEra = (typeof getCantonEraForElection === 'function') ? getCantonEraForElection(currentElection) : CURRENT_ERA_CANTON;
+  const cantonsMeta = ((typeof CANTON_INFO !== 'undefined' && CANTON_INFO[cantonEra]) || {}).cantons || {};
+  const cantonName = (cantonsMeta[cid] || {}).name || ('La Rochelle-' + cid);
+  // Bureaux du canton pour cette ère
+  const bureauNums = Object.keys(yearInfo).filter(ns => String(yearInfo[ns].c || '') === String(cid));
+  const shData = getSheetData();
+  // En cantonale, le canton est la référence — pas de "vs canton" sur la fiche canton elle-même.
+  // Pour les élections non-cantonales, on garde la comparaison canton vs ville (pertinente).
+  const cityAvg = (typeof isCantonalElection === 'function' && isCantonalElection(currentElection)) ? {} : cityAverage();
+  let totI=0, totE=0, totAbst=0, totBn=0;
+  const candTotV = {};
+  bureauNums.forEach(ns2 => {
+    const d = shData[ns2]; if (!d) return;
+    const abst_nb = Math.round((d.i||0)*(d.a||0)/100);
+    totI += d.i||0; totE += d.e||0; totAbst += abst_nb; totBn += d.bn||0;
+    Object.entries(d.c || {}).forEach(([k,v]) => { candTotV[k] = (candTotV[k]||0) + v*(d.e||0)/100; });
+  });
+  const cAvg = {}; Object.entries(candTotV).forEach(([k,v]) => { cAvg[k] = +(v/Math.max(totE,1)*100).toFixed(1); });
+  const cWinner = Object.entries(cAvg).sort((a,b) => b[1]-a[1])[0];
+  const cWinCol = cWinner ? colorOfCandidate(cWinner[0]) : '#ccc';
+  const abst_pct = totI > 0 ? +(totAbst/totI*100).toFixed(1) : 0;
+  // Quartiers présents dans le canton (pour affichage en métadonnée)
+  const quartiersSet = new Set();
+  bureauNums.forEach(ns2 => {
+    const i0 = yearInfo[ns2];
+    if (i0 && i0.q) getQuartierParts(i0.q).forEach(q => quartiersSet.add(q));
+  });
+  const quartiersList = [...quartiersSet].sort();
+  // Header
+  let h = '<div class="fiche-id">'
+    + ficheSail(sailColorForWinner(cWinner && cWinner[0]), false)
+    + '<div class="fiche-text">'
+    + '<div class="fiche-num">Canton</div><div class="fiche-name">'+formatDenomination(cantonName)+'</div>'
+    + '<div class="fiche-meta">'
+    +   '<span><strong>Bureaux</strong> '+bureauNums.length+'</span>'
+    +   '<span><strong>Inscrits</strong> '+totI.toLocaleString('fr-FR')+'</span>'
+    +   (quartiersList.length ? '<span><strong>Quartier'+(quartiersList.length>1?'s':'')+'</strong> '+quartiersList.join(', ')+'</span>' : '')
+    + '</div>'
+    + '</div>'
+    + '</div>';
+  if (totE > 0) {
+    const cData = { c: cAvg, e: totE, w: cWinner ? cWinner[0] : null, i: totI, a: abst_pct, bn: totBn };
+    let sig = '<div class="sig-block">';
+    if (typeof isReferendum === 'function' && isReferendum(currentElection)) {
+      const qRef = (ELECTIONS[currentElection] || {}).q || '';
+      if (qRef) sig += '<div class="ref-question">' + qRef + '</div>';
+    }
+    // En cantonale/départementale : pas de badges meilleur/pire canton. Un binôme ne se
+    // présente que dans son canton donc il a mécaniquement le meilleur ET le pire score
+    // parmi les cantons (un seul canton renseigné) — badge sans valeur informative.
+    // On passe un extr vide pour neutraliser isBest/isWorst dans candRow et renderDuel.
+    const extrForCanton = (typeof isCantonalElection === 'function' && isCantonalElection(currentElection))
+      ? { best: {}, worst: {} }
+      : getExtremesByCanton();
+    sig += renderCandidates(cData, cid, cityAvg, extrForCanton, false, 'canton');
+    sig += '</div>';
+    const abst_nb_tot = Math.round(totI*abst_pct/100);
+    const blancsPct = (totI-abst_nb_tot) > 0 ? +(totBn*100/(totI-abst_nb_tot)).toFixed(1) : 0;
+    h += '<div class="fiche-section-participation" style="margin-bottom:14px">'+particiHTML(totI, abst_pct, abst_nb_tot, blancsPct, totBn, totE)+'</div>';
+    h += '<div class="split"><div id="mm-wrap"></div>'+sig+'</div>';
+    if (!(typeof isReferendum === 'function' && isReferendum(currentElection))) {
+      h += '<div class="fiche-section-blocs" style="margin-bottom:18px"><div class="sec-ttl">Blocs politiques</div>'+renderBlocTriptychQuartier(cData, bureauNums)+'</div>';
+    }
+  } else {
+    h += '<div style="padding:12px;color:var(--text-meta);font-style:italic">Données non disponibles pour ce scrutin dans ce canton.</div>';
+  }
+  // Liste des bureaux du canton
+  h += '<div class="fiche-section-bureaux-list" style="margin-bottom:18px"><div class="sec-ttl">Bureaux du canton</div>';
+  h += '<div style="display:flex;align-items:center;gap:10px;padding:4px 10px;margin-bottom:2px">'
+    +'<span style="font-size:0.6rem;font-weight:700;color:var(--text-meta);width:28px;flex-shrink:0">N°</span>'
+    +'<span style="font-size:0.6rem;font-weight:700;color:var(--text-meta);flex:1">Dénomination</span>'
+    +'<span style="font-size:0.6rem;font-weight:700;color:var(--text-meta);width:68px;text-align:right;flex-shrink:0">Abstention</span>'
+    +'<span style="font-size:0.6rem;font-weight:700;color:var(--text-meta);flex:2;margin-left:12px">'+((typeof isReferendum === 'function' && isReferendum(currentElection)) ? 'Oui / Non' : 'Blocs')+'</span></div>';
+  const sortedNums = bureauNums.slice().sort();
+  function bureauRowC(ns2) {
+    const d = shData[ns2];
+    const eraInfo2 = (BUREAU_INFO[mapYear] || BUREAU_INFO[CURRENT_ERA] || {})[ns2];
+    const denom = eraInfo2 ? (eraInfo2.den || eraInfo2.nom) : 'Bureau ' + parseInt(ns2);
+    const isActive = currentFeature && ns2 === numStr(currentFeature);
+    const abst2 = d ? (d.a || 0) : null;
+    const bar = _blocsBarHTML(d, { height:14 });
+    return '<div class="q-brow'+(isActive?' active':'')+'" onclick="selectBureauFromList(\''+ns2+'\')">'
+      +'<span style="font-size:0.63rem;font-weight:700;color:var(--text-meta);width:28px;flex-shrink:0;padding-top:1px">'+parseInt(ns2)+'</span>'
+      +'<span style="font-size:0.74rem;font-weight:500;color:var(--text-modal);flex:1;line-height:1.35">'+denom+'</span>'
+      +'<span style="font-size:0.72rem;font-weight:700;color:var(--text-modal-muted);width:68px;text-align:right;flex-shrink:0;padding-top:1px">'
+      +(abst2!==null?abst2.toFixed(1)+' %':'—')+'</span>'
+      +'<div style="flex:2;min-width:0;margin-left:12px;padding-top:3px">'+bar+'</div></div>';
+  }
+  const BFOLD = 8;
+  sortedNums.slice(0, BFOLD).forEach(ns2 => { h += bureauRowC(ns2); });
+  const hiddenNums = sortedNums.slice(BFOLD);
+  if (hiddenNums.length) {
+    const uid2 = 'cb_' + cid;
+    h += '<div id="'+uid2+'" style="display:none">';
+    hiddenNums.forEach(ns2 => { h += bureauRowC(ns2); });
+    h += '</div>';
+    h += '<button class="show-more-btn" onclick="var e=document.getElementById(\''+uid2+'\');e.style.display=\'block\';this.remove()">+ '+hiddenNums.length+' autre'+(hiddenNums.length>1?'s':'')+' bureau'+(hiddenNums.length>1?'x':'')+'</button>';
+  }
+  h += '</div>';
+  document.getElementById('ov-body').innerHTML = h;
+  document.getElementById('ov-body').scrollTop = 0;
+  // Mini-carte : tous les bureaux du canton
+  if (totE > 0) {
+    const cNums = new Set(bureauNums);
+    if (mmMap) { mmMap.remove(); mmMap = null; }
+    const wrap = document.getElementById('mm-wrap');
+    if (wrap) {
+      wrap.innerHTML = '<div id="mm-inner" style="width:100%;height:100%;min-height:220px;border-radius:8px;overflow:hidden"></div>';
+      mmMap = L.map('mm-inner', { zoomControl:false, attributionControl:false, dragging:false, scrollWheelZoom:false, zoomSnap:0 });
+      L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', { maxZoom:20 }).addTo(mmMap);
+      const gj = getMapGeoJSON();
+      const cFeats = gj.features.filter(f => cNums.has(numStr(f)));
+      const allHoles = [];
+      cFeats.forEach(f => { allHoles.push(...geomToHoles(f.geometry)); });
+      addInverseMask(mmMap, allHoles, cWinCol);
+      if (cFeats.length) mmMap.fitBounds(L.geoJSON({ type:'FeatureCollection', features:cFeats }).getBounds().pad(0.06));
+    }
+  }
+}
+
+// Ouvre la fiche canton depuis la liste sidebar. Choisit un bureau "ancre"
+// (le 1er du canton) pour permettre la navigation vers ce canton.
+function selectCantonFromList(cid) {
+  const el0 = ELECTIONS[currentElection];
+  const mapYear = String(el0 ? el0.my : CURRENT_ERA);
+  const yearInfo = BUREAU_INFO[mapYear] || BUREAU_INFO[CURRENT_ERA] || {};
+  let ns = null;
+  Object.keys(yearInfo).forEach(num => {
+    if (ns) return;
+    if (String(yearInfo[num].c || '') === String(cid)) ns = num;
+  });
+  if (!ns) return;
+  const gj = getMapGeoJSON();
+  const feat = gj.features.find(f => numStr(f) === ns);
+  if (!feat) return;
+  currentFeature = feat;
+  currentCanton = String(cid);
+  overlayTab = 'canton';
+  const cantonEra = (typeof getCantonEraForElection === 'function') ? getCantonEraForElection(currentElection) : CURRENT_ERA_CANTON;
+  const cantonsMeta = ((typeof CANTON_INFO !== 'undefined' && CANTON_INFO[cantonEra]) || {}).cantons || {};
+  const cantonName = (cantonsMeta[cid] || {}).name || ('La Rochelle-' + cid);
+  document.getElementById('ov-title').textContent = 'Canton — ' + cantonName;
+  setOverlayDisplay('flex');
+  // Bascule la sidebar en mode "liste" (calque openOverlayQuartierNamed / selectBureauFromList).
+  // Sans cet appel, l'arrivée via #canton=X depuis LRVanalyse n'affichait pas les listes.
+  showBureauListSidebar();
+  renderCanton();
+  updateAccentColor();
+  if (typeof updateOverlayTabs === 'function') updateOverlayTabs();
+  if (typeof writeURLState === 'function') writeURLState();
+}
+
 
 // ── ELECTION / SHEET SELECTION ────────────────────────────────────────────────
 
@@ -4279,13 +5624,53 @@ function setMapMode(mode) {
   }
 })();
 
+// Filtre canton pour la légende mode "candidat" en élection cantonale.
+// null = pas de filtre (élection non-cantonale) ; "1"/"2"/"3" = canton sélectionné.
+let legendCantonFilter = '1';
+
+function setLegendCanton(cid) {
+  legendCantonFilter = String(cid);
+  renderMapLegend();
+}
+
 function renderMapLegend() {
   const el = document.getElementById('map-legend-body');
   if (!el) return;
   const shData = getSheetData();
   if (currentMapMode === 'candidat') {
+    // Cas spécial : élection cantonale → 3 boutons (canton 1/2/3) filtrent la liste
+    // des candidats sur les bureaux du canton choisi. La carte affiche toujours
+    // les 3 cantons, seule la légende est restreinte pour rester lisible.
+    const isCantonal = (typeof isCantonalElection === 'function') && isCantonalElection(currentElection);
+    let cantonTabsHtml = '';
+    let filteredShData = shData;
+    if (isCantonal) {
+      const el0 = ELECTIONS[currentElection];
+      const mapYear = String(el0 ? el0.my : CURRENT_ERA);
+      const yearInfo = BUREAU_INFO[mapYear] || BUREAU_INFO[CURRENT_ERA] || {};
+      // Sécurité : si pas de canton sélectionné, prendre "1" par défaut
+      if (!['1','2','3'].includes(legendCantonFilter)) legendCantonFilter = '1';
+      // Tabs UI — sur mobile, placés en BAS de la légende (cf. ordre concat plus bas),
+      // donc on remplace margin-bottom par margin-top pour préserver l'espacement.
+      const _isMobLeg = window.matchMedia && window.matchMedia('(max-width: 720px)').matches;
+      const _tabsMg = _isMobLeg ? 'margin-top:8px' : 'margin-bottom:6px';
+      cantonTabsHtml = '<div class="leg-canton-tabs" style="display:flex;gap:4px;'+_tabsMg+'">';
+      ['1','2','3'].forEach(cid => {
+        const sel = cid === legendCantonFilter;
+        cantonTabsHtml += '<button onclick="setLegendCanton(\''+cid+'\')" '
+          + 'style="flex:1;padding:3px 6px;border:1px solid '+(sel?'#1a1a2e':'#ccc')+';border-radius:4px;'
+          + 'background:'+(sel?'#1a1a2e':'#fff')+';color:'+(sel?'#fff':'#333')+';'
+          + 'cursor:pointer;font-size:0.7rem;font-weight:'+(sel?'700':'500')+';">Canton '+cid+'</button>';
+      });
+      cantonTabsHtml += '</div>';
+      // Filtrer shData sur les bureaux du canton sélectionné
+      filteredShData = {};
+      Object.entries(shData).forEach(([ns,d]) => {
+        if (String((yearInfo[ns]||{}).c||'') === legendCantonFilter) filteredShData[ns] = d;
+      });
+    }
     const wins = {}, ties = {}, totals = {}, counts = {};
-    Object.entries(shData).forEach(([ns,d]) => {
+    Object.entries(filteredShData).forEach(([ns,d]) => {
       if (!d || ns==='0057') return;
       // Ex-aequo : tous les candidats à égalité en tête comptent +1 chacun
       // (le bureau "appartient" autant à chacun). Sans ce traitement, seul le
@@ -4305,8 +5690,16 @@ function renderMapLegend() {
     allCands.sort((a,b) => { const d=(wins[b]||0)-(wins[a]||0); return d!==0?d:avgs[b]-avgs[a]; });
     const rows = allCands.map(name => {
       const ci = candInfo(name); const col = colorOfCandidate(name);
-      const label = (ci.n || name.replace(/\s*\([^)]*\)$/,'').split(/\s+/).pop());
-      const coal = name.match(/\(([^)]+)\)$/); const pa = ci.pa || (coal&&coal[1]) || '';
+      // Binôme : label court "Nom1 / Nom2" (femme devant). Sinon, dernier nom du label brut.
+      const isBinome = Array.isArray(ci.binome) && ci.binome.length === 2;
+      const label = isBinome
+        ? (binomeShortLabel(name) || ci.n)
+        : (ci.n || name.replace(/\s*\([^)]*\)$/,'').split(/\s+/).pop());
+      const coal = name.match(/\(([^)]+)\)$/);
+      // Binôme à partis hétérogènes : étiquette "PA1+PA2" et carré bicolore (split
+      // diagonal 135°). Sinon comportement standard (pa simple + carré uni).
+      const pa = (isBinome && typeof binomePartiLabel === 'function' ? binomePartiLabel(name) : '') || ci.pa || (coal&&coal[1]) || '';
+      const dotBg = (typeof dotBackground === 'function') ? dotBackground(name) : col;
       const nb = wins[name]||0;
       const tieN = ties[name]||0;
       const isSel = currentMapSelection === name;
@@ -4316,7 +5709,7 @@ function renderMapLegend() {
         : '';
       const burLabel = nb > 0 ? nb+' bur.'+tieMark : '<span style="color:#ccc">–</span>';
       return '<div class="leg-row leg-row-click'+(isSel?' leg-row-sel':'')+'" onclick="selectMapItem(\''+name.replace(/'/g,"\\'")+'\')" title="Choroplèthe : '+label+'">'
-        +'<div class="leg-dot" style="background:'+col+';'+(isSel?'box-shadow:0 0 0 2px #fff,0 0 0 4px '+col:'')+'"></div>'
+        +'<div class="leg-dot" style="background:'+dotBg+';'+(isSel?'box-shadow:0 0 0 2px #fff,0 0 0 4px '+col:'')+'"></div>'
         +'<span class="leg-label">'+label+(pa?'<span style="color:#aaa;font-size:0.58rem;margin-left:3px">'+pa+'</span>':'')+'</span>'
         +'<span class="leg-pct">'+(isSel?'✓ ':'')+burLabel+'</span></div>';
     }).join('');
@@ -4328,7 +5721,12 @@ function renderMapLegend() {
         +'<div class="leg-grad-labels"><span>'+currentSelectionMin.toFixed(1)+'%</span><span style="color:'+col+';font-weight:700">'+currentSelectionMax.toFixed(1)+'%</span></div>'
         +'</div>';
     }
-    el.innerHTML = rows + grad;
+    // Ordre des blocs dans la légende :
+    //   - Desktop : tabs canton en HAUT, puis rows, puis gradient
+    //   - Mobile  : rows + gradient en haut, tabs canton en BAS (mieux à proximité
+    //               du pouce sur petit écran, et la liste candidats reste visible).
+    const _isMobLegOrder = window.matchMedia && window.matchMedia('(max-width: 720px)').matches;
+    el.innerHTML = _isMobLegOrder ? (rows + grad + cantonTabsHtml) : (cantonTabsHtml + rows + grad);
   } else if (currentMapMode === 'bloc') {
     const wins = {}, present = new Set();
     Object.entries(shData).forEach(([ns,d]) => {
@@ -4493,6 +5891,10 @@ function setElection(label){
     currentFeature=newFeature; showBureauSidebar(currentFeature); refreshOverlayIfOpen();
   } else if(overlayWasOpen&&overlayTab==='global') {
     renderGlobal(); renderGlobalFiche(); updateAccentColor();
+  } else if (overlayWasOpen && overlayTab === 'canton') {
+    // Fiche canton sans newFeature (bureau ancre perdu) : on garde currentCanton et on
+    // laisse refreshOverlayIfOpen re-mapper sur la nouvelle ère (avec garde-fou intégré).
+    refreshOverlayIfOpen();
   } else if (newFeature) {
     currentFeature=newFeature; showBureauSidebar(currentFeature);
   } else { currentFeature=null; renderGlobal(); }
@@ -4575,6 +5977,10 @@ function updateTopbar(){
     t.textContent=currentSheet==='T2'?'2e tour':currentSheet==='TU'?'Tour unique':(elHMR?'1er tour':'Tour unique');
     t.style.display='';}
   if (typeof updateElectionNavButtons === 'function') updateElectionNavButtons();
+  // Toggle body.is-cantonal : utilisé par le CSS pour switcher #global-tab (par défaut)
+  // vers #cantons-tabs (3 boutons canton sur mobile) lors des cantonales/départementales.
+  var _isCantonalCur = (typeof isCantonalElection === 'function') && isCantonalElection(currentElection);
+  document.body.classList.toggle('is-cantonal', !!_isCantonalCur);
 }
 function updateFooter() {
   const el = ELECTIONS[currentElection];
@@ -4629,6 +6035,8 @@ function writeURLState() {
           if (parts.length) q = parts[0];
         }
         if (q) params.set('quartier', q);
+      } else if (overlayTab === 'canton' && currentCanton) {
+        params.set('canton', currentCanton);
       } else if (overlayTab === 'global') {
         params.set('tab', 'global');
       }
@@ -4770,6 +6178,12 @@ function updateAnalyseLink() {
           openOverlayQuartierNamed(qname);
         }
       }
+    } else {
+      // #canton=X : ouvrir directement la fiche canton via selectCantonFromList.
+      // On le traite en dernier car les autres hooks (bureau/quartier/global) sont
+      // plus fréquents — le canton est plus rare.
+      const cname = params.get('canton');
+      if (cname) selectCantonFromList(cname);
     }
     // Activation de l'écriture du hash après lecture initiale
     _urlStateInit = true;
@@ -5935,6 +7349,23 @@ function updateAnalyseLink() {
       const data = aggData(nums);
       return { type:'quartier', title, subtitle:'Quartier · ' + q, quartier:'', data, bureauNums: nums, winnerCol: data.w ? colorOfCandidate(data.w) : '#888' };
     }
+    if (tab === 'canton') {
+      // currentCanton = id canton (ex. "1"). Le nom du canton vient de CANTON_INFO.
+      const cid = (typeof currentCanton !== 'undefined') ? currentCanton : null;
+      if (!cid) return null;
+      const cantonEra = (typeof getCantonEraForElection === 'function') ? getCantonEraForElection(currentElection) : CURRENT_ERA_CANTON;
+      const cantonsMeta = ((typeof CANTON_INFO !== 'undefined' && CANTON_INFO[cantonEra]) || {}).cantons || {};
+      const cName = (cantonsMeta[cid] || {}).name || ('La Rochelle-' + cid);
+      // Bureaux du canton à l'ère de l'élection courante
+      const el0 = ELECTIONS[currentElection];
+      const mapYear = String(el0 ? el0.my : CURRENT_ERA);
+      const yearInfo = BUREAU_INFO[mapYear] || BUREAU_INFO[CURRENT_ERA] || {};
+      const nums = Object.entries(yearInfo)
+        .filter(([, b]) => String(b.c || '') === String(cid))
+        .map(([id]) => id);
+      const data = aggData(nums);
+      return { type:'canton', title, subtitle:'Canton · ' + cName, quartier:'', data, bureauNums: nums, winnerCol: data.w ? colorOfCandidate(data.w) : '#888' };
+    }
     // bureau
     if (typeof currentFeature === 'undefined' || !currentFeature) return null;
     const ns = numStr(currentFeature);
@@ -5960,6 +7391,14 @@ function updateAnalyseLink() {
     //   2. CAND_DATA[name + '|' + currentElection] (élection)
     //   3. CAND_DATA[name] (générique)
     const ci = (typeof candInfo === 'function') ? candInfo(name) : {};
+    // Binôme paritaire : on retourne {prenom:'', nom: "Nom1 / Nom2"} pour les contextes
+    // étroits (cartouches, légende). Le label long avec prénoms s'obtient via candDisplayName.
+    if (Array.isArray(ci.binome) && ci.binome.length === 2 && typeof binomeShortLabel === 'function') {
+      const shortN = binomeShortLabel(name);
+      // Binôme à partis hétérogènes : on retourne "PA1+PA2" via binomePartiLabel.
+      const pLbl = (typeof binomePartiLabel === 'function') ? binomePartiLabel(name) : (ci.pa || '');
+      if (shortN) return { prenom: '', nom: shortN, parti: pLbl };
+    }
     let prenom = ci.p || '';
     let nom = ci.n || '';
     if (!nom) {
@@ -5988,8 +7427,8 @@ function updateAnalyseLink() {
       return;
     }
 
-    // Mini-carte à gauche (pour bureau OU quartier)
-    const showMap = (fctx.type === 'bureau' || fctx.type === 'quartier');
+    // Mini-carte à gauche (pour bureau, quartier ou canton)
+    const showMap = (fctx.type === 'bureau' || fctx.type === 'quartier' || fctx.type === 'canton');
     const mapW = showMap ? 140 : 0;
     const mapGapX = showMap ? 16 : 0;
     if (showMap) await drawFicheMap(ctx, x, y, mapW, h, fctx);
@@ -6057,13 +7496,13 @@ function updateAnalyseLink() {
 
   // ─── Mini-carte d'export : helpers (pickTarget / computeView / tiles / mask / bureaux) ───
 
-  // Sélectionne les features à mettre en couleur (bureau actuel ou bureaux du quartier).
+  // Sélectionne les features à mettre en couleur (bureau actuel ou bureaux du quartier/canton).
   function _pickTargetFeatures(fctx, allFeatures) {
     if (fctx.type === 'bureau') {
       if (typeof currentFeature === 'undefined' || !currentFeature || !currentFeature.geometry) return null;
       return [currentFeature];
     }
-    if (fctx.type === 'quartier') {
+    if (fctx.type === 'quartier' || fctx.type === 'canton') {
       const numSet = new Set((fctx.bureauNums || []).map(String));
       return allFeatures.filter(f => f && f.geometry && numSet.has(numStr(f)));
     }
@@ -6256,7 +7695,10 @@ function updateAnalyseLink() {
     _drawMapMask(ctx, x, y, w, h, view, allFeatures);
     _drawMapBureaux(ctx, view, allFeatures, targetFeatures, fctx.winnerCol);
     // Repères géographiques : 5 max, priorité aux plus proches du centre, anti-collision activée.
-    drawReperesOnCarte(ctx, view.project, view.bbox, LR_REPERES.pointsFiche, { x: x, y: y, w: w, h: h }, 5);
+    // En mode canton, on les omet : la zone est plus large et les repères surchargent la mini-carte.
+    if (fctx.type !== 'canton') {
+      drawReperesOnCarte(ctx, view.project, view.bbox, LR_REPERES.pointsFiche, { x: x, y: y, w: w, h: h }, 5);
+    }
     ctx.restore();
   }
 
@@ -7110,22 +8552,40 @@ function randomDiscover() {
     if (!host || !host.isConnected) return;
     const inner = host.querySelector('.duel-nom-inner');
     if (!inner) return;
-    // Reset éventuel pour re-mesurer proprement (resize, orientation, etc.).
-    host.classList.remove('has-marquee');
+    // Reset complet pour re-mesurer proprement (resize, orientation, etc.).
+    host.classList.remove('has-marquee', 'prenom-abbrev', 'prenom-hidden');
     host.style.removeProperty('--duel-marquee-d');
     const containerW = host.clientWidth;
-    const innerW = inner.scrollWidth;
-    if (!containerW || !innerW) return;
-    const overflow = innerW - containerW;
-    if (overflow <= 5) return; // marge de tolérance (sub-pixel rounding)
-    // Distance totale = overflow + largeur du fade.
-    // Overshoot : à l'extrême, la portion révélée dépasse la zone de fade et
-    // est donc 100 % opaque. Sans cet ajout, le bout du texte resterait pile
-    // sous le gradient transparent et serait partiellement masqué.
-    const distance = overflow + FADE_PX;
-    // Sens du défilement selon l'alignement :
-    // - data-align="left"  (bloc droit) → texte calé à gauche, on translate de -distance (slide à gauche) pour révéler la fin.
-    // - data-align="right" (bloc gauche) → texte calé à droite, on translate de +distance (slide à droite) pour révéler le début.
+    if (!containerW) return;
+    // Cascade d'abréviation AVANT la marquise (cohérence avec le mode liste) :
+    //   Palier 1 — prénom complet → initiales (.prenom-abbrev)
+    //   Palier 2 — prénom masqué (.prenom-hidden)
+    //   Palier 3 — marquise translateX (animation)
+    // ⚠️ Après chaque classList.add/remove, on FORCE un reflow synchrone via
+    // offsetWidth, sinon scrollWidth peut renvoyer la mesure d'avant le swap.
+    function fits() {
+      // void(inner.offsetWidth) force le navigateur à recalculer le layout maintenant
+      void inner.offsetWidth;
+      return inner.scrollWidth <= containerW + 5;
+    }
+    if (fits()) return;
+    // Le host a-t-il un prénom (binôme avec membre.p) ? Si oui on tente la cascade.
+    const hasPrenom = !!host.querySelector('.cn-prenom-full');
+    if (hasPrenom) {
+      host.classList.add('prenom-abbrev');
+      if (fits()) return;
+      host.classList.remove('prenom-abbrev');
+      host.classList.add('prenom-hidden');
+      if (fits()) return;
+    }
+    // Sinon (ou si encore débordement) : marquise translateX
+    void inner.offsetWidth; // dernier reflow avant la mesure définitive
+    const overflow = inner.scrollWidth - containerW;
+    if (overflow <= 5) return;
+    // Overshoot de 2× FADE_PX : avec +FADE_PX seul, le bout du texte arrive pile sur
+    // le bord du fade gradient et reste partiellement transparent. En doublant, le
+    // bout dépasse la zone fade et est rendu 100% opaque à l'amplitude max.
+    const distance = overflow + FADE_PX * 2;
     const align = host.getAttribute('data-align') || 'left';
     const sign  = (align === 'right') ? '+' : '-';
     host.style.setProperty('--duel-marquee-d', sign + distance + 'px');
@@ -7338,28 +8798,32 @@ function closeElecSheet() {
 function syncNavSheetContent() {
   const srcB = document.getElementById('sb-bureau-list');
   const srcQ = document.getElementById('sb-quartier-list');
+  const srcC = document.getElementById('sb-canton-list');
   const dstB = document.getElementById('nav-sheet-bureaux');
   const dstQ = document.getElementById('nav-sheet-quartiers');
+  const dstC = document.getElementById('nav-sheet-cantons');
   if (srcB && dstB) dstB.innerHTML = srcB.innerHTML;
   if (srcQ && dstQ) dstQ.innerHTML = srcQ.innerHTML;
+  if (srcC && dstC) dstC.innerHTML = srcC.innerHTML;
 }
 
 function switchNavSheetTab(type) {
   const sheet = document.getElementById('nav-sheet');
   if (!sheet) return;
-  const bureauxList = document.getElementById('nav-sheet-bureaux');
-  const quartiersList = document.getElementById('nav-sheet-quartiers');
+  const lists = {
+    bureau:   document.getElementById('nav-sheet-bureaux'),
+    quartier: document.getElementById('nav-sheet-quartiers'),
+    canton:   document.getElementById('nav-sheet-cantons'),
+  };
   const tabs = sheet.querySelectorAll('.nav-sheet-tab');
   tabs.forEach(t => t.classList.toggle('is-current', t.dataset.navType === type));
-  if (type === 'quartier') {
-    bureauxList.style.display = 'none';
-    quartiersList.style.display = '';
-  } else {
-    bureauxList.style.display = '';
-    quartiersList.style.display = 'none';
-  }
+  Object.entries(lists).forEach(([k, el]) => {
+    if (!el) return;
+    el.style.display = (k === type) ? '' : 'none';
+  });
   // Scroll vers la ligne active du nouvel onglet
-  const cur = (type === 'quartier' ? quartiersList : bureauxList).querySelector('.blist-row.cur');
+  const activeList = lists[type];
+  const cur = activeList && activeList.querySelector('.blist-row.cur');
   if (cur) cur.scrollIntoView({ block: 'center' });
 }
 
@@ -7368,7 +8832,11 @@ function openNavSheet() {
   if (!sheet) return;
   syncNavSheetContent();
   // Choisir l'onglet pertinent selon le type de fiche en cours
-  const initialTab = (typeof overlayTab === 'string' && overlayTab === 'quartier') ? 'quartier' : 'bureau';
+  let initialTab = 'bureau';
+  if (typeof overlayTab === 'string') {
+    if (overlayTab === 'quartier') initialTab = 'quartier';
+    else if (overlayTab === 'canton') initialTab = 'canton';
+  }
   switchNavSheetTab(initialTab);
   sheet.classList.add('open');
   sheet.setAttribute('aria-hidden', 'false');
@@ -7392,6 +8860,9 @@ document.addEventListener('click', function(e) {
     closeNavSheet();
   } else if (row.dataset.q) {
     if (typeof selectQuartierFromList === 'function') selectQuartierFromList(row.dataset.q);
+    closeNavSheet();
+  } else if (row.dataset.c) {
+    if (typeof selectCantonFromList === 'function') selectCantonFromList(row.dataset.c);
     closeNavSheet();
   }
 });

@@ -55,7 +55,7 @@
   "mainEntity": {
     "@type": "Dataset",
     "name": "Archives électorales de La Rochelle, 1988-2026",
-    "description": "Résultats par bureau de vote pour 35 élections et 2 référendums organisés à La Rochelle entre 1988 et 2026.",
+    "description": "Résultats par bureau de vote pour 37 élections et 2 référendums organisés à La Rochelle entre 1988 et 2026.",
     "url": "https://larochellevote.fr/",
     "creator": {
       "@type": "Person",
@@ -304,7 +304,10 @@ select.ctrl-sel{width:100%;padding:7px 10px;border:1.5px solid var(--border-moda
 #type-toggles{display:flex;flex-direction:column;gap:3px}
 .type-toggle{padding:5px 8px;border-radius:5px;border:1.5px solid var(--border-modal);cursor:pointer;font-size:0.83rem;font-weight:600;color:var(--text-modal-muted);background:var(--bg-modal);transition:all .12s;user-select:none}
 .type-toggle.on{background:var(--bg-active);border-color:var(--bg-active);color:var(--text-active)}
-.type-toggle:hover:not(.on){background:var(--bg-modal-hover)}
+.type-toggle:hover:not(.on):not(.disabled){background:var(--bg-modal-hover)}
+/* Toggle désactivé (ex. Départementales en niveau ville/quartier) : non cliquable,
+   visuellement estompé. L'explication s'affiche au survol via l'attribut title HTML. */
+.type-toggle.disabled{opacity:0.45;cursor:not-allowed;pointer-events:auto}
 .bloc-toggle{display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;min-width:0}
 .bloc-dot{width:11px;height:11px;border-radius:3px;flex-shrink:0}
 .bloc-name{font-size:0.83rem;color:var(--text-modal-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
@@ -589,9 +592,24 @@ html[data-admin="1"] .rd-add-btn{display:block}
 .rd-add-btn:hover{background:rgba(232,160,32,0.08)}
 /* ─── Modal références ──────────────────────────────────── */
 #ref-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:1000}
-#qcorresp-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:1000;background:rgba(0,0,0,.45);padding:16px}
+#qcorresp-modal,#ccorresp-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:1000;background:rgba(0,0,0,.45);padding:16px}
 #qcorresp-dialog{background:var(--bg-modal);border-radius:12px;padding:20px 24px;width:560px;max-width:95vw;max-height:82vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.22)}
-#qcorresp-dialog h3{margin:0 0 14px;font-size:1rem;color:var(--text-modal)}
+#ccorresp-dialog{background:var(--bg-modal);border-radius:12px;padding:20px 24px;width:780px;max-width:95vw;max-height:88vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.22)}
+#qcorresp-dialog h3,#ccorresp-dialog h3{margin:0 0 14px;font-size:1rem;color:var(--text-modal)}
+/* Modal édition correspondances canton : 3 colonnes par ère, bureau-tag draggable */
+.cc-era{margin-bottom:18px;border:1px solid var(--border-modal);border-radius:8px;overflow:hidden}
+.cc-era-head{background:var(--bg-modal-hover);padding:6px 12px;font-size:0.8rem;font-weight:700;color:var(--text-modal-muted)}
+.cc-cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--border-soft)}
+.cc-col{background:var(--bg-modal);padding:8px 10px;min-height:60px}
+.cc-col-ttl{font-size:0.7rem;font-weight:700;color:var(--text-meta);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+.cc-bv{display:inline-flex;align-items:center;gap:4px;padding:3px 7px;margin:2px 3px 2px 0;border-radius:5px;background:var(--bg-modal-hover);font-size:0.74rem;font-weight:600;color:var(--text-modal);cursor:pointer;border:1px solid var(--border-soft);transition:all .12s}
+.cc-bv:hover{background:var(--bg-active);color:var(--text-active);border-color:var(--bg-active)}
+.cc-bv.moved{background:#fff3e0;border-color:#bf6000;color:#bf6000}
+.cc-bv-id{font-weight:700}
+.cc-bv-den{font-weight:500;opacity:.85;font-size:0.72rem}
+#cc-code{background:#0d1117;color:#c9d1d9;padding:10px 12px;border-radius:6px;font-family:monospace;font-size:0.72rem;white-space:pre-wrap;word-break:break-all;max-height:200px;overflow-y:auto;margin-top:10px;display:none}
+#cc-code.show{display:block}
+.cc-mini-help{font-size:0.74rem;color:var(--text-meta);font-style:italic;margin-bottom:10px;line-height:1.4}
 .qc-era{margin-bottom:14px;border:1px solid var(--border-modal);border-radius:8px;overflow:hidden}
 .qc-era-head{background:var(--bg-modal-hover);padding:6px 12px;font-size:0.8rem;font-weight:700;color:var(--text-modal-muted);display:flex;justify-content:space-between}
 .qc-era-head.ok{background:#f0f7ee;color:#2e7d32}
@@ -610,6 +628,7 @@ html[data-admin="1"] .rd-add-btn{display:block}
 @media (max-width: 380px) {
   #redecoupage-dialog,
   #qcorresp-dialog,
+  #ccorresp-dialog,
   #ref-dialog {
     width: calc(100vw - 24px);
     max-width: none;
@@ -894,19 +913,23 @@ html[data-admin="1"] .rd-add-btn{display:block}
   }
   /* Tap targets WCAG : tous les boutons filtres ≥ 44 px de hauteur tactile.
      On ajuste padding-y et on impose min-height pour garantir le tap confortable
-     même quand le texte est très court. Le visual reste compact horizontalement. */
+     même quand le texte est très court. Le visual reste compact horizontalement.
+     ── Mobile : 4 boutons sur la même ligne (flex:1 1 0), MAIS le texte interne
+     peut wrapper sur 2 lignes (white-space:normal, line-height:1.15) pour
+     éviter les ellipsis sur "Ville entière" / "Bureau de vote". */
   #sidebar .niveau-btn {
     flex: 1 1 0;
     width: auto;
     min-width: 0;
     margin: 0;
     text-align: center;
-    padding: 12px 4px;        /* 7px → 12px */
-    min-height: 44px;
+    padding: 8px 4px;
+    min-height: 48px;
     font-size: 0.74rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 1.15;
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: break-word;
     display: flex; align-items: center; justify-content: center;
   }
 
@@ -1271,8 +1294,16 @@ input:focus-visible,
   <div class="sb-section">
     <div class="sb-label">Niveau d'analyse</div>
     <button class="niveau-btn on" onclick="setNiveau('ville')" id="btn-ville">🏙 Ville entière</button>
+    <button class="niveau-btn" onclick="setNiveau('canton')" id="btn-canton">🧩 Canton</button>
     <button class="niveau-btn" onclick="setNiveau('quartier')" id="btn-quartier">🏘 Quartier</button>
     <button class="niveau-btn" onclick="setNiveau('bureau')" id="btn-bureau">📍 Bureau de vote</button>
+  </div>
+
+  <div class="sb-section" id="sec-canton" style="display:none">
+    <div class="sb-label">Canton</div>
+    <select class="ctrl-sel" id="sel-canton" onchange="refresh()"></select>
+    <button class="rd-add-btn" onclick="openCCorrespPanel()">🔍 Vérifier les correspondances historiques…</button>
+    <button class="rd-add-btn" onclick="openRedecoupageForm()">✏️ Annoter un redécoupage…</button>
   </div>
 
   <div class="sb-section" id="sec-quartier" style="display:none">
@@ -1297,6 +1328,12 @@ input:focus-visible,
       <div class="type-toggle on" data-type="Municipales"    onclick="toggleType(this)"><span>Municipales</span></div>
       <div class="type-toggle on" data-type="Européennes"    onclick="toggleType(this)"><span>Européennes</span></div>
       <div class="type-toggle on" data-type="Régionales"     onclick="toggleType(this)"><span>Régionales</span></div>
+      <!-- Départementales : éteint par défaut. Allumé automatiquement quand niveau=canton,
+           désactivé en niveau ville (infracommunale) ou quartier (quartiers divisés entre
+           cantons). État initial = ville → disabled + tooltip custom (cf. setNiveau pour
+           la suite). Convention du projet : classe .has-tooltip + attribut data-tooltip
+           (bulle custom CSS, pas le tooltip natif title). -->
+      <div class="type-toggle disabled has-tooltip" data-type="Départementales" data-tooltip="Élection infracommunale" onclick="toggleType(this)"><span>Départementales</span></div>
     </div>
   </div>
 
@@ -1637,7 +1674,16 @@ function computeBP(candScores, elecLabel) {
   Object.entries(candScores).forEach(([cname, pct]) => {
     const specific = CAND_DATA[cname + '|' + elecLabel];
     const generic  = CAND_DATA[cname];
-    const bk = (specific && specific.bk) || (generic && generic.bk) || '?';
+    let bk = (specific && specific.bk) || (generic && generic.bk) || '';
+    // Binôme (Départementales/Cantonales) : pas de bk sur l'entrée binôme,
+    // on dérive des membres (même clé si identiques, sinon le 1er membre dont bk est défini).
+    if (!bk && generic && Array.isArray(generic.binome) && generic.binome.length === 2) {
+      const m1 = CAND_DATA[generic.binome[0]+'|'+elecLabel] || CAND_DATA[generic.binome[0]] || {};
+      const m2 = CAND_DATA[generic.binome[1]+'|'+elecLabel] || CAND_DATA[generic.binome[1]] || {};
+      const bk1 = m1.bk || '', bk2 = m2.bk || '';
+      bk = (bk1 && bk1 === bk2) ? bk1 : (bk1 || bk2 || '');
+    }
+    bk = bk || '?';
     out[bk] = (out[bk] || 0) + pct;
   });
   return out;
@@ -1712,6 +1758,8 @@ let showAbst = false;
 let showVilleComparison = false;
 let showQuartierComparison = false;
 let compareQuartierName = null;
+// Canton sélectionné : clé "<era_canton>:<cid>", ex. "2015:1" (moderne) ou "1985:7" (ancien).
+let currentCantonKey = null;
 let showBase100 = false;
 function toggleBase100() {
   const btn = document.getElementById('toggle-base100');
@@ -1769,6 +1817,44 @@ function init() {
     selQ.appendChild(o);
   });
 
+  // Remplir le sélecteur de cantons : 2 optgroups (modernes "carte 2015" + anciens "carte 1985").
+  // La valeur du <option> est la clé "<era_canton>:<cid>" pour distinguer les modernes des anciens.
+  const selC = document.getElementById('sel-canton');
+  if (selC && typeof CANTON_INFO !== 'undefined') {
+    selC.innerHTML = '';
+    // Modernes (ère 2015) en premier
+    const modernes = (CANTON_INFO['2015'] || {}).cantons || {};
+    if (Object.keys(modernes).length) {
+      const og = document.createElement('optgroup');
+      og.label = 'Cantons actuels (carte 2015)';
+      Object.entries(modernes)
+        .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
+        .forEach(([cid, meta]) => {
+          const o = document.createElement('option');
+          o.value = '2015:' + cid;
+          // Pas de suffixe "carte 2015" : l'optgroup le rappelle déjà.
+          o.textContent = meta.name || ('La Rochelle-' + cid);
+          og.appendChild(o);
+        });
+      selC.appendChild(og);
+    }
+    // Anciens (ère 1985, période 1988-2014) ensuite
+    const anciens = (CANTON_INFO['1985'] || {}).cantons || {};
+    if (Object.keys(anciens).length) {
+      const og = document.createElement('optgroup');
+      og.label = 'Anciens cantons (carte 1985, 1988-2014)';
+      Object.entries(anciens)
+        .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
+        .forEach(([cid, meta]) => {
+          const o = document.createElement('option');
+          o.value = '1985:' + cid;
+          o.textContent = meta.name || ('La Rochelle-' + cid);
+          og.appendChild(o);
+        });
+      selC.appendChild(og);
+    }
+  }
+
   // Remplir le sélecteur de bureaux
   const selB = document.getElementById('sel-bureau');
   const bureaux2026 = BUREAU_INFO[CURRENT_ERA] || {};
@@ -1811,13 +1897,16 @@ function writeURLState() {
     const params = new URLSearchParams();
     // Niveau
     if (niveau && niveau !== 'ville') params.set('niveau', niveau);
-    // Sélection bureau ou quartier (selon niveau)
+    // Sélection bureau, quartier ou canton (selon niveau)
     if (niveau === 'bureau') {
       const v = document.getElementById('sel-bureau').value;
       if (v) params.set('bureau', v);
     } else if (niveau === 'quartier') {
       const v = document.getElementById('sel-quartier').value;
       if (v) params.set('quartier', v);
+    } else if (niveau === 'canton') {
+      const v = document.getElementById('sel-canton').value;
+      if (v) params.set('canton', v);
     }
     // Mode d'affichage (blocs/familles)
     if (displayMode && displayMode !== 'blocs') params.set('mode', displayMode);
@@ -1883,9 +1972,9 @@ function applyHashSelection() {
 
   // Niveau (s'applique avant les autres pour bien afficher la sidebar)
   const niv = params.get('niveau');
-  if (niv && ['ville','quartier','bureau'].includes(niv)) {
+  if (niv && ['ville','quartier','canton','bureau'].includes(niv)) {
     niveau = niv;
-    ['ville','quartier','bureau'].forEach(x => {
+    ['ville','quartier','canton','bureau'].forEach(x => {
       const btn = document.getElementById('btn-'+x);
       if (btn) btn.classList.toggle('on', x===niv);
       const sec = document.getElementById('sec-'+x);
@@ -1893,7 +1982,7 @@ function applyHashSelection() {
     });
   }
 
-  // Bureau / quartier
+  // Bureau / quartier / canton
   const bid = params.get('bureau');
   if (bid) {
     const sel = document.getElementById('sel-bureau');
@@ -1902,7 +1991,7 @@ function applyHashSelection() {
       // Rétro-compat : si pas de niveau explicite, on déduit niveau=bureau
       if (!niv) {
         niveau = 'bureau';
-        ['ville','quartier','bureau'].forEach(x => {
+        ['ville','quartier','canton','bureau'].forEach(x => {
           const btn = document.getElementById('btn-'+x);
           if (btn) btn.classList.toggle('on', x==='bureau');
           const sec = document.getElementById('sec-'+x);
@@ -1921,7 +2010,7 @@ function applyHashSelection() {
       sel.value = qname;
       if (!niv && !bid) {
         niveau = 'quartier';
-        ['ville','quartier','bureau'].forEach(x => {
+        ['ville','quartier','canton','bureau'].forEach(x => {
           const btn = document.getElementById('btn-'+x);
           if (btn) btn.classList.toggle('on', x==='quartier');
           const sec = document.getElementById('sec-'+x);
@@ -1930,6 +2019,25 @@ function applyHashSelection() {
       }
     } else {
       showHashError('Quartier "' + qname + '" introuvable.');
+    }
+  }
+  const cname = params.get('canton');
+  if (cname) {
+    const sel = document.getElementById('sel-canton');
+    if (sel && [...sel.options].some(o => o.value === cname)) {
+      sel.value = cname;
+      currentCantonKey = cname;
+      if (!niv && !bid && !qname) {
+        niveau = 'canton';
+        ['ville','quartier','canton','bureau'].forEach(x => {
+          const btn = document.getElementById('btn-'+x);
+          if (btn) btn.classList.toggle('on', x==='canton');
+          const sec = document.getElementById('sec-'+x);
+          if (sec) sec.style.display = (x==='canton') ? '' : 'none';
+        });
+      }
+    } else {
+      showHashError('Canton "' + cname + '" introuvable.');
     }
   }
 
@@ -2033,11 +2141,40 @@ function applyHashSelection() {
 function setNiveau(n) {
   const wasVille = niveau === 'ville';
   niveau = n;
-  ['ville','quartier','bureau'].forEach(x => {
-    document.getElementById('btn-'+x).classList.toggle('on', x===n);
+  ['ville','quartier','canton','bureau'].forEach(x => {
+    const btn = document.getElementById('btn-'+x);
+    if (btn) btn.classList.toggle('on', x===n);
     const sec = document.getElementById('sec-'+x);
     if (sec) sec.style.display = (x===n && n!=='ville') ? '' : 'none';
   });
+  // Toggle "Départementales" : allumé automatiquement seulement en niveau Canton.
+  // Désactivé (non cliquable) en niveau Ville (élection infracommunale, pas de
+  // résultat ville pertinent) et Quartier (les quartiers chevauchent souvent
+  // plusieurs cantons → résultat ambigü). En Bureau : cliquable, OFF par défaut.
+  const depToggle = document.querySelector('.type-toggle[data-type="Départementales"]');
+  if (depToggle) {
+    depToggle.classList.toggle('on', n === 'canton');
+    // Tooltip custom du projet (classe .has-tooltip + data-tooltip).
+    if (n === 'ville') {
+      depToggle.classList.add('disabled', 'has-tooltip');
+      depToggle.setAttribute('data-tooltip', 'Élection infracommunale');
+    } else if (n === 'quartier') {
+      depToggle.classList.add('disabled', 'has-tooltip');
+      depToggle.setAttribute('data-tooltip', 'Quartiers divisés');
+    } else {
+      depToggle.classList.remove('disabled', 'has-tooltip');
+      depToggle.removeAttribute('data-tooltip');
+    }
+  }
+  // Initialiser currentCantonKey si on entre dans le niveau Canton sans sélection
+  if (n === 'canton') {
+    const selC = document.getElementById('sel-canton');
+    if (selC && !selC.value && selC.options.length) {
+      // Par défaut, sélectionner le 1er canton moderne (La Rochelle-1 carte 2015)
+      selC.value = '2015:1';
+    }
+    if (selC) currentCantonKey = selC.value || null;
+  }
   refresh();
   // Quand on quitte la vue Ville, la frise apparaît et change le layout :
   // on force un 2e refresh pour que le chart soit redessiné aux bonnes dimensions
@@ -2061,6 +2198,9 @@ function getVilleData(typeFilter) {
   const result = [];
   for (const [label, elData] of Object.entries(ELECTIONS)) {
     if (!matchesTypeFilter(label, typeFilter)) continue;
+    // Les élections cantonales (Départementales — La Rochelle-N) ne couvrent qu'un
+    // canton : pas de "résultat ville" pertinent → on les exclut du niveau Ville.
+    if (typeof isCantonalElection === 'function' && isCantonalElection(label)) continue;
     const sheet = elData.sheets?.T1 || elData.sheets?.TU;
     if (!sheet) continue;
     let totalE = 0, totalI = 0;
@@ -2120,6 +2260,9 @@ function getQuartierData(quartier, typeFilter) {
   const result = [];
   for (const [label, elData] of Object.entries(ELECTIONS)) {
     if (!matchesTypeFilter(label, typeFilter)) continue;
+    // Élections cantonales : suspension de la fiche quartier (cohérence avec LRVcarte).
+    // Un quartier peut chevaucher 2 cantons → agrégation mélangerait des binômes différents.
+    if (typeof isCantonalElection === 'function' && isCantonalElection(label)) continue;
     const sheet = elData.sheets?.T1 || elData.sheets?.TU;
     if (!sheet) continue;
     const era = elData.my || CURRENT_ERA;
@@ -2149,6 +2292,101 @@ function getQuartierData(quartier, typeFilter) {
     }
   }
   return result.sort((a,b) => a.year !== b.year ? a.year-b.year : elecTypePriority(a.label)-elecTypePriority(b.label));
+}
+
+// ─── Données agrégées canton ──────────────────────────────────────────────
+// cantonKey = "<era_canton>:<cid>", ex. "2015:1" (moderne) ou "1985:7" (ancien).
+// Pour une ère bureau donnée, retourne la liste des bureaux historiques agrégés
+// pour ce canton, ou [] si le canton n'existe pas à cette ère.
+function getCBureauxForEra(cantonKey, eraB) {
+  if (!cantonKey) return [];
+  const parts = cantonKey.split(':');
+  const eraCanton = parts[0];
+  const cid = parts[1];
+  const eraBureauNum = parseInt(eraB);
+
+  // Anciens cantons (ère 1985, période 1988-2014) : seulement valides pour les ères bureau
+  // antérieures à 2015. Pour ces ères, on lit directement BUREAU_INFO[era][ns].c.
+  if (eraCanton === '1985') {
+    if (eraBureauNum >= 2015) return []; // canton historique mort
+    const eraInfo = BUREAU_INFO[eraB] || {};
+    return Object.entries(eraInfo)
+      .filter(([, b]) => String(b.c || '') === String(cid))
+      .map(([id]) => id);
+  }
+
+  // Cantons modernes (ère 2015) : pour les ères ≥ 2015, on lit directement .c.
+  // Pour les ères antérieures, on utilise CANTON_CORRESPONDANCES (mapping inféré
+  // qui dit quels bureaux historiques composent rétroactivement ce canton moderne).
+  if (eraCanton === '2015') {
+    if (eraBureauNum >= 2015) {
+      const eraInfo = BUREAU_INFO[eraB] || {};
+      return Object.entries(eraInfo)
+        .filter(([, b]) => String(b.c || '') === String(cid))
+        .map(([id]) => id);
+    }
+    // Ère antérieure : utiliser CANTON_CORRESPONDANCES
+    if (typeof CANTON_CORRESPONDANCES === 'undefined') return [];
+    return ((CANTON_CORRESPONDANCES[cantonKey] || {})[eraB]) || [];
+  }
+  return [];
+}
+
+// Agrégation des résultats par canton, calquée sur getQuartierData.
+// Pas besoin de filtre temporel explicite : getCBureauxForEra retourne déjà []
+// pour les ères incompatibles (canton historique 1985 sur ère ≥ 2015, ou canton
+// moderne 2015 sur ère < 2015 absente de CANTON_CORRESPONDANCES). Le check
+// `if (!ids.length) continue` ci-dessous fait la troncation naturellement.
+// Pour les cantons modernes (era_canton=2015), CANTON_CORRESPONDANCES couvre
+// les ères 1988-2012 → toutes les élections sont rétroactivement agrégées.
+function getCantonData(cantonKey, typeFilter) {
+  if (!cantonKey) return [];
+  const wantCid = cantonKey.split(':')[1];
+  const result = [];
+  for (const [label, elData] of Object.entries(ELECTIONS)) {
+    if (!matchesTypeFilter(label, typeFilter)) continue;
+    // Élection cantonale (Départementales / Cantonales) :
+    //   - Si le label contient "— La Rochelle-N" : on vérifie que N === wantCid (ancien format multi-entrées).
+    //   - Si le label est sans suffix mais l'élection a une structure par_canton : OK (les données fusionnées
+    //     dans .sheets contiennent les bureaux des 3 cantons ; le filtre `getCBureauxForEra` ne retiendra
+    //     que les bureaux du canton demandé via leur champ BUREAU_INFO[era].c).
+    if (typeof isCantonalElection === 'function' && isCantonalElection(label)) {
+      const elCid = (typeof getCantonOfElection === 'function') ? getCantonOfElection(label) : null;
+      if (elCid && elCid !== wantCid) continue;
+    }
+    const sheet = elData.sheets?.T1 || elData.sheets?.TU;
+    if (!sheet) continue;
+    const era = elData.my || CURRENT_ERA;
+    const year = parseInt(label.match(/\d{4}/)[0]);
+    const ids = getCBureauxForEra(cantonKey, era);
+    if (!ids.length) continue;
+    let totalE = 0, totalI = 0;
+    const sums = {};
+    const csSums = {};
+    for (const bid of ids) {
+      const bd = sheet[bid];
+      if (!bd) continue;
+      const e = bd.e || 0;
+      totalE += e; totalI += bd.i || 0;
+      const bpLive = computeBP(bd.c, label);
+      Object.entries(bpLive).forEach(([k, v]) => { sums[k] = (sums[k] || 0) + v * e; });
+      Object.entries(bd.c || {}).forEach(([cname, pct]) => { csSums[cname] = (csSums[cname] || 0) + pct * e; });
+    }
+    if (totalE > 0) {
+      const bp = {}; Object.entries(sums).forEach(([k, v]) => bp[k] = v / totalE);
+      const cs = {}; Object.entries(csSums).forEach(([k, v]) => cs[k] = v / totalE);
+      let totalBN = 0;
+      for (const bid of ids) { const bd = sheet[bid]; if (bd) totalBN += bd.bn || 0; }
+      const totalVotants = totalE + totalBN;
+      result.push({
+        label, year,
+        a: totalI > 0 ? 100 * (1 - totalE / totalI) : null, bp, cs,
+        i: totalI, e: totalE, bn: totalBN,
+        votants: totalVotants, abs: totalI - totalVotants
+      });
+    }
+  }
+  return result.sort((a, b) => a.year !== b.year ? a.year - b.year : elecTypePriority(a.label) - elecTypePriority(b.label));
 }
 
 // ─── Données bureau ────────────────────────────────────────────────────────
@@ -2216,12 +2454,17 @@ function getBureauHistData(bureauId, typeFilter) {
 
 // ─── Refresh principal ────────────────────────────────────────────────────
 function getActiveTypes() {
+  const allTypes = document.querySelectorAll('.type-toggle');
   const on = document.querySelectorAll('.type-toggle.on');
-  if (on.length === 0 || on.length === 5) return null; // null = tous
+  // null = "tous" (= aucun filtre actif). Vrai si 0 allumés OU tous allumés.
+  if (on.length === 0 || on.length === allTypes.length) return null;
   return new Set([...on].map(el => el.dataset.type));
 }
 
 function toggleType(el) {
+  // Ignore le clic si le toggle est désactivé (ex. Départementales en niveau ville/quartier
+  // où l'élection n'a pas de sens : infracommunale ou quartiers divisés entre cantons).
+  if (el.classList.contains('disabled')) return;
   el.classList.toggle('on');
   refresh();
 }
@@ -2277,9 +2520,18 @@ function selectCompareQuartier(qName) {
 
 function navigateSel(dir) {
   if (niveau === 'ville') return;
-  const selId = niveau === 'quartier' ? 'sel-quartier' : 'sel-bureau';
+  const selId = niveau === 'quartier' ? 'sel-quartier'
+              : niveau === 'canton' ? 'sel-canton'
+              : 'sel-bureau';
   const sel = document.getElementById(selId);
-  const opts = Array.from(sel.options);
+  let opts = Array.from(sel.options);
+  // En mode canton, on restreint la navigation aux options de la même ère canton
+  // (ne pas mélanger modernes 2015:N et anciens 1985:N dans le carrousel des chevrons).
+  if (niveau === 'canton') {
+    const currentEra = (sel.value || '').split(':')[0];
+    opts = opts.filter(o => (o.value || '').split(':')[0] === currentEra);
+  }
+  if (!opts.length) return;
   const idx = opts.findIndex(o => o.value === sel.value);
   const newIdx = (idx + dir + opts.length) % opts.length;
   sel.value = opts[newIdx].value;
@@ -2335,7 +2587,17 @@ function updateContentTitle() {
   const name  = document.getElementById('ct-name');
   const sub   = document.getElementById('ct-sub');
   const era = document.getElementById('tb-era');
-  if (era) era.style.display = niveau === 'ville' ? 'none' : '';
+  // Visible sauf : mode ville, ou ancien canton (ère canton 1985 — l'info est déjà
+  // dans le sous-titre "Canton actif de 1988 à 2014").
+  if (era) {
+    let hide = niveau === 'ville';
+    if (!hide && niveau === 'canton') {
+      const cKey = (document.getElementById('sel-canton')||{}).value || currentCantonKey || '';
+      const eraCanton = cKey.split(':')[0];
+      if (eraCanton === '1985') hide = true;
+    }
+    era.style.display = hide ? 'none' : '';
+  }
   if (niveau === 'ville') {
     num.textContent  = '';
     setMarqueeText(name, 'La Rochelle');
@@ -2350,6 +2612,29 @@ function updateContentTitle() {
     num.textContent  = '';
     setMarqueeText(name, q);
     sub.textContent  = bNums.length ? 'Bureaux ' + bNums.join(', ') : '';
+  } else if (niveau === 'canton') {
+    const cKey = document.getElementById('sel-canton').value || currentCantonKey;
+    currentCantonKey = cKey;
+    const parts = (cKey || '').split(':');
+    const eraCanton = parts[0];
+    const cid = parts[1];
+    const cantonsMeta = ((typeof CANTON_INFO !== 'undefined' && CANTON_INFO[eraCanton]) || {}).cantons || {};
+    const cName = (cantonsMeta[cid] || {}).name || ('La Rochelle-' + cid);
+    num.textContent = '';
+    setMarqueeText(name, cName);
+    // Sous-titre : statut du canton + liste des bureaux (calqué sur le mode quartier).
+    // Pour un canton moderne (era 2015) : bureaux à CURRENT_ERA (état actuel).
+    // Pour un canton historique (era 1985) : bureaux à 2012 (dernière ère où il existait).
+    const cantonInfo = ((typeof CANTON_INFO !== 'undefined' && CANTON_INFO[eraCanton]) || {});
+    const eraEnd = cantonInfo.era_end;
+    const status = eraEnd
+      ? 'Canton actif de ' + (cantonInfo.era_start ? Math.max(1988, parseInt(cantonInfo.era_start)) : 1988) + ' à ' + eraEnd
+      : 'Canton créé en ' + eraCanton;
+    // Choix de l'ère de référence pour la liste des bureaux affichés
+    const refEra = eraEnd ? '2012' : CURRENT_ERA;
+    const bureauxRef = (typeof getCBureauxForEra === 'function') ? getCBureauxForEra(cKey, refEra) : [];
+    const bNums = bureauxRef.map(id => parseInt(id)).sort((a, b) => a - b);
+    sub.textContent = status + (bNums.length ? ' · Bureaux ' + bNums.join(', ') : '');
   } else {
     const bid  = document.getElementById('sel-bureau').value;
     const info = (BUREAU_INFO[CURRENT_ERA] || {})[bid] || {};
@@ -2372,7 +2657,7 @@ function updateContentTitle() {
   document.getElementById('ct-nav').style.display = niveau !== 'ville' ? '' : 'none';
 }
 
-// Met à jour le lien « La carte » pour pointer sur le bureau/quartier en cours.
+// Met à jour le lien « La carte » pour pointer sur le bureau/quartier/canton en cours.
 function updateCarteLink() {
   const a = document.getElementById('tb-link-carte');
   if (!a) return;
@@ -2383,6 +2668,12 @@ function updateCarteLink() {
   } else if (niveau === 'quartier') {
     const q = document.getElementById('sel-quartier').value;
     if (q) suffix = '#quartier=' + encodeURIComponent(q);
+  } else if (niveau === 'canton') {
+    // La carte n'expose qu'un cid (sans préfixe d'ère). On envoie le cid pour
+    // que LRVcarte sélectionne le canton dans l'ère canton de l'élection courante.
+    const cKey = document.getElementById('sel-canton').value || currentCantonKey;
+    const cid = (cKey || '').split(':')[1];
+    if (cid) suffix = '#canton=' + encodeURIComponent(cid);
   }
   a.href = 'LRVcarte.html' + suffix;
 }
@@ -2434,6 +2725,10 @@ function refresh() {
   } else if (niveau === 'quartier') {
     const q = document.getElementById('sel-quartier').value;
     data = getQuartierData(q, typeFilter);
+  } else if (niveau === 'canton') {
+    const cKey = document.getElementById('sel-canton').value || currentCantonKey;
+    currentCantonKey = cKey;
+    data = getCantonData(cKey, typeFilter);
   } else {
     const bid = document.getElementById('sel-bureau').value;
     data = getBureauHistData(bid, typeFilter);
@@ -2458,9 +2753,13 @@ function refresh() {
   // les visibles dans la fenêtre et les autres hors zone (clip-path les cache).
   window._chartFullData = data;
   const N = data.length;
-  // Si la fenêtre courante est plus grande que les données, on reset (cas
-  // changement de filtre qui réduit le nombre de scrutins).
-  if (chartVisibleCount > N || chartVisibleCount < CHART_MIN_VISIBLE) {
+  // Signature du data (1ère + dernière élection + nombre). Si elle change, on a
+  // changé de sélection (ex. ancien canton 26 élections → moderne 37) → reset
+  // du zoom pour ne pas rester collé à l'ancienne période visible.
+  const dataSig = N + '|' + (data[0]?.label || '') + '|' + (data[N - 1]?.label || '');
+  const sigChanged = window._lastChartDataSig && window._lastChartDataSig !== dataSig;
+  window._lastChartDataSig = dataSig;
+  if (sigChanged || chartVisibleCount > N || chartVisibleCount < CHART_MIN_VISIBLE) {
     chartViewStartIdx = 0;
     chartVisibleCount = N;
   }
@@ -2480,6 +2779,7 @@ function refresh() {
   else drawChart(data);
   drawFrise(niveau === 'bureau' ? document.getElementById('sel-bureau').value
           : niveau === 'quartier' ? document.getElementById('sel-quartier').value
+          : niveau === 'canton' ? (document.getElementById('sel-canton').value || currentCantonKey)
           : null);
   drawTable(data);  // ← full data (pas le slice : cf. spec)
   if (typeof writeURLState === 'function') writeURLState();
@@ -2631,6 +2931,18 @@ function getBoundaryChanges() {
         const e = readEntry(val);
         if (e) addChange(key.split('|')[1], e.text, e.type);
       }
+    });
+
+  } else if (niveau === 'canton') {
+    const cKey = document.getElementById('sel-canton').value || currentCantonKey;
+    if (!cKey) return result;
+    // Clés "canton:<eraCanton>:<cid>|<eraBureau>" : on filtre sur le préfixe complet du canton.
+    const prefix = 'canton:' + cKey + '|';
+    Object.entries(REDECOUPAGES).forEach(([key, val]) => {
+      if (!key.startsWith(prefix)) return;
+      if (val === null) return;
+      const e = readEntry(val);
+      if (e) addChange(key.split('|')[1], e.text, e.type);
     });
   }
   return result;
@@ -2850,7 +3162,7 @@ function drawChart(data) {
   data.forEach((d, i) => {
     const x = xScale(i);
     html += `<line class="chart-grid-v" x1="${x}" y1="${PAD.top}" x2="${x}" y2="${PAD.top+cH}" stroke-width="1"/>`;
-    const typeLabel = d.label.replace('Présidentielle','Prés.').replace('Législatives','Lég.').replace('Municipales','Mun.').replace('Européennes','Eur.').replace('Régionales','Rég.').replace(/\s+\d{4}.*/, '');
+    const typeLabel = d.label.replace('Présidentielle','Prés.').replace('Législatives','Lég.').replace('Municipales','Mun.').replace('Européennes','Eur.').replace('Régionales','Rég.').replace('Départementales','Dép.').replace('Cantonales','Cant.').replace(/\s+\d{4}.*/, '');
     const yearLabel = d.label.match(/\d{4}.*/)?.[0] || '';
     const isUncertain = uncertainElections.has(d.label);
     // Élections incertaines : fill hardcodé légèrement plus pâle (signal visuel)
@@ -3271,7 +3583,7 @@ function drawStackedChart(data) {
       html += `<line x1="${x-2}" y1="${ya}" x2="${x+barW+2}" y2="${ya}" stroke="${ABST_COLOR}" stroke-width="1.5" stroke-dasharray="3,2"/>`;
     }
     // Label X
-    const typeLabel = d.label.replace('Présidentielle','Prés.').replace('Législatives','Lég.').replace('Municipales','Mun.').replace('Européennes','Eur.').replace('Régionales','Rég.').replace(/\s+\d{4}.*/, '');
+    const typeLabel = d.label.replace('Présidentielle','Prés.').replace('Législatives','Lég.').replace('Municipales','Mun.').replace('Européennes','Eur.').replace('Régionales','Rég.').replace('Départementales','Dép.').replace('Cantonales','Cant.').replace(/\s+\d{4}.*/, '');
     const yearLabel = d.label.match(/\d{4}.*/)?.[0] || '';
     const isUncertain = uncertainElections.has(d.label);
     const lFill = isUncertain ? '#bbb' : '#999';
@@ -3369,6 +3681,44 @@ function drawFrise(bid, xScaleOverride, previewWindow) {
       }
       eraInfo[era] = { num, den, agg: isAgg, ids: histIds };
     });
+  } else if (niveau === 'canton') {
+    // Vue canton : bid contient la clé canton (ex "2015:1" ou "1985:7")
+    const cKey = bid;
+    const eraCanton = (cKey || '').split(':')[0];
+    const cid = (cKey || '').split(':')[1];
+    const cantonsMeta = ((typeof CANTON_INFO !== 'undefined' && CANTON_INFO[eraCanton]) || {}).cantons || {};
+    const cName = (cantonsMeta[cid] || {}).name || ('La Rochelle-' + cid);
+    // Format homogène : toujours "N bureau(x)" en affichage. La liste détaillée
+    // "1+2+3+..." reste accessible via le tooltip (numFull).
+    function _compactCount(idArr) {
+      const n = idArr.length;
+      if (n === 0) return '—';
+      if (n === 1) return '1 bureau';
+      return n + ' bureaux';
+    }
+    // Distinction pré/post création du canton :
+    // - eraCanton "2015" : agg=true pour ères 1988-2012 (agrégation rétroactive,
+    //   le canton n'existait pas encore), agg=false pour ères ≥ 2015.
+    // - eraCanton "1985" : agg=false partout (le canton existait réellement aux ères 1988-2014).
+    // Conséquence : hachures 135° sur les ères pré-création, propre sur les ères natives.
+    const eraCantonNum = parseInt(eraCanton);
+    // Libellé pour les ères pré-création : on n'écrit PAS le nom du canton (qui serait
+    // anachronique), mais une mention explicite que l'agrégation est rétroactive.
+    const preCantonLabel = 'Agrégation correspondant plus ou moins au canton créé en ' + eraCanton;
+    ERAS.forEach(era => {
+      const ids = (typeof getCBureauxForEra === 'function') ? getCBureauxForEra(cKey, era) : [];
+      const nums = _compactCount(ids);
+      // numFull : liste complète "1+2+3+..." pour le tooltip au survol
+      const numFull = ids.length > 0
+        ? ids.map(id => String(parseInt(id))).sort((a, b) => +a - +b).join('+')
+        : '—';
+      const isPreCanton = parseInt(era) < eraCantonNum;
+      // Tooltip ligne Nom : phrase explicative pré-2015 / nom du canton sinon.
+      // Tooltip ligne N° : liste complète des bureaux (numFull), sans suffixe pour rester lisible.
+      const denDisplay = isPreCanton ? preCantonLabel : cName;
+      const denTooltip = isPreCanton ? preCantonLabel : cName;
+      eraInfo[era] = { num: nums, numFull, den: denDisplay, denFull: denTooltip, agg: isPreCanton, ids };
+    });
   } else {
     // Vue quartier : bid contient le nom du quartier
     const qname = bid;
@@ -3437,7 +3787,11 @@ function drawFrise(bid, xScaleOverride, previewWindow) {
   });
 
   // ── Rendu des lignes ────────────────────────────────────────────────────────
-  function buildBlocks(getValue) {
+  // getValue : produit la valeur affichée dans le bloc (string).
+  // getTooltipValue (optionnel) : produit la valeur du tooltip au survol. Si non fourni,
+  // tooltip = valeur affichée. Utile pour les cantons où on affiche "22 bureaux" en compact
+  // mais on veut "1+2+3+..." complet au survol.
+  function buildBlocks(getValue, getTooltipValue) {
     // Pré-calcule l'alt-0/1 de chaque éra basé sur la séquence COMPLÈTE des
     // valeurs (sur ERAS entiers, indépendamment de la fenêtre visible). Le
     // compteur n'augmente que quand la valeur change. Conséquence :
@@ -3461,26 +3815,34 @@ function drawFrise(bid, xScaleOverride, previewWindow) {
     // même si CURRENT_ERA elle-même n'est pas dans la fenêtre visible.
     // → Exemple : un bureau qui s'appelle "École Massiou" de 1996 à 2026 reste
     //   en gras quand on zoome sur 1996-2007 (sa valeur est toujours l'actuelle).
+    // Garde-fou : le statut d'agrégation doit aussi correspondre. Sinon un canton
+    // moderne dont l'agrégation rétroactive de 1992 a le même nombre de bureaux
+    // que l'ère actuelle ("22 bureaux") serait à tort marqué "actuel".
     const currentValue = eraInfo[CURRENT_ERA] ? getValue(eraInfo[CURRENT_ERA]) : null;
+    const currentAgg = eraInfo[CURRENT_ERA] ? !!eraInfo[CURRENT_ERA].agg : false;
 
     const blocks = []; let cur = null;
     presentEras.forEach(era => {
       const info = eraInfo[era] || {};
       const val = getValue(info);
+      const tooltipVal = getTooltipValue ? getTooltipValue(info) : val;
       const agg = !!info.agg;
       const pct = eraPct[era].pct;
       const ids = info.ids || [];
-      // Fusionner seulement si même valeur ET même statut d'agrégation
+      // Fusionner seulement si même valeur ET même statut d'agrégation.
+      // En cas de fusion, on concatène les tooltips des ères fusionnées si différents.
       if (cur && cur.val === val && cur.agg === agg) {
         cur.pct += pct;
         cur.eras.push(era);
         cur.eraPcts.push(pct);
         cur.ids = ids; // ids de la dernière ère du bloc
+        // Garder le dernier tooltip (typiquement même valeur pour fusion sur val)
+        if (tooltipVal !== cur.tooltip) cur.tooltip = tooltipVal;
       } else {
         if (cur) blocks.push(cur);
-        cur = { val, pct, changed: !!cur, agg, eras: [era], eraPcts: [pct], ids,
+        cur = { val, tooltip: tooltipVal, pct, changed: !!cur, agg, eras: [era], eraPcts: [pct], ids,
                 alt: eraAlt[era] !== undefined ? eraAlt[era] : 0,
-                isCurrent: currentValue !== null && val === currentValue };
+                isCurrent: currentValue !== null && val === currentValue && agg === currentAgg };
       }
     });
     if (cur) blocks.push(cur);
@@ -3505,14 +3867,21 @@ function drawFrise(bid, xScaleOverride, previewWindow) {
         ? ' style="font-weight:700;font-style:normal"'
         : ' style="font-weight:normal;font-style:italic"';
       const era = b.eras[b.eras.length - 1];
-      h += `<div class="${cls}" style="${style}" data-tooltip="${b.val}" data-era="${era}" data-eras="${b.eras.join(',')}" data-era-pcts="${b.eraPcts.join(',')}"
+      // data-tooltip = version longue (b.tooltip), affichage = version compacte (b.val).
+      // Pour les cantons : compact "22 bureaux", tooltip "1+2+3+...+53".
+      const tooltipAttr = (b.tooltip || b.val).replace(/"/g, '&quot;');
+      h += `<div class="${cls}" style="${style}" data-tooltip="${tooltipAttr}" data-era="${era}" data-eras="${b.eras.join(',')}" data-era-pcts="${b.eraPcts.join(',')}"
         onclick="openFrisePanel(this,event)"><span${spanStyle}>${b.val}</span></div>`;
     });
     return h + '</div></div>';
   }
 
-  const nomHtml = renderRow(buildBlocks(d => d.den), 'Nom');
-  const numHtml = renderRow(buildBlocks(d => d.num), 'N°');
+  // Ligne Nom : pour les cantons, denFull peut enrichir le tooltip ("agrégation rétroactive…").
+  // Pour bureau / quartier : pas de denFull → fallback sur den (comportement inchangé).
+  const nomHtml = renderRow(buildBlocks(d => d.den, d => d.denFull || d.den), 'Nom');
+  // Ligne N° : pour les cantons on a un tooltip plus riche (numFull, liste complète).
+  // Pour bureau / quartier : pas de numFull → fallback sur num (comportement inchangé).
+  const numHtml = renderRow(buildBlocks(d => d.num, d => d.numFull || d.num), 'N°');
 
   let axisHtml = `<div class="frise-row frise-axis"><div class="frise-label"></div><div class="frise-track">`;
   presentEras.forEach(era => {
@@ -3527,6 +3896,8 @@ function drawFrise(bid, xScaleOverride, previewWindow) {
   window._friseNiveau  = niveau;
   window._friseSelection = niveau === 'bureau'
     ? document.getElementById('sel-bureau').value
+    : niveau === 'canton'
+    ? document.getElementById('sel-canton').value
     : document.getElementById('sel-quartier').value;
 }
 
@@ -3628,9 +3999,11 @@ function _showFrisePanelEra(era) {
   eraBar.innerHTML = eras.map(e => {
     const hasRd = niv === 'bureau'   ? !!REDECOUPAGES[sel + '|' + e]
                 : niv === 'quartier' ? !!REDECOUPAGES['quartier:' + sel + '|' + e]
+                : niv === 'canton'   ? !!REDECOUPAGES['canton:' + sel + '|' + e]
                 : false;
     const hasZi = niv === 'bureau'   ? !!ZONES_INCERTAINES[sel + '|' + e]
                 : niv === 'quartier' ? !!ZONES_INCERTAINES['quartier:' + sel + '|' + e]
+                : niv === 'canton'   ? !!ZONES_INCERTAINES['canton:' + sel + '|' + e]
                 : false;
     const dot = hasRd ? ' •' : (hasZi ? ' ?' : '');
     const cls = [
@@ -3645,13 +4018,32 @@ function _showFrisePanelEra(era) {
   }).join('');
 
   // Infos texte
+  // En mode canton, on affiche la liste complète des bureaux (numFull) plutôt que
+  // le compact "22 bureaux" de la frise. Pour la ligne Nom, on ne l'affiche que
+  // pour les ères post-création (info.agg=false) — sur les ères pré-création, la
+  // notion de "nom du canton" est anachronique donc on l'omet.
   let html = '';
-  if (info.num && info.num !== '—') html += `<div><strong>N°&thinsp;</strong>${info.num}</div>`;
-  if (info.den && info.den !== info.num && info.den !== '—')
+  const _isCanton = (niv === 'canton');
+  const _numText = _isCanton ? (info.numFull || info.num) : info.num;
+  if (_numText && _numText !== '—') html += `<div><strong>N°&thinsp;</strong>${_numText}</div>`;
+  if (_isCanton) {
+    const _parts = (sel || '').split(':');
+    if (info.agg) {
+      // Ère pré-création : mention italique de l'agrégation rétroactive (pas de "Nom").
+      html += `<div style="font-size:0.82rem;color:var(--text-meta);font-style:italic;margin-top:4px">Agrégation correspondant plus ou moins au canton créé en ${_parts[0]}</div>`;
+    } else if (info.den && info.den !== '—') {
+      // Post-création : nom officiel du canton.
+      const _meta = ((typeof CANTON_INFO !== 'undefined' && CANTON_INFO[_parts[0]]) || {}).cantons || {};
+      const _cName = (_meta[_parts[1]] || {}).name || ('La Rochelle-' + _parts[1]);
+      html += `<div><strong>Nom&thinsp;</strong>${_cName}</div>`;
+    }
+  } else if (info.den && info.den !== info.num && info.den !== '—') {
     html += `<div><strong>Nom&thinsp;</strong>${info.den}</div>`;
+  }
   let rd = null;
   if (niv === 'bureau')   rd = REDECOUPAGES[sel + '|' + era];
   if (niv === 'quartier') rd = REDECOUPAGES['quartier:' + sel + '|' + era];
+  if (niv === 'canton')   rd = REDECOUPAGES['canton:' + sel + '|' + era];
   if (rd) {
     const type = {creation:'Création',majeur:'Redécoupage majeur',mineur:'Redécoupage mineur'}[rd.type] || rd.type;
     html += `<div class="fp-notice"><strong>${type}</strong><br>${rd.text}</div>`;
@@ -3659,6 +4051,7 @@ function _showFrisePanelEra(era) {
   let zi = null;
   if (niv === 'bureau')   zi = ZONES_INCERTAINES[sel + '|' + era];
   if (niv === 'quartier') zi = ZONES_INCERTAINES['quartier:' + sel + '|' + era];
+  if (niv === 'canton')   zi = ZONES_INCERTAINES['canton:' + sel + '|' + era];
   if (zi) html += `<div class="fp-uncertain"><strong>⚠ Données incertaines</strong><br>${zi}</div>`;
   document.getElementById('frise-panel-info').innerHTML = html;
 
@@ -4315,6 +4708,27 @@ window.addEventListener('DOMContentLoaded', () => {
   </div>
 </div>
 
+<!-- ─── Modal édition CANTON_CORRESPONDANCES ─────────────────────── -->
+<div id="ccorresp-modal" role="dialog" aria-modal="true" aria-labelledby="ccorresp-title" onclick="if(event.target===this)closeCCorrespPanel()">
+  <div id="ccorresp-dialog">
+    <h3 id="ccorresp-title">Correspondances historiques — Cantons modernes</h3>
+    <div class="cc-mini-help">
+      Pour chaque ère bureau (1988-2012), les bureaux historiques sont répartis dans
+      les 3 cantons modernes (créés en 2015). Clique sur un bureau pour cocher ou décocher
+      les cantons où il appartient — un bureau peut être présent dans <strong>plusieurs cantons
+      simultanément</strong> (comptage entier dans chacun, comme les quartiers partagés).
+      Une fois terminé, génère le code à copier dans <code>donnees.js</code>.
+    </div>
+    <div id="ccorresp-body"></div>
+    <pre id="cc-code"></pre>
+    <div style="text-align:right;margin-top:14px;display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="resetCCorrespEdits()" style="padding:6px 14px;border:1px solid #ccc;border-radius:6px;background:#f5f5f5;cursor:pointer;font-size:.8rem">↺ Annuler modifs</button>
+      <button onclick="generateCCorrespCode()" style="padding:6px 14px;border:1px solid #2e7d32;border-radius:6px;background:#2e7d32;color:#fff;cursor:pointer;font-size:.8rem;font-weight:600">📋 Générer le code</button>
+      <button onclick="closeCCorrespPanel()" style="padding:6px 16px;border:1px solid #ccc;border-radius:6px;background:#f5f5f5;cursor:pointer;font-size:.8rem">Fermer</button>
+    </div>
+  </div>
+</div>
+
 <div id="ref-modal" role="dialog" aria-modal="true" aria-labelledby="ref-title">
   <div id="ref-overlay" onclick="closeRefForm()" aria-hidden="true"></div>
   <div id="ref-dialog">
@@ -4384,6 +4798,12 @@ function openRedecoupageForm(prefillEraYear, prefillText, prefillType) {
   } else if (niveau === 'quartier') {
     _rdCtx.q = document.getElementById('sel-quartier').value;
     ctxLabel = 'Quartier ' + _rdCtx.q;
+  } else if (niveau === 'canton') {
+    _rdCtx.cantonKey = document.getElementById('sel-canton').value || currentCantonKey;
+    const parts = (_rdCtx.cantonKey || '').split(':');
+    const cantonsMeta = ((typeof CANTON_INFO !== 'undefined' && CANTON_INFO[parts[0]]) || {}).cantons || {};
+    const cName = (cantonsMeta[parts[1]] || {}).name || ('La Rochelle-' + parts[1]);
+    ctxLabel = 'Canton ' + cName + ' (carte ' + parts[0] + ')';
   }
   document.getElementById('redecoupage-ctx').textContent = ctxLabel;
 
@@ -4472,6 +4892,163 @@ function closeQCorrespPanel() {
   document.getElementById('qcorresp-modal').style.display = 'none';
 }
 
+// ─── Modal édition CANTON_CORRESPONDANCES ──────────────────────────────────
+// État local de l'éditeur : clone profond de CANTON_CORRESPONDANCES qu'on modifie
+// en live. Les bureaux déplacés sont affichés en orange. "Générer le code" produit
+// la const finale à coller dans donnees.js.
+let _ccEdits = null;        // { "2015:1": { "1988": [...], ... }, ... }
+let _ccOriginal = null;     // référence pour highlight "déplacé"
+
+function openCCorrespPanel() {
+  if (typeof CANTON_CORRESPONDANCES === 'undefined') {
+    alert('CANTON_CORRESPONDANCES introuvable dans donnees.js.');
+    return;
+  }
+  // Clone profond pour édition isolée
+  _ccEdits = JSON.parse(JSON.stringify(CANTON_CORRESPONDANCES));
+  _ccOriginal = JSON.parse(JSON.stringify(CANTON_CORRESPONDANCES));
+  renderCCorrespBody();
+  document.getElementById('cc-code').classList.remove('show');
+  document.getElementById('cc-code').textContent = '';
+  document.getElementById('ccorresp-modal').style.display = 'flex';
+}
+
+function closeCCorrespPanel() {
+  document.getElementById('ccorresp-modal').style.display = 'none';
+}
+
+function resetCCorrespEdits() {
+  _ccEdits = JSON.parse(JSON.stringify(_ccOriginal));
+  renderCCorrespBody();
+  document.getElementById('cc-code').classList.remove('show');
+}
+
+// Renvoie la liste triée des cantons (clés "2015:N") où un bureau est placé pour une ère.
+// Un bureau peut appartenir à plusieurs cantons simultanément (cf. quartiers "A/B").
+function _ccGetCantonsOf(eraB, bid, store) {
+  const out = [];
+  Object.keys(store).forEach(cKey => {
+    if ((store[cKey][eraB] || []).indexOf(bid) >= 0) out.push(cKey);
+  });
+  return out.sort();
+}
+
+// Bascule l'appartenance d'un bureau à un canton (toggle on/off).
+// Garde-fou : empêche de désélectionner le dernier canton (sinon le bureau disparaît).
+function ccToggleBureau(eraB, bid, toKey) {
+  const arr = _ccEdits[toKey][eraB] = _ccEdits[toKey][eraB] || [];
+  const idx = arr.indexOf(bid);
+  if (idx >= 0) {
+    // Retrait : vérifier qu'il reste au moins un autre canton
+    const others = _ccGetCantonsOf(eraB, bid, _ccEdits).filter(k => k !== toKey);
+    if (!others.length) {
+      alert('Impossible de retirer le bureau ' + bid + ' du dernier canton.');
+      return;
+    }
+    arr.splice(idx, 1);
+  } else {
+    arr.push(bid);
+    arr.sort();
+  }
+  renderCCorrespBody();
+}
+
+// True si l'appartenance du bureau a changé par rapport à l'original.
+function _ccIsMoved(eraB, bid) {
+  const cur = _ccGetCantonsOf(eraB, bid, _ccEdits).join(',');
+  const orig = _ccGetCantonsOf(eraB, bid, _ccOriginal).join(',');
+  return cur !== orig;
+}
+
+function renderCCorrespBody() {
+  const cantonsMeta = ((typeof CANTON_INFO !== 'undefined' && CANTON_INFO['2015']) || {}).cantons || {};
+  // Lister toutes les ères présentes (dans _ccEdits, c'est uniforme entre cantons)
+  const erasSet = new Set();
+  Object.values(_ccEdits).forEach(byEra => Object.keys(byEra).forEach(e => erasSet.add(e)));
+  const eras = [...erasSet].sort();
+
+  let html = '';
+  eras.forEach(eraB => {
+    html += '<div class="cc-era">';
+    html += '<div class="cc-era-head">Ère bureau ' + eraB + '</div>';
+    html += '<div class="cc-cols">';
+    ['1', '2', '3'].forEach(cid => {
+      const cKey = '2015:' + cid;
+      const cantonName = (cantonsMeta[cid] || {}).name || ('La Rochelle-' + cid);
+      const arr = (_ccEdits[cKey] || {})[eraB] || [];
+      html += '<div class="cc-col">';
+      html += '<div class="cc-col-ttl">' + cantonName + ' <span style="font-weight:500;color:var(--text-meta)">· ' + arr.length + '</span></div>';
+      arr.forEach(bid => {
+        const info = (BUREAU_INFO[eraB] || {})[bid] || {};
+        const den = (info.den || '').replace(/–/g, '–').slice(0, 22);
+        const moved = _ccIsMoved(eraB, bid);
+        // Si le bureau est dans plusieurs cantons, on l'indique par un petit "×N"
+        const allCantons = _ccGetCantonsOf(eraB, bid, _ccEdits);
+        const multi = allCantons.length > 1;
+        html += '<span class="cc-bv' + (moved ? ' moved' : '') + '" '
+             + 'data-bid="' + bid + '" data-era="' + eraB + '" '
+             + 'onclick="_ccShowMenu(this)" '
+             + 'title="' + (info.den || '').replace(/"/g, '&quot;') + (info.q ? ' / ' + info.q : '')
+             + (multi ? ' [partagé entre ' + allCantons.map(k => 'C' + k.split(':')[1]).join(', ') + ']' : '')
+             + '">'
+             + '<span class="cc-bv-id">' + bid + '</span>'
+             + (den ? ' <span class="cc-bv-den">' + den + '</span>' : '')
+             + (multi ? ' <span style="font-size:0.65rem;opacity:.7">×' + allCantons.length + '</span>' : '')
+             + '</span>';
+      });
+      html += '</div>';
+    });
+    html += '</div></div>';
+  });
+  document.getElementById('ccorresp-body').innerHTML = html;
+}
+
+// Menu inline avec 3 cases à cocher : un bureau peut appartenir à plusieurs cantons simultanément.
+// Conventions identiques aux quartiers partagés (ex. "Laleu/La Pallice") : comptage entier
+// dans chaque canton où il est coché.
+function _ccShowMenu(el) {
+  // Si déjà ouvert sur ce span, fermer
+  if (el.querySelector('.cc-menu')) { renderCCorrespBody(); return; }
+  const bid = el.dataset.bid;
+  const era = el.dataset.era;
+  const current = _ccGetCantonsOf(era, bid, _ccEdits);
+  let menu = '<span class="cc-menu" style="margin-left:6px;display:inline-flex;gap:3px;align-items:center" onclick="event.stopPropagation()">';
+  ['1', '2', '3'].forEach(cid => {
+    const toKey = '2015:' + cid;
+    const checked = current.indexOf(toKey) >= 0;
+    menu += '<label style="display:inline-flex;align-items:center;gap:2px;padding:1px 5px;border:1px solid ' + (checked ? '#2e7d32' : '#ccc')
+         + ';border-radius:4px;background:' + (checked ? '#2e7d32' : '#fff') + ';color:' + (checked ? '#fff' : '#333')
+         + ';cursor:pointer;font-size:0.7rem;font-weight:600;user-select:none">'
+         + '<input type="checkbox" ' + (checked ? 'checked' : '')
+         + ' onchange="ccToggleBureau(\'' + era + '\',\'' + bid + '\',\'' + toKey + '\')" '
+         + 'style="margin:0;cursor:pointer;width:11px;height:11px">'
+         + 'C' + cid
+         + '</label>';
+  });
+  menu += '</span>';
+  el.insertAdjacentHTML('beforeend', menu);
+}
+
+// Produit le const à coller dans donnees.js (format JSON compact comme l'original).
+function generateCCorrespCode() {
+  // Trier les clés et les bureaux dans chaque liste pour stabilité
+  const out = {};
+  ['1', '2', '3'].forEach(cid => {
+    const cKey = '2015:' + cid;
+    out[cKey] = {};
+    const eras = Object.keys(_ccEdits[cKey] || {}).sort();
+    eras.forEach(e => {
+      out[cKey][e] = [...(_ccEdits[cKey][e] || [])].sort();
+    });
+  });
+  const code = 'const CANTON_CORRESPONDANCES = ' + JSON.stringify(out) + ';';
+  const el = document.getElementById('cc-code');
+  el.textContent = code;
+  el.classList.add('show');
+  // Copier dans le presse-papiers si possible
+  if (navigator.clipboard) navigator.clipboard.writeText(code).catch(() => {});
+}
+
 function closeRedecoupageForm() {
   document.getElementById('redecoupage-modal').style.display = 'none';
 }
@@ -4495,8 +5072,13 @@ function validateRedecoupage() {
     const q = document.getElementById('sel-quartier').value;
     if (!q) { alert('Aucun quartier sélectionné.'); return; }
     key = 'quartier:' + q + '|' + eraYear;
+  } else if (niveau === 'canton') {
+    const cKey = document.getElementById('sel-canton').value || currentCantonKey;
+    if (!cKey) { alert('Aucun canton sélectionné.'); return; }
+    // Format clé : canton:<eraCanton>:<cid>|<eraBureau>, ex. "canton:2015:1|2015"
+    key = 'canton:' + cKey + '|' + eraYear;
   } else {
-    alert('Passez en vue Bureau ou Quartier pour annoter un redécoupage.');
+    alert('Passez en vue Bureau, Quartier ou Canton pour annoter un redécoupage.');
     return;
   }
 
@@ -5728,7 +6310,13 @@ function randomDiscover() {
   function neighborOption(selectId, dir){
     const sel = document.getElementById(selectId);
     if (!sel) return null;
-    const opts = [...sel.options];
+    let opts = [...sel.options];
+    // En mode canton : restreindre la navigation à la même ère canton (pas de saut
+    // entre modernes 2015:N et anciens 1985:N).
+    if (selectId === 'sel-canton') {
+      const currentEra = (sel.value || '').split(':')[0];
+      opts = opts.filter(o => (o.value || '').split(':')[0] === currentEra);
+    }
     const i = opts.findIndex(o => o.value === sel.value);
     if (i < 0) return null;
     const tgt = opts[i + dir];
@@ -5746,11 +6334,16 @@ function randomDiscover() {
       } else if (niveau === 'quartier') {
         const v = neighborOption('sel-quartier', dir);
         if (v) { document.getElementById('sel-quartier').value = v; refresh(); e.preventDefault(); }
+      } else if (niveau === 'canton') {
+        const v = neighborOption('sel-canton', dir);
+        if (v) { document.getElementById('sel-canton').value = v; currentCantonKey = v; refresh(); e.preventDefault(); }
       }
     } else if (k === 'v' || k === 'V') {
       setNiveau('ville'); e.preventDefault();
     } else if (k === 'q' || k === 'Q') {
       setNiveau('quartier'); e.preventDefault();
+    } else if (k === 'c' || k === 'C') {
+      setNiveau('canton'); e.preventDefault();
     } else if (k === 'b' || k === 'B') {
       setNiveau('bureau'); e.preventDefault();
     } else if (k === 'Escape') {

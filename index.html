@@ -55,7 +55,7 @@
   "@context": "https://schema.org",
   "@type": "Dataset",
   "name": "Archives électorales de La Rochelle, 1988-2026",
-  "description": "Résultats par bureau de vote pour 35 élections et 2 référendums organisés à La Rochelle entre 1988 et 2026.",
+  "description": "Résultats par bureau de vote pour 37 élections et 2 référendums organisés à La Rochelle entre 1988 et 2026.",
   "url": "https://larochellevote.fr/",
   "keywords": ["élections", "La Rochelle", "bureau de vote", "résultats électoraux", "archives politiques", "Charente-Maritime"],
   "creator": {
@@ -705,13 +705,32 @@
 
   // Construit un bp clé-bk-historique à partir des scores candidats `c` et CAND_DATA.
   // (Le champ `bd.bp` legacy a été retiré lors de la migration voix→pct.)
+  // Cas binôme paritaire (Départementales/Cantonales) : l'entrée binôme n'a pas de
+  // `bk`, on le dérive depuis les 2 membres (champ `binome: [k1, k2]`). Si les
+  // 2 bk sont identiques → on l'utilise. Si différents → split 50/50 (cohérent
+  // avec la nature paritaire : chaque membre porte la moitié du binôme).
   function bpFromCands(candScores, elecLabel) {
     if (!candScores) return null;
     const out = {};
+    const CD = (typeof CAND_DATA !== 'undefined') ? CAND_DATA : {};
     Object.entries(candScores).forEach(([cname, pct]) => {
-      const specific = (typeof CAND_DATA !== 'undefined') ? CAND_DATA[cname + '|' + elecLabel] : null;
-      const generic  = (typeof CAND_DATA !== 'undefined') ? CAND_DATA[cname] : null;
-      const bk = (specific && specific.bk) || (generic && generic.bk) || '?';
+      const specific = CD[cname + '|' + elecLabel] || null;
+      const generic  = CD[cname] || null;
+      let bk = (specific && specific.bk) || (generic && generic.bk) || null;
+      if (!bk && generic && Array.isArray(generic.binome) && generic.binome.length === 2) {
+        const m1 = CD[generic.binome[0]];
+        const m2 = CD[generic.binome[1]];
+        const bk1 = m1 && m1.bk;
+        const bk2 = m2 && m2.bk;
+        if (bk1 && bk2 && bk1 !== bk2) {
+          // Split 50/50 entre les 2 bk différents — chaque membre apporte la moitié
+          out[bk1] = (out[bk1] || 0) + pct / 2;
+          out[bk2] = (out[bk2] || 0) + pct / 2;
+          return;
+        }
+        bk = bk1 || bk2 || null;
+      }
+      if (!bk) bk = '?';
       out[bk] = (out[bk] || 0) + pct;
     });
     return out;
