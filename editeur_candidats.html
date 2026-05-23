@@ -389,11 +389,25 @@ function buildRows() {
       const pipe = key.indexOf('|');
       if (pipe >= 0) elec = key.slice(pipe + 1);
     }
+    let p = c.p || '';
+    let n = c.n || '';
+    let s = c.s || '';
+    let isBinome = false;
+    // Pour les binômes, l'identité est dans les 2 membres (PERSONS)
+    if (Array.isArray(c.binome) && c.binome.length === 2 && typeof PERSONS !== 'undefined') {
+      const m1 = PERSONS[c.binome[0]] || {};
+      const m2 = PERSONS[c.binome[1]] || {};
+      const ordered = (m1.s !== 'F' && m2.s === 'F') ? [m2, m1] : [m1, m2];
+      n = ordered.map(m => m.n || '').filter(Boolean).join(' / ');
+      p = ordered.map(m => m.p || '').filter(Boolean).join(' / ');
+      s = '♀♂';  // marqueur visuel binôme paritaire
+      isBinome = true;
+    }
     return {
-      key, elec,
-      nom:    c.n  || '',
-      prenom: c.p  || '',
-      sexe:   c.s  || '',
+      key, elec, isBinome,
+      nom:    n,
+      prenom: p,
+      sexe:   s,
       parti:  c.pa || '',
       t:      Array.isArray(c.t) ? c.t.slice() : [],
       c:      c.c  || '',
