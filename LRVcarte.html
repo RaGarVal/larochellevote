@@ -2257,6 +2257,15 @@ function candInfo(name) {
   // (ex. Rousset 2015 al T1=PRG,PCF vs T2=PRG,PCF,EELV — Fountaine 2014 al T2=EELV).
   // Compat legacy : si on tombe sur une ancienne clé "Nom Parti" via URL/cache,
   // la cascade |Élection / |Tour fait le fallback (sera no-op après cleanup M5).
+  // Référendums : plusieurs call sites utilisent les noms courts "Oui" et "Non"
+  // (raccourci historique) ; on dérive le cand_id réel depuis l'élection courante.
+  if ((name === 'Oui' || name === 'Non') && typeof isReferendum === 'function' && isReferendum(currentElection)) {
+    const yr = (currentElection.match(/(\d{4})/) || [])[1];
+    if (yr) {
+      const cid = name.toLowerCase() + '@referendum-' + yr;
+      if (CAND_DATA[cid]) return CAND_DATA[cid];
+    }
+  }
   const base = CAND_DATA[name] || {};
   const elec = CAND_DATA[name + '|' + currentElection] || {};
   const tour = CAND_DATA[name + '|' + currentElection + '|' + currentSheet] || {};
