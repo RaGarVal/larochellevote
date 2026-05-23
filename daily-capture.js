@@ -439,6 +439,10 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
     headless: 'new',
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--lang=fr-FR'],
   });
+  // try/finally garantit la fermeture du browser même en cas d'exception, sinon
+  // process Chromium zombie en CI. browser.close() est idempotent (les 4 close
+  // explicites internes peuvent rester) — le finally agit en filet de sécurité.
+  try {
 
   const page = await browser.newPage();
 
@@ -1170,6 +1174,9 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
 
   console.log('\n🎉 Prêt pour Make.com !');
 
+  } finally {
+    try { await browser.close(); } catch (_) {}
+  }
 })().catch(err => {
   console.error('❌ Erreur :', err);
   process.exit(1);

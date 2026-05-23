@@ -1924,7 +1924,14 @@ function writeURLState() {
       .flatMap(el => el.dataset.type.split(',').map(t => t.trim()));
     const offTypes = [...document.querySelectorAll('.type-toggle:not(.on)')]
       .flatMap(el => el.dataset.type.split(',').map(t => t.trim()));
-    if (offTypes.length > 0 && onTypes.length > 0) {
+    // On écrit `types` quand l'état diffère de la valeur par défaut au load.
+    // Par défaut : 5 standards ON + le toggle mutual Cantonales/Départementales OFF.
+    // Cas non-défaut à sérialiser :
+    //   • au moins un toggle standard OFF (offTypes contient autre chose que les 2 mutual)
+    //   • OU le toggle mutual est ON (état différent du défaut, doit être restauré au reload)
+    const _mutualOn = !!document.querySelector('.type-toggle.on[data-type*="Cantonales"]');
+    const _standardOff = offTypes.some(t => t !== 'Cantonales' && t !== 'Départementales');
+    if (_standardOff || _mutualOn) {
       params.set('types', onTypes.join(','));
     }
     // Blocs/familles visibles (n'encoder que si différent du défaut "tous allumés")

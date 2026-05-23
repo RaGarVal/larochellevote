@@ -1926,7 +1926,20 @@ const HAS_T2 = new Set(['Présidentielle 1988','Présidentielle 1995','Présiden
 const HAS_TU = new Set(['Régionales 1992','Régionales 1998','Européennes 1994','Européennes 1999','Européennes 2004','Européennes 2009','Européennes 2014','Européennes 2019','Européennes 2024']);
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
-let currentElection = 'Municipales 2026';
+// Élection initiale : on prend la plus récente parmi les Municipales (la plus
+// emblématique d'une ère cartographique). Si jamais le label de la municipale
+// la plus récente change (ex. 2032), pas besoin de patch ici.
+function _defaultInitialElection() {
+  const labels = Object.keys(ELECTIONS || {});
+  const muns = labels.filter(l => l.startsWith('Municipales '))
+    .sort((a,b) => parseInt(b.match(/\d{4}/)) - parseInt(a.match(/\d{4}/)));
+  if (muns.length) return muns[0];
+  // Fallback : élection la plus récente toutes catégories confondues (hors référendums).
+  const sorted = labels.filter(l => !/^Référendum/.test(l))
+    .sort((a,b) => parseInt(b.match(/\d{4}/)) - parseInt(a.match(/\d{4}/)));
+  return sorted[0] || labels[0] || 'Municipales 2026';
+}
+let currentElection = _defaultInitialElection();
 let currentSheet    = 'T1';
 let currentFeature  = null;
 let mainLayer       = null;
@@ -6095,7 +6108,7 @@ function updateAnalyseLink() {
   const qname = params.get('quartier');
   const elec = params.get('election');
   const tour = params.get('tour');
-  const mode = params.get('mode');
+  let mode = params.get('mode');
   const selection = params.get('selection');
   const tab = params.get('tab');
   // Bascule d'élection si demandé (avant ouverture du fiche)

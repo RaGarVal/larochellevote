@@ -229,7 +229,11 @@ const REDECOUPAGES = {
   Object.values(ELECTIONS).forEach(el => {
     Object.values(el.sheets || {}).forEach(sheet => {
       Object.values(sheet).forEach(bd => {
-        if (bd && bd.e > 0 && bd.c) {
+        // Guard idempotence : si bd._voix est déjà posé, la conversion a déjà eu
+        // lieu (bd.c contient les pct). Skip pour ne pas re-diviser et corrompre.
+        // Cas usuels protégés : HMR, double <script src="donnees.js">, require()
+        // accidentel dans un script Node qui modifie donnees.js, etc.
+        if (bd && bd.e > 0 && bd.c && !bd._voix) {
           const cPct = {};
           Object.entries(bd.c).forEach(([k, voix]) => {
             cPct[k] = voix / bd.e * 100;

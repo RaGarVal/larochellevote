@@ -35,7 +35,7 @@
   "@type": "Dataset",
   "name": "Archives électorales de La Rochelle, 1988-2026",
   "alternateName": "La Rochelle Vote",
-  "description": "Résultats par bureau de vote pour 33 élections et 2 référendums organisés à La Rochelle entre 1988 et 2026. Inclut les fonds cartographiques pour 10 ères de découpage successives, les métadonnées de candidat·es, et les liens de filiation entre bureaux à travers les redécoupages.",
+  "description": "Résultats par bureau de vote pour 37 élections et 2 référendums organisés à La Rochelle entre 1988 et 2026. Inclut les fonds cartographiques pour 10 ères de découpage successives, les métadonnées de candidat·es, et les liens de filiation entre bureaux à travers les redécoupages.",
   "url": "https://larochellevote.fr/methodologie.html",
   "sameAs": "https://larochellevote.fr/",
   "keywords": ["élections", "La Rochelle", "bureau de vote", "résultats électoraux", "archives politiques", "Charente-Maritime", "présidentielle", "législatives", "municipales", "européennes", "régionales", "référendum"],
@@ -480,7 +480,7 @@ footer.doc-foot a:hover { color: var(--text-chrome); }
         La&nbsp;Rochelle. Avant cette date, il n'existe pas de découpage officiel dans un format
         praticable et toutes les cartes du site sont donc des réalisations manuelles de l'autrice.
         À partir de 2007, les références sont des fichiers PDF récupérés auprès du service des
-        élections de la ville de La&nbsp;Rochelle. À partir de 1993, la référence est une carte
+        élections de la ville de La&nbsp;Rochelle. À partir de 1992, la référence est une carte
         papier, griffonnée au gré des redécoupages suivants mais tout de même assez précise. Reste
         le cas de 1988, expliqué plus bas. Pour les années précédentes, c'est encore un
         chantier… si jamais vous avez des informations, n'hésitez pas à contacter
@@ -488,7 +488,7 @@ footer.doc-foot a:hover { color: var(--text-chrome); }
       </p>
       <p>
         Concrètement, en l'état actuel des choses, le site distingue plusieurs
-        <strong>« ères »</strong> géographiques&nbsp;: <code>1988</code>, <code>1993</code>,
+        <strong>« ères »</strong> géographiques&nbsp;: <code>1988</code>, <code>1992</code>,
         <code>1996</code>, <code>2004</code>, <code>2007</code>, <code>2010</code>,
         <code>2012</code>, <code>2015</code>, <code>2022</code>, <code>2026</code>. À chaque ère
         correspond un fond de carte propre et un système de numérotation cohérent à l'intérieur de
@@ -689,7 +689,7 @@ footer.doc-foot a:hover { color: var(--text-chrome); }
 
       <h3>3.2 Zones d'incertitude</h3>
       <p>
-        Pour les ères à partir de 2007, les contours sont toujours rigoureusement exacts. Entre 1993
+        Pour les ères à partir de 2007, les contours sont toujours rigoureusement exacts. Entre 1992
         et 2004, les frontières sont dans quelques endroits déduites par l'évidence des contraintes
         des limites de cantons qui, elles, ne changent que très rarement. Pour l'ère 1988, c'est
         beaucoup plus compliqué&nbsp;: les déductions sont plus nombreuses ; à Mireuil et
@@ -731,7 +731,7 @@ footer.doc-foot a:hover { color: var(--text-chrome); }
           par l'autrice pour faciliter les agrégations à l'échelle d'un quartier rochelais
           (Centre-Ville, Mireuil, Villeneuve-les-Salines, Lafond, La&nbsp;Genette, etc.).</li>
         <li><strong>Ère</strong> — période de validité d'un découpage administratif des bureaux&nbsp;:
-          1988, 1993, 1996, 2004, 2007, 2010, 2012, 2015, 2022, 2026. Chaque ère a ses propres limites
+          1988, 1992, 1996, 2004, 2007, 2010, 2012, 2015, 2022, 2026. Chaque ère a ses propres limites
           de bureaux.</li>
         <li><strong>Bureau agrégé</strong> — quand un bureau historique a été scindé ou n'a pas pu
           être localisé précisément, ses résultats sont attribués à un groupe de bureaux contemporains,
@@ -883,7 +883,7 @@ setupSailAnimation();
     const items = [];
     const b2026 = (typeof BUREAU_INFO !== 'undefined' && BUREAU_INFO['2026']) || {};
     const corr = (typeof BUREAU_CORRESPONDANCES !== 'undefined' && BUREAU_CORRESPONDANCES) || {};
-    const ERAS = ['1988','1993','1996','2004','2007','2010','2012','2015','2022','2026'];
+    const ERAS = ['1988','1992','1996','2004','2007','2010','2012','2015','2022','2026'];
     Object.entries(b2026).forEach(([id, b]) => {
       if (!b || b.q === 'Nul') return;
       const num = parseInt(id);
