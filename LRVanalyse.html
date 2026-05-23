@@ -301,8 +301,14 @@ body{font-family:'Space Grotesk', 'Segoe UI', system-ui, sans-serif;background:v
 .ct-btn.on{background:var(--bg-active);border-color:var(--bg-active);color:var(--text-active)}
 .ct-btn:hover:not(.on){background:var(--bg-modal-hover)}
 select.ctrl-sel{width:100%;padding:7px 10px;border:1.5px solid var(--border-modal);border-radius:6px;font-size:0.85rem;color:var(--text-modal);background:var(--bg-modal);cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23bbb' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;margin-bottom:6px}
-#type-toggles{display:flex;flex-direction:column;gap:3px}
-.type-toggle{padding:5px 8px;border-radius:5px;border:1.5px solid var(--border-modal);cursor:pointer;font-size:0.83rem;font-weight:600;color:var(--text-modal-muted);background:var(--bg-modal);transition:all .12s;user-select:none}
+/* Type d'élection : chips/pills en flex wrap pour gagner de la place — le nav
+   place 2-3 toggles par ligne selon la largeur du sidebar, et le toggle long
+   (« Cantonᵃˡᵉˢ / Départementᵃˡᵉˢ ») finit sur sa propre ligne naturellement. */
+#type-toggles{display:flex;flex-direction:row;flex-wrap:wrap;gap:4px}
+.type-toggle{padding:6px 12px;border-radius:999px;border:1.5px solid var(--border-modal);cursor:pointer;font-size:0.8rem;font-weight:600;color:var(--text-modal-muted);background:var(--bg-modal);transition:all .12s;user-select:none;display:inline-flex;align-items:center;line-height:1.15}
+/* Sup à l'intérieur des toggles (« Cantonᵃˡᵉˢ ») : éviter le saut de line-height
+   et garder un suffixe lisible (0.7em ≈ 9 px à 13 px de base). */
+.type-toggle sup{font-size:0.7em;line-height:0;vertical-align:0.4em;font-weight:600}
 .type-toggle.on{background:var(--bg-active);border-color:var(--bg-active);color:var(--text-active)}
 .type-toggle:hover:not(.on):not(.disabled){background:var(--bg-modal-hover)}
 /* Toggle désactivé (ex. Départementales en niveau ville/quartier) : non cliquable,
@@ -1339,7 +1345,7 @@ input:focus-visible,
            + tooltip custom (cf. setNiveau pour la suite). data-type contient les 2 types
            séparés par virgule ; getActiveTypes splittera pour matcher dans
            matchesTypeFilter. -->
-      <div class="type-toggle disabled has-tooltip" data-type="Cantonales,Départementales" data-tooltip="Élection infracommunale" role="button" tabindex="0" aria-pressed="false" aria-disabled="true" onclick="toggleType(this)"><span>Cantonales / Départementales</span></div>
+      <div class="type-toggle disabled has-tooltip" data-type="Cantonales,Départementales" data-tooltip="Élection infracommunale" role="button" tabindex="0" aria-pressed="false" aria-disabled="true" onclick="toggleType(this)"><span>Canton<sup>ales</sup> / Département<sup>ales</sup></span></div>
     </div>
   </div>
 
@@ -2252,7 +2258,20 @@ function matchesTypeFilter(label, typeFilter) {
   return false;
 }
 
+// Cache mémo : invalidé via invalidateDataMemo() quand le snapshot des
+// données (élections / blocs / overrides) change.
+window._memoVille = window._memoVille || new Map();
+window._memoQuartier = window._memoQuartier || new Map();
+window._memoCanton = window._memoCanton || new Map();
+function invalidateDataMemo() {
+  window._memoVille.clear();
+  window._memoQuartier.clear();
+  window._memoCanton.clear();
+}
+
 function getVilleData(typeFilter) {
+  const _mk = Array.isArray(typeFilter) ? typeFilter.slice().sort().join(',') : String(typeFilter || '');
+  if (window._memoVille.has(_mk)) return window._memoVille.get(_mk);
   const result = [];
   for (const [label, elData] of Object.entries(ELECTIONS)) {
     if (!matchesTypeFilter(label, typeFilter)) continue;
@@ -2283,7 +2302,9 @@ function getVilleData(typeFilter) {
         votants: totalVotants, abs: totalI - totalVotants });
     }
   }
-  return result.sort((a,b) => a.year !== b.year ? a.year-b.year : elecTypePriority(a.label)-elecTypePriority(b.label));
+  const sorted = result.sort((a,b) => a.year !== b.year ? a.year-b.year : elecTypePriority(a.label)-elecTypePriority(b.label));
+  window._memoVille.set(_mk, sorted);
+  return sorted;
 }
 
 // ─── Données agrégées quartier ─────────────────────────────────────────────
@@ -2315,6 +2336,9 @@ function getQBureauxForEra(quartier, eraYear) {
 }
 
 function getQuartierData(quartier, typeFilter) {
+  const _tk = Array.isArray(typeFilter) ? typeFilter.slice().sort().join(',') : String(typeFilter || '');
+  const _mk = quartier + '|' + _tk;
+  if (window._memoQuartier.has(_mk)) return window._memoQuartier.get(_mk);
   const result = [];
   for (const [label, elData] of Object.entries(ELECTIONS)) {
     if (!matchesTypeFilter(label, typeFilter)) continue;
@@ -2349,7 +2373,9 @@ function getQuartierData(quartier, typeFilter) {
         votants: totalVotants, abs: totalI - totalVotants });
     }
   }
-  return result.sort((a,b) => a.year !== b.year ? a.year-b.year : elecTypePriority(a.label)-elecTypePriority(b.label));
+  const sorted = result.sort((a,b) => a.year !== b.year ? a.year-b.year : elecTypePriority(a.label)-elecTypePriority(b.label));
+  window._memoQuartier.set(_mk, sorted);
+  return sorted;
 }
 
 // ─── Données agrégées canton ──────────────────────────────────────────────
@@ -2399,6 +2425,9 @@ function getCBureauxForEra(cantonKey, eraB) {
 // les ères 1988-2012 → toutes les élections sont rétroactivement agrégées.
 function getCantonData(cantonKey, typeFilter) {
   if (!cantonKey) return [];
+  const _tk = Array.isArray(typeFilter) ? typeFilter.slice().sort().join(',') : String(typeFilter || '');
+  const _mk = cantonKey + '|' + _tk;
+  if (window._memoCanton.has(_mk)) return window._memoCanton.get(_mk);
   const wantCid = cantonKey.split(':')[1];
   const result = [];
   for (const [label, elData] of Object.entries(ELECTIONS)) {
@@ -2444,7 +2473,9 @@ function getCantonData(cantonKey, typeFilter) {
       });
     }
   }
-  return result.sort((a, b) => a.year !== b.year ? a.year - b.year : elecTypePriority(a.label) - elecTypePriority(b.label));
+  const sorted = result.sort((a, b) => a.year !== b.year ? a.year - b.year : elecTypePriority(a.label) - elecTypePriority(b.label));
+  window._memoCanton.set(_mk, sorted);
+  return sorted;
 }
 
 // ─── Données bureau ────────────────────────────────────────────────────────
@@ -3189,6 +3220,11 @@ function drawChart(data) {
   let html = '';
   let yAxisHtml = '';
   const uncertainElections = getUncertainElections();
+  // Perf : hoister activeCategories() et getVisibleSet() qui sont pures sur cet
+  // appel de drawChart — sinon on les recalcule des dizaines de fois dans les
+  // forEach des overlays / lignes / stacked / pickers.
+  const _ac = activeCategories();
+  const _vs = getVisibleSet();
 
   // Zones d'incertitude (fond grisé) — dessinées avant tout le reste.
   // bandW = unitX (= cW/visibleCount, cohérent avec xScale et le zoom) pour que la
@@ -3291,8 +3327,8 @@ function drawChart(data) {
     const villeData = applyAggregation(getVilleData(typeFilter));
     const villeByLabel = {};
     villeData.forEach(d => { villeByLabel[d.label] = d; });
-    activeCategories().forEach(b => {
-      if (!getVisibleSet().has(b.key)) return;
+    _ac.forEach(b => {
+      if (!_vs.has(b.key)) return;
       const pts = data.map((d,i) => {
         const vd = villeByLabel[d.label];
         const v = vd ? vd.bp[b.key] : undefined;
@@ -3317,8 +3353,8 @@ function drawChart(data) {
     const qData = applyAggregation(getQuartierData(compareQuartierName, typeFilter));
     const qByLabel = {};
     qData.forEach(d => { qByLabel[d.label] = d; });
-    activeCategories().forEach(b => {
-      if (!getVisibleSet().has(b.key)) return;
+    _ac.forEach(b => {
+      if (!_vs.has(b.key)) return;
       const pts = data.map((d,i) => {
         const qd = qByLabel[d.label];
         const v = qd ? qd.bp[b.key] : undefined;
@@ -3344,7 +3380,7 @@ function drawChart(data) {
     const refLabel = showVilleComparison ? 'ville' : compareQuartierName;
     html += `<text class="chart-label" x="${W - PAD.right - 2}" y="${PAD.top + 10}" text-anchor="end" font-size="9" font-family="'Space Grotesk', 'Segoe UI', system-ui, sans-serif" font-style="italic">— ${refLabel} (base 100)</text>`;
     base100Blocks.forEach(b100Block => {
-      const blocCfg = activeCategories().find(b => b.key === b100Block) || {color:'#1A1A1A'};
+      const blocCfg = _ac.find(b => b.key === b100Block) || {color:'#1A1A1A'};
       const pts = base100Data.map((d, i) => d.ratios[b100Block] !== null ? `${xScale(i)},${yScale(d.ratios[b100Block])}` : null).filter(Boolean);
       if (pts.length > 1) {
         html += `<polyline${darkBlocCls(blocCfg.color)} points="${pts.join(' ')}" stroke="${blocCfg.color}" stroke-width="7" fill="none" stroke-linejoin="round" stroke-linecap="round"/>`;
@@ -3358,8 +3394,8 @@ function drawChart(data) {
     });
   }
   // Lignes des blocs (uniquement quand pas en mode base 100)
-  if (!base100Data) activeCategories().forEach(b => {
-    if (!getVisibleSet().has(b.key)) return;
+  if (!base100Data) _ac.forEach(b => {
+    if (!_vs.has(b.key)) return;
     const pts = data.map((d,i) => {
       const v = d.bp[b.key];
       return v !== undefined ? `${xScale(i)},${yScale(v)}` : null;
@@ -3432,6 +3468,9 @@ function showTooltip(e, idx) {
   const tt = document.getElementById('tooltip');
   document.getElementById('tooltip-title').textContent = d.label;
   let rows = '';
+  // Perf : hoister les helpers utilisés par les forEach des modes blocs/familles.
+  const _ac_tt = activeCategories();
+  const _vs_tt = getVisibleSet();
   // Format selon l'échelle : voix → "1 234 voix", pourcentage → "45.6%"
   const fmt = v => chartScale === 'voix' ? Math.round(v).toLocaleString('fr-FR') + ' voix' : v.toFixed(1) + '%';
   if (showAbst && d.a !== null) {
@@ -3443,7 +3482,7 @@ function showTooltip(e, idx) {
   if (b100 && b100[idx] && b100Blocks.length) {
     const refLbl = showVilleComparison ? 'ville' : compareQuartierName;
     b100Blocks.forEach(b100Block => {
-      const blocCfg = activeCategories().find(b => b.key === b100Block) || {color:'#1A1A1A', label:b100Block};
+      const blocCfg = _ac_tt.find(b => b.key === b100Block) || {color:'#1A1A1A', label:b100Block};
       const ratio = b100[idx].ratios ? b100[idx].ratios[b100Block] : null;
       const v = d.bp[b100Block];
       if (ratio !== null && ratio !== undefined) {
@@ -3456,7 +3495,7 @@ function showTooltip(e, idx) {
   } else if (displayMode === 'familles' && chartType === 'empiles') {
     // Mode familles + empilé : refléter exactement les segments dessinés.
     // 1 ligne par segment (pure ou partagé), avec pastille multi-couleurs.
-    const segs = computeFamilyStackedSegments(d.cs, d.label, getVisibleSet(), chartScale === 'voix' ? (d.e || 0) / 100 : 1);
+    const segs = computeFamilyStackedSegments(d.cs, d.label, _vs_tt, chartScale === 'voix' ? (d.e || 0) / 100 : 1);
     segs.forEach(seg => {
       const v = seg.total;
       if (v <= 0.05) return;
@@ -3477,8 +3516,8 @@ function showTooltip(e, idx) {
       rows += `<div class="tt-row"><div class="tt-dot" style="${dotStyle}"></div><span class="tt-label">${labels}</span><span class="tt-val">${fmt(v)}</span></div>`;
     });
   } else {
-    activeCategories().forEach(b => {
-      if (!getVisibleSet().has(b.key)) return;
+    _ac_tt.forEach(b => {
+      if (!_vs_tt.has(b.key)) return;
       const v = d.bp[b.key] || 0;
       // Affiche toutes les familles cochées : si v > 0 plein, sinon (0%) en grisé
       const dim = v <= 0.05 ? ' style="opacity:0.5"' : '';
@@ -3532,6 +3571,11 @@ function drawStackedChart(data) {
     return;
   }
 
+  // Perf : hoister activeCategories() et getVisibleSet() — appelés dans la
+  // boucle yMax puis dans la boucle de rendu (et tooltip).
+  const _ac = activeCategories();
+  const _vs = getVisibleSet();
+
   // Fenêtre courante (zoom/pan) : nombre de scrutins visibles + index de départ.
   // Même approche que drawChart : on rend TOUTES les barres avec des positions
   // absolues, et un clip-path cache celles hors fenêtre visible.
@@ -3550,7 +3594,7 @@ function drawStackedChart(data) {
     data.forEach(d => {
       let sum;
       if (displayMode === 'familles') {
-        const segs = computeFamilyStackedSegments(d.cs, d.label, getVisibleSet(), (d.e || 0) / 100);
+        const segs = computeFamilyStackedSegments(d.cs, d.label, _vs, (d.e || 0) / 100);
         sum = segs.reduce((s, sg) => s + sg.total, 0);
       } else {
         sum = Object.values(d.bp || {}).reduce((s, v) => s + v, 0);
@@ -3604,7 +3648,7 @@ function drawStackedChart(data) {
   });
 
   // Barres empilées
-  const blocs = [...activeCategories()];
+  const blocs = [..._ac];
   if (displayMode === 'blocs' && visibleBlocs.has('?')) blocs.push({key:'?', label:'Divers', color:'#A0E1E2'});
 
   // Sur mobile (portrait OU paysage) : labels X ultra-compacts en quinconce (cf. chart courbes)
@@ -3625,7 +3669,7 @@ function drawStackedChart(data) {
     if (displayMode === 'familles') {
       // Décomposition par sous-ensembles : 1 segment par groupe de candidats
       // partageant le même set de familles visibles. Score complet (non splitté).
-      const segs = computeFamilyStackedSegments(d.cs, d.label, getVisibleSet(), chartScale === 'voix' ? (d.e || 0) / 100 : 1);
+      const segs = computeFamilyStackedSegments(d.cs, d.label, _vs, chartScale === 'voix' ? (d.e || 0) / 100 : 1);
       segs.forEach(seg => {
         const v = seg.total;
         if (v <= 0.05) return;
@@ -3648,7 +3692,7 @@ function drawStackedChart(data) {
     } else {
       // Mode blocs : segment unique par bloc visible
       blocs.forEach(b => {
-        if (!getVisibleSet().has(b.key)) return;
+        if (!_vs.has(b.key)) return;
         const v = d.bp[b.key] || 0;
         if (v <= 0.05) return;
         const yTop = yScale(cumPct + v);

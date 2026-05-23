@@ -2097,7 +2097,23 @@ function refLabelForCurrent() {
 }
 
 // Best/worst bureau per candidate
+// Cache pour getExtremes / getExtremesByQuartier / getExtremesByCanton — invalidé
+// au changement d'élection/tour (cf. _invalidateExtremesCache appelé dans setElection
+// et setSheet). Coût des recalculs : O(bureaux × candidats) → ~1800 ops sur 60×30 ;
+// appelés à chaque mouseover via renderCandidates dans la sidebar preview, donc
+// le cache économise des cycles significatifs en hover continu.
+let _extrCacheKey = '';
+let _extrCache = null;
+let _extrQCache = null;
+let _extrCCache = null;
+function _currentExtrKey() { return currentElection + '|' + currentSheet; }
+function _invalidateExtremesCache() {
+  _extrCacheKey = '';
+  _extrCache = null; _extrQCache = null; _extrCCache = null;
+}
 function getExtremes() {
+  const key = _currentExtrKey();
+  if (_extrCache && _extrCacheKey === key) return _extrCache;
   const best = {}, worst = {};
   const NON_GEO = new Set(['0057']);
   Object.entries(getSheetData()).forEach(([num, d]) => {
@@ -2107,11 +2123,15 @@ function getExtremes() {
       if (!worst[k] || pct < worst[k].pct) worst[k] = { pct, num };
     });
   });
-  return { best, worst };
+  _extrCacheKey = key;
+  _extrCache = { best, worst };
+  return _extrCache;
 }
 
 // Extrêmes par QUARTIER : pour chaque candidat, retourne le quartier où il a fait le meilleur/pire score
 function getExtremesByQuartier() {
+  const key = _currentExtrKey();
+  if (_extrQCache && _extrCacheKey === key) return _extrQCache;
   const best = {}, worst = {};
   const shData = getSheetData();
   const el0 = ELECTIONS[currentElection];
@@ -2140,12 +2160,16 @@ function getExtremesByQuartier() {
       if (!worst[k] || pct < worst[k].pct) worst[k] = { pct, num: qName };
     });
   });
-  return { best, worst };
+  _extrCacheKey = key;
+  _extrQCache = { best, worst };
+  return _extrQCache;
 }
 
 // Extrêmes par CANTON : pour chaque candidat, retourne le canton où il a fait
 // le meilleur/pire score. Calque getExtremesByQuartier mais agrège par .c.
 function getExtremesByCanton() {
+  const key = _currentExtrKey();
+  if (_extrCCache && _extrCacheKey === key) return _extrCCache;
   const best = {}, worst = {};
   const shData = getSheetData();
   const el0 = ELECTIONS[currentElection];
@@ -2171,7 +2195,9 @@ function getExtremesByCanton() {
       if (!worst[k] || pct < worst[k].pct) worst[k] = { pct, num: cid };
     });
   });
-  return { best, worst };
+  _extrCacheKey = _currentExtrKey();
+  _extrCCache = { best, worst };
+  return _extrCCache;
 }
 
 // Candidates sharing same quartier as given bureau
@@ -2421,9 +2447,11 @@ window.addEventListener('DOMContentLoaded', () => {
   const targets = ['sb-info', 'ov-body'].map(id => document.getElementById(id)).filter(Boolean);
   if (!targets.length) return;
   let _t;
+  // Throttle 120 ms : suffisant pour rattraper le contenu en fin d'injection
+  // sans saturer le main thread quand un append touche la fiche en boucle.
   const mo = new MutationObserver(() => {
     clearTimeout(_t);
-    _t = setTimeout(() => { syncFicheSails(); setupFicheMapHint(); }, 0);
+    _t = setTimeout(() => { syncFicheSails(); setupFicheMapHint(); }, 120);
   });
   targets.forEach(t => mo.observe(t, { childList: true, subtree: true }));
   // resize → re-sync (fonts loading, layout reflow)
@@ -4100,10 +4128,23 @@ function showBlocTip(el, x, y) {
   tip.style.left=left+'px'; tip.style.top=(y-42)+'px';
 }
 function hideBlocTip() { document.getElementById('bloc-tip').style.display='none'; }
-document.addEventListener('mousemove',function(e){
-  var el=e.target;
-  if(el.classList.contains('btip')){showBlocTip(el,e.clientX,e.clientY);}
-  else{hideBlocTip();}
+// Délégation : on n'écoute mousemove QUE quand on est sur un .btip
+// (mouseover/mouseout bubblent, contrairement à mouseenter/leave).
+document.addEventListener('mouseover', function(e){
+  if (e.target.classList && e.target.classList.contains('btip')) {
+    showBlocTip(e.target, e.clientX, e.clientY);
+  }
+});
+document.addEventListener('mouseout', function(e){
+  if (e.target.classList && e.target.classList.contains('btip')) hideBlocTip();
+});
+// On garde un mousemove ciblé pour suivre le curseur quand on est SUR un .btip.
+// Posé en delegation via closest() pour limiter l'overhead.
+document.addEventListener('mousemove', function(e){
+  var el = e.target;
+  if (el && el.classList && el.classList.contains('btip')) {
+    showBlocTip(el, e.clientX, e.clientY);
+  }
 });
 
 // BLOC_LEGACY est désormais déclaré dans donnees.js (récupéré ici via le backup,
@@ -5842,6 +5883,7 @@ function setElection(label){
   const prevNumero = prevFeature ? numStr(prevFeature) : null;
   const prevB2026 = prevFeature ? (prevFeature.properties.b2026 || prevNumero) : null;
   currentElection=label; currentFeature=null;
+  if (typeof _invalidateExtremesCache === 'function') _invalidateExtremesCache();
   if (preservedBlocSel) {
     // On garde la sélection ; on recomputera le range après avoir fixé currentSheet
     currentMapSelection = preservedBlocSel;
@@ -5962,6 +6004,7 @@ function setSheet(sheet){
   // Conserver la sélection bloc entre tours (T1 → T2 par exemple)
   const preservedBlocSel = (currentMapMode === 'bloc' && currentMapSelection) ? currentMapSelection : null;
   currentSheet=sheet;
+  if (typeof _invalidateExtremesCache === 'function') _invalidateExtremesCache();
   if (preservedBlocSel) {
     currentMapSelection = preservedBlocSel;
     [currentSelectionMin, currentSelectionMax] = computeSelectionRange();
