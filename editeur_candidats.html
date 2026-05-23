@@ -78,6 +78,13 @@
   .prof-meta { display: flex; gap: 6px; align-items: center; font-size: .72rem; color: #888; }
   .prof-meta-warn { color: #c62828; background: #ffebee; padding: 1px 6px; border-radius: 3px; font-weight: 600; font-size: .72rem; }
   .profile-edit-id.person-changed { background: #fff8e1; border-left: 3px solid #ffb300; padding: 4px 6px; border-radius: 4px; }
+  /* Familles en mode tags (timeline profil) */
+  .fam-input { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; border: 1px solid #ccc; border-radius: 4px; padding: 2px 3px; min-width: 220px; background: white; }
+  .fam-input:focus-within { border-color: #1a73e8; }
+  .fam-chip { display: inline-flex; align-items: center; background: #e3f2fd; color: #1565c0; border-radius: 3px; padding: 1px 2px 1px 6px; font-size: .72rem; font-weight: 500; white-space: nowrap; }
+  .fam-chip-x { background: none; border: none; color: #1565c0; cursor: pointer; font-size: .9rem; line-height: 1; padding: 0 4px; margin-left: 2px; font-weight: bold; }
+  .fam-chip-x:hover { color: #c62828; }
+  .fam-add { border: none; outline: none; background: transparent; font-size: .75rem; padding: 2px 4px; min-width: 90px; flex: 1; }
 
   #profile-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 100; align-items: center; justify-content: center; }
   #profile-modal.show { display: flex; }
@@ -1056,9 +1063,7 @@ function openProfile(id) {
       + '<td><span class="b-badge" style="background:' + bg + '" title="dérivé du bk">' + bVal + '</span></td>'
       + '<td><select class="cell-inp" style="border-color:' + bkBg + ';color:' + bkBg + ';font-weight:600" '
       +     'onchange="setCandidatureField(this.closest(\'tr\').dataset.cid,\'bk\',this.value);_markCandRow(this);refreshTimelineRow(this.closest(\'tr\'))">' + bkOpts + '</select></td>'
-      + '<td><input class="cell-inp" style="width:200px;font-size:.75rem" '
-      +     'value="' + escapeAttr((t || []).join(', ')) + '" placeholder="ex: gauche modérée, écolo" '
-      +     'oninput="setCandidatureFamilies(this.closest(\'tr\').dataset.cid,this);_markCandRow(this)"></td>'
+      + '<td>' + renderFamiliesCellInner(cid, t) + '</td>'
       + '<td>' + renderCandidatureColorCell(cid, c, pa, isBinome) + '</td>'
       + '</tr>';
   }
@@ -1139,6 +1144,103 @@ function openProfile(id) {
 function setCandidatureFamilies(cid, input) {
   const arr = input.value.split(',').map(s => s.trim()).filter(Boolean);
   setCandidatureField(cid, 't', arr);
+}
+
+// ─── Familles en mode tags (timeline profil) ──────────────────────────
+// Datalist global #fam-suggestions construit au chargement à partir de
+// toutes les familles déjà utilisées dans les CANDIDATURES (incluant les
+// changes en cours pour découvrir les nouvelles à la volée).
+function buildFamiliesDatalist() {
+  if (typeof CANDIDATURES === 'undefined') return;
+  const families = new Set();
+  Object.values(CANDIDATURES).forEach(c => {
+    (c.t || []).forEach(f => f && families.add(f));
+  });
+  // Inclure aussi les familles posées dans les changes (utile si l'utilisateur
+  // a tapé une nouvelle famille, elle s'auto-suggère sur les autres lignes).
+  Object.values(candidatureChanges).forEach(ch => {
+    if (Array.isArray(ch.t)) ch.t.forEach(f => f && families.add(f));
+  });
+  let dl = document.getElementById('fam-suggestions');
+  if (!dl) {
+    dl = document.createElement('datalist');
+    dl.id = 'fam-suggestions';
+    document.body.appendChild(dl);
+  }
+  dl.innerHTML = [...families].sort().map(f => '<option value="' + escapeAttr(f) + '">').join('');
+}
+
+function renderFamiliesCellInner(cid, t) {
+  const fams = (Array.isArray(t) ? t : []).filter(Boolean);
+  const safeCid = escapeAttr(cid);
+  const chips = fams.map(f =>
+    '<span class="fam-chip" data-fam="' + escapeAttr(f) + '">'
+    +   escapeHtml(f)
+    +   '<button type="button" class="fam-chip-x" title="Retirer cette famille" '
+    +     'onclick="removeFamily(\'' + safeCid + '\', this.parentNode.dataset.fam)">×</button>'
+    + '</span>'
+  ).join('');
+  const placeholder = fams.length ? '+ ajouter' : 'ajouter une famille';
+  return '<div class="fam-input" data-cid="' + safeCid + '">'
+       +   chips
+       +   '<input type="text" class="fam-add" list="fam-suggestions" '
+       +     'placeholder="' + placeholder + '" '
+       +     'onkeydown="handleFamilyKey(event, \'' + safeCid + '\')" '
+       +     'onchange="commitFamilyOnChange(event, \'' + safeCid + '\')">'
+       + '</div>';
+}
+
+function handleFamilyKey(e, cid) {
+  if (e.key === 'Enter' || e.key === ',') {
+    e.preventDefault();
+    const val = (e.target.value || '').trim();
+    if (val) { addFamily(cid, val); e.target.value = ''; }
+  } else if (e.key === 'Backspace' && !e.target.value) {
+    // Retire le dernier chip si l'input est vide et l'utilisateur appuie Backspace
+    const c = (typeof CANDIDATURES !== 'undefined' && CANDIDATURES[cid]) || {};
+    const t = (getCandidatureField(cid, 't') || c.t || []).slice();
+    if (t.length) { removeFamily(cid, t[t.length - 1]); }
+  }
+}
+// Si l'utilisateur sélectionne une suggestion du datalist (change event), commit direct.
+function commitFamilyOnChange(e, cid) {
+  const val = (e.target.value || '').trim();
+  if (val) { addFamily(cid, val); e.target.value = ''; }
+}
+function addFamily(cid, fam) {
+  if (!fam) return;
+  const c = (typeof CANDIDATURES !== 'undefined' && CANDIDATURES[cid]) || {};
+  const t = (getCandidatureField(cid, 't') || c.t || []).slice();
+  if (t.includes(fam)) return;  // déjà présent → no-op
+  t.push(fam);
+  setCandidatureField(cid, 't', t);
+  refreshFamiliesCell(cid, true);  // true = refocus input
+  buildFamiliesDatalist();         // nouvelle famille éventuelle disponible partout
+}
+function removeFamily(cid, fam) {
+  const c = (typeof CANDIDATURES !== 'undefined' && CANDIDATURES[cid]) || {};
+  const t = (getCandidatureField(cid, 't') || c.t || []).slice();
+  const idx = t.indexOf(fam);
+  if (idx >= 0) t.splice(idx, 1);
+  setCandidatureField(cid, 't', t);
+  refreshFamiliesCell(cid, true);
+}
+// Re-render uniquement la cellule familles d'une ligne donnée (préserve les autres
+// champs et le focus utilisateur). La cellule est à l'index 6 (Année, Élection,
+// Parti, Alliance, Bloc, bk, Familles, Couleur).
+function refreshFamiliesCell(cid, refocus) {
+  const tr = document.querySelector('tr[data-cid="' + cssEsc(cid) + '"]');
+  if (!tr) return;
+  const c = (typeof CANDIDATURES !== 'undefined' && CANDIDATURES[cid]) || {};
+  const tdFam = tr.children[6];
+  if (!tdFam) return;
+  const t = getCandidatureField(cid, 't') || c.t || [];
+  tdFam.innerHTML = renderFamiliesCellInner(cid, t);
+  _markCandRow(tr);
+  if (refocus) {
+    const inp = tdFam.querySelector('.fam-add');
+    if (inp) inp.focus();
+  }
 }
 function _markCandRow(input) {
   if (!input) return;
@@ -1731,6 +1833,9 @@ document.addEventListener('DOMContentLoaded', () => {
   dl.id = 'parti-codes';
   document.body.appendChild(dl);
   refreshPartiCodesDatalist();
+
+  // Datalist global pour l'autocomplétion des familles (tags dans timeline profil)
+  buildFamiliesDatalist();
 
   document.getElementById('cand-head').querySelectorAll('th').forEach(th => {
     if (th.classList.contains('no-sort')) return;
