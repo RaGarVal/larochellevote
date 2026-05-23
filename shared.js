@@ -130,6 +130,38 @@ function elecTypePriority(label) {
 }
 
 // ───────────────────────────────────────────────────────────────
+//  A11y — Contraste auto du texte (WCAG)
+//  Calcule la luminance perçue d'une couleur hex (#RGB ou #RRGGBB) et retourne
+//  '#fff' ou '#000' pour assurer un contraste lisible. Pour les couleurs claires
+//  (jaune CNI, orange MoDem, vert EELV…) ça renvoie '#000', sinon '#fff'.
+// ───────────────────────────────────────────────────────────────
+function pickTextColor(bgHex) {
+  if (!bgHex || typeof bgHex !== 'string') return '#fff';
+  let hex = bgHex.trim().replace(/^#/, '');
+  // Support #RGB → #RRGGBB
+  if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+  if (hex.length !== 6) return '#fff';
+  const r = parseInt(hex.slice(0,2), 16);
+  const g = parseInt(hex.slice(2,4), 16);
+  const b = parseInt(hex.slice(4,6), 16);
+  if (isNaN(r) || isNaN(g) || isNaN(b)) return '#fff';
+  // Luminance perçue (formule YIQ — moins précise que WCAG mais bien suffisante
+  // et plus rapide). Seuil 0.6 ajusté empiriquement pour matcher les couleurs
+  // partis "limite" (orange MoDem #FF9900, vert EELV).
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return lum > 0.6 ? '#000' : '#fff';
+}
+// Variante pratique pour les backgrounds qui peuvent être soit une couleur unie
+// (#RRGGBB) soit un linear-gradient (binôme à 2 vrais partis). On extrait la
+// 1ère couleur hex du string et on délègue à pickTextColor. Si pas trouvable
+// (ex. var(--css-var)), fallback à '#fff'.
+function pickTextColorForBg(bg) {
+  if (!bg || typeof bg !== 'string') return '#fff';
+  const m = bg.match(/#[0-9a-fA-F]{3,6}/);
+  return m ? pickTextColor(m[0]) : '#fff';
+}
+
+// ───────────────────────────────────────────────────────────────
 //  RÉFÉRENDUMS — détection
 //  Les référendums (Oui/Non) sont stockés dans ELECTIONS comme les autres
 //  scrutins, mais traités différemment côté UI :
