@@ -238,6 +238,13 @@
     padding: 1px 5px;
     border-radius: 3px;
   }
+  .candidature-rank.first-lr {
+    color: #5a5a3a;
+    background: #fff4d1;
+    padding: 1px 5px;
+    border-radius: 3px;
+    cursor: help;
+  }
 
   /* État "pas de candidat trouvé" */
   .empty {
@@ -374,26 +381,25 @@ function yearOfElection(label) {
   return m ? parseInt(m[1]) : 0;
 }
 
-// Statut affichage : élu / qualifié T2 / éliminé
+// Statut affichage. ATTENTION : notre dataset ne couvre QUE La Rochelle.
+// Pour les Législatives (circo plurielle), Présidentielles, Régionales,
+// Européennes : "1er à La Rochelle" ≠ "élu". On ne déclare jamais "Élu"
+// depuis les seules données rochelaises (pas la circo réelle). Pour les
+// Municipales (= La Rochelle entière), on peut être plus affirmatif.
 function statusOfCandidature(cid, c, scores) {
-  const el = ELECTIONS[c.election];
-  if (!el || !scores) return null;
-  // Élu si le candidat est winner dans une majorité de bureaux du tour final
+  if (!scores) return null;
   const finalTour = scores.T2 ? 'T2' : (scores.TU ? 'TU' : 'T1');
-  const sh = el.sheets[finalTour];
-  if (!sh) return null;
-  let wins = 0, total = 0;
-  Object.values(sh).forEach(bd => {
-    if (!bd || !bd.c || !Object.prototype.hasOwnProperty.call(bd.c, cid)) return;
-    total++;
-    if (bd.w === cid) wins++;
-  });
-  if (total === 0) return null;
   const sc = scores[finalTour];
-  // "Élu" = arrivé 1er dans la majorité des bureaux ET premier au total ville (rank=1)
-  if (sc.rank === 1 && wins >= total / 2) return 'win';
-  if (sc.rank === 1) return 'first';
-  if (scores.T2 && !scores.T2.bureauWithCand && sc.rank > 2) return 'eliminated';
+  if (!sc) return null;
+  const label = (c.election || '');
+  const isMunicipale = /^Municipales\b/i.test(label);
+  // Pour les Municipales : "Élu" si rank=1 (la circo correspond à LR).
+  // Pour les autres : on se contente de "1er à La Rochelle" — l'utilisateur sait
+  // que le résultat global peut différer (ex. Crépeau 1er à LR en 1993 mais
+  // battu dans la 1re circo qui inclut d'autres communes).
+  if (sc.rank === 1) {
+    return isMunicipale ? 'win' : 'first-lr';
+  }
   return null;
 }
 
@@ -455,12 +461,13 @@ function render() {
   // ─── Mandats ───
   let mandatsHtml = '';
   if (Array.isArray(p.mandats) && p.mandats.length) {
-    // Tri chronologique décroissant (le plus récent en haut)
+    // Tri chronologique croissant (ancien → récent), cohérent avec la timeline
+    // candidatures : on raconte une trajectoire du début vers la fin.
     const sorted = p.mandats.slice().sort((a, b) => {
       const ya = a.de || 0, yb = b.de || 0;
-      if (yb !== ya) return yb - ya;
-      // À égalité, le plus long en premier
-      return ((b.a || 9999) - yb) - ((a.a || 9999) - ya);
+      if (ya !== yb) return ya - yb;
+      // À égalité de début, le plus court en premier (sous-mandat avant mandat long)
+      return ((a.a || 9999) - ya) - ((b.a || 9999) - yb);
     });
     const items = sorted.map(m => {
       const period = m.a
@@ -478,7 +485,9 @@ function render() {
   }
 
   // ─── Timeline candidatures ───
-  const candsSorted = cands.slice().sort((a,b) => yearOfElection(b.c.election) - yearOfElection(a.c.election));
+  // Tri chronologique croissant (la 1ère en haut, la dernière en bas) — récit
+  // de carrière du début vers la fin.
+  const candsSorted = cands.slice().sort((a,b) => yearOfElection(a.c.election) - yearOfElection(b.c.election));
   const candItems = candsSorted.map(({cid, c, isBinome}) => {
     const yr = yearOfElection(c.election);
     const scores = computeCandidatureScore(cid, c);
@@ -486,6 +495,8 @@ function render() {
     const status = scores ? statusOfCandidature(cid, c, scores) : null;
     const statusBadge = status === 'win'
       ? '<span class="candidature-rank win">★ Élu</span>'
+      : status === 'first-lr'
+      ? '<span class="candidature-rank first-lr" title="Score à La Rochelle uniquement. Le résultat global de l\'élection peut différer.">1<sup>er</sup> à La&nbsp;Rochelle</span>'
       : (finalScore ? '<span class="candidature-rank">rang ' + finalScore.rank + '/' + finalScore.nbCand + '</span>' : '');
     const pct = finalScore ? finalScore.pct.toFixed(1) + ' %' : '—';
     const voixTotal = finalScore ? finalScore.totV.toLocaleString('fr-FR') + ' voix' : '';
