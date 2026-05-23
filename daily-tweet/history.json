@@ -165,5 +165,16 @@
     "quartier": null,
     "subtype": "gagnants",
     "candidat": null
+  },
+  {
+    "date": "2026-05-23",
+    "signature": "bureau|Présidentielle 2007|T1|0033",
+    "niveau": "bureau",
+    "election": "Présidentielle 2007",
+    "tour": "T1",
+    "bureau": "0033",
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
   }
 ]

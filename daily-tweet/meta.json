@@ -1,13 +1,13 @@
 {
-  "date": "2026-05-22",
+  "date": "2026-05-23",
   "niveau": "global",
-  "election": "Législatives 2007",
+  "election": "Présidentielle 2007",
   "tour": "T1",
-  "bureau": null,
+  "bureau": "0033",
   "quartier": null,
-  "subtype": "gagnants",
+  "subtype": null,
   "candidat": null,
-  "signature": "carte|Législatives 2007|T1",
-  "chars": 232,
-  "generated_at": "2026-05-22T06:01:04.257Z"
+  "signature": "bureau|Présidentielle 2007|T1|0033",
+  "chars": 236,
+  "generated_at": "2026-05-23T06:00:54.999Z"
 }

@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🏛️ Le 10 juin 2007, pour les législatives (1er tour), Maxime Bono (PS) arrive en tête avec 45,1 % à La Rochelle.
+👤 Le 22 avril 2007, pour la présidentielle (1er tour), Ségolène Royal (PS) arrive en tête avec 35,6 % à La Rochelle.
 
-Les résultats de ce scrutin, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=L%C3%A9gislatives+2007&tour=T1&tab=global
+Les résultats de ce scrutin, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Pr%C3%A9sidentielle+2007&tour=T1&tab=global
