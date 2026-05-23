@@ -31,30 +31,60 @@ Notes pour les sessions Claude Code. Convention : commentaires et UX en françai
 - Ères cartographiques : clés à 4 chiffres dans `BUREAU_INFO` (`'1988'`, `'1993'`, `'1996'`, `'2004'`, `'2007'`, `'2010'`, `'2012'`, `'2015'`, `'2022'`, `'2026'`)
 - `CURRENT_ERA` et `ERAS` calculés dynamiquement dans `shared.js` — **jamais hardcoder une année**.
 
-### `CAND_DATA` — lookup à 3 niveaux
-La fonction `candInfo(name)` dans LRVcarte essaie dans cet ordre :
-1. `CAND_DATA["Nom|Election|Tour"]` (override le plus spécifique)
-2. `CAND_DATA["Nom|Election"]`
-3. `CAND_DATA["Nom"]` (générique)
+### Modèle de données — PERSONS + CANDIDATURES + CAND_DATA (post-migration M4/M5)
+Trois tables liées dans `donnees.js`, plus de lookup à 3 niveaux ni d'overrides `|Election|Tour`.
 
-**⚠️ Pièges** : la plupart des autres call sites n'utilisent que 2 niveaux (sans `|Tour`). Donc pour un override par élection, préférer le format `|Election` (sans tour) sauf si on veut vraiment distinguer T1/T2.
+- **`PERSONS[<person_id>]`** = identité immuable, format `{ p: prénom, n: nom, s: "F"/"H"/"" }`.
+  - `person_id` = slug nom-prénom (ex. `"marylise-fleuret-pagnoux"`).
+- **`CANDIDATURES[<cand_id>]`** = variante par scrutin (1 personne ou 1 binôme).
+  - `cand_id` = `<person_id>@<slug-election>` (ex. `"alain-rousset@regionales-2015"`) pour les individuels.
+  - Binôme paritaire : `<pid1>+<pid2>@<slug-election>` (ex. `"dominique-guego+marie-nedellec@departementales-2021"`).
+- **`CAND_DATA`** = miroir de CANDIDATURES (mêmes clés), utilisé par les call sites historiques.
+  Les sheets ELECTIONS référencent les `cand_id` directement (`bd.c["alain-rousset@regionales-2015"] = pct`).
 
-### `CAND_DATA[<clé>]` complet
-`{ p: prénom, n: nom, b: bloc (G/C/D/EXD/?), t: [familles], c: couleur hex, pa: code parti, bk: clé fine (exg/grg/g/eco/c/d/ds/exd/?), al: alliances, s: sexe ("F"/"H"), binome: [k1, k2] }`
+### `CANDIDATURES[<cid>]` complet
+- **Individuelle** : `{ p, n, s, person: <pid>, election: "Régionales 2015", pa: code parti, bk, b, t: [familles], al: alliances, c: couleur hex?, tour_specific? }`
+- **Binôme** : `{ election, binome: [pid1, pid2], binome_partis: [pa1, pa2], pa: dérivé, bk, b, t, al?, tour_specific? }`
+  Pas de `p`, `n`, `s` propres au binôme — ils sont dans PERSONS via les `pid` du couple.
+
+### Valeurs autorisées
+- **`bk`** (clé fine) : `{ exg, g, c, d, exd, divers }` (6 valeurs). `divers` = ancien `?`, renommé pour clarté UX.
+- **`b`** (bloc parent) : `{ G, C, D, EXD, ? }`. Dérivé de `bk` via `BLOC_LEGACY` au chargement par le wizard d'import / par l'éditeur.
+- **`s`** : `"F"`, `"H"`, ou `""` (non renseigné — toléré pour les profils historiques anciens).
 
 ### Binômes paritaires (Cantonales/Départementales 2015+)
-1 entrée binôme + 2 entrées membres dans CAND_DATA :
-- **Binôme** : clé = `"Nom1/Nom2 PARTI"`, `{ n: "Nom1/Nom2", pa: parti, binome: [k1, k2] }` (pas de `p`, `s`, `bk` directs)
-- **Membres** : clé = `"Nom PARTI_DU_BINÔME"`, `{ p, n, s: "F"/"H", pa: vrai_parti, bk, b, t, al? }`. Le `pa` du MEMBRE peut différer du parti du binôme (ex. binôme `UMP+MoDem` → membre 1 `pa: "UMP"`, membre 2 `pa: "MoDem"`).
-- **Override par élection** : si la même clé `Nom Parti` désigne 2 personnes différentes selon le scrutin, créer un override `CAND_DATA["Nom Parti|Nom Élection"] = { p, s, bk, ... }`. Ex. `"Bessière PCF"` = Jacques (par défaut), `"Bessière PCF|Départementales 2021"` = Isabelle.
+- Une seule entrée CANDIDATURES, clé `<pid1>+<pid2>@<elec>`.
+- **`binome_partis: [pa1, pa2]`** = source de vérité pour les partis individuels. L'ordre suit l'ordre de `binome`.
+- **`pa`** est **dérivé automatiquement** depuis `binome_partis` au chargement (IIFE en fin de `donnees.js` + helper `derivePaForBinome` dans `shared.js`). Plus jamais de stockage divergent.
+  - Règle de dérivation :
+    - Homogène (pa1 = pa2) → `pa1`
+    - DV* + vrai parti → vrai parti seul (le DV* éliminé)
+    - 2 vrais partis distincts → `"paF+paH"` (femme devant si sexes connus)
+    - 2 divers distincts → idem `"paF+paH"`
+
+### Règle paritaire — la candidate prime sur la carte
+Pour les binômes, quand il faut choisir UNE couleur unique sur la carte (pas bicolor) :
+- **Couleur** : parti de la candidate F par défaut. Exception : si F est DV* et H un vrai parti, on prend H (lisibilité politique).
+- **Label combiné** "PA_F+PA_H" : femme devant.
+- Helpers dans LRVcarte : `_femaleIdxOfBinome(ci)`, `_orderedBinomePartis(name)`, `colorOfCandidate(name)`.
 
 ### Bicolorisation pour binôme à "2 vrais partis"
-Convention : un binôme `pa1 + pa2` est dit "à 2 vrais partis" ssi **aucun des 2** ne commence par `DV` (DVG, DVD, DVC, DVE, DVP…). Sinon (vrai parti + divers), couleur unique du parti déclaré.
 - Helper `isDiversParti(pa)` : `/^DV/i.test(pa)`
-- Helper `binomePartiColors(name)` : retourne `[c1, c2]` ou `null` (homogène ou avec divers)
-- Helper `dotBackground(name)` : retourne `linear-gradient(135deg, c1 50%, c2 50%)` ou couleur unie
+- Helper `binomePartiColors(name)` : retourne `[c1, c2]` ou `null` (homogène, non-binôme, ou mixte vrai+divers).
+  Convention : un binôme `pa1 + pa2` est dit "à 2 vrais partis" ssi **aucun des 2** ne commence par `DV`. L'ordre [c1, c2] suit `_orderedBinomePartis` → **femme devant** (post mai 2026).
+- Helper `dotBackground(name)` : retourne `linear-gradient(135deg, c1 50%, c2 50%)` ou couleur unie via `colorOfCandidate`.
 - **Sites bicolorisés** : dot/carré légende, tag tooltip carte, tag listes leaders (sidebar bureau/quartier/canton), barres de progression, fond winner duel (grand bloc → diagonale visible), bordure loser duel (2 ::before/::after halves verticales), voile fiche desktop (5 sail-rows haut + 5 bas), voile fiche mobile (gradient bar 6px), topbar fiche (::after horizontal), titrailles canton/bureau sidebar (2 ::before/::after halves), border-image NON utilisé (rend mal sur bordures fines)
-- **Carte choroplèthe** : reste en couleur unie (par décision UX, pas de bicolor sur les polygones bureaux)
+- **Carte choroplèthe** : reste en couleur unie (par décision UX, pas de bicolor sur les polygones bureaux). La couleur unique appliquée est celle de `colorOfCandidate(winner)` qui suit la règle paritaire.
+
+### Overrides par tour (`tour_specific`)
+Pour les candidatures à 2 tours dont certains champs changent entre T1 et T2 (typiquement `al` — alliance élargie pour le ballottage) :
+```js
+CANDIDATURES["alain-rousset@regionales-2015"] = {
+  ..., al: "PRG, PCF",                       // valeur par défaut (= T1)
+  tour_specific: { T2: { al: "PRG, PCF, EELV" } }  // override T2
+}
+```
+Au runtime, `candInfo(name)` dans LRVcarte applique `Object.assign(merged, c.tour_specific[currentSheet])` pour le tour courant. Côté éditeur, la cellule "Alliance" d'une candidature multi-tour propose un toggle `↔ T2` qui split en 2 champs T1/T2 (puis `×` pour révoquer l'override).
 
 ### Bureau `0057`
 Bureau non-géographique (Français de l'étranger / détenus). Exclu de la plupart des calculs via `NON_GEO = new Set(['0057'])`.
@@ -105,6 +135,8 @@ Un IIFE en queue de `donnees.js` (avant celui de conversion voix→pct) "applati
 ---
 
 ## ➕ Procédure complète : Ajouter une élection
+
+> ⚠️ **Section à actualiser** : décrit l'ancien flow pré-migration (clés `CAND_DATA["Nom Parti"]`, overrides `|Election`). Depuis M4/M5, les clés sont des **`cand_id`** au format `<pid>@<slug-election>`. Le wizard **"Nouvelle élection"** dans `editeur_candidats.html` (bouton ➕ dans le header) gère désormais l'injection initiale (paste JSON → validation → export). Les étapes ci-dessous restent indicatives pour l'esprit général (Excel, sanity checks, mises à jour statiques).
 
 ### Étape 0 — Pré-requis
 Demander à l'utilisateur :
@@ -213,8 +245,11 @@ Fallback automatique via `getPartiColor(pa)` : on hérite de la couleur du 1er c
 ### Éditeur : bug de propagation couleur parti (corrigé)
 Avant : la propagation sautait les candidats sans couleur (`r.c !== oldColor` était toujours vrai). Corrigé en `r.c && r.c !== oldColor` pour ne sauter que les vrais overrides.
 
-### Override `|Election|Tour` non vu par tous les call sites
-Si tu mets `CAND_DATA["X|Election|TU"]`, seule `candInfo()` (LRVcarte) le trouve. Toutes les autres lectures n'inspectent que `|Election`. Pour les TU, préférer `CAND_DATA["X|Election"]` (sans tour).
+### Overrides par tour : utiliser `tour_specific`, pas la clé `|Election|Tour`
+**Obsolète depuis M5** : le format `CAND_DATA["X|Election|Tour"]` (lookup 3 niveaux) a été supprimé. Pour varier un champ entre T1 et T2 (typiquement `al`), utiliser `tour_specific` sur l'unique entrée CANDIDATURES de la candidature. Voir la section "Overrides par tour" plus haut.
+
+### Format ancien `<cid>-t1` / `<cid>-t2` : ne plus utiliser
+Pendant la migration M3, certaines candidatures avaient été dédoublées (`segolene-royal@presidentielle-2007-t1` + `-t2`) au lieu d'utiliser `tour_specific`. Cleanup effectué en mai 2026 (3 candidatures fusionnées : Ferreira Lég. 2017, Royal Présidentielle 2007, Royal Régionales 2010). Si une nouvelle dette apparaît, vérifier `grep "-t[12]" donnees.js` et fusionner via le pattern documenté dans le commit `2353be9`.
 
 ### `daily-capture.js` cascade > 280 chars
 Le script choisit un niveau (carte/bureau/quartier/global), et si le texte dépasse 280 chars, il cascade vers un niveau plus large. La variable `niveauFinal` capture ce niveau réel. **Toujours utiliser `niveauFinal`** (pas `niveau`) pour :
