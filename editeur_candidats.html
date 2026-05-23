@@ -381,8 +381,14 @@ function setCand(key, field, value) {
 // ─────────────── CONSTRUCTION ───────────────
 function buildRows() {
   rows = Object.entries(CAND_DATA).map(([key, c]) => {
-    const pipe = key.indexOf('|');
-    const elec = pipe >= 0 ? key.slice(pipe + 1) : '';
+    // Post-migration : key est un cand_id (ex. "alain-bucherie@cantonales-2004").
+    // Le label élection est dans c.election. Fallback sur l'ancien format |Élection
+    // pour les overrides legacy qui auraient pu subsister.
+    let elec = c.election || '';
+    if (!elec) {
+      const pipe = key.indexOf('|');
+      if (pipe >= 0) elec = key.slice(pipe + 1);
+    }
     return {
       key, elec,
       nom:    c.n  || '',
