@@ -277,12 +277,14 @@
 
 <script>
 // ─────────────── CONFIG ───────────────
-const BK_COLORS = { exg:'#6B0000', grg:'#C0392B', g:'#CC0100', eco:'#27AE60', c:'#E8A020', d:'#3C78D8', ds:'#1A237E', exd:'#20124D', '?':'#aaa' };
+// Set restreint (mai 2026) : on garde 6 valeurs bk + '?' bloc orphelin.
+// Le '?' bk historique a été renommé 'divers' pour clarté UX.
+const BK_COLORS = { exg:'#6B0000', g:'#CC0100', c:'#E8A020', d:'#3C78D8', exd:'#20124D', divers:'#aaa' };
 const B_COLORS  = { G:'#CC0100', C:'#E8A020', D:'#3C78D8', EXD:'#20124D', '?':'#aaa' };
 const BK_OPTIONS = [
-  ['exg','exg — Extrême gauche'], ['grg','grg — Gauche radicale'], ['g','g — Gauche'],
-  ['eco','eco — Écologie'], ['c','c — Centre'], ['d','d — Droite'],
-  ['ds','ds — Droite souverainiste'], ['exd','exd — Extrême droite'], ['?','? — Divers']
+  ['exg','exg — Extrême gauche'], ['g','g — Gauche'],
+  ['c','c — Centre'], ['d','d — Droite'],
+  ['exd','exd — Extrême droite'], ['divers','divers — Divers']
 ];
 
 // ─────────────── ÉTAT ───────────────
@@ -299,9 +301,10 @@ let currentSection = 'cand';
 
 // ─────────────── HELPERS ───────────────
 function guessBkFromB(b) {
-  if (!b || typeof BLOC_LEGACY === 'undefined') return '?';
+  // Fallback : 'divers' (= ancien '?', renommé pour clarté UX).
+  if (!b || typeof BLOC_LEGACY === 'undefined') return 'divers';
   const found = Object.entries(BLOC_LEGACY).find(([_, bb]) => bb === b);
-  return found ? found[0] : '?';
+  return found ? found[0] : 'divers';
 }
 function bkToB(bk) {
   if (!bk || typeof BLOC_LEGACY === 'undefined') return '?';
