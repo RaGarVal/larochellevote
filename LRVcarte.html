@@ -203,7 +203,13 @@ body {
 }
 #tb-center { flex:1; display:flex; align-items:center; justify-content:center; gap:10px; position: relative; }
 #tb-election { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.5px; }
-#tb-election.is-partielle { font-style: italic; }
+/* Italique sur tous les emplacements affichant le label d'une élection partielle
+   (topbar fixe + dropdown desktop + bottom sheet mobile). Critère : présence du
+   mot "partielle" dans le label. */
+#tb-election.is-partielle,
+#el-select option[value*="partielle" i],
+.elec-item.is-partielle,
+.elec-item-2t.is-partielle .elec-item-name { font-style: italic; }
 #tb-tour { font-size: 0.85rem; font-weight: 600; background: var(--bg-chrome-accent); color: var(--text-chrome-muted); padding: 4px 12px; border-radius: 5px; white-space: nowrap; }
 #tb-elec-nav { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); display: flex; gap: 4px; }
 .tb-elec-nav-btn { background: none; border: 1px solid var(--border-chrome); border-radius: 6px; width: 26px; height: 26px; font-size: 0.95rem; line-height: 1; cursor: pointer; color: var(--text-chrome-muted); transition: all .15s; display: flex; align-items: center; justify-content: center; padding: 0; font-family: inherit; }
@@ -9224,10 +9230,13 @@ function openElecSheet() {
       const sheets = (typeof ELECTIONS !== 'undefined' && ELECTIONS[label] && ELECTIONS[label].sheets) || {};
       const has2Tours = !!sheets['T2'];
       const isCurrent = label === currentElection;
+      // Italique pour les partielles (cf. CSS .is-partielle sur .elec-item / .elec-item-2t).
+      const isPartielle = /partielle/i.test(label);
+      const partielleCls = isPartielle ? ' is-partielle' : '';
       const safeVal = label.replace(/'/g, "\\'");
       if (has2Tours) {
         // Élection à 2 tours : nom de l'élection + 2 chips T1 / T2
-        html += '<div class="elec-item-2t' + (isCurrent ? ' is-current-elec' : '') + '">'
+        html += '<div class="elec-item-2t' + (isCurrent ? ' is-current-elec' : '') + partielleCls + '">'
               + '<div class="elec-item-name">' + opt.textContent + '</div>'
               + '<div class="elec-tour-chips">'
               +   '<button class="elec-tour-chip' + (isCurrent && currentSheet === 'T1' ? ' is-current' : '') + '"'
@@ -9237,7 +9246,7 @@ function openElecSheet() {
               + '</div></div>';
       } else {
         // Tour unique (TU ou T1 seul) : bouton simple
-        html += '<button class="elec-item' + (isCurrent ? ' is-current' : '') + '"'
+        html += '<button class="elec-item' + (isCurrent ? ' is-current' : '') + partielleCls + '"'
               + ' onclick="setElection(\'' + safeVal + '\'); closeElecSheet();">'
               + opt.textContent + '</button>';
       }
