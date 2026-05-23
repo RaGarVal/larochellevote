@@ -1026,9 +1026,7 @@ function openProfile(id) {
       +     'data-bidx="' + myIdxInBinome + '" '
       +     'value="' + escapeAttr(pa) + '" '
       +     'oninput="setCandidatureMemberPa(this.closest(\'tr\').dataset.cid,this.dataset.bidx,this.value);_markCandRow(this)"></td>'
-      + '<td><input class="cell-inp" style="width:160px" '
-      +     'value="' + escapeAttr(al) + '" placeholder="ex: PRG, EELV" '
-      +     'oninput="setCandidatureField(this.closest(\'tr\').dataset.cid,\'al\',this.value);_markCandRow(this)"></td>'
+      + '<td>' + renderAllianceCellInner(cid, c) + '</td>'
       + '<td><span class="b-badge" style="background:' + bg + '" title="dérivé du bk">' + bVal + '</span></td>'
       + '<td><select class="cell-inp" style="border-color:' + bkBg + ';color:' + bkBg + ';font-weight:600" '
       +     'onchange="setCandidatureField(this.closest(\'tr\').dataset.cid,\'bk\',this.value);_markCandRow(this);refreshTimelineRow(this.closest(\'tr\'))">' + bkOpts + '</select></td>'
@@ -1071,7 +1069,9 @@ function setCandidatureFamilies(cid, input) {
   setCandidatureField(cid, 't', arr);
 }
 function _markCandRow(input) {
-  const tr = input.closest('tr');
+  if (!input) return;
+  const tr = input.closest ? input.closest('tr') : input;
+  if (!tr) return;
   const cid = tr.dataset.cid;
   tr.classList.toggle('cand-changed', isCandidatureChanged(cid));
   // Compteur global modif candidatures
@@ -1080,6 +1080,109 @@ function _markCandRow(input) {
     const n = Object.keys(candidatureChanges).length;
     counter.textContent = n ? `📝 ${n} candidature(s) modifiée(s)` : '';
   }
+}
+
+// ─── Tour-specific (M4.4) — overrides par tour pour les candidatures à 2 tours.
+// Format : c.tour_specific = { T2: { al: '...' } }. c.al sert de valeur par défaut
+// (= T1). L'override T2 remplace c.al au runtime via Object.assign (cf. candInfo).
+function isCandidatureMultiTour(c) {
+  if (!c || !c.election || typeof ELECTIONS === 'undefined') return false;
+  const sheets = (ELECTIONS[c.election] || {}).sheets;
+  return !!(sheets && sheets.T2);
+}
+function getTourSpecific(cid) {
+  const ch = candidatureChanges[cid] || {};
+  if ('tour_specific' in ch) return ch.tour_specific || {};
+  return (CANDIDATURES[cid] && CANDIDATURES[cid].tour_specific) || {};
+}
+function hasT2AllianceOverride(cid) {
+  const ts = getTourSpecific(cid);
+  return !!(ts.T2 && 'al' in ts.T2);
+}
+function getT2Alliance(cid) {
+  const ts = getTourSpecific(cid);
+  return (ts.T2 && ts.T2.al) || '';
+}
+function _setTourSpecific(cid, ts) {
+  const isEmpty = !ts || Object.keys(ts).length === 0;
+  setCandidatureField(cid, 'tour_specific', isEmpty ? undefined : ts);
+}
+function enableT2Override(cid) {
+  // Initialiser T2 avec la valeur courante de l'al (T1) — l'utilisateur modifie ensuite.
+  const cur = getCandidatureField(cid, 'al') || '';
+  const ts = { ...getTourSpecific(cid) };
+  ts.T2 = { ...(ts.T2 || {}), al: cur };
+  _setTourSpecific(cid, ts);
+  const tr = document.querySelector('tr[data-cid="' + cssEsc(cid) + '"]');
+  if (tr) refreshTimelineRowAlliance(tr);
+}
+function disableT2Override(cid) {
+  const ts = { ...getTourSpecific(cid) };
+  if (ts.T2) {
+    const t2 = { ...ts.T2 };
+    delete t2.al;
+    if (Object.keys(t2).length === 0) delete ts.T2;
+    else ts.T2 = t2;
+  }
+  _setTourSpecific(cid, ts);
+  const tr = document.querySelector('tr[data-cid="' + cssEsc(cid) + '"]');
+  if (tr) refreshTimelineRowAlliance(tr);
+}
+function setT2Alliance(cid, value) {
+  const ts = { ...getTourSpecific(cid) };
+  ts.T2 = { ...(ts.T2 || {}), al: value };
+  _setTourSpecific(cid, ts);
+}
+function refreshTimelineRowAlliance(tr) {
+  const cid = tr.dataset.cid;
+  const c = (typeof CANDIDATURES !== 'undefined' && CANDIDATURES[cid]) || {};
+  const tdAl = tr.children[3];  // 0=Année, 1=Élection, 2=Parti, 3=Alliance
+  if (tdAl) tdAl.innerHTML = renderAllianceCellInner(cid, c);
+  _markCandRow(tr);
+}
+function renderAllianceCellInner(cid, c) {
+  const al = getCandidatureField(cid, 'al') || '';
+  const isMulti = isCandidatureMultiTour(c);
+  const hasOverride = isMulti && hasT2AllianceOverride(cid);
+  const safeCid = escapeAttr(cid);
+  if (!isMulti) {
+    // Tour unique : champ simple
+    return '<input class="cell-inp" style="width:160px" '
+         +   'value="' + escapeAttr(al) + '" placeholder="ex: PRG, EELV" '
+         +   'oninput="setCandidatureField(this.closest(\'tr\').dataset.cid,\'al\',this.value);_markCandRow(this)">';
+  }
+  if (!hasOverride) {
+    // 2 tours, alliance unique : champ + bouton "↔ T2"
+    return '<div style="display:flex;align-items:center;gap:4px">'
+         +   '<input class="cell-inp" style="width:120px" '
+         +     'value="' + escapeAttr(al) + '" placeholder="ex: PRG, EELV" '
+         +     'oninput="setCandidatureField(this.closest(\'tr\').dataset.cid,\'al\',this.value);_markCandRow(this)">'
+         +   '<button type="button" title="Définir une alliance différente au T2" '
+         +     'style="font-size:.68rem;padding:1px 5px;border:1px solid #aaa;background:#fff;cursor:pointer;border-radius:3px;color:#555;white-space:nowrap" '
+         +     'onclick="enableT2Override(\'' + safeCid + '\')">↔ T2</button>'
+         + '</div>';
+  }
+  // Override T2 actif : 2 champs T1/T2 + bouton "×"
+  const alT2 = getT2Alliance(cid);
+  return '<div style="display:flex;flex-direction:column;gap:2px">'
+       +   '<div style="display:flex;align-items:center;gap:3px">'
+       +     '<span style="font-size:.65rem;color:#666;font-weight:600;width:16px">T1</span>'
+       +     '<input class="cell-inp" style="width:130px" value="' + escapeAttr(al) + '" placeholder="alliance T1" '
+       +       'oninput="setCandidatureField(this.closest(\'tr\').dataset.cid,\'al\',this.value);_markCandRow(this)">'
+       +   '</div>'
+       +   '<div style="display:flex;align-items:center;gap:3px">'
+       +     '<span style="font-size:.65rem;color:#666;font-weight:600;width:16px">T2</span>'
+       +     '<input class="cell-inp" style="width:130px" value="' + escapeAttr(alT2) + '" placeholder="alliance T2" '
+       +       'oninput="setT2Alliance(this.closest(\'tr\').dataset.cid,this.value);_markCandRow(this)">'
+       +     '<button type="button" title="Supprimer l\'override T2 (alliance unique)" '
+       +       'style="font-size:.7rem;padding:0 5px;border:1px solid #ccc;background:#fff;cursor:pointer;border-radius:3px;color:#c62828" '
+       +       'onclick="disableT2Override(\'' + safeCid + '\')">×</button>'
+       +   '</div>'
+       + '</div>';
+}
+function cssEsc(s) {
+  if (window.CSS && typeof window.CSS.escape === 'function') return CSS.escape(s);
+  return (s || '').replace(/(["\\])/g, '\\$1');
 }
 function refreshTimelineRow(tr) {
   // Quand bk change, recalculer le bloc affiché dans la cellule b
