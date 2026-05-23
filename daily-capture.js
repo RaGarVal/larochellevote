@@ -227,6 +227,7 @@ const DATES = {
   'Référendum 2000':     { TU: '24 septembre 2000'   },
   'Référendum 2005':     { TU: '29 mai 2005'         },
   'Cantonales 2001':       { T1: '11 mars 2001', T2: '18 mars 2001' },
+  'Cantonale partielle 2002': { T1: '22 septembre 2002', T2: '29 septembre 2002' },
   'Cantonales 2004':       { T1: '21 mars 2004', T2: '28 mars 2004' },
   'Cantonales 2008':       { T1: '9 mars 2008',  T2: '16 mars 2008' },
   'Cantonales 2011':       { T1: '20 mars 2011', T2: '27 mars 2011' },
@@ -349,9 +350,10 @@ function electionScrutin(label) {
   if (/référendum/i.test(label))                 return 'referendum';
   if (/législative/i.test(label))                return 'legislatives';
   if (/municipale/i.test(label))                 return 'municipales';
-  // "Départementales" / "Cantonales" : avant "regionales" pour ne pas
-  // que le match "régionale" remonte sur "départementales régionale" par accident.
-  if (/^(d[ée]partementales|cantonales)/i.test(label)) return 'departementales';
+  // "Départementales" / "Cantonales" (+ singulier pour les partielles) :
+  // avant "regionales" pour ne pas que le match "régionale" remonte sur
+  // "départementales régionale" par accident.
+  if (/^(d[ée]partementale[s]?|cantonale[s]?)/i.test(label)) return 'departementales';
   if (/régionale/i.test(label))                  return 'regionales';
   if (/européenne/i.test(label))                 return 'europeennes';
   return 'autres';
@@ -361,7 +363,7 @@ function electionEmoji(label) {
   if (/présidentielle/i.test(label))                   return '👤';
   if (/référendum/i.test(label))                       return '🗳️';
   if (/législative/i.test(label))                      return '🏛️';
-  if (/^(d[ée]partementales|cantonales)/i.test(label)) return '🧩';
+  if (/^(d[ée]partementale[s]?|cantonale[s]?)/i.test(label)) return '🧩';
   if (/municipale|régionale/i.test(label))             return '🏙️';
   if (/européenne/i.test(label))                       return '🇪🇺';
   return '🗳️';

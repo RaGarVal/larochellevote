@@ -115,6 +115,10 @@ function elecTypePriority(label) {
   if (label.startsWith('Cantonales 2004'))      return 5.5;
   if (label.startsWith('Cantonales 2008'))      return 5.5;
   if (label.startsWith('Départementales 2021')) return 5.5;
+  // Partielles (hors cycle) : typiquement en cours d'année après les scrutins
+  // normaux. On les range en queue (5.5) faute de mieux ; idéalement on
+  // utiliserait la date exacte mais ce serait un autre modèle.
+  if (/^Cantonale partielle/i.test(label))      return 5.5;
   if (label.startsWith('Présidentielle')) return 1;
   if (label.startsWith('Législatives'))  return 2;
   if (label.startsWith('Municipales'))   return 3;
@@ -540,10 +544,11 @@ function isCantonEraAlive(era_canton, year) {
 
 // Vrai si une élection est de type cantonal/départemental.
 // Sécurité : utilise regex sur le label pour ne pas dépendre d'une convention
-// spécifique (ex. ELECTIONS[label].scrutin_type).
+// spécifique (ex. ELECTIONS[label].scrutin_type). Accepte le singulier pour les
+// partielles (ex. "Cantonale partielle 2002") qui ne portent que sur 1 canton.
 function isCantonalElection(electionLabel) {
   if (!electionLabel) return false;
-  return /^(Cantonales|Départementales)\b/i.test(electionLabel);
+  return /^(Cantonale[s]?|Départementale[s]?)\b/i.test(electionLabel);
 }
 
 // Pour une élection cantonale dont le label se termine par "— La Rochelle-N",
