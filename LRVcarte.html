@@ -2243,15 +2243,20 @@ function getPartiColor(pa) {
 }
 
 function candInfo(name) {
-  // Merge en cascade : générique ← override |Élection ← override |Élection|Tour.
-  // Permet aux overrides d'être PARTIELS (ex. juste {al:"PRG"} pour ajuster une
-  // alliance) sans avoir à recopier toute la fiche. Les overrides "fiche complète"
-  // existants (héritage de l'éditeur) continuent de fonctionner — le spread les
-  // écrase juste de manière équivalente.
-  const generic = CAND_DATA[name] || {};
-  const elec    = CAND_DATA[name + '|' + currentElection] || {};
-  const tour    = CAND_DATA[name + '|' + currentElection + '|' + currentSheet] || {};
-  return { ...generic, ...elec, ...tour };
+  // Post-migration M4 : `name` est un cand_id (ex. "alain-bucherie@cantonales-2004").
+  // Le merge avec tour_specific[currentSheet] applique les variations par tour
+  // (ex. Rousset 2015 al T1=PRG,PCF vs T2=PRG,PCF,EELV — Fountaine 2014 al T2=EELV).
+  // Compat legacy : si on tombe sur une ancienne clé "Nom Parti" via URL/cache,
+  // la cascade |Élection / |Tour fait le fallback (sera no-op après cleanup M5).
+  const base = CAND_DATA[name] || {};
+  const elec = CAND_DATA[name + '|' + currentElection] || {};
+  const tour = CAND_DATA[name + '|' + currentElection + '|' + currentSheet] || {};
+  const merged = { ...base, ...elec, ...tour };
+  // Applique tour_specific (M4.4) si présent
+  if (merged.tour_specific && merged.tour_specific[currentSheet]) {
+    Object.assign(merged, merged.tour_specific[currentSheet]);
+  }
+  return merged;
 }
 
 // ── BINÔMES (Départementales/Cantonales) ───────────────────────────────────
