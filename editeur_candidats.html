@@ -169,6 +169,9 @@
 <section id="section-profil" class="section">
   <div class="filters">
     <input type="search" id="search-profil" placeholder="Rechercher une personne (nom, prénom, parti)…" oninput="filterProfil()">
+    <select id="filter-profil-elec" onchange="filterProfil()">
+      <option value="">Toutes élections</option>
+    </select>
     <select id="filter-profil-parti" onchange="filterProfil()">
       <option value="">Tous partis</option>
     </select>
@@ -851,10 +854,12 @@ function renderProfiles(filtered) {
 function filterProfil() {
   const q = (document.getElementById('search-profil').value || '').toLowerCase();
   const fp = document.getElementById('filter-profil-parti').value;
+  const fe = document.getElementById('filter-profil-elec').value;
   const multi = document.getElementById('filter-profil-multi').checked;
   const filtered = profiles.filter(p => {
     if (multi && p.candidates.length < 2) return false;
     if (fp && !p.partis.has(fp)) return false;
+    if (fe && !p.candidates.some(({c}) => c.election === fe)) return false;
     if (q) {
       const txt = (p.p + ' ' + p.n + ' ' + [...p.partis].join(' ')).toLowerCase();
       if (!txt.includes(q)) return false;
@@ -874,6 +879,23 @@ function refreshProfilPartiFilter() {
   const opts = ['<option value="">Tous partis</option>']
     .concat([...allPartis].sort().map(c => '<option value="' + escapeAttr(c) + '"' + (c === current ? ' selected' : '') + '>' + escapeHtml(c) + '</option>'));
   sel.innerHTML = opts.join('');
+}
+function refreshProfilElecFilter() {
+  const sel = document.getElementById('filter-profil-elec');
+  if (!sel || typeof ELECTIONS === 'undefined') return;
+  const current = sel.value;
+  // Object.keys garde l'ordre d'insertion → la dernière est la plus récemment ajoutée.
+  const keys = Object.keys(ELECTIONS);
+  const lastImport = keys[keys.length - 1];
+  // Trier alphabétiquement pour l'affichage standard
+  const sortedKeys = keys.slice().sort();
+  let opts = '<option value="">Toutes élections</option>';
+  if (lastImport) {
+    opts += '<option value="' + escapeAttr(lastImport) + '"' + (lastImport === current ? ' selected' : '') + '>📥 Dernier import : ' + escapeHtml(lastImport) + '</option>';
+    opts += '<option disabled>───</option>';
+  }
+  opts += sortedKeys.map(k => '<option value="' + escapeAttr(k) + '"' + (k === current && k !== lastImport ? ' selected' : '') + '>' + escapeHtml(k) + '</option>').join('');
+  sel.innerHTML = opts;
 }
 
 // M4.2 — openProfile lit directement les CANDIDATURES de la personne.
@@ -1381,6 +1403,7 @@ document.addEventListener('DOMContentLoaded', () => {
   buildPartiList();
   buildProfiles();
   refreshProfilPartiFilter();
+  refreshProfilElecFilter();
 
   const dl = document.createElement('datalist');
   dl.id = 'parti-codes';
