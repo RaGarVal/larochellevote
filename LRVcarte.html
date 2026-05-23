@@ -2267,8 +2267,10 @@ function candInfo(name) {
 function binomeMembers(name) {
   const ci = candInfo(name);
   if (!Array.isArray(ci.binome) || ci.binome.length !== 2) return null;
-  const m1 = candInfo(ci.binome[0]);
-  const m2 = candInfo(ci.binome[1]);
+  // M5 : les membres sont des person_ids → lecture directe de PERSONS qui
+  // contient {p, n, s}. Plus rapide et clair que de passer par candInfo.
+  const m1 = (typeof PERSONS !== 'undefined' && PERSONS[ci.binome[0]]) || {};
+  const m2 = (typeof PERSONS !== 'undefined' && PERSONS[ci.binome[1]]) || {};
   // Tri : femme devant. On inverse dès que m2 est F et m1 ne l'est pas (couvre
   // les cas où le sexe de m1 est inconnu/H et celui de m2 explicitement F).
   if (m1.s !== 'F' && m2.s === 'F') return [m2, m1];
