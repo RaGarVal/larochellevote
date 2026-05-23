@@ -40,7 +40,21 @@ La fonction `candInfo(name)` dans LRVcarte essaie dans cet ordre :
 **⚠️ Pièges** : la plupart des autres call sites n'utilisent que 2 niveaux (sans `|Tour`). Donc pour un override par élection, préférer le format `|Election` (sans tour) sauf si on veut vraiment distinguer T1/T2.
 
 ### `CAND_DATA[<clé>]` complet
-`{ p: prénom, n: nom, b: bloc (G/C/D/EXD/?), t: [familles], c: couleur hex, pa: code parti, bk: clé fine (exg/grg/g/eco/c/d/ds/exd/?), al: alliances }`
+`{ p: prénom, n: nom, b: bloc (G/C/D/EXD/?), t: [familles], c: couleur hex, pa: code parti, bk: clé fine (exg/grg/g/eco/c/d/ds/exd/?), al: alliances, s: sexe ("F"/"H"), binome: [k1, k2] }`
+
+### Binômes paritaires (Cantonales/Départementales 2015+)
+1 entrée binôme + 2 entrées membres dans CAND_DATA :
+- **Binôme** : clé = `"Nom1/Nom2 PARTI"`, `{ n: "Nom1/Nom2", pa: parti, binome: [k1, k2] }` (pas de `p`, `s`, `bk` directs)
+- **Membres** : clé = `"Nom PARTI_DU_BINÔME"`, `{ p, n, s: "F"/"H", pa: vrai_parti, bk, b, t, al? }`. Le `pa` du MEMBRE peut différer du parti du binôme (ex. binôme `UMP+MoDem` → membre 1 `pa: "UMP"`, membre 2 `pa: "MoDem"`).
+- **Override par élection** : si la même clé `Nom Parti` désigne 2 personnes différentes selon le scrutin, créer un override `CAND_DATA["Nom Parti|Nom Élection"] = { p, s, bk, ... }`. Ex. `"Bessière PCF"` = Jacques (par défaut), `"Bessière PCF|Départementales 2021"` = Isabelle.
+
+### Bicolorisation pour binôme à "2 vrais partis"
+Convention : un binôme `pa1 + pa2` est dit "à 2 vrais partis" ssi **aucun des 2** ne commence par `DV` (DVG, DVD, DVC, DVE, DVP…). Sinon (vrai parti + divers), couleur unique du parti déclaré.
+- Helper `isDiversParti(pa)` : `/^DV/i.test(pa)`
+- Helper `binomePartiColors(name)` : retourne `[c1, c2]` ou `null` (homogène ou avec divers)
+- Helper `dotBackground(name)` : retourne `linear-gradient(135deg, c1 50%, c2 50%)` ou couleur unie
+- **Sites bicolorisés** : dot/carré légende, tag tooltip carte, tag listes leaders (sidebar bureau/quartier/canton), barres de progression, fond winner duel (grand bloc → diagonale visible), bordure loser duel (2 ::before/::after halves verticales), voile fiche desktop (5 sail-rows haut + 5 bas), voile fiche mobile (gradient bar 6px), topbar fiche (::after horizontal), titrailles canton/bureau sidebar (2 ::before/::after halves), border-image NON utilisé (rend mal sur bordures fines)
+- **Carte choroplèthe** : reste en couleur unie (par décision UX, pas de bicolor sur les polygones bureaux)
 
 ### Bureau `0057`
 Bureau non-géographique (Français de l'étranger / détenus). Exclu de la plupart des calculs via `NON_GEO = new Set(['0057'])`.

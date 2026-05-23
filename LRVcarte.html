@@ -2999,7 +2999,13 @@ function _onCantonTitrailleEnter(cid) {
   previewCantonId = String(cid);
   if (typeof mainLayer !== 'undefined' && mainLayer) mainLayer.setStyle(featureStyle);
   // Mémoriser le filtre légende courant pour le restaurer au mouseleave.
-  _prevLegendCantonForHover = (typeof legendCantonFilter !== 'undefined') ? legendCantonFilter : null;
+  // Capture UNIQUEMENT à la première entrée dans la zone des titrailles (= valeur
+  // null). Si le user glisse rapidement d'une titraille à l'autre sans sortir, on
+  // ne ré-écrase pas la valeur initiale avec le filtre déjà pollué par l'entrée
+  // précédente. _prevLegendCantonForHover est reset à null par _onCantonTitrailleLeave.
+  if (_prevLegendCantonForHover === null) {
+    _prevLegendCantonForHover = (typeof legendCantonFilter !== 'undefined') ? legendCantonFilter : null;
+  }
   if (typeof setLegendCanton === 'function') setLegendCanton(cid);
 }
 function _onCantonTitrailleLeave() {

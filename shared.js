@@ -100,12 +100,27 @@ function setupSailAnimation() {
 function elecTypePriority(label) {
   if (label.startsWith('Européennes 2024')) return 1.5;
   if (label.startsWith('Régionales 2004'))  return 3.5;
+  // ── EXCEPTIONS "même jour" pour Cantonales/Départementales ──
+  // Règle : Cantonales/Départementales sont en général à 3.5 (mars typique, avant
+  // Régionales décembre). MAIS quand elles ont eu lieu LE MÊME JOUR qu'une autre
+  // élection, elles passent APRÈS (priorité 5.5) — l'autre scrutin prime.
+  //   • Cantonales 1992    = 22 mars 1992 (= Régionales 1992)         → après
+  //   • Cantonales 1998    = 15 mars 1998 (= Régionales 1998)         → après
+  //   • Cantonales 2004    = 21 mars 2004 (= Régionales 2004)         → après
+  //   • Cantonales 2008    = 9 mars 2008  (= Municipales 2008)        → après
+  //   • Départementales 2021 = 20 juin 2021 (= Régionales 2021)       → après
+  // Cantonales 1988 / 2011 / Départementales 2015 : seules, restent à 3.5.
+  if (label.startsWith('Cantonales 1992'))      return 5.5;
+  if (label.startsWith('Cantonales 1998'))      return 5.5;
+  if (label.startsWith('Cantonales 2004'))      return 5.5;
+  if (label.startsWith('Cantonales 2008'))      return 5.5;
+  if (label.startsWith('Départementales 2021')) return 5.5;
   if (label.startsWith('Présidentielle')) return 1;
   if (label.startsWith('Législatives'))  return 2;
   if (label.startsWith('Municipales'))   return 3;
-  // Cantonales/Départementales : typiquement en mars, donc entre Municipales (3)
-  // et Européennes (4). Pour 2015, les Départementales (mars) précèdent ainsi
-  // les Régionales (décembre, priorité 5).
+  // Cantonales/Départementales par défaut : typiquement en mars, donc entre
+  // Municipales (3) et Européennes (4). Pour 2015, les Départementales (mars,
+  // sans collision) précèdent ainsi les Régionales (décembre, priorité 5).
   if (label.startsWith('Cantonales'))    return 3.5;
   if (label.startsWith('Départementales')) return 3.5;
   if (label.startsWith('Européennes'))   return 4;
