@@ -76,7 +76,7 @@
   .parti-chip { font-size: .68rem; font-weight: 700; color: #fff; padding: 2px 7px; border-radius: 10px; font-family: monospace; }
   .parti-chip.no-color { background: #aaa; color: #333; }
   .prof-meta { display: flex; gap: 6px; align-items: center; font-size: .72rem; color: #888; }
-  .prof-meta-warn { color: #c08000; font-weight: 600; }
+  .prof-meta-warn { color: #c62828; background: #ffebee; padding: 1px 6px; border-radius: 3px; font-weight: 600; font-size: .72rem; }
 
   #profile-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 100; align-items: center; justify-content: center; }
   #profile-modal.show { display: flex; }
@@ -764,6 +764,22 @@ function setCandidatureField(cid, field, value) {
     candidatureChanges[cid][field] = value;
   }
 }
+// Helper : pour un binôme, "Parti" affiché/édité = binome_partis[idx] (parti propre du membre).
+// Pour une candidature individuelle, idx = -1 → on édite le champ pa standard.
+// Les binômes peuvent légitimement avoir 2 partis différents (ex. UMP+MoDem) — d'où ce helper.
+function setCandidatureMemberPa(cid, idxInBinome, value) {
+  const idx = parseInt(idxInBinome, 10);
+  if (Number.isFinite(idx) && idx >= 0) {
+    const cur = getCandidatureField(cid, 'binome_partis');
+    const orig = (typeof CANDIDATURES !== 'undefined' && CANDIDATURES[cid] && CANDIDATURES[cid].binome_partis) || ['', ''];
+    const list = Array.isArray(cur) ? cur.slice() : orig.slice();
+    while (list.length < 2) list.push('');
+    list[idx] = value;
+    setCandidatureField(cid, 'binome_partis', list);
+  } else {
+    setCandidatureField(cid, 'pa', value);
+  }
+}
 function getCandidatureField(cid, field) {
   const ch = candidatureChanges[cid];
   if (ch && ch[field] !== undefined) return ch[field];
@@ -803,17 +819,33 @@ function buildProfiles() {
     const cands = candidaturesByPerson[pid] || [];
     const partis = new Set();
     let yearMin = Infinity, yearMax = -Infinity;
-    let incomplete = false;
+    // Raisons d'incompletion accumulées sur l'ensemble des candidatures du profil
+    const incompleteReasons = new Set();
     cands.forEach(({ cid, c }) => {
-      if (c.pa) partis.add(c.pa);
+      // Parti propre à CETTE personne :
+      //  - binôme : on prend binome_partis[idx] (parti individuel du membre)
+      //  - sinon : c.pa (parti de la candidature individuelle)
+      let myPa = '';
+      const isBinome = Array.isArray(c.binome) && c.binome.length === 2;
+      if (isBinome) {
+        const idx = c.binome.indexOf(pid);
+        const bp = Array.isArray(c.binome_partis) ? c.binome_partis : null;
+        myPa = (idx >= 0 && bp) ? (bp[idx] || '') : '';
+      } else {
+        myPa = c.pa || '';
+      }
+      if (myPa) partis.add(myPa);
+      else incompleteReasons.add('parti');
       const ym = (c.election.match(/\d{4}/) || [0])[0];
       const yi = parseInt(ym);
       if (yi) {
         if (yi < yearMin) yearMin = yi;
         if (yi > yearMax) yearMax = yi;
       }
-      // Incompletion : si une candidature individuelle (pas binôme) manque bk/b
-      if (!c.binome && (c.b === '' || c.b === '?' || !c.bk)) incomplete = true;
+      // Incompletion : on flag bk/b manquant pour TOUTES les candidatures
+      // (binômes inclus — un binôme sans bloc/bk reste incomplet).
+      if (c.b === '' || c.b === '?' || !c.b) incompleteReasons.add('bloc');
+      if (!c.bk) incompleteReasons.add('bk');
     });
     arr.push({
       id: pid,
@@ -822,7 +854,8 @@ function buildProfiles() {
       partis,
       yearMin, yearMax,
       nbAppearances: cands.length,
-      incomplete
+      incomplete: incompleteReasons.size > 0,
+      incompleteReasons: [...incompleteReasons]
     });
   });
   profiles = arr.sort((a, b) => {
@@ -855,7 +888,12 @@ function renderProfiles(filtered) {
     const sexeIcon = p.s === 'F' ? '♀' : p.s === 'H' ? '♂' : '';
     const fullName = p.p ? (p.p + ' ') : '<em style="color:#bbb">[sans prénom] </em>';
     const cls = 'profile-card' + (p.incomplete ? ' flag-incomplete' : '');
-    const warn = p.incomplete ? '<span class="prof-meta-warn">à compléter</span> · ' : '';
+    // Détail de ce qui manque (parti / bloc / bk) avec icône d'alerte et tooltip.
+    let warn = '';
+    if (p.incomplete) {
+      const reasonsList = p.incompleteReasons.join(', ');
+      warn = '<span class="prof-meta-warn" title="Manque : ' + escapeAttr(reasonsList) + '">⚠ ' + escapeHtml(reasonsList) + '</span> · ';
+    }
     const candLabel = nCand === 0
       ? '<span style="color:#bbb">aucune candidature</span>'
       : nCand + ' candidature' + (nCand > 1 ? 's' : '');
@@ -942,24 +980,34 @@ function openProfile(id) {
   function renderRow(e) {
     const cid = e.cid;
     const c = e.c;
-    // Affichage des valeurs : pris depuis candidatureChanges si modifié, sinon original
-    const pa = getCandidatureField(cid, 'pa') || '';
+    // Binôme : récupérer le co-équipier + identifier l'index de la personne courante
+    const liveBinome = getCandidatureField(cid, 'binome') || c.binome;
+    const isBinome = Array.isArray(liveBinome) && liveBinome.length === 2;
+    const myIdxInBinome = isBinome ? liveBinome.indexOf(p.id) : -1;
+    // Affichage parti : pour un binôme, on édite le parti PROPRE de cette personne
+    // (binome_partis[myIdx]), pas le pa commun du binôme. Pour modifier le pa commun
+    // ou le co-équipier, l'utilisateur passe par le bouton ✎ (Cas A).
+    let pa;
+    if (myIdxInBinome >= 0) {
+      const liveBinomePartis = getCandidatureField(cid, 'binome_partis') || c.binome_partis || ['', ''];
+      pa = liveBinomePartis[myIdxInBinome] || '';
+    } else {
+      pa = getCandidatureField(cid, 'pa') || '';
+    }
     const al = getCandidatureField(cid, 'al') || '';
     const bkVal = getCandidatureField(cid, 'bk') || '';
     const bVal = (typeof BLOC_LEGACY !== 'undefined' && BLOC_LEGACY[bkVal]) || c.b || '?';
     const t = getCandidatureField(cid, 't') || c.t || [];
     const bg = B_COLORS[bVal] || '#aaa';
     const bkBg = BK_COLORS[bkVal] || '#aaa';
-    // Binôme : récupérer le co-équipier (en tenant compte des modifs en cours)
-    const liveBinome = getCandidatureField(cid, 'binome') || c.binome;
     let coLabel = '';
-    if (Array.isArray(liveBinome) && liveBinome.length === 2) {
+    if (isBinome) {
       const otherId = liveBinome.find(x => x !== p.id);
       if (otherId && PERSONS[otherId]) {
         const other = PERSONS[otherId];
         coLabel = '<span style="font-size:.7rem;color:#888;margin-left:5px">avec '
           + escapeHtml((other.p ? other.p + ' ' : '') + other.n)
-          + ' <a href="#" onclick="event.preventDefault();openBinomeEditor(\'' + escapeAttr(cid) + '\',\'' + escapeAttr(p.id) + '\')" style="color:#1a73e8;text-decoration:none;font-weight:600" title="Modifier le binôme">✎</a></span>';
+          + ' <a href="#" onclick="event.preventDefault();openBinomeEditor(\'' + escapeAttr(cid) + '\',\'' + escapeAttr(p.id) + '\')" style="color:#1a73e8;text-decoration:none;font-weight:600" title="Modifier le binôme (co-équipier et partis individuels)">✎</a></span>';
       }
     }
     const isChanged = isCandidatureChanged(cid);
@@ -969,12 +1017,15 @@ function openProfile(id) {
       '<option value="' + v + '"' + (v === bkVal ? ' selected' : '') + '>' + v + '</option>'
     ).join('');
     const safeCid = escapeAttr(cid);
+    // Pour les binômes, on stocke l'idx du membre dans data-bidx (utilisé par le handler Parti
+    // pour cibler binome_partis[idx] et pas pa). Pour les candidatures individuelles, idx = -1.
     return '<tr' + trCls + ' data-cid="' + safeCid + '">'
       + '<td class="yr">' + e.year + '</td>'
       + '<td>' + escapeHtml(c.election) + coLabel + '</td>'
       + '<td><input class="cell-inp" style="font-family:monospace;font-weight:700;width:80px" '
+      +     'data-bidx="' + myIdxInBinome + '" '
       +     'value="' + escapeAttr(pa) + '" '
-      +     'oninput="setCandidatureField(this.closest(\'tr\').dataset.cid,\'pa\',this.value);_markCandRow(this)"></td>'
+      +     'oninput="setCandidatureMemberPa(this.closest(\'tr\').dataset.cid,this.dataset.bidx,this.value);_markCandRow(this)"></td>'
       + '<td><input class="cell-inp" style="width:160px" '
       +     'value="' + escapeAttr(al) + '" placeholder="ex: PRG, EELV" '
       +     'oninput="setCandidatureField(this.closest(\'tr\').dataset.cid,\'al\',this.value);_markCandRow(this)"></td>'
