@@ -203,6 +203,7 @@ body {
 }
 #tb-center { flex:1; display:flex; align-items:center; justify-content:center; gap:10px; position: relative; }
 #tb-election { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.5px; }
+#tb-election.is-partielle { font-style: italic; }
 #tb-tour { font-size: 0.85rem; font-weight: 600; background: var(--bg-chrome-accent); color: var(--text-chrome-muted); padding: 4px 12px; border-radius: 5px; white-space: nowrap; }
 #tb-elec-nav { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); display: flex; gap: 4px; }
 .tb-elec-nav-btn { background: none; border: 1px solid var(--border-chrome); border-radius: 6px; width: 26px; height: 26px; font-size: 0.95rem; line-height: 1; cursor: pointer; color: var(--text-chrome-muted); transition: all .15s; display: flex; align-items: center; justify-content: center; padding: 0; font-family: inherit; }
@@ -6402,7 +6403,12 @@ function updateTourUI() {
 function updateTopbar(){
   var e=document.getElementById('tb-election');
   var t=document.getElementById('tb-tour');
-  if(e)e.textContent=currentElection;
+  if(e){
+    e.textContent=currentElection;
+    // Italique pour les partielles (ou tout label contenant "partielle"),
+    // afin de signaler visuellement que ce n'est pas un scrutin du cycle normal.
+    e.classList.toggle('is-partielle', /partielle/i.test(currentElection || ''));
+  }
   if(t){var elHMR=HAS_T2.has(currentElection)||HAS_TU.has(currentElection);
     t.textContent=currentSheet==='T2'?'2e tour':currentSheet==='TU'?'Tour unique':(elHMR?'1er tour':'Tour unique');
     t.style.display='';}
