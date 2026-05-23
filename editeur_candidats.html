@@ -77,6 +77,7 @@
   .parti-chip.no-color { background: #aaa; color: #333; }
   .prof-meta { display: flex; gap: 6px; align-items: center; font-size: .72rem; color: #888; }
   .prof-meta-warn { color: #c62828; background: #ffebee; padding: 1px 6px; border-radius: 3px; font-weight: 600; font-size: .72rem; }
+  .profile-edit-id.person-changed { background: #fff8e1; border-left: 3px solid #ffb300; padding: 4px 6px; border-radius: 4px; }
 
   #profile-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 100; align-items: center; justify-content: center; }
   #profile-modal.show { display: flex; }
@@ -751,6 +752,26 @@ function addParti() {
 // sous forme de CANDIDATURE_CORRECTIONS.
 let profiles = [];
 let candidatureChanges = {};  // { cand_id: { field: value } }
+let personsChanges = {};      // { person_id: { p?: string, n?: string, s?: "F"/"H"/"" } }
+
+function setPersonField(pid, field, value) {
+  if (!personsChanges[pid]) personsChanges[pid] = {};
+  const orig = (typeof PERSONS !== 'undefined' && PERSONS[pid]) || {};
+  if ((orig[field] || '') === (value || '')) {
+    delete personsChanges[pid][field];
+    if (!Object.keys(personsChanges[pid]).length) delete personsChanges[pid];
+  } else {
+    personsChanges[pid][field] = value;
+  }
+}
+function getPersonField(pid, field) {
+  const ch = personsChanges[pid];
+  if (ch && ch[field] !== undefined) return ch[field];
+  return ((typeof PERSONS !== 'undefined' && PERSONS[pid]) || {})[field];
+}
+function isPersonChanged(pid) {
+  return !!(personsChanges[pid] && Object.keys(personsChanges[pid]).length);
+}
 
 function setCandidatureField(cid, field, value) {
   if (!candidatureChanges[cid]) candidatureChanges[cid] = {};
@@ -974,8 +995,10 @@ function openProfile(id) {
     return a.c.election.localeCompare(b.c.election);
   });
 
-  const fullName = (p.p ? p.p + ' ' : '') + p.n;
-  const sexeBadge = p.s === 'F' ? '<span class="badge-sexe">♀</span>' : p.s === 'H' ? '<span class="badge-sexe">♂</span>' : '';
+  // Identité éditable : on lit live (= changes appliqués si présents)
+  const livePrenom = getPersonField(p.id, 'p') ?? p.p ?? '';
+  const liveNom    = getPersonField(p.id, 'n') ?? p.n ?? '';
+  const liveSexe   = getPersonField(p.id, 's') ?? p.s ?? '';
   const detail = document.querySelector('#profile-modal .profile-detail');
 
   // Phase 2 : timeline éditable. Chaque cellule = input qui modifie candidatureChanges.
@@ -1036,19 +1059,64 @@ function openProfile(id) {
       + '<td><input class="cell-inp" style="width:200px;font-size:.75rem" '
       +     'value="' + escapeAttr((t || []).join(', ')) + '" placeholder="ex: gauche modérée, écolo" '
       +     'oninput="setCandidatureFamilies(this.closest(\'tr\').dataset.cid,this);_markCandRow(this)"></td>'
+      + '<td>' + renderCandidatureColorCell(cid, c, pa, isBinome) + '</td>'
       + '</tr>';
+  }
+  // Cellule couleur de la candidature. Pour les binômes, on n'édite pas — la couleur
+  // est dérivée des partis individuels via colorOfCandidate (règle paritaire).
+  function renderCandidatureColorCell(cid, c, pa, isBinome) {
+    if (isBinome) {
+      return '<span style="color:#aaa;font-size:.7rem;font-style:italic" title="Dérivée des partis individuels (binome_partis)">—</span>';
+    }
+    const partiCol = (typeof getPartiColor === 'function' && getPartiColor(pa)) || '#cccccc';
+    const liveC = getCandidatureField(cid, 'c');
+    const candCol = liveC || partiCol;
+    const isSpecific = !!(liveC && liveC !== partiCol);
+    const hexUp = (candCol || '#cccccc').toUpperCase();
+    return '<div style="display:flex;gap:4px;align-items:center;">'
+         +   '<input type="checkbox"' + (isSpecific ? ' checked' : '') + ' '
+         +     'title="' + (isSpecific ? 'Couleur spécifique' : 'Hérite du parti') + '" '
+         +     'onchange="toggleCandidatureColor(this.closest(\'tr\').dataset.cid, this)">'
+         +   '<input class="cell-inp candi-hex" type="text" value="' + escapeAttr(hexUp) + '" maxlength="7"'
+         +     (!isSpecific ? ' disabled' : '') + ' '
+         +     'style="width:70px;font-family:monospace;font-size:.72rem;text-transform:uppercase" '
+         +     'oninput="syncCandidatureHex(this)">'
+         +   '<input class="candi-picker" type="color" value="' + escapeAttr(candCol) + '"'
+         +     (!isSpecific ? ' disabled' : '') + ' '
+         +     'oninput="syncCandidaturePicker(this)">'
+         + '</div>';
   }
 
   const nbChanges = events.filter(e => isCandidatureChanged(e.cid)).length;
   const saveLabel = nbChanges ? `Enregistrer (${nbChanges} modif)` : 'Aucune modification';
-  detail.innerHTML = '<h2>' + escapeHtml(fullName) + '</h2>'
-    + '<div class="sub-id">' + sexeBadge
+  const safePid = escapeAttr(p.id);
+  const personChangedCls = isPersonChanged(p.id) ? ' person-changed' : '';
+  // Identité éditable (PERSONS). Tout passe par setPersonField → personsChanges,
+  // exporté en fin de session sous PERSON_CORRECTIONS. Tout est en ligne, le
+  // person_id reste en code sous le titre.
+  detail.innerHTML = '<div class="profile-edit-id' + personChangedCls + '" style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap">'
+    +   '<input class="cell-inp" placeholder="Prénom" '
+    +     'style="font-size:.95rem;font-weight:600;width:140px" '
+    +     'value="' + escapeAttr(livePrenom) + '" '
+    +     'oninput="setPersonField(\'' + safePid + '\',\'p\',this.value);_markProfileHeader(this)">'
+    +   '<input class="cell-inp" placeholder="Nom" '
+    +     'style="font-size:1.05rem;font-weight:800;width:220px" '
+    +     'value="' + escapeAttr(liveNom) + '" '
+    +     'oninput="setPersonField(\'' + safePid + '\',\'n\',this.value);_markProfileHeader(this)">'
+    +   '<select class="cell-inp" style="font-size:.95rem;width:70px;font-weight:600" '
+    +     'onchange="setPersonField(\'' + safePid + '\',\'s\',this.value);_markProfileHeader(this);openProfile(\'' + safePid + '\')">'
+    +     '<option value=""'  + (liveSexe === ''  ? ' selected' : '') + '>—</option>'
+    +     '<option value="F"' + (liveSexe === 'F' ? ' selected' : '') + '>♀ F</option>'
+    +     '<option value="H"' + (liveSexe === 'H' ? ' selected' : '') + '>♂ H</option>'
+    +   '</select>'
+    + '</div>'
+    + '<div class="sub-id">'
     +   '<span>person_id : <code style="font-size:.78rem">' + escapeHtml(p.id) + '</code> · '
     +   events.length + ' candidature' + (events.length > 1 ? 's' : '') + '</span>'
     + '</div>'
     + (events.length === 0
         ? '<p style="color:#888;font-style:italic;padding:20px">Aucune candidature trouvée.</p>'
-        : '<p style="font-size:.78rem;color:#888;margin-bottom:5px">💡 Tu peux modifier <strong>parti</strong>, <strong>alliance</strong>, <strong>bk</strong>, <strong>familles</strong> directement dans le tableau. Les modifications sont retenues en mémoire jusqu\'à l\'export.</p>'
+        : '<p style="font-size:.78rem;color:#888;margin-bottom:5px">💡 Tu peux modifier <strong>identité</strong> (au-dessus), <strong>parti</strong>, <strong>alliance</strong>, <strong>bk</strong>, <strong>familles</strong>, <strong>couleur</strong> directement dans le tableau. Les modifications sont retenues en mémoire jusqu\'à l\'export.</p>'
           + '<table class="timeline"><thead><tr>'
           + '<th style="width:55px">Année</th>'
           + '<th>Élection</th>'
@@ -1057,6 +1125,7 @@ function openProfile(id) {
           + '<th style="width:55px">Bloc</th>'
           + '<th style="width:80px">bk ✏️</th>'
           + '<th>Familles ✏️</th>'
+          + '<th style="width:160px">Couleur ✏️</th>'
           + '</tr></thead><tbody>'
           + events.map(renderRow).join('')
           + '</tbody></table>')
@@ -1080,9 +1149,73 @@ function _markCandRow(input) {
   // Compteur global modif candidatures
   const counter = document.getElementById('prof-modif-count');
   if (counter) {
-    const n = Object.keys(candidatureChanges).length;
-    counter.textContent = n ? `📝 ${n} candidature(s) modifiée(s)` : '';
+    const nCand = Object.keys(candidatureChanges).length;
+    const nPers = Object.keys(personsChanges).length;
+    const parts = [];
+    if (nPers) parts.push(`👤 ${nPers} profil${nPers > 1 ? 's' : ''}`);
+    if (nCand) parts.push(`📝 ${nCand} candidature${nCand > 1 ? 's' : ''}`);
+    counter.textContent = parts.length ? parts.join(' · ') + ' modifié' + ((nPers + nCand) > 1 ? 's' : '') : '';
   }
+}
+// Surligne le header profil quand PERSONS modifiée + compteur.
+function _markProfileHeader(input) {
+  const wrap = input && input.closest ? input.closest('.profile-edit-id') : null;
+  if (wrap) {
+    // Trouver le pid via le bouton (data-attr) ou via l'ordre des inputs — plus simple,
+    // lire un attribut data sur le wrap ou parser le onchange du select.
+    // Ici on déduit du sélecteur du select sexe : son onchange contient setPersonField('<pid>'...).
+    // Plus robuste : poser data-pid sur le wrap au render. À faire au prochain refresh.
+    // Pour l'instant, on rafraîchit juste la classe via personsChanges courant.
+    const code = document.querySelector('#profile-modal .sub-id code');
+    if (code) {
+      const pid = code.textContent;
+      wrap.classList.toggle('person-changed', isPersonChanged(pid));
+    }
+  }
+  // Compteur (réutilise la logique de _markCandRow)
+  _markCandRow(input);
+}
+// Helpers couleur candidature (override c.c) — équivalents de toggleCandColor pour profil.
+function toggleCandidatureColor(cid, checkbox) {
+  const tr = checkbox.closest('tr');
+  const hexInp = tr.querySelector('.candi-hex');
+  const picker = tr.querySelector('.candi-picker');
+  if (checkbox.checked) {
+    // Activer override : prendre la valeur actuelle (hex ou picker) ou couleur du parti
+    const pa = getCandidatureField(cid, 'pa') || ((CANDIDATURES[cid] && CANDIDATURES[cid].pa) || '');
+    const partiCol = (typeof getPartiColor === 'function' && getPartiColor(pa)) || '#cccccc';
+    const cur = (hexInp && hexInp.value) || partiCol;
+    hexInp.disabled = false;
+    picker.disabled = false;
+    hexInp.value = cur.toUpperCase();
+    picker.value = cur;
+    setCandidatureField(cid, 'c', cur);
+  } else {
+    hexInp.disabled = true;
+    picker.disabled = true;
+    setCandidatureField(cid, 'c', '');  // '' = hérite du parti
+  }
+  _markCandRow(checkbox);
+}
+function syncCandidatureHex(input) {
+  let v = (input.value || '').trim();
+  if (!v.startsWith('#')) v = '#' + v;
+  if (!/^#[0-9a-f]{6}$/i.test(v)) return;
+  v = v.toUpperCase();
+  input.value = v;
+  const tr = input.closest('tr');
+  const picker = tr.querySelector('.candi-picker');
+  if (picker) picker.value = v;
+  setCandidatureField(tr.dataset.cid, 'c', v);
+  _markCandRow(input);
+}
+function syncCandidaturePicker(input) {
+  const v = (input.value || '').toUpperCase();
+  const tr = input.closest('tr');
+  const hex = tr.querySelector('.candi-hex');
+  if (hex) hex.value = v;
+  setCandidatureField(tr.dataset.cid, 'c', v);
+  _markCandRow(input);
 }
 
 // ─── Tour-specific (M4.4) — overrides par tour pour les candidatures à 2 tours.
@@ -1528,6 +1661,8 @@ function showExport() {
     candidatureChangesOut[cid] = out;
   });
   const nbCandidatures = Object.keys(candidatureChangesOut).length;
+  // Modifications PERSONS (identité : prénom, nom, sexe) — édition via fiche profil.
+  const nbPersons = Object.keys(personsChanges).length;
 
   let txt = '';
   if (nbBk) {
@@ -1548,12 +1683,17 @@ function showExport() {
     txt += '// });\n';
     txt += 'const CANDIDATURE_CORRECTIONS = ' + JSON.stringify(candidatureChangesOut, null, 2) + ';\n\n';
   }
+  if (nbPersons) {
+    txt += '// Corrections PERSONS (identité : prénom, nom, sexe) — ' + nbPersons + ' profil(s) modifié(s)\n';
+    txt += '// Pour appliquer : Object.entries(PERSON_CORRECTIONS).forEach(([pid,v]) => Object.assign(PERSONS[pid] = PERSONS[pid] || {}, v));\n';
+    txt += 'const PERSON_CORRECTIONS = ' + JSON.stringify(personsChanges, null, 2) + ';\n\n';
+  }
   if (nbPartiName) {
     txt += '// Corrections noms de partis — ' + nbPartiName + ' modification(s)' + (newPartis.size ? ' (dont ' + newPartis.size + ' nouveau(x))' : '') + '\n';
     txt += '// Pour appliquer : Object.assign(PARTI_NAMES, PARTI_CORRECTIONS);\n';
     txt += 'const PARTI_CORRECTIONS = ' + JSON.stringify(changesPartiName, null, 2) + ';\n\n';
   }
-  if (!nbBk && !nbCand && !nbCandidatures && !nbPartiName) txt = '// Aucune modification à exporter.\n';
+  if (!nbBk && !nbCand && !nbCandidatures && !nbPersons && !nbPartiName) txt = '// Aucune modification à exporter.\n';
 
   document.getElementById('export-text').value = txt;
   document.getElementById('export-area').classList.add('show');
