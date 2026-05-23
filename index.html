@@ -1151,6 +1151,12 @@
     const from = (typeof startVal === 'number') ? startVal : 0;
     const finalStr = format ? target.toLocaleString('fr-FR') : String(target);
     ghostEl.textContent = finalStr;
+    // A11y : respect prefers-reduced-motion → on saute le tween, affichage direct.
+    const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) {
+      activeEl.textContent = finalStr;
+      return;
+    }
     const t0 = performance.now();
     function step(t) {
       const p = Math.min((t - t0) / dur, 1);

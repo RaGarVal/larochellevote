@@ -162,6 +162,55 @@ function pickTextColorForBg(bg) {
 }
 
 // ───────────────────────────────────────────────────────────────
+//  A11y — Focus trap réutilisable pour modals (WCAG 2.4.3)
+//  Usage :
+//    const trap = createFocusTrap(modalEl);
+//    trap.activate();   // au open du modal
+//    trap.deactivate(); // au close
+//  Comportement : Tab/Shift+Tab boucle dans les focusables visibles du modal,
+//  focus initial sur le 1er focusable à l'activation, restauration du focus
+//  précédent à la désactivation.
+// ───────────────────────────────────────────────────────────────
+function createFocusTrap(modalEl) {
+  let prevFocus = null;
+  function getFocusables() {
+    if (!modalEl) return [];
+    const sel = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    return [...modalEl.querySelectorAll(sel)].filter(el => el.offsetParent !== null);
+  }
+  function onKeydown(e) {
+    if (e.key !== 'Tab') return;
+    const focusables = getFocusables();
+    if (!focusables.length) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    const active = document.activeElement;
+    if (e.shiftKey && active === first) {
+      e.preventDefault(); last.focus();
+    } else if (!e.shiftKey && active === last) {
+      e.preventDefault(); first.focus();
+    }
+  }
+  return {
+    activate() {
+      prevFocus = document.activeElement;
+      document.addEventListener('keydown', onKeydown, true);
+      setTimeout(() => {
+        const focusables = getFocusables();
+        if (focusables.length) focusables[0].focus();
+      }, 0);
+    },
+    deactivate() {
+      document.removeEventListener('keydown', onKeydown, true);
+      if (prevFocus && typeof prevFocus.focus === 'function') {
+        try { prevFocus.focus(); } catch (_) {}
+      }
+      prevFocus = null;
+    },
+  };
+}
+
+// ───────────────────────────────────────────────────────────────
 //  RÉFÉRENDUMS — détection
 //  Les référendums (Oui/Non) sont stockés dans ELECTIONS comme les autres
 //  scrutins, mais traités différemment côté UI :

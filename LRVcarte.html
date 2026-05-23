@@ -3382,6 +3382,13 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
   // Bloc perdant : fond blanc, score coloré, ligne colorée côté VS
   // pa = acronyme du parti (pour compact) ; parti = nom complet (pour full)
   function blockWinner(col, name, pct, voix, prenom, nom, nomFull, parti, pa, allie, align, c) {
+    // A11y : couleur de texte adaptée au contraste du fond. Sur fond clair (orange
+    // MoDem, jaune CNI, vert EELV), texte noir au lieu de blanc. Pour les nuances
+    // d'opacité (voix/parti/allie), on bascule entre rgba blanc et rgba noir.
+    const txtCol = (typeof pickTextColorForBg === 'function') ? pickTextColorForBg(col) : '#fff';
+    const _tc = txtCol === '#000'
+      ? (a) => 'rgba(0,0,0,' + a + ')'
+      : (a) => 'rgba(255,255,255,' + a + ')';
     const arrow = arrowFor(name, c, true);
     // Mobile (full) ET binôme (full) : la flèche meilleur/pire est déplacée à côté
     // du score, côté extérieur. Côté extérieur = opposé du VS : align='right' (bloc
@@ -3433,20 +3440,20 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
     // même si un des noms est plus long que l'autre. Le débordement est clippé.
     return (c
       ? '<div style="flex:1 1 0;min-width:0;overflow:hidden;background:'+col+';padding:10px 12px;text-align:'+align+'">'
-        + '<div style="font-size:2.2rem;font-weight:900;color:#fff;line-height:1">'+scoreHtml+'</div>'
+        + '<div style="font-size:2.2rem;font-weight:900;color:'+txtCol+';line-height:1">'+scoreHtml+'</div>'
         + diffLine(name, pct, true, align, c)
-        + '<div style="font-size:0.82rem;color:rgba(255,255,255,0.75);margin-top:3px">'+voix.toLocaleString('fr-FR')+' voix</div>'
-        + '<div style="font-size:'+nomSizeC+';font-weight:700;color:#fff;margin-top:8px">'+(hasBr ? nomInner : nomHtml)+'</div>'
-        + (pa ? '<div style="font-size:0.68rem;color:rgba(255,255,255,0.7);margin-top:3px">'+pa+'</div>' : '')
+        + '<div style="font-size:0.82rem;color:'+_tc(0.75)+';margin-top:3px">'+voix.toLocaleString('fr-FR')+' voix</div>'
+        + '<div style="font-size:'+nomSizeC+';font-weight:700;color:'+txtCol+';margin-top:8px">'+(hasBr ? nomInner : nomHtml)+'</div>'
+        + (pa ? '<div style="font-size:0.68rem;color:'+_tc(0.7)+';margin-top:3px">'+pa+'</div>' : '')
         + '</div>'
       : '<div style="flex:1 1 0;min-width:0;overflow:hidden;background:'+col+';padding:'+dPad+';text-align:'+align+'">'
-        + '<div style="font-size:'+dScoreSize+';font-weight:900;color:#fff;line-height:1">'+scoreHtml+'</div>'
+        + '<div style="font-size:'+dScoreSize+';font-weight:900;color:'+txtCol+';line-height:1">'+scoreHtml+'</div>'
         + diffLine(name, pct, true, align, c)
-        + '<div style="font-size:'+dVoixSize+';color:rgba(255,255,255,0.75);margin-top:'+dGapVoix+'">'+voix.toLocaleString('fr-FR')+' voix</div>'
-        + (prenom ? '<div style="font-size:'+dPrenomSize+';color:rgba(255,255,255,0.85);margin-top:'+dGapPrenom+';line-height:1">'+prenom+'</div>' : '')
-        + '<div'+nomAttrs+' style="font-size:'+nomSize+';font-weight:700;color:#fff;margin-top:'+(isRefDuel?dGapPrenom:'2px')+';line-height:1">'+nomInner+'</div>'
-        + (partiToShow ? '<div style="font-size:'+dPartiSize+';color:rgba(255,255,255,0.7);margin-top:'+dGapParti+'">'+partiToShow+'</div>' : '')
-        + (allie ? '<div style="font-size:'+dAllieSize+';color:rgba(255,255,255,0.55);margin-top:2px">'+allie+'</div>' : '')
+        + '<div style="font-size:'+dVoixSize+';color:'+_tc(0.75)+';margin-top:'+dGapVoix+'">'+voix.toLocaleString('fr-FR')+' voix</div>'
+        + (prenom ? '<div style="font-size:'+dPrenomSize+';color:'+_tc(0.85)+';margin-top:'+dGapPrenom+';line-height:1">'+prenom+'</div>' : '')
+        + '<div'+nomAttrs+' style="font-size:'+nomSize+';font-weight:700;color:'+txtCol+';margin-top:'+(isRefDuel?dGapPrenom:'2px')+';line-height:1">'+nomInner+'</div>'
+        + (partiToShow ? '<div style="font-size:'+dPartiSize+';color:'+_tc(0.7)+';margin-top:'+dGapParti+'">'+partiToShow+'</div>' : '')
+        + (allie ? '<div style="font-size:'+dAllieSize+';color:'+_tc(0.55)+';margin-top:2px">'+allie+'</div>' : '')
         + '</div>'
     );
   }
@@ -5592,44 +5599,16 @@ function setOverlayDisplay(v) {
 }
 
 // ── A11y : focus trap pour le modal #overlay ─────────────────────────────
-// Mémorise l'élément focusé avant ouverture pour le restaurer à la fermeture.
-// Pendant que le modal est ouvert : Tab depuis le dernier focusable → focus
-// premier ; Shift+Tab depuis le premier → focus dernier. Cohérent avec WCAG 2.4.3.
-let _overlayPrevFocus = null;
-function _getFocusableInOverlay() {
-  const ov = document.getElementById('overlay');
-  if (!ov) return [];
-  const sel = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
-  return [...ov.querySelectorAll(sel)].filter(el => el.offsetParent !== null);
-}
-function _overlayKeydownTrap(e) {
-  if (e.key !== 'Tab') return;
-  const focusables = _getFocusableInOverlay();
-  if (!focusables.length) return;
-  const first = focusables[0];
-  const last  = focusables[focusables.length - 1];
-  const active = document.activeElement;
-  if (e.shiftKey && active === first) {
-    e.preventDefault(); last.focus();
-  } else if (!e.shiftKey && active === last) {
-    e.preventDefault(); first.focus();
-  }
-}
+// Utilise createFocusTrap (shared.js) — helper réutilisable WCAG 2.4.3.
+let _overlayTrap = null;
 function _enableOverlayFocusTrap() {
-  _overlayPrevFocus = document.activeElement;
-  document.addEventListener('keydown', _overlayKeydownTrap, true);
-  // Focus initial sur le 1er élément focusable du modal (= bouton Retour usuellement)
-  setTimeout(() => {
-    const focusables = _getFocusableInOverlay();
-    if (focusables.length) focusables[0].focus();
-  }, 0);
+  if (!_overlayTrap && typeof createFocusTrap === 'function') {
+    _overlayTrap = createFocusTrap(document.getElementById('overlay'));
+  }
+  if (_overlayTrap) _overlayTrap.activate();
 }
 function _disableOverlayFocusTrap() {
-  document.removeEventListener('keydown', _overlayKeydownTrap, true);
-  if (_overlayPrevFocus && typeof _overlayPrevFocus.focus === 'function') {
-    try { _overlayPrevFocus.focus(); } catch (_) {}
-  }
-  _overlayPrevFocus = null;
+  if (_overlayTrap) _overlayTrap.deactivate();
 }
 // Met à jour l'état (activé/désactivé) des boutons de mode selon le scrutin courant.
 // Sur un référendum, le mode "Blocs" est désactivé (pas de familles politiques pertinentes).
@@ -8381,15 +8360,20 @@ function randomDiscover() {
     cursor = (cursor + d + results.length) % results.length;
     render();
   }
+  let _cmdkTrap = null;
   function openOverlayUI(){
     ensureUI();
     overlayEl.style.display = 'flex';
     inputEl.value = '';
     runSearch();
     setTimeout(() => inputEl.focus(), 0);
+    // A11y : focus trap (cmdk a son propre input focus, le trap garde Tab dedans).
+    if (!_cmdkTrap && typeof createFocusTrap === 'function') _cmdkTrap = createFocusTrap(overlayEl);
+    if (_cmdkTrap) _cmdkTrap.activate();
   }
   function closeOverlayUI(){
     if (overlayEl) overlayEl.style.display = 'none';
+    if (_cmdkTrap) _cmdkTrap.deactivate();
   }
   // Raccourci global Cmd/Ctrl + K
   document.addEventListener('keydown', e => {
@@ -8503,6 +8487,9 @@ function randomDiscover() {
   // Cheatsheet overlay
   const cs = document.createElement('div');
   cs.id = 'shortcuts-cheat';
+  cs.setAttribute('role', 'dialog');
+  cs.setAttribute('aria-modal', 'true');
+  cs.setAttribute('aria-label', 'Raccourcis clavier');
   cs.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:10000;font-family:Space Grotesk,system-ui,sans-serif';
   cs.innerHTML = '<div style="background:#fff;border-radius:10px;padding:24px 28px;max-width:420px;box-shadow:0 12px 40px rgba(0,0,0,.25)">'
     + '<h3 style="margin:0 0 14px;font-size:1.1rem">Raccourcis clavier</h3>'
@@ -8522,8 +8509,16 @@ function randomDiscover() {
   st.textContent = '#shortcuts-cheat kbd{display:inline-block;background:#f5f5f5;border:1px solid #ddd;border-radius:4px;padding:2px 7px;font-family:Space Grotesk,system-ui,sans-serif;font-size:.8rem;color:#333;font-weight:600}';
   document.head.appendChild(st);
 
+  let _shortcutsTrap = null;
   window.toggleShortcutsCheat = () => {
-    cs.style.display = cs.style.display === 'flex' ? 'none' : 'flex';
+    const willOpen = cs.style.display !== 'flex';
+    cs.style.display = willOpen ? 'flex' : 'none';
+    // A11y : focus trap actif quand le modal s'ouvre.
+    if (!_shortcutsTrap && typeof createFocusTrap === 'function') _shortcutsTrap = createFocusTrap(cs);
+    if (_shortcutsTrap) {
+      if (willOpen) _shortcutsTrap.activate();
+      else _shortcutsTrap.deactivate();
+    }
   };
 
   // État initial des boutons chevrons (setupShortcuts s'exécute après updateTopbar)
