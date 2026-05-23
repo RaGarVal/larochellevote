@@ -1851,12 +1851,21 @@ function showExport() {
   let txt = '';
   if (nbBk) {
     txt += '// Corrections bk — ' + nbBk + ' modification(s)\n';
+    txt += '// Pour appliquer (propage à CAND_DATA + CANDIDATURES, recalcule b via BLOC_LEGACY) :\n';
+    txt += '//   Object.entries(BK_CORRECTIONS).forEach(([k,bk]) => {\n';
+    txt += '//     const b = (typeof BLOC_LEGACY !== "undefined" && BLOC_LEGACY[bk]) || "?";\n';
+    txt += '//     [CAND_DATA, CANDIDATURES].forEach(d => { if (d[k]) Object.assign(d[k], {bk, b}); });\n';
+    txt += '//   });\n';
     txt += 'const BK_CORRECTIONS = ' + JSON.stringify(bkOnly, null, 2) + ';\n\n';
   }
   if (nbCand) {
     txt += '// Corrections candidats — ' + nbCand + ' candidat(s)';
     if (nbPartiColor) txt += ' (couleur de parti propagée)';
-    txt += '\n// Pour appliquer : Object.entries(CAND_CORRECTIONS).forEach(([k,v]) => Object.assign(CAND_DATA[k] = CAND_DATA[k] || {}, v));\n';
+    txt += '\n// Pour appliquer (propage à CAND_DATA + CANDIDATURES, clés identiques post-M5) :\n';
+    txt += '//   Object.entries(CAND_CORRECTIONS).forEach(([k,v]) => {\n';
+    txt += '//     Object.assign(CAND_DATA[k] = CAND_DATA[k] || {}, v);\n';
+    txt += '//     if (typeof CANDIDATURES !== "undefined" && CANDIDATURES[k]) Object.assign(CANDIDATURES[k], v);\n';
+    txt += '//   });\n';
     txt += 'const CAND_CORRECTIONS = ' + JSON.stringify(candOther, null, 2) + ';\n\n';
   }
   if (nbCandidatures) {
