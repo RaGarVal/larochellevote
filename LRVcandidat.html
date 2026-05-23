@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Candidat — La Rochelle Vote</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Notice biographique et historique électoral d'un candidat à La Rochelle.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="manifest" href="manifest.json">
+<style>
+  :root {
+    --bg-page: #F7F3EE;
+    --bg-card: #ffffff;
+    --text-main: #222;
+    --text-meta: #666;
+    --text-muted: #888;
+    --border: #e5e0d8;
+    --accent: #1a73e8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0;
+    background: var(--bg-page);
+    color: var(--text-main);
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* Topbar simple : logo + navigation. Reprend le style sobre des autres pages. */
+  #topbar {
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+  #topbar .brand {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: #222;
+    text-decoration: none;
+  }
+  #topbar .brand .b-mark { font-weight: 800; color: var(--accent); }
+  #topbar nav a {
+    color: var(--text-meta);
+    font-weight: 500;
+    font-size: 0.92rem;
+    margin-right: 14px;
+  }
+  #topbar nav a.active { color: #222; font-weight: 700; }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px 20px 60px;
+  }
+
+  /* HEADER candidat — identité + période + partis */
+  .candidat-header {
+    background: var(--bg-card);
+    border-radius: 10px;
+    padding: 22px 26px;
+    margin-bottom: 22px;
+    display: flex;
+    gap: 22px;
+    align-items: center;
+    border-left: 6px solid var(--accent);
+  }
+  .candidat-header .avatar {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #888, #555);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    user-select: none;
+  }
+  .candidat-header .ident { flex: 1; }
+  .candidat-header h1 {
+    margin: 0 0 4px;
+    font-size: 1.9rem;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+  .candidat-header h1 .sexe {
+    font-size: 1.1rem;
+    color: var(--text-meta);
+    margin-left: 6px;
+    font-weight: 400;
+  }
+  .candidat-header .meta {
+    color: var(--text-meta);
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+  }
+  .partis-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .parti-chip {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: #fff;
+    background: #888;
+  }
+  .parti-chip.no-color {
+    background: #fff;
+    border: 1px dashed #aaa;
+    color: #888;
+  }
+
+  /* Layout 2 colonnes desktop */
+  .grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 22px;
+  }
+  @media (max-width: 780px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+  .card {
+    background: var(--bg-card);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-bottom: 22px;
+  }
+  .card h2 {
+    margin: 0 0 12px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text-meta);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .card.bio {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 0.98rem;
+    line-height: 1.65;
+    color: #333;
+  }
+  .card.bio p { margin: 0 0 0.7em; }
+  .card.bio strong { font-weight: 700; }
+  .card.bio em { font-style: italic; }
+
+  /* Mandats : liste chronologique avec dates en gros */
+  .mandats-list { margin: 0; padding: 0; list-style: none; }
+  .mandat-item {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    padding: 9px 0;
+    border-bottom: 1px dashed #eee;
+  }
+  .mandat-item:last-child { border-bottom: none; }
+  .mandat-period {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 0.82rem;
+    color: #555;
+    flex-shrink: 0;
+    min-width: 95px;
+    text-align: right;
+  }
+  .mandat-fonction { font-weight: 600; color: #222; }
+  .mandat-circo { color: var(--text-meta); font-size: 0.86rem; margin-left: 6px; }
+  .mandat-en-cours {
+    display: inline-block;
+    background: #d1f1d6;
+    color: #1a7a4a;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    margin-left: 6px;
+  }
+
+  /* Timeline candidatures (cards cliquables) */
+  .candidatures-list { display: flex; flex-direction: column; gap: 10px; }
+  .candidature-card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 12px 16px;
+    border-left: 4px solid #888;
+    cursor: pointer;
+    transition: background 0.15s;
+    display: grid;
+    grid-template-columns: 60px 1fr auto;
+    gap: 14px;
+    align-items: center;
+    text-decoration: none;
+    color: var(--text-main);
+  }
+  .candidature-card:hover { background: #faf7f2; text-decoration: none; }
+  .candidature-year {
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: #444;
+    text-align: center;
+  }
+  .candidature-body { min-width: 0; }
+  .candidature-elec {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 2px;
+  }
+  .candidature-detail {
+    color: var(--text-meta);
+    font-size: 0.82rem;
+  }
+  .candidature-score {
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .candidature-pct {
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: #222;
+  }
+  .candidature-rank {
+    color: var(--text-meta);
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .candidature-rank.win {
+    color: #1a7a4a;
+    background: #d1f1d6;
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  /* État "pas de candidat trouvé" */
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-meta);
+  }
+  .empty h1 { font-size: 1.2rem; color: #444; }
+  .empty p { margin: 8px 0; }
+  .empty a { font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <a href="index.html" class="brand">LR<span class="b-mark">Vote</span></a>
+  <nav>
+    <a href="LRVcarte.html">La carte</a>
+    <a href="LRVanalyse.html">L'analyse</a>
+  </nav>
+</div>
+
+<main id="candidat-main">
+  <div id="content"><p class="empty">Chargement…</p></div>
+</main>
+
+<script src="donnees.js"></script>
+<script src="shared.js"></script>
+<script>
+// ───── Helpers ──────────────────────────────────────────────────────────
+function escapeHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function escapeAttr(s) { return escapeHtml(s); }
+
+// Markdown minimaliste : gras, italique, liens, paragraphes.
+function renderMarkdown(md) {
+  if (!md) return '';
+  let h = escapeHtml(md);
+  // Liens [text](url)
+  h = h.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  // Gras **...**
+  h = h.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  // Italique *...*
+  h = h.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  // Paragraphes (séparés par ligne vide)
+  const paras = h.split(/\n\s*\n/).map(p => '<p>' + p.replace(/\n/g, '<br>') + '</p>').join('');
+  return paras;
+}
+
+// Avatar initiales (fallback quand pas de photo). Prend les majuscules du prénom et du nom.
+function initialsOf(p, n) {
+  const pi = (p || '').trim()[0] || '';
+  const ni = (n || '').trim()[0] || '';
+  return (pi + ni).toUpperCase() || '?';
+}
+
+// Couleur d'avatar dérivée du parti principal (couleur la plus utilisée).
+function dominantPartiColor(candidatures) {
+  const counts = {};
+  candidatures.forEach(c => {
+    const pa = c.pa;
+    if (pa) counts[pa] = (counts[pa] || 0) + 1;
+  });
+  const top = Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];
+  if (!top) return null;
+  // Chercher la couleur du parti via une candidature qui l'a
+  for (const c of candidatures) {
+    if (c.pa === top[0] && c.c) return c.c;
+  }
+  return null;
+}
+
+// ───── Lookup candidatures d'un person ──────────────────────────────────
+// Retourne toutes les candidatures (individuelles + binômes où ce pid est membre),
+// avec score à La Rochelle calculé depuis les voix entières.
+function getCandidaturesOfPerson(pid) {
+  if (typeof CANDIDATURES === 'undefined') return [];
+  const result = [];
+  Object.entries(CANDIDATURES).forEach(([cid, c]) => {
+    const isIndiv = c.person === pid;
+    const isBinome = Array.isArray(c.binome) && c.binome.includes(pid);
+    if (!isIndiv && !isBinome) return;
+    result.push({ cid, c, isBinome });
+  });
+  return result;
+}
+
+// Calcule le score total d'un candidat à La Rochelle pour une élection.
+// Source de vérité = voix entières (cf. CLAUDE.md). On somme bd._voix[cid] sur tous
+// les bureaux où la candidature apparaît, et on divise par la somme des exprimés
+// des MÊMES bureaux.
+function computeCandidatureScore(cid, c) {
+  const el = ELECTIONS[c.election];
+  if (!el || !el.sheets) return null;
+  // Pour les T2 : si T2 existe, on retourne 2 scores (T1 et T2)
+  const tours = {};
+  for (const tour of ['T1', 'T2', 'TU']) {
+    const sh = el.sheets[tour];
+    if (!sh) continue;
+    let totV = 0, totE = 0, rank = null, nbCand = 0;
+    let bureauWithCand = 0;
+    Object.values(sh).forEach(bd => {
+      if (!bd || !bd.c) return;
+      if (!Object.prototype.hasOwnProperty.call(bd.c, cid)) return;
+      const v = (bd._voix && bd._voix[cid] != null) ? bd._voix[cid] : Math.round((bd.c[cid] || 0) * (bd.e || 0) / 100);
+      totV += v;
+      totE += bd.e || 0;
+      bureauWithCand++;
+    });
+    if (totE === 0) continue;
+    // Rang : on calcule le total ville de chaque candidat pour ce tour, puis on classe.
+    const allTotals = {};
+    Object.values(sh).forEach(bd => {
+      if (!bd || !bd.c) return;
+      Object.keys(bd.c).forEach(k => {
+        const v = (bd._voix && bd._voix[k] != null) ? bd._voix[k] : 0;
+        allTotals[k] = (allTotals[k] || 0) + v;
+      });
+    });
+    const sorted = Object.entries(allTotals).sort((a,b)=>b[1]-a[1]);
+    rank = sorted.findIndex(([k]) => k === cid) + 1;
+    nbCand = sorted.length;
+    tours[tour] = { totV, totE, pct: totV / totE * 100, rank, nbCand, bureauWithCand };
+  }
+  return tours;
+}
+
+// Année extraite du label d'élection
+function yearOfElection(label) {
+  const m = (label || '').match(/(\d{4})/);
+  return m ? parseInt(m[1]) : 0;
+}
+
+// Statut affichage : élu / qualifié T2 / éliminé
+function statusOfCandidature(cid, c, scores) {
+  const el = ELECTIONS[c.election];
+  if (!el || !scores) return null;
+  // Élu si le candidat est winner dans une majorité de bureaux du tour final
+  const finalTour = scores.T2 ? 'T2' : (scores.TU ? 'TU' : 'T1');
+  const sh = el.sheets[finalTour];
+  if (!sh) return null;
+  let wins = 0, total = 0;
+  Object.values(sh).forEach(bd => {
+    if (!bd || !bd.c || !Object.prototype.hasOwnProperty.call(bd.c, cid)) return;
+    total++;
+    if (bd.w === cid) wins++;
+  });
+  if (total === 0) return null;
+  const sc = scores[finalTour];
+  // "Élu" = arrivé 1er dans la majorité des bureaux ET premier au total ville (rank=1)
+  if (sc.rank === 1 && wins >= total / 2) return 'win';
+  if (sc.rank === 1) return 'first';
+  if (scores.T2 && !scores.T2.bureauWithCand && sc.rank > 2) return 'eliminated';
+  return null;
+}
+
+// ───── Render principal ─────────────────────────────────────────────────
+function render() {
+  const params = new URLSearchParams(location.hash.replace(/^#/, ''));
+  const pid = params.get('id');
+  const root = document.getElementById('content');
+
+  if (!pid || typeof PERSONS === 'undefined' || !PERSONS[pid]) {
+    root.innerHTML = '<div class="empty">'
+      + '<h1>Candidat introuvable</h1>'
+      + '<p>Identifiant attendu dans l\'URL : <code>#id=&lt;person_id&gt;</code></p>'
+      + '<p><a href="LRVcarte.html">Retour à la carte</a></p>'
+      + '</div>';
+    document.title = 'Candidat introuvable — La Rochelle Vote';
+    return;
+  }
+
+  const p = PERSONS[pid];
+  const cands = getCandidaturesOfPerson(pid);
+  const fullName = ((p.p || '') + ' ' + (p.n || '')).trim() || pid;
+  document.title = fullName + ' — La Rochelle Vote';
+
+  // Période d'activité
+  const years = cands.map(({c}) => yearOfElection(c.election)).filter(y => y > 0);
+  const yMin = years.length ? Math.min(...years) : null;
+  const yMax = years.length ? Math.max(...years) : null;
+  const period = yMin
+    ? (yMin === yMax ? String(yMin) : yMin + ' → ' + yMax)
+    : '—';
+
+  // Partis distincts (chronologique)
+  const partisChrono = [];
+  cands.slice().sort((a,b) => yearOfElection(a.c.election) - yearOfElection(b.c.election))
+    .forEach(({c}) => {
+      const pa = c.pa;
+      if (pa && !partisChrono.includes(pa)) partisChrono.push(pa);
+    });
+  const partisHtml = partisChrono.map(pa => {
+    const col = (PARTI_NAMES[pa] !== undefined) ? null : null;
+    // Trouver la couleur du parti dans une candidature
+    const candWithCol = cands.find(({c}) => c.pa === pa && c.c);
+    const bg = (candWithCol && candWithCol.c.c) || '#888';
+    return '<span class="parti-chip" style="background:' + bg + '" title="' + escapeAttr(PARTI_NAMES[pa] || pa) + '">' + escapeHtml(pa) + '</span>';
+  }).join('');
+
+  // Avatar couleur dominante
+  const avatarColor = dominantPartiColor(cands.map(({c}) => c)) || '#888';
+
+  // Sexe icône
+  const sexeIcon = p.s === 'F' ? '♀' : p.s === 'H' ? '♂' : '';
+
+  // ─── Bio ───
+  const bioHtml = p.bio
+    ? '<section class="card bio"><h2>Notice biographique</h2>' + renderMarkdown(p.bio) + '</section>'
+    : '';
+
+  // ─── Mandats ───
+  let mandatsHtml = '';
+  if (Array.isArray(p.mandats) && p.mandats.length) {
+    // Tri chronologique décroissant (le plus récent en haut)
+    const sorted = p.mandats.slice().sort((a, b) => {
+      const ya = a.de || 0, yb = b.de || 0;
+      if (yb !== ya) return yb - ya;
+      // À égalité, le plus long en premier
+      return ((b.a || 9999) - yb) - ((a.a || 9999) - ya);
+    });
+    const items = sorted.map(m => {
+      const period = m.a
+        ? (m.de === m.a ? String(m.de) : m.de + '–' + m.a)
+        : (m.de + ' →');
+      const enCours = !m.a ? '<span class="mandat-en-cours">en cours</span>' : '';
+      const circo = m.circo ? '<span class="mandat-circo">· ' + escapeHtml(m.circo) + '</span>' : '';
+      return '<li class="mandat-item">'
+        + '<span class="mandat-period">' + escapeHtml(period) + '</span>'
+        + '<span><span class="mandat-fonction">' + escapeHtml(m.fonction || '?') + '</span>'
+        + circo + enCours + '</span>'
+        + '</li>';
+    }).join('');
+    mandatsHtml = '<section class="card"><h2>Mandats</h2><ul class="mandats-list">' + items + '</ul></section>';
+  }
+
+  // ─── Timeline candidatures ───
+  const candsSorted = cands.slice().sort((a,b) => yearOfElection(b.c.election) - yearOfElection(a.c.election));
+  const candItems = candsSorted.map(({cid, c, isBinome}) => {
+    const yr = yearOfElection(c.election);
+    const scores = computeCandidatureScore(cid, c);
+    const finalScore = scores && (scores.T2 || scores.TU || scores.T1);
+    const status = scores ? statusOfCandidature(cid, c, scores) : null;
+    const statusBadge = status === 'win'
+      ? '<span class="candidature-rank win">★ Élu</span>'
+      : (finalScore ? '<span class="candidature-rank">rang ' + finalScore.rank + '/' + finalScore.nbCand + '</span>' : '');
+    const pct = finalScore ? finalScore.pct.toFixed(1) + ' %' : '—';
+    const voixTotal = finalScore ? finalScore.totV.toLocaleString('fr-FR') + ' voix' : '';
+    let detail = '';
+    if (isBinome) {
+      const other = c.binome.find(x => x !== pid);
+      const op = PERSONS[other] || {};
+      detail = 'Binôme avec ' + escapeHtml(((op.p || '') + ' ' + (op.n || '')).trim() || other);
+    } else if (c.al) {
+      detail = 'Alliance : ' + escapeHtml(c.al);
+    }
+    const pa = c.pa ? '<span style="font-family:monospace;font-weight:700;color:#666;font-size:0.78rem">' + escapeHtml(c.pa) + '</span>' : '';
+    const colorBorder = c.c || '#888';
+    return '<a class="candidature-card" style="border-left-color:' + escapeAttr(colorBorder) + '" href="LRVcarte.html#election=' + encodeURIComponent(c.election) + '&candidat=' + encodeURIComponent(cid) + '">'
+      + '<div class="candidature-year">' + yr + '</div>'
+      + '<div class="candidature-body">'
+      +   '<div class="candidature-elec">' + escapeHtml(c.election) + ' ' + pa + '</div>'
+      +   '<div class="candidature-detail">' + (detail || voixTotal) + '</div>'
+      + '</div>'
+      + '<div class="candidature-score">'
+      +   '<div class="candidature-pct">' + pct + '</div>'
+      +   statusBadge
+      + '</div>'
+      + '</a>';
+  }).join('');
+  const candsHtml = '<section class="card">'
+    + '<h2>Candidatures à La Rochelle (' + cands.length + ')</h2>'
+    + (cands.length ? '<div class="candidatures-list">' + candItems + '</div>' : '<p style="color:var(--text-muted)">Aucune candidature recensée à La Rochelle.</p>')
+    + '</section>';
+
+  // ─── Compose final ───
+  const header = '<div class="candidat-header" style="border-left-color:' + escapeAttr(avatarColor) + '">'
+    + '<div class="avatar" style="background:' + escapeAttr(avatarColor) + '">' + initialsOf(p.p, p.n) + '</div>'
+    + '<div class="ident">'
+    +   '<h1>' + escapeHtml(fullName) + (sexeIcon ? '<span class="sexe">' + sexeIcon + '</span>' : '') + '</h1>'
+    +   '<div class="meta">' + period + ' · ' + cands.length + ' candidature' + (cands.length > 1 ? 's' : '') + ' à La Rochelle</div>'
+    +   '<div class="partis-chips">' + partisHtml + '</div>'
+    + '</div>'
+    + '</div>';
+
+  // Layout : header full-width, puis 2 colonnes (gauche = candidatures, droite = bio + mandats)
+  root.innerHTML = header
+    + '<div class="grid">'
+    +   '<div class="col-left">' + candsHtml + '</div>'
+    +   '<div class="col-right">' + bioHtml + mandatsHtml + '</div>'
+    + '</div>';
+}
+
+window.addEventListener('hashchange', render);
+render();
+</script>
+</body>
+</html>
