@@ -253,3 +253,36 @@ const REDECOUPAGES = {
     });
   });
 })();
+
+// ─── Dérivation de pa pour les binômes au chargement ─────────────────────
+// Décision (mai 2026) : pa du binôme n'est plus stocké dans donnees.js, il
+// est dérivé systématiquement depuis binome_partis. "Le parti qui compte
+// est celui de chaque candidat" → plus de divergence possible entre l'étiquette
+// globale et les partis individuels. Voir aussi derivePaForBinome dans shared.js
+// (logique identique, helper exposé pour les call sites).
+// Idempotent : peut être ré-exécuté sans dommage.
+(function(){
+  function derive(bp) {
+    if (!Array.isArray(bp) || bp.length !== 2) return '';
+    const a = (bp[0] || '').trim();
+    const b = (bp[1] || '').trim();
+    if (!a || !b) return a || b || '';
+    if (a === b) return a;
+    const aDiv = /^DV/i.test(a);
+    const bDiv = /^DV/i.test(b);
+    if (aDiv && !bDiv) return b;
+    if (bDiv && !aDiv) return a;
+    return a + '+' + b;
+  }
+  function apply(dict) {
+    if (typeof dict === 'undefined') return;
+    Object.values(dict).forEach(c => {
+      if (Array.isArray(c.binome) && c.binome.length === 2 && Array.isArray(c.binome_partis)) {
+        const derived = derive(c.binome_partis);
+        if (derived) c.pa = derived;
+      }
+    });
+  }
+  apply(typeof CAND_DATA !== 'undefined' ? CAND_DATA : undefined);
+  apply(typeof CANDIDATURES !== 'undefined' ? CANDIDATURES : undefined);
+})();

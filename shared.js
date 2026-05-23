@@ -223,6 +223,36 @@ function isReferendum(elecLabel) {
 }
 
 // ───────────────────────────────────────────────────────────────
+//  derivePaForBinome — dérivation systématique du pa d'un binôme
+//  depuis ses partis individuels. Décision : on ne stocke plus pa
+//  côté binôme dans donnees.js, on le dérive au chargement via un
+//  IIFE qui appelle ce helper. Le parti qui compte est celui de
+//  chaque candidat (binome_partis), pas une étiquette globale.
+//
+//  Règles :
+//    • bp homogène (pa1 === pa2)               → pa1
+//    • DV* + vrai parti                        → vrai parti seul
+//      (un binôme "PRG + DVG" reste de famille PRG ; le DVG
+//      n'est qu'une étiquette administrative pour le co-équipier
+//      non encarté).
+//    • 2 vrais partis distincts                → "pa1+pa2"
+//    • 2 divers distincts                      → "pa1+pa2" (fallback)
+//    • bp invalide                             → '' (caller décide)
+// ───────────────────────────────────────────────────────────────
+function derivePaForBinome(bp) {
+  if (!Array.isArray(bp) || bp.length !== 2) return '';
+  const a = (bp[0] || '').trim();
+  const b = (bp[1] || '').trim();
+  if (!a || !b) return a || b || '';
+  if (a === b) return a;
+  const aDiv = /^DV/i.test(a);
+  const bDiv = /^DV/i.test(b);
+  if (aDiv && !bDiv) return b;
+  if (bDiv && !aDiv) return a;
+  return a + '+' + b;
+}
+
+// ───────────────────────────────────────────────────────────────
 //  MENU LOGO (dropdown global) — réutilisé par les 4 pages
 //
 //  Usage :
