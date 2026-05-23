@@ -667,82 +667,51 @@ function slugifyName(s) {
     .replace(/^-+|-+$/g,'');
 }
 
+// M4.2 — Construction directe depuis PERSONS + CANDIDATURES.
+// Plus de regroupement heuristique slugify : chaque PERSON est un profil et
+// les CANDIDATURES sont sa timeline. Homonymies déjà résolues à la migration
+// (Jean-Marie vs Marine Le Pen, Jacques vs Isabelle Bessière, etc.).
 function buildProfiles() {
-  const map = new Map();
-  rows.forEach(row => {
-    const ent = CAND_DATA[row.key];
-    if (!ent) return;
-    // Skip les entrées binôme (= la clé parent "Nom1/Nom2 PARTI") → Phase 3
-    if (Array.isArray(ent.binome) && ent.binome.length === 2) return;
-    let p = row.prenom || '';
-    let n = row.nom || '';
-    let s = row.sexe || '';
-    // Override partiel "|Élection" sans nom : récupérer depuis la générique.
-    // Sinon les overrides type {al:"PS"} étaient skip → la carte profil sous-comptait
-    // les candidatures (visible sur Bucherie / Mandroux 2008 / etc.).
-    if (row.elec && (!n || !p)) {
-      const baseKey = row.key.split('|')[0];
-      const baseRow = rows.find(r => r.key === baseKey);
-      if (baseRow) {
-        n = n || baseRow.nom;
-        p = p || baseRow.prenom;
-        s = s || baseRow.sexe;
-      }
-    }
-    if (!n) return; // pas de nom → on ne peut toujours pas grouper
-    const profileId = slugifyName(p + '-' + n);
-    if (!map.has(profileId)) {
-      map.set(profileId, {
-        id: profileId,
-        p, n, s,
-        candidates: [],
-        partis: new Set(),
-        yearMin: Infinity, yearMax: -Infinity,
-        nbAppearances: 0,
-        incomplete: false
-      });
-    }
-    const prof = map.get(profileId);
-    // Si une variante a un sexe défini et le profil pas encore → on l'adopte
-    if (!prof.s && s) prof.s = s;
-    // Récupérer les années réelles d'apparition dans les sheets
-    const years = candElections[row.key] || candElections[row.key.split('|')[0]] || [];
-    years.forEach(y => {
-      const yi = parseInt(y);
-      if (!isNaN(yi)) {
-        if (yi < prof.yearMin) prof.yearMin = yi;
-        if (yi > prof.yearMax) prof.yearMax = yi;
-      }
+  if (typeof PERSONS === 'undefined' || typeof CANDIDATURES === 'undefined') {
+    profiles = []; return;
+  }
+  // Pour chaque person : retrouver ses candidatures (individuelles + binômes où elle est membre)
+  const candidaturesByPerson = {};
+  Object.entries(CANDIDATURES).forEach(([cid, c]) => {
+    const personIds = c.person ? [c.person] : (Array.isArray(c.binome) ? c.binome : []);
+    personIds.forEach(pid => {
+      if (!candidaturesByPerson[pid]) candidaturesByPerson[pid] = [];
+      candidaturesByPerson[pid].push({ cid, c });
     });
-    // Si la clé est un override |Élection, extraire l'année du suffixe (les overrides
-    // n'apparaissent pas dans candElections car la résolution dans les sheets utilise
-    // toujours la clé pure)
-    if (row.elec) {
-      const m = row.elec.match(/(\d{4})/);
-      if (m) {
-        const yi = parseInt(m[1]);
-        if (yi < prof.yearMin) prof.yearMin = yi;
-        if (yi > prof.yearMax) prof.yearMax = yi;
-      }
-    }
-    prof.candidates.push({
-      key: row.key,
-      elec: row.elec,           // suffix |Élection si override, sinon ''
-      parti: row.parti,
-      t: row.t,
-      al: row.al,
-      c: row.c,
-      b: row.b,
-      bk: row.bk,
-      years: years.slice()
-    });
-    prof.nbAppearances += years.length;
-    if (row.parti) prof.partis.add(row.parti);
-    // Incompletion : on évalue uniquement sur les entrées génériques (les overrides
-    // partiels n'ont pas forcément b/bk, ce qui est normal — la générique fournit la valeur).
-    if (!row.elec && (row.b === '?' || !row.bk)) prof.incomplete = true;
   });
-  profiles = Array.from(map.values()).sort((a,b) => {
+  const arr = [];
+  Object.entries(PERSONS).forEach(([pid, person]) => {
+    const cands = candidaturesByPerson[pid] || [];
+    const partis = new Set();
+    let yearMin = Infinity, yearMax = -Infinity;
+    let incomplete = false;
+    cands.forEach(({ cid, c }) => {
+      if (c.pa) partis.add(c.pa);
+      const ym = (c.election.match(/\d{4}/) || [0])[0];
+      const yi = parseInt(ym);
+      if (yi) {
+        if (yi < yearMin) yearMin = yi;
+        if (yi > yearMax) yearMax = yi;
+      }
+      // Incompletion : si une candidature individuelle (pas binôme) manque bk/b
+      if (!c.binome && (c.b === '' || c.b === '?' || !c.bk)) incomplete = true;
+    });
+    arr.push({
+      id: pid,
+      p: person.p, n: person.n, s: person.s,
+      candidates: cands,           // [{cid, c}]
+      partis,
+      yearMin, yearMax,
+      nbAppearances: cands.length,
+      incomplete
+    });
+  });
+  profiles = arr.sort((a, b) => {
     if (a.n !== b.n) return a.n.localeCompare(b.n);
     return (a.p || '').localeCompare(b.p || '');
   });
@@ -816,72 +785,56 @@ function refreshProfilPartiFilter() {
   sel.innerHTML = opts.join('');
 }
 
+// M4.2 — openProfile lit directement les CANDIDATURES de la personne.
+// Plus d'événements à reconstituer ni d'overrides à fusionner : chaque candidature
+// EST l'événement à afficher.
 function openProfile(id) {
   const p = profiles.find(x => x.id === id);
   if (!p) return;
-  // Construire les événements timeline : pour chaque candidature et chaque année
-  // d'apparition, une ligne. Les overrides apparaissent sur leur élection spécifique.
-  const events = [];
-  // 1) Pour chaque entrée générique (sans suffix |), créer 1 événement par année où elle apparaît
-  // 2) Pour les overrides, ils sont attachés à l'élection précise (pas l'année)
-  const ovrByElec = {};
-  p.candidates.forEach(c => {
-    if (c.elec) ovrByElec[c.elec] = c; // override sur cette élection
-  });
-  // Génériques : 1 événement par (parti, année), en utilisant l'override si présent pour cette élection
-  p.candidates.forEach(c => {
-    if (c.elec) return; // skip les overrides ici (intégrés via merge plus bas)
-    if (c.years.length === 0) {
-      events.push({
-        year: '?', elecLabel: '(aucune trace dans les sheets)',
-        ...c, isOverride: false
-      });
-      return;
-    }
-    // Pour chaque année, retrouver l'élection précise (parti X année année)
-    c.years.forEach(y => {
-      // Trouver toutes les élections de cette année où c.key apparaît
-      Object.entries(ELECTIONS || {}).forEach(([elabel, e]) => {
-        if (!elabel.match(new RegExp('(\\b)' + y + '(\\b)'))) return;
-        // chercher si c.key apparaît dans cette élection
-        let foundHere = false;
-        Object.values(e.sheets || {}).forEach(sheet => {
-          if (foundHere) return;
-          Object.values(sheet).forEach(b => {
-            if (b.c && b.c[c.key] !== undefined) foundHere = true;
-          });
-        });
-        if (!foundHere) return;
-        // override pour cette élection ?
-        const ovrKey = c.key + '|' + elabel;
-        const ovr = p.candidates.find(cc => cc.key === ovrKey);
-        const merged = ovr ? Object.assign({}, c, ovr, { _ovrFields: Object.keys(CAND_DATA[ovrKey] || {}) }) : c;
-        events.push({
-          year: parseInt(y),
-          elecLabel: elabel,
-          ...merged,
-          isOverride: !!ovr,
-        });
-      });
-    });
-  });
-  events.sort((a, b) => {
-    const ya = (typeof a.year === 'number') ? a.year : 9999;
-    const yb = (typeof b.year === 'number') ? b.year : 9999;
-    if (ya !== yb) return ya - yb;
-    return a.elecLabel.localeCompare(b.elecLabel);
+  // Trier les candidatures par année (extraite du label d'élection)
+  const events = p.candidates.map(({ cid, c }) => {
+    const ym = (c.election.match(/\d{4}/) || [0])[0];
+    return { cid, c, year: parseInt(ym) || 0 };
+  }).sort((a, b) => {
+    if (a.year !== b.year) return a.year - b.year;
+    return a.c.election.localeCompare(b.c.election);
   });
 
   const fullName = (p.p ? p.p + ' ' : '') + p.n;
   const sexeBadge = p.s === 'F' ? '<span class="badge-sexe">♀</span>' : p.s === 'H' ? '<span class="badge-sexe">♂</span>' : '';
   const detail = document.querySelector('#profile-modal .profile-detail');
+
+  // Pour les binômes : afficher le co-équipier
+  function renderRow(e) {
+    const c = e.c;
+    const bg = B_COLORS[c.b] || '#aaa';
+    const bkBg = BK_COLORS[c.bk] || '#aaa';
+    let coLabel = '';
+    if (Array.isArray(c.binome) && c.binome.length === 2) {
+      const otherId = c.binome.find(x => x !== p.id);
+      if (otherId && PERSONS[otherId]) {
+        const other = PERSONS[otherId];
+        coLabel = '<span style="font-size:.7rem;color:#888;margin-left:5px">avec ' + escapeHtml((other.p ? other.p + ' ' : '') + other.n) + '</span>';
+      }
+    }
+    return '<tr>'
+      + '<td class="yr">' + e.year + '</td>'
+      + '<td>' + escapeHtml(c.election) + coLabel + '</td>'
+      + '<td><span style="font-family:monospace;font-weight:700">' + escapeHtml(c.pa || '') + '</span></td>'
+      + '<td>' + escapeHtml(c.al || '') + '</td>'
+      + '<td><span class="b-badge" style="background:' + bg + '">' + (c.b || '?') + '</span></td>'
+      + '<td><span class="b-badge" style="background:' + bkBg + '">' + (c.bk || '?') + '</span></td>'
+      + '<td style="font-size:.75rem;color:#666">' + escapeHtml((c.t || []).join(', ')) + '</td>'
+      + '</tr>';
+  }
+
   detail.innerHTML = '<h2>' + escapeHtml(fullName) + '</h2>'
     + '<div class="sub-id">' + sexeBadge
-    +   '<span>' + p.candidates.length + ' entrée(s) CAND_DATA · '
-    +   events.length + ' candidature(s) effective(s)</span>'
+    +   '<span>person_id : <code style="font-size:.78rem">' + escapeHtml(p.id) + '</code> · '
+    +   events.length + ' candidature' + (events.length > 1 ? 's' : '') + '</span>'
     + '</div>'
     + (events.length === 0
-        ? '<p style="color:#888;font-style:italic;padding:20px">Aucune candidature retrouvée dans les sheets ELECTIONS.</p>'
+        ? '<p style="color:#888;font-style:italic;padding:20px">Aucune candidature trouvée.</p>'
         : '<table class="timeline"><thead><tr>'
           + '<th style="width:60px">Année</th>'
           + '<th>Élection</th>'
@@ -891,19 +844,7 @@ function openProfile(id) {
           + '<th style="width:60px">bk</th>'
           + '<th>Familles</th>'
           + '</tr></thead><tbody>'
-          + events.map(e => {
-            const bg = B_COLORS[e.b] || '#aaa';
-            const bkBg = BK_COLORS[e.bk] || '#aaa';
-            return '<tr' + (e.isOverride ? ' class="override-row"' : '') + '>'
-              + '<td class="yr">' + e.year + '</td>'
-              + '<td>' + escapeHtml(e.elecLabel) + (e.isOverride ? '<span class="ovr-tag">override</span>' : '') + '</td>'
-              + '<td><span style="font-family:monospace;font-weight:700">' + escapeHtml(e.parti || '') + '</span></td>'
-              + '<td>' + escapeHtml(e.al || '') + '</td>'
-              + '<td><span class="b-badge" style="background:' + bg + '">' + (e.b || '?') + '</span></td>'
-              + '<td><span class="b-badge" style="background:' + bkBg + '">' + (e.bk || '?') + '</span></td>'
-              + '<td style="font-size:.75rem;color:#666">' + escapeHtml((e.t || []).join(', ')) + '</td>'
-              + '</tr>';
-          }).join('')
+          + events.map(renderRow).join('')
           + '</tbody></table>')
     + '<button class="close-btn" onclick="closeProfile()">Fermer</button>';
   document.getElementById('profile-modal').classList.add('show');

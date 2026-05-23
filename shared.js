@@ -727,3 +727,68 @@ function getCantonOfElection(electionLabel) {
     if (e.key === 'Escape' && modal.classList.contains('open')) close();
   });
 })();
+
+// ───────────────────────────────────────────────────────────────
+//  HELPERS PERSONS / CANDIDATURES (migration M4)
+//  API uniformisée d'accès aux nouvelles structures (donnees.js).
+//  Cohabite avec CAND_DATA tant que tous les call sites n'ont pas migré.
+// ───────────────────────────────────────────────────────────────
+
+// Retourne l'objet PERSON par son id (ex. "alain-bucherie") ou null.
+function personById(pid) {
+  return (typeof PERSONS !== 'undefined' && PERSONS[pid]) || null;
+}
+
+// Retourne l'objet CANDIDATURE par son id (ex. "alain-bucherie@cantonales-2004") ou null.
+function candById(cid) {
+  return (typeof CANDIDATURES !== 'undefined' && CANDIDATURES[cid]) || null;
+}
+
+// Retourne la candidature mergée avec l'identité de sa personne (ou des 2 membres
+// pour un binôme). Champs identité (p/n/s) viennent de PERSONS, le reste de la
+// CANDIDATURE. Pour un binôme, on ajoute `binome_members: [person1, person2]`.
+function candFullInfo(cid) {
+  const c = candById(cid);
+  if (!c) return null;
+  if (c.person) {
+    const p = personById(c.person);
+    if (p) return { p: p.p, n: p.n, s: p.s, ...c };
+    return { ...c };
+  }
+  if (Array.isArray(c.binome) && c.binome.length === 2) {
+    const m1 = personById(c.binome[0]);
+    const m2 = personById(c.binome[1]);
+    return { ...c, binome_members: [m1, m2] };
+  }
+  return { ...c };
+}
+
+// Toutes les candidatures (cand_id, candidature) d'une personne — y compris
+// celles où elle apparaît comme membre d'un binôme. Triées chronologiquement
+// via l'année extraite de l'élection (fallback 0 si pas d'année).
+function candidaturesOfPerson(pid) {
+  if (typeof CANDIDATURES === 'undefined') return [];
+  const result = [];
+  for (const cid of Object.keys(CANDIDATURES)) {
+    const c = CANDIDATURES[cid];
+    if (c.person === pid || (Array.isArray(c.binome) && c.binome.indexOf(pid) >= 0)) {
+      result.push([cid, c]);
+    }
+  }
+  result.sort((a, b) => {
+    const ya = (a[1].election.match(/\d{4}/) || [0])[0];
+    const yb = (b[1].election.match(/\d{4}/) || [0])[0];
+    return parseInt(ya) - parseInt(yb);
+  });
+  return result;
+}
+
+// Toutes les candidatures d'une élection donnée.
+function candidaturesOfElection(electionLabel) {
+  if (typeof CANDIDATURES === 'undefined') return [];
+  const result = [];
+  for (const cid of Object.keys(CANDIDATURES)) {
+    if (CANDIDATURES[cid].election === electionLabel) result.push([cid, CANDIDATURES[cid]]);
+  }
+  return result;
+}
