@@ -22,6 +22,21 @@ Notes pour les sessions Claude Code. Convention : commentaires et UX en françai
 
 ## 🔑 Conventions de données
 
+### ⚠️ PRINCIPE FONDAMENTAL : **la base de tout, c'est les voix entières**
+
+Tous les calculs, agrégations, affichages et tests d'égalité partent des **voix entières** (`bd._voix[cand_id]`). Jamais d'une somme de pourcentages, jamais d'une reconstitution `pct × exprimés / 100`. C'est une règle absolue, indépendante de la couche d'affichage.
+
+Pourquoi : les pourcentages stockés dans `bd.c` (après l'IIFE de chargement) sont des floats arrondis, et toute somme/multiplication propage des erreurs. Un cumul sur un canton/quartier/ville peut décaler le total d'1 voix (« Moulinier 782 » au lieu de 781 réel — bug observé en 2026, cf. commit `6ef7e15`).
+
+**Règles pratiques** :
+- Source de vérité runtime = `bd._voix[cid]` (entier, posé par l'IIFE de `donnees.js`). Le `bd.c[cid]` (pct) reste pour l'affichage rapide bureau-par-bureau et le rendu carte.
+- **Agrégations** (canton, quartier, ville) : sommer `bd._voix[cid]` à travers les bureaux. JAMAIS sommer `bd.c[cid] * bd.e / 100`.
+- **Pourcentages agrégés** : `sum_voix / sum_exprimés × 100`, puis arrondi à 1 décimale pour l'affichage. Pas l'inverse.
+- **Affichage des voix** : si on a un `data._voix[cid]` dérivé (= entier exact), l'utiliser direct. Le fallback `Math.round(pct × e / 100)` n'est toléré que pour les anciennes données sans `_voix` (legacy).
+- **Tests d'égalité (ex-aequo)** : `tieCandidatesForBureau()` utilise `_voix` et pas `c` — déjà documenté ailleurs. Idem partout où une comparaison stricte est requise.
+
+Si tu touches au code des fiches (bureau, quartier, canton, ville) ou aux agrégats des sidebars, vérifie en lecture **d'abord** d'où viennent les voix : depuis `_voix` ou reconstituées ? Si reconstituées, c'est probablement un bug.
+
 ### Format `donnees.js`
 - `ELECTIONS[<Nom>].sheets[<Tour>][<NumBureau>]` = `{ a, i, e, bn, c, w }`
   - `a` = abstention % | `i` = inscrits | `e` = exprimés | `bn` = blancs+nuls (entier)
