@@ -8364,9 +8364,11 @@ function randomDiscover() {
   // elecTypePriority(label) : départage les élections de même année. Définie dans shared.js.
   function neighborElection(dir){
     const all = Object.keys(ELECTIONS);
+    // Garde-fou : si un label n'a pas d'année à 4 chiffres (cas non attendu mais
+    // possible si on ajoute une élection mal nommée), on tombe à 0 au lieu de crash.
+    const _y = lab => { const m = lab.match(/\d{4}/); return m ? parseInt(m[0]) : 0; };
     const sorted = all.slice().sort((a,b) => {
-      const ya = parseInt(a.match(/\d{4}/)[0]);
-      const yb = parseInt(b.match(/\d{4}/)[0]);
+      const ya = _y(a), yb = _y(b);
       if (ya !== yb) return ya - yb;
       return elecTypePriority(a) - elecTypePriority(b);
     });

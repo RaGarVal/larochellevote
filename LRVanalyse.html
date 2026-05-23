@@ -2174,11 +2174,18 @@ function setNiveau(n) {
   // toggle qui inclut "Départementales" ou "Cantonales" dans son data-type).
   const depToggle = document.querySelector('.type-toggle[data-type*="Départementales"], .type-toggle[data-type*="Cantonales"]');
   if (depToggle) {
-    // Si l'utilisateur a modifié manuellement le toggle pendant la session, on
-    // préserve son choix (ne pas réécraser à chaque switch de niveau). Sinon, on
-    // réapplique la règle "ON en canton, OFF ailleurs".
-    if (!_depToggleUserOverride) {
-      depToggle.classList.toggle('on', n === 'canton');
+    // Règle :
+    //  • canton          → ON  (toujours, peu importe l'override : pertinence forte)
+    //  • ville/quartier  → OFF (toujours, sinon visuel "ON mais disabled" trompeur)
+    //  • bureau          → respecte l'override utilisateur si défini, sinon OFF
+    if (n === 'canton') {
+      depToggle.classList.add('on');
+    } else if (n === 'ville' || n === 'quartier') {
+      depToggle.classList.remove('on');
+    } else if (!_depToggleUserOverride) {
+      // n === 'bureau' (par défaut OFF, mais pas écrasé si user a explicitement
+      // activé pendant la session courante)
+      depToggle.classList.remove('on');
     }
     // Tooltip custom du projet (classe .has-tooltip + data-tooltip).
     if (n === 'ville') {
@@ -3146,9 +3153,12 @@ function drawChart(data) {
   let yAxisHtml = '';
   const uncertainElections = getUncertainElections();
 
-  // Zones d'incertitude (fond grisé) — dessinées avant tout le reste
+  // Zones d'incertitude (fond grisé) — dessinées avant tout le reste.
+  // bandW = unitX (= cW/visibleCount, cohérent avec xScale et le zoom) pour que la
+  // largeur des bandes corresponde exactement à 1 colonne visible. Utiliser n-1
+  // donnait des bandes trop étroites dès qu'un zoom était actif.
   if (uncertainElections.size > 0) {
-    const bandW = n > 1 ? Math.round(cW / (n - 1)) : cW;
+    const bandW = Math.round(unitX);
     data.forEach((d, i) => {
       if (!uncertainElections.has(d.label)) return;
       const x = xScale(i);
@@ -3336,10 +3346,10 @@ function drawChart(data) {
     data.forEach((d,i) => { if ((d.bp['?']||0) > 0) html += `<circle cx="${xScale(i)}" cy="${yScale(d.bp['?'])}" r="3" fill="#fff" stroke="#A0E1E2" stroke-width="2.5"/>`; });
   }
 
-  // Zone de hover invisible
+  // Zone de hover invisible — w = unitX pour rester aligné avec xScale et le zoom.
   data.forEach((d, i) => {
     const x = xScale(i);
-    const w = n > 1 ? cW/(n-1) : cW;
+    const w = unitX;
     html += `<rect x="${x-w/2}" y="${PAD.top}" width="${w}" height="${cH}" fill="transparent" data-idx="${i}"
       onmouseover="showTooltip(event,${i})" onmouseout="hideTooltip()"/>`;
   });
