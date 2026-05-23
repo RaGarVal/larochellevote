@@ -2305,16 +2305,27 @@ function binomeAllies(name) {
 }
 // ── BINÔMES À PARTIS HÉTÉROGÈNES ───────────────────────────────────────────
 // "Divers" (pattern élargi : tout pa qui commence par DV — DVG/DVD/DVC/DVE/DVP/...).
-// Quand un binôme associe un parti déclaré à un divers, le parti déclaré passe
-// devant (ex. UMP+DVD plutôt que DVD+UMP). À égalité de statut, ordre des membres
-// (= ordre binomeMembers, femme devant).
+// Règle paritaire (mai 2026) : quand un binôme paritaire associe 2 vrais partis
+// distincts, la candidate F passe devant l'homme H dans l'ordre d'affichage.
+// Pour les binômes "vrai + divers", on ne combine pas (le pa dérivé reste le vrai
+// seul) — voir derivePaForBinome dans shared.js.
 function isDiversParti(pa) {
   return typeof pa === 'string' && /^DV/i.test(pa.trim());
 }
-// Renvoie le couple [pa1, pa2] dans l'ordre d'affichage (parti déclaré devant
-// divers, sinon ordre des membres). Null si binôme homogène ou non-binôme.
-// Post-M4.5 : lit directement le champ binome_partis sur la candidature binôme
-// (les person_id des membres n'ont plus de pa propre dans le modèle PERSONS).
+// Index du membre F dans c.binome (0/1), -1 sinon.
+// Sert à appliquer la règle paritaire (couleur de la candidate, label femme devant).
+function _femaleIdxOfBinome(ci) {
+  if (!Array.isArray(ci.binome) || ci.binome.length !== 2) return -1;
+  if (typeof PERSONS === 'undefined') return -1;
+  const s0 = (PERSONS[ci.binome[0]] || {}).s;
+  const s1 = (PERSONS[ci.binome[1]] || {}).s;
+  if (s0 === 'F' && s1 !== 'F') return 0;
+  if (s1 === 'F' && s0 !== 'F') return 1;
+  return -1;
+}
+// Renvoie le couple [pa1, pa2] dans l'ordre d'affichage (femme devant).
+// Null si binôme homogène ou non-binôme.
+// Post-M4.5 : lit directement le champ binome_partis sur la candidature binôme.
 function _orderedBinomePartis(name) {
   const ci = candInfo(name);
   if (!Array.isArray(ci.binome) || ci.binome.length !== 2) return null;
@@ -2322,8 +2333,9 @@ function _orderedBinomePartis(name) {
   const pa1 = (ci.binome_partis[0] || '').trim();
   const pa2 = (ci.binome_partis[1] || '').trim();
   if (!pa1 || !pa2 || pa1 === pa2) return null;
-  // Priorité parti déclaré devant divers (DV*)
-  if (isDiversParti(pa1) && !isDiversParti(pa2)) return [pa2, pa1];
+  // Règle paritaire : femme devant. Fallback (pas de F identifié) : ordre brut.
+  const idxF = _femaleIdxOfBinome(ci);
+  if (idxF === 1) return [pa2, pa1];
   return [pa1, pa2];
 }
 // Étiquette parti à afficher pour un binôme : "PS+PRG" si mixte, "PS" sinon.
@@ -2362,8 +2374,22 @@ function dotBackground(name) {
   if (!cs) return colorOfCandidate(name);
   return 'linear-gradient(135deg,' + cs[0] + ' 50%,' + cs[1] + ' 50%)';
 }
+// Couleur unique d'un candidat ou d'un binôme.
+// Règle paritaire (mai 2026) pour les binômes : couleur du parti de la candidate F
+// par défaut. Exception : si F est DV* et H un vrai parti, on prend H (lisibilité
+// politique — un divers DV* n'a pas de couleur signifiante).
+// Hors binômes / fallback : couleur propre du candidat si définie, sinon dérivée du parti.
 function colorOfCandidate(name) {
   const ci = candInfo(name);
+  if (Array.isArray(ci.binome) && ci.binome.length === 2 && Array.isArray(ci.binome_partis) && ci.binome_partis.length === 2) {
+    const idxF = _femaleIdxOfBinome(ci);
+    if (idxF >= 0) {
+      const paF = (ci.binome_partis[idxF] || '').trim();
+      const paH = (ci.binome_partis[1 - idxF] || '').trim();
+      const pick = (isDiversParti(paF) && paH && !isDiversParti(paH)) ? paH : paF;
+      if (pick) return getPartiColor(pick) || '#bbbbbb';
+    }
+  }
   return ci.c || getPartiColor(ci.pa) || '#bbbbbb';
 }
 function winnerColor(data) { if (!data || !data.w) return '#ccc'; return colorOfCandidate(data.w); }

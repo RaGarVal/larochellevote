@@ -258,11 +258,12 @@ const REDECOUPAGES = {
 // Décision (mai 2026) : pa du binôme n'est plus stocké dans donnees.js, il
 // est dérivé systématiquement depuis binome_partis. "Le parti qui compte
 // est celui de chaque candidat" → plus de divergence possible entre l'étiquette
-// globale et les partis individuels. Voir aussi derivePaForBinome dans shared.js
-// (logique identique, helper exposé pour les call sites).
+// globale et les partis individuels. Règle paritaire : pour les binômes
+// mixtes 2 vrais partis (ou 2 divers), la candidate F passe devant l'homme H.
+// Voir aussi derivePaForBinome dans shared.js (même logique, helper exposé).
 // Idempotent : peut être ré-exécuté sans dommage.
 (function(){
-  function derive(bp) {
+  function derive(bp, sexes) {
     if (!Array.isArray(bp) || bp.length !== 2) return '';
     const a = (bp[0] || '').trim();
     const b = (bp[1] || '').trim();
@@ -272,13 +273,18 @@ const REDECOUPAGES = {
     const bDiv = /^DV/i.test(b);
     if (aDiv && !bDiv) return b;
     if (bDiv && !aDiv) return a;
+    if (Array.isArray(sexes) && sexes.length === 2) {
+      if (sexes[0] !== 'F' && sexes[1] === 'F') return b + '+' + a;
+    }
     return a + '+' + b;
   }
   function apply(dict) {
     if (typeof dict === 'undefined') return;
+    const hasPersons = typeof PERSONS !== 'undefined';
     Object.values(dict).forEach(c => {
       if (Array.isArray(c.binome) && c.binome.length === 2 && Array.isArray(c.binome_partis)) {
-        const derived = derive(c.binome_partis);
+        const sexes = hasPersons ? c.binome.map(pid => (PERSONS[pid] || {}).s || '') : null;
+        const derived = derive(c.binome_partis, sexes);
         if (derived) c.pa = derived;
       }
     });

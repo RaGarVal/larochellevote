@@ -235,20 +235,31 @@ function isReferendum(elecLabel) {
 //      (un binôme "PRG + DVG" reste de famille PRG ; le DVG
 //      n'est qu'une étiquette administrative pour le co-équipier
 //      non encarté).
-//    • 2 vrais partis distincts                → "pa1+pa2"
-//    • 2 divers distincts                      → "pa1+pa2" (fallback)
+//    • 2 vrais partis distincts                → "paF+paH" (femme devant
+//      si sexes connus, sinon ordre brut [a, b]).
+//    • 2 divers distincts                      → idem (femme devant)
 //    • bp invalide                             → '' (caller décide)
+//
+//  Paramètre sexes : tableau [s0, s1] des sexes des membres dans le
+//  même ordre que bp (depuis c.binome → PERSONS[pid].s). Optionnel —
+//  si absent on ne réordonne pas (label = ordre brut).
+//  Règle paritaire (mai 2026) : la candidate F passe devant l'homme H.
 // ───────────────────────────────────────────────────────────────
-function derivePaForBinome(bp) {
+function derivePaForBinome(bp, sexes) {
   if (!Array.isArray(bp) || bp.length !== 2) return '';
-  const a = (bp[0] || '').trim();
-  const b = (bp[1] || '').trim();
+  let a = (bp[0] || '').trim();
+  let b = (bp[1] || '').trim();
   if (!a || !b) return a || b || '';
   if (a === b) return a;
   const aDiv = /^DV/i.test(a);
   const bDiv = /^DV/i.test(b);
+  // Mixte vrai + divers : on garde le vrai parti seul (lisibilité politique).
   if (aDiv && !bDiv) return b;
   if (bDiv && !aDiv) return a;
+  // 2 vrais OU 2 divers : on combine "paF+paH" (femme devant si connue).
+  if (Array.isArray(sexes) && sexes.length === 2) {
+    if (sexes[0] !== 'F' && sexes[1] === 'F') return b + '+' + a;
+  }
   return a + '+' + b;
 }
 
