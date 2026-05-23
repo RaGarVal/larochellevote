@@ -1704,7 +1704,7 @@ input:focus-visible,
     <a href="LRVanalyse.html" class="tb-nav-link" id="tb-link-analyse">L'analyse</a>
   </nav>
   <div id="tb-center">
-    <span id="tb-election" onclick="if (window.matchMedia && window.matchMedia('(max-width: 720px)').matches) openElecSheet();">Municipales 2026</span>
+    <span id="tb-election" role="button" tabindex="0" aria-label="Changer d'élection" onclick="if (window.matchMedia && window.matchMedia('(max-width: 720px)').matches) openElecSheet();">Municipales 2026</span>
     <span id="tb-tour" style="display:none">1er tour</span>
     <div id="tb-elec-nav">
       <button id="tb-elec-prev" class="tb-elec-nav-btn" onclick="navigateElection(-1)" title="Élection précédente (←)" aria-label="Élection précédente">‹</button>
@@ -1856,7 +1856,7 @@ input:focus-visible,
 <!-- Side drawer mobile : tiroir latéral droit avec onglets Bureaux / Quartiers -->
 <div id="nav-sheet" aria-hidden="true">
   <div class="nav-sheet-overlay" onclick="closeNavSheet()"></div>
-  <div class="nav-sheet-panel" role="dialog" aria-label="Navigation bureaux et quartiers">
+  <div class="nav-sheet-panel" role="dialog" aria-modal="true" aria-label="Navigation bureaux et quartiers">
     <div class="nav-sheet-head">
       <div class="nav-sheet-tabs">
         <button class="nav-sheet-tab is-current" data-nav-type="bureau" onclick="switchNavSheetTab('bureau')">Bureaux</button>
@@ -1877,8 +1877,8 @@ input:focus-visible,
 <div id="overlay">
   <div id="ov-topbar">
     <button id="ov-back" onclick="closeOverlay()">← Retour</button>
-    <div id="ov-tabs" style="display:flex;gap:4px">
-      <button class="otab on" id="otab-b" onclick="switchTab('bureau')">Ce bureau</button>
+    <div id="ov-tabs" role="tablist" aria-label="Onglets de la fiche" style="display:flex;gap:4px">
+      <button class="otab on" id="otab-b" role="tab" aria-selected="true" onclick="switchTab('bureau')">Ce bureau</button>
       <span id="otab-quartiers" style="display:flex;gap:4px"></span>
     </div>
     <h2 id="ov-title" style="flex:1;text-align:right;font-size:0.82rem;opacity:0.6;font-weight:500"></h2>
@@ -4003,6 +4003,7 @@ function updateOverlayTabs(){
   if (!c || !tabB) return;
   // Bouton "Ce bureau"
   tabB.className = (overlayTab === 'bureau' ? 'otab on' : 'otab');
+  tabB.setAttribute('aria-selected', overlayTab === 'bureau' ? 'true' : 'false');
   // Boutons quartier (1 ou plusieurs si bureau partagé) puis bouton canton.
   // Deux préfixes pour chaque label : version longue desktop / version courte mobile.
   // Le swap se fait en CSS via @media (pas de détection JS, cohérent au resize).
@@ -4019,7 +4020,7 @@ function updateOverlayTabs(){
         '<span class="otab-prefix-full">Le quartier : </span>' +
         '<span class="otab-prefix-short">Q. </span>' + q;
       const safeQ = q.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-      html += '<button class="otab' + (isActive?' on':'') + '" onclick="switchTabQ(\'' + safeQ + '\')">' + label + '</button>';
+      html += '<button class="otab' + (isActive?' on':'') + '" role="tab" aria-selected="'+(isActive?'true':'false')+'" onclick="switchTabQ(\'' + safeQ + '\')">' + label + '</button>';
     });
     // Bouton canton : déduit du champ .c du bureau courant pour l'ère de l'élection.
     const cid = (typeof getCantonOfBureau === 'function')
@@ -4033,7 +4034,7 @@ function updateOverlayTabs(){
       const label =
         '<span class="otab-prefix-full">Le canton : </span>' +
         '<span class="otab-prefix-short">C. </span>' + cantonName;
-      html += '<button class="otab' + (isActive?' on':'') + '" onclick="switchTabC(\'' + cid + '\')">' + label + '</button>';
+      html += '<button class="otab' + (isActive?' on':'') + '" role="tab" aria-selected="'+(isActive?'true':'false')+'" onclick="switchTabC(\'' + cid + '\')">' + label + '</button>';
     }
   }
   c.innerHTML = html;
@@ -8417,6 +8418,19 @@ function randomDiscover() {
     if (typeof writeURLState === 'function') writeURLState();
   }
 
+  // A11y : Enter / Space déclenchent un click() sur les éléments role="button"
+  // (les <button> natifs s'auto-gèrent et sont skippés). Avant les raccourcis
+  // perso pour ne pas écraser leur comportement (sauf si la cible est un button-like).
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const t = e.target;
+    if (!t || t.getAttribute('role') !== 'button') return;
+    if (t.tagName === 'BUTTON') return;
+    if (isTypingTarget(t)) return;
+    e.preventDefault();
+    t.click();
+  });
+
   document.addEventListener('keydown', (e) => {
     if (isTypingTarget(e.target)) return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -8752,7 +8766,7 @@ function randomDiscover() {
 <!-- Bottom sheet mobile pour changer d'élection -->
 <div id="elec-sheet" aria-hidden="true">
   <div class="elec-sheet-overlay" onclick="closeElecSheet()"></div>
-  <div class="elec-sheet-panel" role="dialog" aria-label="Choisir une élection">
+  <div class="elec-sheet-panel" role="dialog" aria-modal="true" aria-label="Choisir une élection">
     <div class="elec-sheet-handle" onclick="closeElecSheet()" aria-hidden="true"></div>
     <div class="elec-sheet-title">Choisir un scrutin</div>
     <div class="elec-sheet-list" id="elec-sheet-list"></div>

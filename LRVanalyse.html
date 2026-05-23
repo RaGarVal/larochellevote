@@ -308,6 +308,9 @@ select.ctrl-sel{width:100%;padding:7px 10px;border:1.5px solid var(--border-moda
 /* Toggle désactivé (ex. Départementales en niveau ville/quartier) : non cliquable,
    visuellement estompé. L'explication s'affiche au survol via l'attribut title HTML. */
 .type-toggle.disabled{opacity:0.45;cursor:not-allowed;pointer-events:auto}
+/* A11y : classe utilitaire pour cacher visuellement mais garder lisible par les
+   lecteurs d'écran (technique standard "sr-only"). */
+.visually-hidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 .bloc-toggle{display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;min-width:0}
 .bloc-dot{width:11px;height:11px;border-radius:3px;flex-shrink:0}
 .bloc-name{font-size:0.83rem;color:var(--text-modal-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
@@ -1293,10 +1296,12 @@ input:focus-visible,
 
   <div class="sb-section">
     <div class="sb-label">Niveau d'analyse</div>
-    <button class="niveau-btn on" onclick="setNiveau('ville')" id="btn-ville">🏙 Ville entière</button>
-    <button class="niveau-btn" onclick="setNiveau('canton')" id="btn-canton">🧩 Canton</button>
-    <button class="niveau-btn" onclick="setNiveau('quartier')" id="btn-quartier">🏘 Quartier</button>
-    <button class="niveau-btn" onclick="setNiveau('bureau')" id="btn-bureau">📍 Bureau de vote</button>
+    <div role="group" aria-label="Niveau d'analyse">
+    <button class="niveau-btn on" onclick="setNiveau('ville')" id="btn-ville" aria-pressed="true">🏙 Ville entière</button>
+    <button class="niveau-btn" onclick="setNiveau('canton')" id="btn-canton" aria-pressed="false">🧩 Canton</button>
+    <button class="niveau-btn" onclick="setNiveau('quartier')" id="btn-quartier" aria-pressed="false">🏘 Quartier</button>
+    <button class="niveau-btn" onclick="setNiveau('bureau')" id="btn-bureau" aria-pressed="false">📍 Bureau de vote</button>
+    </div>
   </div>
 
   <div class="sb-section" id="sec-canton" style="display:none">
@@ -1323,18 +1328,18 @@ input:focus-visible,
   <div class="sb-section">
     <div class="sb-label">Type d'élection</div>
     <div id="type-toggles">
-      <div class="type-toggle on" data-type="Présidentielle" onclick="toggleType(this)"><span>Présidentielles</span></div>
-      <div class="type-toggle on" data-type="Législatives"   onclick="toggleType(this)"><span>Législatives</span></div>
-      <div class="type-toggle on" data-type="Municipales"    onclick="toggleType(this)"><span>Municipales</span></div>
-      <div class="type-toggle on" data-type="Européennes"    onclick="toggleType(this)"><span>Européennes</span></div>
-      <div class="type-toggle on" data-type="Régionales"     onclick="toggleType(this)"><span>Régionales</span></div>
+      <div class="type-toggle on" data-type="Présidentielle" role="button" tabindex="0" aria-pressed="true" onclick="toggleType(this)"><span>Présidentielles</span></div>
+      <div class="type-toggle on" data-type="Législatives"   role="button" tabindex="0" aria-pressed="true" onclick="toggleType(this)"><span>Législatives</span></div>
+      <div class="type-toggle on" data-type="Municipales"    role="button" tabindex="0" aria-pressed="true" onclick="toggleType(this)"><span>Municipales</span></div>
+      <div class="type-toggle on" data-type="Européennes"    role="button" tabindex="0" aria-pressed="true" onclick="toggleType(this)"><span>Européennes</span></div>
+      <div class="type-toggle on" data-type="Régionales"     role="button" tabindex="0" aria-pressed="true" onclick="toggleType(this)"><span>Régionales</span></div>
       <!-- Cantonales / Départementales (toggle mutualisé) : éteint par défaut. Allumé
            automatiquement quand niveau=canton, désactivé en niveau ville (infracommunale)
            ou quartier (quartiers divisés entre cantons). État initial = ville → disabled
            + tooltip custom (cf. setNiveau pour la suite). data-type contient les 2 types
            séparés par virgule ; getActiveTypes splittera pour matcher dans
            matchesTypeFilter. -->
-      <div class="type-toggle disabled has-tooltip" data-type="Cantonales,Départementales" data-tooltip="Élection infracommunale" onclick="toggleType(this)"><span>Cantonales / Départementales</span></div>
+      <div class="type-toggle disabled has-tooltip" data-type="Cantonales,Départementales" data-tooltip="Élection infracommunale" role="button" tabindex="0" aria-pressed="false" aria-disabled="true" onclick="toggleType(this)"><span>Cantonales / Départementales</span></div>
     </div>
   </div>
 
@@ -1392,7 +1397,8 @@ input:focus-visible,
       <span class="oh-text">Mieux en paysage</span>
       <button class="oh-close" type="button" onclick="dismissOrientationHint()" aria-label="Masquer le conseil">×</button>
     </div>
-    <svg id="chart-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    <svg id="chart-svg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Graphique d'évolution des résultats électoraux à La Rochelle" aria-describedby="chart-fallback"></svg>
+    <div id="chart-fallback" class="visually-hidden" aria-live="polite"></div>
     <!-- Bouton "reset zoom" : visible uniquement quand le graphique est zoomé.
          Position absolue en haut-droite du chart, discret mais accessible. -->
     <button id="chart-zoom-reset" type="button" onclick="resetChartZoom()" aria-label="Réinitialiser le zoom" style="display:none">
@@ -1727,6 +1733,11 @@ function buildBlocToggles() {
     d.className = 'bloc-toggle' + (isOn ? ' on' : ' off');
     d.id = 'toggle-' + slugifyKey(b.key);
     d.innerHTML = `<div class="bloc-dot" style="background:${b.color}"></div><div class="bloc-name">${b.label}</div>`;
+    // A11y : annoncer comme bouton tabable avec état pressed.
+    d.setAttribute('role', 'button');
+    d.setAttribute('tabindex', '0');
+    d.setAttribute('aria-pressed', isOn ? 'true' : 'false');
+    d.setAttribute('aria-label', b.label + ' : ' + (isOn ? 'visible' : 'masqué'));
     d.onclick = () => toggleBloc(b.key);
     ct.appendChild(d);
   });
@@ -1735,6 +1746,10 @@ function buildBlocToggles() {
     const dq = document.createElement('div');
     dq.className = 'bloc-toggle off'; dq.id = 'toggle-' + slugifyKey('?');
     dq.innerHTML = `<div class="bloc-dot" style="background:#A0E1E2"></div><div class="bloc-name">Divers</div>`;
+    dq.setAttribute('role', 'button');
+    dq.setAttribute('tabindex', '0');
+    dq.setAttribute('aria-pressed', 'false');
+    dq.setAttribute('aria-label', 'Divers : masqué');
     dq.onclick = () => toggleBloc('?');
     ct.appendChild(dq);
   }
@@ -2105,7 +2120,9 @@ function applyHashSelection() {
     const onSet = new Set(types.split(',').map(t => t.trim()));
     document.querySelectorAll('.type-toggle').forEach(el => {
       const myTypes = el.dataset.type.split(',').map(t => t.trim());
-      el.classList.toggle('on', myTypes.some(t => onSet.has(t)));
+      const isOn = myTypes.some(t => onSet.has(t));
+      el.classList.toggle('on', isOn);
+      el.setAttribute('aria-pressed', isOn ? 'true' : 'false'); // a11y sync
     });
   }
 
@@ -2162,7 +2179,10 @@ function setNiveau(n) {
   niveau = n;
   ['ville','quartier','canton','bureau'].forEach(x => {
     const btn = document.getElementById('btn-'+x);
-    if (btn) btn.classList.toggle('on', x===n);
+    if (btn) {
+      btn.classList.toggle('on', x===n);
+      btn.setAttribute('aria-pressed', x===n ? 'true' : 'false'); // a11y sync
+    }
     const sec = document.getElementById('sec-'+x);
     if (sec) sec.style.display = (x===n && n!=='ville') ? '' : 'none';
   });
@@ -2187,16 +2207,21 @@ function setNiveau(n) {
       // activé pendant la session courante)
       depToggle.classList.remove('on');
     }
+    // Sync aria-pressed avec l'état visuel (a11y)
+    depToggle.setAttribute('aria-pressed', depToggle.classList.contains('on') ? 'true' : 'false');
     // Tooltip custom du projet (classe .has-tooltip + data-tooltip).
     if (n === 'ville') {
       depToggle.classList.add('disabled', 'has-tooltip');
       depToggle.setAttribute('data-tooltip', 'Élection infracommunale');
+      depToggle.setAttribute('aria-disabled', 'true');
     } else if (n === 'quartier') {
       depToggle.classList.add('disabled', 'has-tooltip');
       depToggle.setAttribute('data-tooltip', 'Quartiers divisés');
+      depToggle.setAttribute('aria-disabled', 'true');
     } else {
       depToggle.classList.remove('disabled', 'has-tooltip');
       depToggle.removeAttribute('data-tooltip');
+      depToggle.removeAttribute('aria-disabled');
     }
   }
   // Initialiser currentCantonKey si on entre dans le niveau Canton sans sélection
@@ -2503,6 +2528,7 @@ function toggleType(el) {
   // où l'élection n'a pas de sens : infracommunale ou quartiers divisés entre cantons).
   if (el.classList.contains('disabled')) return;
   el.classList.toggle('on');
+  el.setAttribute('aria-pressed', el.classList.contains('on') ? 'true' : 'false');
   // Mémoriser l'override utilisateur pour Cantonales/Départementales (cf. setNiveau).
   // Au prochain changement de niveau, on respectera ce choix au lieu de réécraser.
   if (/Départementales|Cantonales/.test(el.dataset.type || '')) {
@@ -2510,6 +2536,17 @@ function toggleType(el) {
   }
   refresh();
 }
+// A11y : handler keydown global pour les éléments role="button" (type-toggle,
+// bloc-toggle, etc.). Enter/Space déclenche un click équivalent au mouse click.
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const t = e.target;
+  if (!t || t.getAttribute('role') !== 'button') return;
+  // Ne pas écraser les <button> natifs qui gèrent Enter/Space tout seuls.
+  if (t.tagName === 'BUTTON') return;
+  e.preventDefault();
+  t.click();
+});
 
 function toggleVilleComparison() {
   showVilleComparison = !showVilleComparison;
