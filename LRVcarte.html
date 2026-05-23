@@ -4401,13 +4401,14 @@ function renderBlocTriptych(data, histoKey) {
   // chronologiquement adjacent, on itère pour trouver le plus proche AVEC des
   // données effectives — utile pour les cantonales partielles (série A vs B :
   // un bureau du canton 7 sauté en 2011 doit remonter à Cantonales 2008).
-  const CANTONAL_FAMILY = new Set(['Cantonales', 'Départementales']);
   const curType = elecType(currentElection);
   const curYear = parseInt(currentElection.match(/\d{4}$/) || [0]);
+  // Famille cantonale-like : on regroupe Cantonale/Cantonales/Départementale/
+  // Départementales (singulier pour les partielles) via isCantonalElection.
   let family;
-  if (CANTONAL_FAMILY.has(curType)) {
+  if (typeof isCantonalElection === 'function' && isCantonalElection(currentElection)) {
     family = Object.keys(ELECTIONS)
-      .filter(l => CANTONAL_FAMILY.has(elecType(l)))
+      .filter(l => isCantonalElection(l))
       .sort((a, b) => parseInt(a.match(/\d{4}$/)) - parseInt(b.match(/\d{4}$/)));
   } else {
     family = allElecOfType(curType);
@@ -5395,7 +5396,17 @@ function _adjacentElections(currentLabel) {
   const curYear = parseInt(currentLabel.match(/\d{4}$/) || [0]);
   const curEl = ELECTIONS[currentLabel] || {};
   const curSerie = curEl.serie || null;
-  let sameType = allElecOfType(curType).filter(l => l !== currentLabel);
+  // Pour les cantonales-like (incluant partielles au singulier), on regroupe
+  // Cantonale/Cantonales/Départementale/Départementales dans une seule famille
+  // via isCantonalElection. Sinon on s'en tient à elecType (1er mot).
+  let sameType;
+  if (typeof isCantonalElection === 'function' && isCantonalElection(currentLabel)) {
+    sameType = Object.keys(ELECTIONS)
+      .filter(l => l !== currentLabel && isCantonalElection(l))
+      .sort((a, b) => parseInt(a.match(/\d{4}$/)) - parseInt(b.match(/\d{4}$/)));
+  } else {
+    sameType = allElecOfType(curType).filter(l => l !== currentLabel);
+  }
   if (curSerie) sameType = sameType.filter(l => (ELECTIONS[l] || {}).serie === curSerie);
   return {
     prev: sameType.filter(l => parseInt(l.match(/\d{4}$/)) < curYear).pop(),
