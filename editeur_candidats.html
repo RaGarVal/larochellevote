@@ -1685,7 +1685,12 @@ function showExport() {
   }
   if (nbPersons) {
     txt += '// Corrections PERSONS (identité : prénom, nom, sexe) — ' + nbPersons + ' profil(s) modifié(s)\n';
-    txt += '// Pour appliquer : Object.entries(PERSON_CORRECTIONS).forEach(([pid,v]) => Object.assign(PERSONS[pid] = PERSONS[pid] || {}, v));\n';
+    txt += '// Pour appliquer (propage aussi à CAND_DATA + CANDIDATURES pour les candidatures individuelles) :\n';
+    txt += '//   Object.entries(PERSON_CORRECTIONS).forEach(([pid,v]) => {\n';
+    txt += '//     Object.assign(PERSONS[pid] = PERSONS[pid] || {}, v);\n';
+    txt += '//     Object.values(CAND_DATA).forEach(c => { if (c.person === pid) Object.assign(c, v); });\n';
+    txt += '//     Object.values(CANDIDATURES).forEach(c => { if (c.person === pid) Object.assign(c, v); });\n';
+    txt += '//   });\n';
     txt += 'const PERSON_CORRECTIONS = ' + JSON.stringify(personsChanges, null, 2) + ';\n\n';
   }
   if (nbPartiName) {
