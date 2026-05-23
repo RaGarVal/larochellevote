@@ -89,6 +89,18 @@
   .timeline th { position: static; background: #f5f5f5; padding: 7px 10px; font-size: .68rem; color: #777; border-bottom: 1px solid #e0e0e0; }
   .timeline td { padding: 7px 10px; border-bottom: 1px solid #f0f0f0; }
   .timeline tr.override-row td { background: #f0fff4; }
+  .timeline tr.cand-changed td { background: #fff8e1; }
+  .timeline .cell-inp {
+    border: 1px solid transparent;
+    background: transparent;
+    padding: 3px 5px;
+    border-radius: 3px;
+    font-size: .8rem;
+    font-family: inherit;
+  }
+  .timeline .cell-inp:hover { border-color: #ddd; background: #fff; }
+  .timeline .cell-inp:focus { outline: none; border-color: #1a73e8; background: #fff; }
+  .timeline select.cell-inp { cursor: pointer; }
   .timeline .yr { font-family: monospace; font-weight: 700; color: #555; }
   .timeline .ovr-tag { font-size: .65rem; background: #d6f0e3; color: #1e8449; padding: 1px 6px; border-radius: 3px; margin-left: 4px; }
   .profile-detail .close-btn { align-self: flex-end; padding: 7px 14px; background: #eee; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
@@ -105,6 +117,7 @@
     <button id="tab-parti" onclick="showSection('parti')">Partis</button>
   </div>
   <span class="count" id="count-label"></span>
+  <button class="btn-add" onclick="openNewElectionWizard()" title="Ajouter une nouvelle élection (JSON)">+ Nouvelle élection</button>
   <button class="btn-export" onclick="showExport()">Exporter →</button>
 </header>
 
@@ -190,6 +203,58 @@
     <tbody id="parti-body"><tr><td colspan="4" class="loading">Chargement…</td></tr></tbody>
   </table>
 </section>
+
+<!-- ─────────────── WIZARD NOUVELLE ÉLECTION (Phase 2B v0) ─────────────── -->
+<div id="newelec-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:150;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:10px;padding:22px;width:900px;max-width:96vw;max-height:90vh;display:flex;flex-direction:column;gap:12px">
+    <h2 style="font-size:1.05rem">Nouvelle élection — Import JSON</h2>
+    <p style="font-size:.78rem;color:#666;line-height:1.5">
+      Colle ici le JSON décrivant l'élection à ajouter. Format attendu :
+      <a href="#" onclick="event.preventDefault();document.getElementById('newelec-schema').style.display = document.getElementById('newelec-schema').style.display === 'none' ? 'block' : 'none'">voir schéma ↓</a>
+    </p>
+    <pre id="newelec-schema" style="display:none;font-size:.7rem;background:#f5f5f5;padding:10px;border-radius:6px;max-height:300px;overflow:auto">{
+  "label": "Cantonales 2030",
+  "my": "2026",                       // ère cartographique
+  "my_canton": "2015",                // (cantonales/dép uniquement)
+  "serie": "A",                       // (cantonales uniquement, optionnel)
+  "new_persons": {
+    "antoine-dupont": { "p": "Antoine", "n": "Dupont", "s": "H" },
+    ...
+  },
+  "candidatures": {
+    "antoine-dupont@cantonales-2030": {
+      "election": "Cantonales 2030",
+      "person": "antoine-dupont",     // OU "binome": ["pid1","pid2"]
+      "pa": "PS", "bk": "g", "b": "G",
+      "t": ["gauche modérée"],
+      "c": "#CC0100",
+      "al": "PRG"
+    },
+    ...
+  },
+  "par_canton": {                     // (cantonales/dép) ou "sheets" pour les autres types
+    "1": {
+      "sheets": {
+        "T1": {
+          "0001": { "i": 1000, "e": 700, "bn": 10, "a": 30.0,
+                    "c": { "antoine-dupont@cantonales-2030": 35.5, ... },
+                    "w": "antoine-dupont@cantonales-2030" },
+          ...
+        },
+        "T2": {...}
+      }
+    }
+  }
+}</pre>
+    <textarea id="newelec-input" placeholder="Colle ici le JSON..." style="flex:1;min-height:300px;font-family:monospace;font-size:.78rem;border:1px solid #ddd;border-radius:6px;padding:10px;resize:vertical"></textarea>
+    <div id="newelec-preview" style="font-size:.82rem;padding:10px;background:#f5f5f5;border-radius:6px;min-height:50px;color:#555"></div>
+    <div style="display:flex;justify-content:flex-end;gap:8px">
+      <button onclick="validateNewElection()" style="padding:8px 14px;background:#1a73e8;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600">Valider</button>
+      <button id="newelec-export-btn" disabled onclick="exportNewElection()" style="padding:8px 14px;background:#27AE60;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;opacity:.5">Générer l'export ↓</button>
+      <button onclick="closeNewElectionWizard()" style="padding:8px 14px;background:#eee;border:none;border-radius:6px;cursor:pointer">Fermer</button>
+    </div>
+  </div>
+</div>
 
 <!-- ─────────────── EXPORT MODAL ─────────────── -->
 <div id="export-area">
@@ -655,10 +720,36 @@ function addParti() {
 }
 
 // ─────────────── PROFILS ───────────────
-// Regroupement des entrées CAND_DATA par "personne" via heuristique slug(prénom+nom).
-// Les overrides "|Élection" sont rattachés au profil de la générique. Les binômes
-// (entries avec binome:[k1,k2]) sont exclus de cette vue (gérés en Phase 3).
+// Vue par PERSONS + CANDIDATURES (modèle post-migration M4). Édition inline
+// des candidatures (Phase 2) : modifs stockées en mémoire et exportées
+// sous forme de CANDIDATURE_CORRECTIONS.
 let profiles = [];
+let candidatureChanges = {};  // { cand_id: { field: value } }
+
+function setCandidatureField(cid, field, value) {
+  if (!candidatureChanges[cid]) candidatureChanges[cid] = {};
+  // Si la valeur revient à l'originale → retirer le diff
+  const orig = (typeof CANDIDATURES !== 'undefined' && CANDIDATURES[cid]) || {};
+  const origVal = orig[field];
+  const eq = Array.isArray(origVal) && Array.isArray(value)
+    ? JSON.stringify(origVal) === JSON.stringify(value)
+    : (origVal || '') === (value || '');
+  if (eq) {
+    delete candidatureChanges[cid][field];
+    if (Object.keys(candidatureChanges[cid]).length === 0) delete candidatureChanges[cid];
+  } else {
+    candidatureChanges[cid][field] = value;
+  }
+}
+function getCandidatureField(cid, field) {
+  const ch = candidatureChanges[cid];
+  if (ch && ch[field] !== undefined) return ch[field];
+  const orig = (typeof CANDIDATURES !== 'undefined' && CANDIDATURES[cid]) || {};
+  return orig[field];
+}
+function isCandidatureChanged(cid) {
+  return !!(candidatureChanges[cid] && Object.keys(candidatureChanges[cid]).length);
+}
 
 function slugifyName(s) {
   return (s || '').toLowerCase()
@@ -804,30 +895,58 @@ function openProfile(id) {
   const sexeBadge = p.s === 'F' ? '<span class="badge-sexe">♀</span>' : p.s === 'H' ? '<span class="badge-sexe">♂</span>' : '';
   const detail = document.querySelector('#profile-modal .profile-detail');
 
-  // Pour les binômes : afficher le co-équipier
+  // Phase 2 : timeline éditable. Chaque cellule = input qui modifie candidatureChanges.
+  // Pour les binômes (Cas A) : le co-équipier est éditable via bouton ✎.
   function renderRow(e) {
+    const cid = e.cid;
     const c = e.c;
-    const bg = B_COLORS[c.b] || '#aaa';
-    const bkBg = BK_COLORS[c.bk] || '#aaa';
+    // Affichage des valeurs : pris depuis candidatureChanges si modifié, sinon original
+    const pa = getCandidatureField(cid, 'pa') || '';
+    const al = getCandidatureField(cid, 'al') || '';
+    const bkVal = getCandidatureField(cid, 'bk') || '';
+    const bVal = (typeof BLOC_LEGACY !== 'undefined' && BLOC_LEGACY[bkVal]) || c.b || '?';
+    const t = getCandidatureField(cid, 't') || c.t || [];
+    const bg = B_COLORS[bVal] || '#aaa';
+    const bkBg = BK_COLORS[bkVal] || '#aaa';
+    // Binôme : récupérer le co-équipier (en tenant compte des modifs en cours)
+    const liveBinome = getCandidatureField(cid, 'binome') || c.binome;
     let coLabel = '';
-    if (Array.isArray(c.binome) && c.binome.length === 2) {
-      const otherId = c.binome.find(x => x !== p.id);
+    if (Array.isArray(liveBinome) && liveBinome.length === 2) {
+      const otherId = liveBinome.find(x => x !== p.id);
       if (otherId && PERSONS[otherId]) {
         const other = PERSONS[otherId];
-        coLabel = '<span style="font-size:.7rem;color:#888;margin-left:5px">avec ' + escapeHtml((other.p ? other.p + ' ' : '') + other.n) + '</span>';
+        coLabel = '<span style="font-size:.7rem;color:#888;margin-left:5px">avec '
+          + escapeHtml((other.p ? other.p + ' ' : '') + other.n)
+          + ' <a href="#" onclick="event.preventDefault();openBinomeEditor(\'' + escapeAttr(cid) + '\',\'' + escapeAttr(p.id) + '\')" style="color:#1a73e8;text-decoration:none;font-weight:600" title="Modifier le binôme">✎</a></span>';
       }
     }
-    return '<tr>'
+    const isChanged = isCandidatureChanged(cid);
+    const trCls = isChanged ? ' class="cand-changed"' : '';
+    // bk dropdown
+    const bkOpts = '<option value="">—</option>' + BK_OPTIONS.map(([v, lbl]) =>
+      '<option value="' + v + '"' + (v === bkVal ? ' selected' : '') + '>' + v + '</option>'
+    ).join('');
+    const safeCid = escapeAttr(cid);
+    return '<tr' + trCls + ' data-cid="' + safeCid + '">'
       + '<td class="yr">' + e.year + '</td>'
       + '<td>' + escapeHtml(c.election) + coLabel + '</td>'
-      + '<td><span style="font-family:monospace;font-weight:700">' + escapeHtml(c.pa || '') + '</span></td>'
-      + '<td>' + escapeHtml(c.al || '') + '</td>'
-      + '<td><span class="b-badge" style="background:' + bg + '">' + (c.b || '?') + '</span></td>'
-      + '<td><span class="b-badge" style="background:' + bkBg + '">' + (c.bk || '?') + '</span></td>'
-      + '<td style="font-size:.75rem;color:#666">' + escapeHtml((c.t || []).join(', ')) + '</td>'
+      + '<td><input class="cell-inp" style="font-family:monospace;font-weight:700;width:80px" '
+      +     'value="' + escapeAttr(pa) + '" '
+      +     'oninput="setCandidatureField(this.closest(\'tr\').dataset.cid,\'pa\',this.value);_markCandRow(this)"></td>'
+      + '<td><input class="cell-inp" style="width:160px" '
+      +     'value="' + escapeAttr(al) + '" placeholder="ex: PRG, EELV" '
+      +     'oninput="setCandidatureField(this.closest(\'tr\').dataset.cid,\'al\',this.value);_markCandRow(this)"></td>'
+      + '<td><span class="b-badge" style="background:' + bg + '" title="dérivé du bk">' + bVal + '</span></td>'
+      + '<td><select class="cell-inp" style="border-color:' + bkBg + ';color:' + bkBg + ';font-weight:600" '
+      +     'onchange="setCandidatureField(this.closest(\'tr\').dataset.cid,\'bk\',this.value);_markCandRow(this);refreshTimelineRow(this.closest(\'tr\'))">' + bkOpts + '</select></td>'
+      + '<td><input class="cell-inp" style="width:200px;font-size:.75rem" '
+      +     'value="' + escapeAttr((t || []).join(', ')) + '" placeholder="ex: gauche modérée, écolo" '
+      +     'oninput="setCandidatureFamilies(this.closest(\'tr\').dataset.cid,this);_markCandRow(this)"></td>'
       + '</tr>';
   }
 
+  const nbChanges = events.filter(e => isCandidatureChanged(e.cid)).length;
+  const saveLabel = nbChanges ? `Enregistrer (${nbChanges} modif)` : 'Aucune modification';
   detail.innerHTML = '<h2>' + escapeHtml(fullName) + '</h2>'
     + '<div class="sub-id">' + sexeBadge
     +   '<span>person_id : <code style="font-size:.78rem">' + escapeHtml(p.id) + '</code> · '
@@ -835,19 +954,303 @@ function openProfile(id) {
     + '</div>'
     + (events.length === 0
         ? '<p style="color:#888;font-style:italic;padding:20px">Aucune candidature trouvée.</p>'
-        : '<table class="timeline"><thead><tr>'
-          + '<th style="width:60px">Année</th>'
+        : '<p style="font-size:.78rem;color:#888;margin-bottom:5px">💡 Tu peux modifier <strong>parti</strong>, <strong>alliance</strong>, <strong>bk</strong>, <strong>familles</strong> directement dans le tableau. Les modifications sont retenues en mémoire jusqu\'à l\'export.</p>'
+          + '<table class="timeline"><thead><tr>'
+          + '<th style="width:55px">Année</th>'
           + '<th>Élection</th>'
-          + '<th style="width:80px">Parti</th>'
-          + '<th>Alliance</th>'
-          + '<th style="width:60px">Bloc</th>'
-          + '<th style="width:60px">bk</th>'
-          + '<th>Familles</th>'
+          + '<th style="width:90px">Parti ✏️</th>'
+          + '<th style="width:170px">Alliance ✏️</th>'
+          + '<th style="width:55px">Bloc</th>'
+          + '<th style="width:80px">bk ✏️</th>'
+          + '<th>Familles ✏️</th>'
           + '</tr></thead><tbody>'
           + events.map(renderRow).join('')
           + '</tbody></table>')
-    + '<button class="close-btn" onclick="closeProfile()">Fermer</button>';
+    + '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">'
+    +   '<span id="prof-modif-count" style="margin-right:auto;color:#27AE60;font-size:.8rem;font-weight:600;align-self:center">'
+    +     (nbChanges ? `📝 ${nbChanges} candidature(s) modifiée(s)` : '') + '</span>'
+    +   '<button class="close-btn" onclick="closeProfile()">Fermer</button>'
+    + '</div>';
   document.getElementById('profile-modal').classList.add('show');
+}
+function setCandidatureFamilies(cid, input) {
+  const arr = input.value.split(',').map(s => s.trim()).filter(Boolean);
+  setCandidatureField(cid, 't', arr);
+}
+function _markCandRow(input) {
+  const tr = input.closest('tr');
+  const cid = tr.dataset.cid;
+  tr.classList.toggle('cand-changed', isCandidatureChanged(cid));
+  // Compteur global modif candidatures
+  const counter = document.getElementById('prof-modif-count');
+  if (counter) {
+    const n = Object.keys(candidatureChanges).length;
+    counter.textContent = n ? `📝 ${n} candidature(s) modifiée(s)` : '';
+  }
+}
+function refreshTimelineRow(tr) {
+  // Quand bk change, recalculer le bloc affiché dans la cellule b
+  const cid = tr.dataset.cid;
+  const bkVal = getCandidatureField(cid, 'bk') || '';
+  const bVal = (typeof BLOC_LEGACY !== 'undefined' && BLOC_LEGACY[bkVal]) || '?';
+  const tdB = tr.children[4];
+  if (tdB) {
+    const bg = B_COLORS[bVal] || '#aaa';
+    tdB.innerHTML = '<span class="b-badge" style="background:' + bg + '">' + bVal + '</span>';
+  }
+}
+
+// ─────────────── WIZARD NOUVELLE ÉLECTION (Phase 2B v0) ───────────────
+let validatedNewElection = null;
+function openNewElectionWizard() {
+  document.getElementById('newelec-modal').style.display = 'flex';
+  document.getElementById('newelec-input').value = '';
+  document.getElementById('newelec-preview').textContent = '';
+  document.getElementById('newelec-export-btn').disabled = true;
+  document.getElementById('newelec-export-btn').style.opacity = '.5';
+  validatedNewElection = null;
+}
+function closeNewElectionWizard() {
+  document.getElementById('newelec-modal').style.display = 'none';
+}
+function validateNewElection() {
+  const txt = document.getElementById('newelec-input').value.trim();
+  const preview = document.getElementById('newelec-preview');
+  if (!txt) { preview.innerHTML = '<span style="color:#c00">⚠️ JSON vide</span>'; return; }
+  let data;
+  try {
+    data = JSON.parse(txt);
+  } catch (e) {
+    preview.innerHTML = '<span style="color:#c00">❌ JSON invalide : ' + escapeHtml(e.message) + '</span>';
+    return;
+  }
+  const errs = [];
+  const warns = [];
+
+  // Validation des champs requis
+  if (!data.label || typeof data.label !== 'string') errs.push('Champ "label" manquant ou invalide');
+  if (data.label && ELECTIONS[data.label]) errs.push('Élection "' + data.label + '" existe déjà dans ELECTIONS');
+  if (!data.my || typeof data.my !== 'string') errs.push('Champ "my" (ère cartographique) manquant');
+  if (data.my && !BUREAU_INFO[data.my]) errs.push('Ère cartographique "' + data.my + '" inconnue');
+  if (!data.candidatures || typeof data.candidatures !== 'object') errs.push('Champ "candidatures" manquant');
+
+  // Validation new_persons (optionnel)
+  const newPersons = data.new_persons || {};
+  const personsCount = Object.keys(newPersons).length;
+  Object.entries(newPersons).forEach(([pid, p]) => {
+    if (PERSONS[pid]) warns.push('Person "' + pid + '" existe déjà (sera fusionnée)');
+    if (!p.n) errs.push('Person "' + pid + '" : n manquant');
+  });
+
+  // Validation candidatures : chaque doit pointer vers une PERSON existante ou nouvelle
+  const candCount = Object.keys(data.candidatures || {}).length;
+  let cidCheckedFirst = null;
+  Object.entries(data.candidatures || {}).forEach(([cid, c]) => {
+    if (CANDIDATURES[cid]) errs.push('Candidature "' + cid + '" existe déjà');
+    if (c.person) {
+      if (!PERSONS[c.person] && !newPersons[c.person]) errs.push('Person "' + c.person + '" (pour ' + cid + ') inconnue (ajoutez-la dans new_persons)');
+    } else if (Array.isArray(c.binome) && c.binome.length === 2) {
+      c.binome.forEach(pid => {
+        if (!PERSONS[pid] && !newPersons[pid]) errs.push('Person "' + pid + '" (binôme de ' + cid + ') inconnue');
+      });
+    } else {
+      errs.push('Candidature "' + cid + '" : ni "person" ni "binome[2]" valide');
+    }
+    if (c.election !== data.label) warns.push('Candidature "' + cid + '" : election="' + c.election + '" ne matche pas le label "' + data.label + '"');
+    if (!cidCheckedFirst) cidCheckedFirst = cid;
+  });
+
+  // Validation sheets (par_canton ou direct)
+  let bureauxCount = 0;
+  let toursList = [];
+  function checkSheet(sheet, contextLabel) {
+    for (const [bid, bd] of Object.entries(sheet)) {
+      bureauxCount++;
+      if (!BUREAU_INFO[data.my][bid]) warns.push(contextLabel + ' bureau "' + bid + '" inconnu dans BUREAU_INFO[' + data.my + ']');
+      // Vérifier que les cand_ids dans c référencent des candidatures valides
+      Object.keys(bd.c || {}).forEach(refId => {
+        if (refId === 'Oui' || refId === 'Non') return;
+        if (refId.match(/^Autres\s*\(\d+\s*listes?\)$/)) return;
+        if (!data.candidatures[refId] && !CANDIDATURES[refId]) {
+          errs.push(contextLabel + ' bureau "' + bid + '" : cand_id "' + refId + '" inconnu');
+        }
+      });
+    }
+  }
+  if (data.par_canton) {
+    Object.entries(data.par_canton).forEach(([cid, cd]) => {
+      Object.entries(cd.sheets || {}).forEach(([tour, sheet]) => {
+        toursList.push(tour);
+        checkSheet(sheet, 'Canton ' + cid + ' ' + tour);
+      });
+    });
+  } else if (data.sheets) {
+    Object.entries(data.sheets).forEach(([tour, sheet]) => {
+      toursList.push(tour);
+      checkSheet(sheet, tour);
+    });
+  } else {
+    errs.push('Ni "par_canton" ni "sheets" présent');
+  }
+
+  if (errs.length) {
+    preview.innerHTML = '<div style="color:#c00"><strong>❌ ' + errs.length + ' erreur(s) :</strong><ul style="margin:4px 0 0 20px">'
+      + errs.slice(0, 10).map(e => '<li>' + escapeHtml(e) + '</li>').join('')
+      + (errs.length > 10 ? '<li>… +' + (errs.length - 10) + ' autres</li>' : '')
+      + '</ul></div>';
+    return;
+  }
+
+  // OK
+  validatedNewElection = data;
+  document.getElementById('newelec-export-btn').disabled = false;
+  document.getElementById('newelec-export-btn').style.opacity = '1';
+  let summary = '<div style="color:#27AE60"><strong>✓ JSON valide</strong></div>'
+    + '<div style="margin-top:6px">'
+    + '<strong>' + escapeHtml(data.label) + '</strong> (ère ' + data.my + (data.my_canton ? ', canton ' + data.my_canton : '') + (data.serie ? ', série ' + data.serie : '') + ')<br>'
+    + '• <strong>' + personsCount + '</strong> nouvelle' + (personsCount > 1 ? 's' : '') + ' personne' + (personsCount > 1 ? 's' : '') + '<br>'
+    + '• <strong>' + candCount + '</strong> candidature' + (candCount > 1 ? 's' : '') + '<br>'
+    + '• <strong>' + bureauxCount + '</strong> bureau' + (bureauxCount > 1 ? 'x' : '') + ' × tours [' + [...new Set(toursList)].join(', ') + ']'
+    + '</div>';
+  if (warns.length) {
+    summary += '<div style="margin-top:8px;color:#c08000"><strong>⚠️ ' + warns.length + ' avertissement(s) :</strong><ul style="margin:4px 0 0 20px;font-size:.78rem">'
+      + warns.slice(0, 5).map(w => '<li>' + escapeHtml(w) + '</li>').join('')
+      + (warns.length > 5 ? '<li>… +' + (warns.length - 5) + ' autres</li>' : '')
+      + '</ul></div>';
+  }
+  preview.innerHTML = summary;
+}
+function exportNewElection() {
+  if (!validatedNewElection) return;
+  const data = validatedNewElection;
+  // Générer le bloc à patcher dans donnees.js
+  const newPersons = data.new_persons || {};
+  const candidatures = data.candidatures || {};
+
+  // Construire la nouvelle entrée ELECTIONS
+  const newElec = { my: data.my };
+  if (data.my_canton) newElec.my_canton = data.my_canton;
+  if (data.serie) newElec.serie = data.serie;
+  if (data.par_canton) newElec.par_canton = data.par_canton;
+  if (data.sheets) newElec.sheets = data.sheets;
+
+  // Construire les entrées CAND_DATA = identité + candidature
+  const newCandData = {};
+  Object.entries(candidatures).forEach(([cid, c]) => {
+    const obj = { ...c };
+    if (c.person) {
+      const person = PERSONS[c.person] || newPersons[c.person] || {};
+      if (person.p) obj.p = person.p;
+      if (person.n) obj.n = person.n;
+      if (person.s) obj.s = person.s;
+    }
+    newCandData[cid] = obj;
+  });
+
+  let txt = '// === NOUVELLE ÉLECTION ' + data.label + ' ===\n';
+  txt += '// À appliquer dans donnees.js via : \n';
+  txt += '//   Object.assign(PERSONS, NEW_ELECTION.persons);\n';
+  txt += '//   Object.assign(CANDIDATURES, NEW_ELECTION.candidatures);\n';
+  txt += '//   Object.assign(CAND_DATA, NEW_ELECTION.cand_data);\n';
+  txt += '//   ELECTIONS["' + data.label + '"] = NEW_ELECTION.election;\n\n';
+  txt += 'const NEW_ELECTION = {\n';
+  txt += '  label: ' + JSON.stringify(data.label) + ',\n';
+  txt += '  persons: ' + JSON.stringify(newPersons, null, 2) + ',\n';
+  txt += '  candidatures: ' + JSON.stringify(candidatures, null, 2) + ',\n';
+  txt += '  cand_data: ' + JSON.stringify(newCandData, null, 2) + ',\n';
+  txt += '  election: ' + JSON.stringify(newElec, null, 2) + '\n';
+  txt += '};\n';
+
+  // Réutiliser le textarea d'export
+  closeNewElectionWizard();
+  document.getElementById('export-text').value = txt;
+  document.getElementById('export-area').classList.add('show');
+}
+
+// ─────────────── BINÔME EDITOR (Phase 2 — Cas A) ───────────────
+// Sous-modal pour éditer le binôme d'une candidature : co-équipier et partis.
+function openBinomeEditor(cid, currentPersonId) {
+  const c = CANDIDATURES[cid];
+  if (!c || !Array.isArray(c.binome)) return;
+  const liveBinome = getCandidatureField(cid, 'binome') || c.binome;
+  const liveBinomePartis = getCandidatureField(cid, 'binome_partis') || c.binome_partis || ['', ''];
+  // Identifier qui est "soi" (= currentPersonId) et qui est l'autre dans le binôme
+  const idxSelf = liveBinome.indexOf(currentPersonId);
+  const idxOther = idxSelf === 0 ? 1 : 0;
+  const selfId = liveBinome[idxSelf];
+  const otherId = liveBinome[idxOther];
+  const selfPa = liveBinomePartis[idxSelf] || '';
+  const otherPa = liveBinomePartis[idxOther] || '';
+
+  // Construire les options de PERSONS (triées par n)
+  const sortedPersons = Object.entries(PERSONS).sort((a, b) => {
+    const an = a[1].n || '', bn = b[1].n || '';
+    if (an !== bn) return an.localeCompare(bn);
+    return (a[1].p || '').localeCompare(b[1].p || '');
+  });
+  const opts = sortedPersons.map(([pid, person]) => {
+    const lbl = (person.p ? person.p + ' ' : '') + (person.n || '');
+    return '<option value="' + escapeAttr(pid) + '"' + (pid === otherId ? ' selected' : '') + '>' + escapeHtml(lbl) + (person.s ? ' (' + person.s + ')' : '') + '</option>';
+  }).join('');
+
+  const selfPersonObj = PERSONS[selfId] || {};
+  const otherPersonObj = PERSONS[otherId] || {};
+  const selfName = (selfPersonObj.p ? selfPersonObj.p + ' ' : '') + (selfPersonObj.n || '');
+  const otherName = (otherPersonObj.p ? otherPersonObj.p + ' ' : '') + (otherPersonObj.n || '');
+
+  const modal = document.createElement('div');
+  modal.id = 'binome-editor-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center';
+  modal.onclick = (e) => { if (e.target === modal) document.body.removeChild(modal); };
+  modal.innerHTML = '<div style="background:#fff;padding:24px;border-radius:10px;width:560px;max-width:95vw">'
+    + '<h2 style="font-size:1rem;margin-bottom:16px">Éditer le binôme — <code style="font-size:.78rem">' + escapeHtml(c.election) + '</code></h2>'
+    + '<div style="display:flex;flex-direction:column;gap:14px">'
+    + '<div style="display:grid;grid-template-columns:120px 1fr 90px;gap:8px;align-items:center">'
+    + '<label style="font-size:.85rem;font-weight:600">Soi-même</label>'
+    + '<div style="font-size:.85rem">' + escapeHtml(selfName) + ' <code style="font-size:.7rem;color:#888">' + escapeHtml(selfId) + '</code></div>'
+    + '<input type="text" id="binome-edit-pa-self" value="' + escapeAttr(selfPa) + '" placeholder="parti" style="padding:5px 7px;border:1px solid #ddd;border-radius:4px;font-family:monospace;font-size:.85rem">'
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:120px 1fr 90px;gap:8px;align-items:center">'
+    + '<label style="font-size:.85rem;font-weight:600">Co-équipier</label>'
+    + '<select id="binome-edit-other" style="padding:5px 7px;border:1px solid #ddd;border-radius:4px;font-size:.85rem">'
+    + opts
+    + '</select>'
+    + '<input type="text" id="binome-edit-pa-other" value="' + escapeAttr(otherPa) + '" placeholder="parti" style="padding:5px 7px;border:1px solid #ddd;border-radius:4px;font-family:monospace;font-size:.85rem">'
+    + '</div>'
+    + '<p style="font-size:.72rem;color:#888;line-height:1.4">'
+    + '💡 Les <strong>partis</strong> sont ceux des 2 membres individuellement. Si différents (ex. <code>PS</code> + <code>EELV</code>), le binôme s\'affichera en <strong>bicolor diagonal</strong> sur la carte. Si identiques, mono-couleur.'
+    + '</p>'
+    + '</div>'
+    + '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px">'
+    + '<button onclick="document.body.removeChild(document.getElementById(\'binome-editor-modal\'))" style="padding:8px 14px;background:#eee;border:none;border-radius:6px;cursor:pointer">Annuler</button>'
+    + '<button onclick="saveBinomeEdit(\'' + escapeAttr(cid) + '\',' + idxSelf + ',\'' + escapeAttr(selfId) + '\')" style="padding:8px 14px;background:#27AE60;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600">Appliquer</button>'
+    + '</div>'
+    + '</div>';
+  document.body.appendChild(modal);
+}
+function saveBinomeEdit(cid, idxSelf, selfId) {
+  const newOther = document.getElementById('binome-edit-other').value;
+  const newPaSelf = document.getElementById('binome-edit-pa-self').value.trim();
+  const newPaOther = document.getElementById('binome-edit-pa-other').value.trim();
+  // Reconstruire binome dans le bon ordre
+  const newBinome = [];
+  newBinome[idxSelf] = selfId;
+  newBinome[idxSelf === 0 ? 1 : 0] = newOther;
+  const newPartis = [];
+  newPartis[idxSelf] = newPaSelf;
+  newPartis[idxSelf === 0 ? 1 : 0] = newPaOther;
+  setCandidatureField(cid, 'binome', newBinome);
+  setCandidatureField(cid, 'binome_partis', newPartis);
+  // Fermer la modal + rafraîchir la modal profil
+  const modal = document.getElementById('binome-editor-modal');
+  if (modal) document.body.removeChild(modal);
+  // Trouver le profil en cours et le re-render
+  const detail = document.querySelector('#profile-modal .profile-detail h2');
+  if (detail) {
+    // Re-render via openProfile en re-trouvant le bon profile
+    const currentProfileId = document.querySelector('#profile-modal .profile-detail .sub-id code').textContent;
+    openProfile(currentProfileId);
+  }
 }
 function closeProfile() {
   document.getElementById('profile-modal').classList.remove('show');
@@ -914,6 +1317,18 @@ function showExport() {
   const nbCand = Object.keys(candOther).length;
   const nbPartiName = Object.keys(changesPartiName).length;
   const nbPartiColor = Object.keys(changesPartiColor).length;
+  // Phase 2 : modifications de candidatures (nouveau modèle)
+  // Pour chaque cand_id modifié, on calcule aussi le b dérivé du bk pour cohérence.
+  const candidatureChangesOut = {};
+  Object.entries(candidatureChanges).forEach(([cid, ch]) => {
+    const out = { ...ch };
+    // Si bk changé → recalculer b
+    if (ch.bk !== undefined && typeof BLOC_LEGACY !== 'undefined') {
+      out.b = BLOC_LEGACY[ch.bk] || '?';
+    }
+    candidatureChangesOut[cid] = out;
+  });
+  const nbCandidatures = Object.keys(candidatureChangesOut).length;
 
   let txt = '';
   if (nbBk) {
@@ -926,12 +1341,20 @@ function showExport() {
     txt += '\n// Pour appliquer : Object.entries(CAND_CORRECTIONS).forEach(([k,v]) => Object.assign(CAND_DATA[k] = CAND_DATA[k] || {}, v));\n';
     txt += 'const CAND_CORRECTIONS = ' + JSON.stringify(candOther, null, 2) + ';\n\n';
   }
+  if (nbCandidatures) {
+    txt += '// Corrections candidatures (Phase 2) — ' + nbCandidatures + ' candidature(s) modifiée(s)\n';
+    txt += '// Pour appliquer : Object.entries(CANDIDATURE_CORRECTIONS).forEach(([cid,v]) => {\n';
+    txt += '//   Object.assign(CANDIDATURES[cid] = CANDIDATURES[cid] || {}, v);\n';
+    txt += '//   Object.assign(CAND_DATA[cid] = CAND_DATA[cid] || {}, v);\n';
+    txt += '// });\n';
+    txt += 'const CANDIDATURE_CORRECTIONS = ' + JSON.stringify(candidatureChangesOut, null, 2) + ';\n\n';
+  }
   if (nbPartiName) {
     txt += '// Corrections noms de partis — ' + nbPartiName + ' modification(s)' + (newPartis.size ? ' (dont ' + newPartis.size + ' nouveau(x))' : '') + '\n';
     txt += '// Pour appliquer : Object.assign(PARTI_NAMES, PARTI_CORRECTIONS);\n';
     txt += 'const PARTI_CORRECTIONS = ' + JSON.stringify(changesPartiName, null, 2) + ';\n\n';
   }
-  if (!nbBk && !nbCand && !nbPartiName) txt = '// Aucune modification à exporter.\n';
+  if (!nbBk && !nbCand && !nbCandidatures && !nbPartiName) txt = '// Aucune modification à exporter.\n';
 
   document.getElementById('export-text').value = txt;
   document.getElementById('export-area').classList.add('show');
