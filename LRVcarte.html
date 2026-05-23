@@ -2311,17 +2311,18 @@ function isDiversParti(pa) {
 }
 // Renvoie le couple [pa1, pa2] dans l'ordre d'affichage (parti déclaré devant
 // divers, sinon ordre des membres). Null si binôme homogène ou non-binôme.
+// Post-M4.5 : lit directement le champ binome_partis sur la candidature binôme
+// (les person_id des membres n'ont plus de pa propre dans le modèle PERSONS).
 function _orderedBinomePartis(name) {
   const ci = candInfo(name);
   if (!Array.isArray(ci.binome) || ci.binome.length !== 2) return null;
-  const ms = binomeMembers(name);
-  if (!ms) return null;
-  const pa1 = (ms[0].pa || '').trim();
-  const pa2 = (ms[1].pa || '').trim();
+  if (!Array.isArray(ci.binome_partis) || ci.binome_partis.length !== 2) return null;
+  const pa1 = (ci.binome_partis[0] || '').trim();
+  const pa2 = (ci.binome_partis[1] || '').trim();
   if (!pa1 || !pa2 || pa1 === pa2) return null;
-  // Priorité parti déclaré devant divers
-  if (isDiversParti(pa1) && !isDiversParti(pa2)) return [pa2, pa1, ms[1], ms[0]];
-  return [pa1, pa2, ms[0], ms[1]];
+  // Priorité parti déclaré devant divers (DV*)
+  if (isDiversParti(pa1) && !isDiversParti(pa2)) return [pa2, pa1];
+  return [pa1, pa2];
 }
 // Étiquette parti à afficher pour un binôme : "PS+PRG" si mixte, "PS" sinon.
 // Pour un non-binôme : retourne le pa simple via candInfo.
@@ -2340,11 +2341,14 @@ function binomePartiLabel(name) {
 function binomePartiColors(name) {
   const ord = _orderedBinomePartis(name);
   if (!ord) return null;
-  const [pa1, pa2, m1, m2] = ord;
+  const [pa1, pa2] = ord;
   // Restreindre la bicolorisation aux binômes à DEUX vrais partis (= pas de divers).
   if (isDiversParti(pa1) || isDiversParti(pa2)) return null;
-  const c1 = (m1.c) || (typeof getPartiColor === 'function' && getPartiColor(m1.pa)) || '#bbbbbb';
-  const c2 = (m2.c) || (typeof getPartiColor === 'function' && getPartiColor(m2.pa)) || '#bbbbbb';
+  // Post-M4.5 : couleur dérivée du parti (les person_id n'ont plus de couleur
+  // propre dans PERSONS). getPartiColor lit donnees.js qui a la couleur de
+  // référence par code parti.
+  const c1 = (typeof getPartiColor === 'function' && getPartiColor(pa1)) || '#bbbbbb';
+  const c2 = (typeof getPartiColor === 'function' && getPartiColor(pa2)) || '#bbbbbb';
   return [c1, c2];
 }
 // Helper de style inline pour un dot/carré bicolore. Retourne un string CSS
