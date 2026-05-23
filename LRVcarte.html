@@ -3348,13 +3348,20 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
   const allieR = (typeof binomeAllies === 'function') ? binomeAllies(nameR) : (ciR.al || '');
   // Écart vs ville pour un candidat
   const showVsVille = cityAvg && Object.keys(cityAvg).length > 0 && ns && ns !== 'ville' && ns !== 'quartier';
-  function diffLine(name, pct, onColor, align, c) {
+  function diffLine(name, pct, onColor, align, c, txtCol) {
     if (!showVsVille || c) return '';
     const d = +(pct - (cityAvg[name] || 0)).toFixed(1);
     const sign = d >= 0 ? '+' : '';
-    const col = onColor ? 'rgba(255,255,255,0.8)' : (d >= 0 ? '#1a7a4a' : '#b91c1c');
+    // Si onColor (fond winner coloré) ET txtCol indique fond clair (#000),
+    // utiliser rgba(0,0,0,X) au lieu de rgba(255,255,255,X) pour lisibilité.
+    const useBlack = onColor && txtCol === '#000';
+    const col = onColor
+      ? (useBlack ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.8)')
+      : (d >= 0 ? '#1a7a4a' : '#b91c1c');
     const size = c ? '0.58rem' : '0.68rem';
-    const textCol = onColor ? 'rgba(255,255,255,0.55)' : '#bbb';
+    const textCol = onColor
+      ? (useBlack ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.55)')
+      : '#bbb';
     const lbl = (typeof refLabelForCurrent === 'function') ? refLabelForCurrent() : 'ville';
     return '<div style="font-size:'+size+';color:'+textCol+';margin-top:'+(c?'2px':'4px')+';text-align:'+align+'">'
       + 'vs '+lbl+'\xa0<span style="font-weight:700;color:'+col+'">'+sign+d.toFixed(1)+'\xa0pts</span></div>';
@@ -3441,14 +3448,14 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
     return (c
       ? '<div style="flex:1 1 0;min-width:0;overflow:hidden;background:'+col+';padding:10px 12px;text-align:'+align+'">'
         + '<div style="font-size:2.2rem;font-weight:900;color:'+txtCol+';line-height:1">'+scoreHtml+'</div>'
-        + diffLine(name, pct, true, align, c)
+        + diffLine(name, pct, true, align, c, txtCol)
         + '<div style="font-size:0.82rem;color:'+_tc(0.75)+';margin-top:3px">'+voix.toLocaleString('fr-FR')+' voix</div>'
         + '<div style="font-size:'+nomSizeC+';font-weight:700;color:'+txtCol+';margin-top:8px">'+(hasBr ? nomInner : nomHtml)+'</div>'
         + (pa ? '<div style="font-size:0.68rem;color:'+_tc(0.7)+';margin-top:3px">'+pa+'</div>' : '')
         + '</div>'
       : '<div style="flex:1 1 0;min-width:0;overflow:hidden;background:'+col+';padding:'+dPad+';text-align:'+align+'">'
         + '<div style="font-size:'+dScoreSize+';font-weight:900;color:'+txtCol+';line-height:1">'+scoreHtml+'</div>'
-        + diffLine(name, pct, true, align, c)
+        + diffLine(name, pct, true, align, c, txtCol)
         + '<div style="font-size:'+dVoixSize+';color:'+_tc(0.75)+';margin-top:'+dGapVoix+'">'+voix.toLocaleString('fr-FR')+' voix</div>'
         + (prenom ? '<div style="font-size:'+dPrenomSize+';color:'+_tc(0.85)+';margin-top:'+dGapPrenom+';line-height:1">'+prenom+'</div>' : '')
         + '<div'+nomAttrs+' style="font-size:'+nomSize+';font-weight:700;color:'+txtCol+';margin-top:'+(isRefDuel?dGapPrenom:'2px')+';line-height:1">'+nomInner+'</div>'
@@ -8862,12 +8869,17 @@ function openElecSheet() {
   // Scroll vers l'élection active
   const cur = listEl.querySelector('.elec-item.is-current');
   if (cur) cur.scrollIntoView({ block: 'center' });
+  // A11y : focus trap
+  if (!_elecSheetTrap && typeof createFocusTrap === 'function') _elecSheetTrap = createFocusTrap(sheet);
+  if (_elecSheetTrap) _elecSheetTrap.activate();
 }
+let _elecSheetTrap = null;
 function closeElecSheet() {
   const sheet = document.getElementById('elec-sheet');
   if (!sheet) return;
   sheet.classList.remove('open');
   sheet.setAttribute('aria-hidden', 'true');
+  if (_elecSheetTrap) _elecSheetTrap.deactivate();
 }
 
 // ═══════════ Side drawer mobile : nav bureaux / quartiers ═══════════
@@ -8906,6 +8918,7 @@ function switchNavSheetTab(type) {
   if (cur) cur.scrollIntoView({ block: 'center' });
 }
 
+let _navSheetTrap = null;
 function openNavSheet() {
   const sheet = document.getElementById('nav-sheet');
   if (!sheet) return;
@@ -8919,12 +8932,16 @@ function openNavSheet() {
   switchNavSheetTab(initialTab);
   sheet.classList.add('open');
   sheet.setAttribute('aria-hidden', 'false');
+  // A11y : focus trap
+  if (!_navSheetTrap && typeof createFocusTrap === 'function') _navSheetTrap = createFocusTrap(sheet);
+  if (_navSheetTrap) _navSheetTrap.activate();
 }
 
 function closeNavSheet() {
   const sheet = document.getElementById('nav-sheet');
   if (!sheet) return;
   sheet.classList.remove('open');
+  if (_navSheetTrap) _navSheetTrap.deactivate();
   sheet.setAttribute('aria-hidden', 'true');
 }
 

@@ -4915,9 +4915,13 @@ function openRedecoupageForm(prefillEraYear, prefillText, prefillType) {
   // Pré-remplir le texte si fourni (clic sur un badge existant)
   document.getElementById('redecoupage-text').value = prefillText || '';
   document.getElementById('redecoupage-output').style.display = 'none';
-  document.getElementById('redecoupage-modal').style.display = 'flex';
+  const _rm = document.getElementById('redecoupage-modal');
+  _rm.style.display = 'flex';
+  if (!_redecoupageTrap && typeof createFocusTrap === 'function') _redecoupageTrap = createFocusTrap(_rm);
+  if (_redecoupageTrap) _redecoupageTrap.activate();
   setTimeout(() => document.getElementById('redecoupage-text').focus(), 80);
 }
+let _redecoupageTrap = null;
 
 function openQCorrespPanel() {
   const quartier = document.getElementById('sel-quartier').value;
@@ -4967,11 +4971,16 @@ function openQCorrespPanel() {
     html += `</div>`;
   }
   document.getElementById('qcorresp-body').innerHTML = html;
-  document.getElementById('qcorresp-modal').style.display = 'flex';
+  const _qm = document.getElementById('qcorresp-modal');
+  _qm.style.display = 'flex';
+  if (!_qcorrespTrap && typeof createFocusTrap === 'function') _qcorrespTrap = createFocusTrap(_qm);
+  if (_qcorrespTrap) _qcorrespTrap.activate();
 }
 
+let _qcorrespTrap = null;
 function closeQCorrespPanel() {
   document.getElementById('qcorresp-modal').style.display = 'none';
+  if (_qcorrespTrap) _qcorrespTrap.deactivate();
 }
 
 // ─── Modal édition CANTON_CORRESPONDANCES ──────────────────────────────────
@@ -4992,11 +5001,16 @@ function openCCorrespPanel() {
   renderCCorrespBody();
   document.getElementById('cc-code').classList.remove('show');
   document.getElementById('cc-code').textContent = '';
-  document.getElementById('ccorresp-modal').style.display = 'flex';
+  const _cm = document.getElementById('ccorresp-modal');
+  _cm.style.display = 'flex';
+  if (!_ccorrespTrap && typeof createFocusTrap === 'function') _ccorrespTrap = createFocusTrap(_cm);
+  if (_ccorrespTrap) _ccorrespTrap.activate();
 }
 
+let _ccorrespTrap = null;
 function closeCCorrespPanel() {
   document.getElementById('ccorresp-modal').style.display = 'none';
+  if (_ccorrespTrap) _ccorrespTrap.deactivate();
 }
 
 function resetCCorrespEdits() {
@@ -5133,6 +5147,7 @@ function generateCCorrespCode() {
 
 function closeRedecoupageForm() {
   document.getElementById('redecoupage-modal').style.display = 'none';
+  if (_redecoupageTrap) _redecoupageTrap.deactivate();
 }
 
 function validateRedecoupage() {
@@ -5209,8 +5224,12 @@ function openRefForm() {
 
   document.getElementById('ref-output').style.display = 'none';
   renderRefEras();
-  document.getElementById('ref-modal').style.display = 'flex';
+  const _refM = document.getElementById('ref-modal');
+  _refM.style.display = 'flex';
+  if (!_refModalTrap && typeof createFocusTrap === 'function') _refModalTrap = createFocusTrap(_refM);
+  if (_refModalTrap) _refModalTrap.activate();
 }
+let _refModalTrap = null;
 
 // Trouve l'ère BUREAU_INFO la plus récente ≤ eraYear
 function getBureauInfoEra(eraYear) {
@@ -5311,6 +5330,7 @@ function applyRefToAll(era) {
 
 function closeRefForm() {
   document.getElementById('ref-modal').style.display = 'none';
+  if (_refModalTrap) _refModalTrap.deactivate();
 }
 
 function applyAndGenerateRef() {
