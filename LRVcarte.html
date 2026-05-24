@@ -5650,7 +5650,10 @@ function renderFiche(feature) {
     h += '<div class="fiche-section-participation" style="margin-bottom:14px">' + particiHTML(data.i, data.a, abst_nb_r, blancsPct_r, data.bn || 0, data.e) + '</div>';
     // Split : mini-carte à gauche + (question + duel) à droite
     h += '<div class="split"><div id="mm-wrap"></div>' + sig_r + '</div>';
-    h += renderMoreLinks('bureau', ns, isAgg ? 'ces bureaux agrégés' : ('ce bureau de vote n° ' + parseInt(ns)));
+    // Lien LRVanalyse : utiliser histoKey (ID 2026 canonique de la lignée) pour
+    // que la page analyse suive le MÊME bureau à travers les redécoupages.
+    // Le label reste avec ns (numéro de l'ère affichée, ce que voit le user).
+    h += renderMoreLinks('bureau', histoKey, isAgg ? 'ces bureaux agrégés' : ('ce bureau de vote n° ' + parseInt(ns)));
     document.getElementById('ov-body').innerHTML = h; document.getElementById('ov-body').scrollTop = 0;
     const gjR = getMapGeoJSON();
     const freshR = gjR.features.find(f => numStr(f) === ns) || feature;
@@ -5675,7 +5678,10 @@ function renderFiche(feature) {
   h += '<div class="fiche-section-blocs" style="margin-bottom:18px"><div class="sec-ttl">Blocs politiques</div>'
     + renderBlocTriptych(data, histoKey) + '</div>';
 
-  h += renderMoreLinks('bureau', ns, isAgg ? 'ces bureaux agrégés' : ('ce bureau de vote n° ' + parseInt(ns)));
+  // Lien LRVanalyse : histoKey (ID 2026 canonique) pour suivre la lignée du
+  // bureau à travers les redécoupages successifs. Label avec ns (ce que le
+  // user voit dans la fiche courante).
+  h += renderMoreLinks('bureau', histoKey, isAgg ? 'ces bureaux agrégés' : ('ce bureau de vote n° ' + parseInt(ns)));
   document.getElementById('ov-body').innerHTML = h; document.getElementById('ov-body').scrollTop = 0;
 
   // Récupère la géométrie à jour depuis le GeoJSON du scrutin courant
