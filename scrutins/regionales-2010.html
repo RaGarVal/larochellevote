@@ -3,6 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+  /* Force la vue mobile (viewport=720) si le flag localStorage est activé. */
+  (function () {
+    try {
+      if (localStorage.getItem('lrvote_force_mobile') === '1') {
+        document.querySelector('meta[name=viewport]').setAttribute('content', 'width=720, user-scalable=yes');
+      }
+    } catch (_) {}
+  })();
+</script>
 <title>Régionales 2010 à La Rochelle — Résultats bureau par bureau — La Rochelle Vote</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <meta name="description" content="Résultats détaillés de Régionales 2010 à La Rochelle, bureau par bureau. Top 3 : Ségolène Royal (65,4 %), Dominique Bussereau (34,6 %). Abstention : 52,9 %.">
@@ -113,9 +123,30 @@ section.s-block p { font-size: 1rem; line-height: 1.6; color: var(--text-body); 
 .cand-row { display: flex; flex-direction: column; gap: 6px; }
 .cand-row-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
 .cand-row-namepart { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-.cand-name { font-size: 1.15rem; font-weight: 700; line-height: 1.1; color: var(--text-chrome); }
+.cand-name { font-size: 1.15rem; font-weight: 700; line-height: 1.1; color: var(--text-chrome); min-width: 0; }
 .cand-row.winner .cand-name { font-weight: 800; }
 .cand-sub { font-size: 0.82rem; color: var(--text-chrome-muted); }
+/* Cascade de troncature (alignée sur LRVcarte) : par défaut on affiche les versions
+   longues ; le JS applique .prenom-abbrev / .prenom-hidden / .parti-abbrev quand
+   le contenu déborde sur 2 lignes (ou wrap en column mobile). */
+.cn-prenom-full { display: inline; }
+.cn-prenom-short { display: none; }
+.cand-name.prenom-abbrev .cn-prenom-full { display: none; }
+.cand-name.prenom-abbrev .cn-prenom-short { display: inline; }
+.cand-name.prenom-hidden .cn-prenom-full,
+.cand-name.prenom-hidden .cn-prenom-short { display: none; }
+.cand-parti-full { display: inline; }
+.cand-parti-short { display: none; }
+.cand-sub.parti-abbrev .cand-parti-full { display: none; }
+.cand-sub.parti-abbrev .cand-parti-short { display: inline; }
+
+/* Palier intermédiaire (tablette / fenêtre étroite) : juste réduit polices. */
+@media (max-width: 900px) and (min-width: 721px) {
+  .cand-name { font-size: 1.05rem; }
+  .cand-sub { font-size: 0.78rem; }
+  .cand-pct { font-size: 1.2rem; }
+  .cand-voix { font-size: 0.78rem; }
+}
 .cand-row-pctvoix { display: flex; align-items: baseline; gap: 8px; flex-shrink: 0; }
 .cand-voix { font-size: 0.82rem; color: var(--text-chrome-muted); font-variant-numeric: tabular-nums; }
 .cand-sep { color: var(--text-chrome-muted); font-size: 0.8rem; }
@@ -200,10 +231,16 @@ footer.s-foot a:hover { color: var(--text-chrome); }
   .pbox { padding: 6px; gap: 2px; }
   .pbox-val { font-size: 0.82rem; }
   .pbox-lbl { font-size: 0.6rem; letter-spacing: 0.2px; }
-  /* Lignes candidat·e plus compactes */
-  .cand-name { font-size: 1rem; }
-  .cand-pct { font-size: 1.15rem; }
-  .cand-sub, .cand-voix { font-size: 0.78rem; }
+  /* Mobile (≤720px) : layout column nom/parti à gauche, %/voix à droite.
+     La cascade JS applique .prenom-abbrev / .prenom-hidden / .parti-abbrev quand
+     un élément déborde sur 2 lignes — pas de forçage CSS du nom court. */
+  .cand-row-namepart { flex-direction: column; align-items: flex-start; gap: 2px; flex-wrap: nowrap; }
+  .cand-row-pctvoix { flex-direction: column; align-items: flex-end; gap: 1px; }
+  .cand-sep { display: none; }
+  .cand-row-pctvoix .cand-pct { order: 1; font-size: 1.3rem; }
+  .cand-row-pctvoix .cand-voix { order: 2; font-size: 0.7rem; }
+  .cand-name { font-size: 1.1rem; font-weight: 700; line-height: 1.15; }
+  .cand-sub { font-size: 0.72rem; }
   /* Listes agrégées : layout compact à 2 lignes sur mobile */
   .agg-row { grid-template-columns: 1fr auto; grid-template-areas: 'name abst' 'win win' 'bar bar'; gap: 4px 10px; font-size: 0.82rem; padding: 8px; }
   .agg-name { grid-area: name; }
@@ -274,11 +311,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
 
       <h3>Résultats par candidat·e</h3>
       <div class="s-cands"><div class="cand-list">
-        <div class="cand-row winner">
+        <div class="cand-row winner" title="Ségolène Royal — Parti socialiste">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Ségolène Royal</span>
-              <span class="cand-sub">Parti socialiste</span>
+              <span class="cand-name"><span class="cn-prenom-full">Ségolène </span><span class="cn-prenom-short">S. </span>Royal</span>
+              <span class="cand-sub"><span class="cand-parti-full">Parti socialiste</span><span class="cand-parti-short">PS</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">8 426 voix</span>
@@ -288,11 +325,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:38.7%;background:#CC0100"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="Dominique Bussereau — Union pour un mouvement populaire">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Dominique Bussereau</span>
-              <span class="cand-sub">Union pour un mouvement populaire</span>
+              <span class="cand-name"><span class="cn-prenom-full">Dominique </span><span class="cn-prenom-short">D. </span>Bussereau</span>
+              <span class="cand-sub"><span class="cand-parti-full">Union pour un mouvement populaire</span><span class="cand-parti-short">UMP</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">5 630 voix</span>
@@ -302,11 +339,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:25.9%;background:#0F55CC"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="Françoise Coutant — Europe écologie">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Françoise Coutant</span>
-              <span class="cand-sub">Europe écologie</span>
+              <span class="cand-name"><span class="cn-prenom-full">Françoise </span><span class="cn-prenom-short">F. </span>Coutant</span>
+              <span class="cand-sub"><span class="cand-parti-full">Europe écologie</span><span class="cand-parti-short">EE</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">3 645 voix</span>
@@ -316,11 +353,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:16.7%;background:#6AA84F"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="Jean‑Marc de Lacoste‑Lareymondie — Front national">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Jean-Marc de Lacoste-Lareymondie</span>
-              <span class="cand-sub">Front national</span>
+              <span class="cand-name"><span class="cn-prenom-full">Jean-Marc </span><span class="cn-prenom-short">J.-M. </span>de Lacoste‑Lareymondie</span>
+              <span class="cand-sub"><span class="cand-parti-full">Front national</span><span class="cand-parti-short">FN</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">1 390 voix</span>
@@ -330,11 +367,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:6.4%;background:#063763"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="Gisèle Jean — Front de gauche">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Gisèle Jean</span>
-              <span class="cand-sub">Front de gauche</span>
+              <span class="cand-name"><span class="cn-prenom-full">Gisèle </span><span class="cn-prenom-short">G. </span>Jean</span>
+              <span class="cand-sub"><span class="cand-parti-full">Front de gauche</span><span class="cand-parti-short">FdG</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">1 294 voix</span>
@@ -344,11 +381,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:5.9%;background:#FF0000"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="Pascal Monier — Mouvement démocrate">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Pascal Monier</span>
-              <span class="cand-sub">Mouvement démocrate</span>
+              <span class="cand-name"><span class="cn-prenom-full">Pascal </span><span class="cn-prenom-short">P. </span>Monier</span>
+              <span class="cand-sub"><span class="cand-parti-full">Mouvement démocrate</span><span class="cand-parti-short">MoDem</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">797 voix</span>
@@ -358,11 +395,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:3.7%;background:#FF9900"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="Myriam Rossignol — Nouveau Parti anticapitaliste">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Myriam Rossignol</span>
-              <span class="cand-sub">Nouveau Parti anticapitaliste</span>
+              <span class="cand-name"><span class="cn-prenom-full">Myriam </span><span class="cn-prenom-short">M. </span>Rossignol</span>
+              <span class="cand-sub"><span class="cand-parti-full">Nouveau Parti anticapitaliste</span><span class="cand-parti-short">NPA</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">401 voix</span>
@@ -375,11 +412,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
         <details class="cand-fold">
           <summary>+ 1 autre candidat·e</summary>
           <div class="cand-list">
-        <div class="cand-row winner">
+        <div class="cand-row winner" title="Ludovic Gaillard — Lutte ouvrière">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Ludovic Gaillard</span>
-              <span class="cand-sub">Lutte ouvrière</span>
+              <span class="cand-name"><span class="cn-prenom-full">Ludovic </span><span class="cn-prenom-short">L. </span>Gaillard</span>
+              <span class="cand-sub"><span class="cand-parti-full">Lutte ouvrière</span><span class="cand-parti-short">LO</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">186 voix</span>
@@ -396,13 +433,13 @@ footer.s-foot a:hover { color: var(--text-chrome); }
       <div class="trip-wrap">
         
         <a class="trip-side" href="/scrutins/regionales-2015.html" title="Régionales 2015">
-          <div class="trip-bar trip-bar-side"><div class="bb-seg" title="Gauche : 52,4 %" style="width:52.40%;background:#CC0100"></div><div class="bb-seg" title="Droite : 32,8 %" style="width:32.80%;background:#0F55CC"></div><div class="bb-seg" title="Extrême droite : 14,8 %" style="width:14.80%;background:#20124D"></div></div>
+          <div class="trip-bar trip-bar-side"><div class="bb-seg" title="Gauche : 52,3 %" style="width:52.30%;background:#CC0100"></div><div class="bb-seg" title="Droite : 30,1 %" style="width:30.10%;background:#0F55CC"></div><div class="bb-seg" title="Extrême droite : 16,7 %" style="width:16.70%;background:#20124D"></div><div class="bb-seg" title="Divers : 0,9 %" style="width:0.90%;background:#A0E1E2"></div></div>
           <span class="trip-side-label">Régionales 2015 <span class="trip-side-meta">(suivant)</span></span>
         </a>
         <div class="trip-bar trip-bar-current"><div class="bb-seg" title="Gauche : 64,1 %" style="width:64.04%;background:#CC0100"></div><div class="bb-seg" title="Centre : 3,7 %" style="width:3.70%;background:#F1C232"></div><div class="bb-seg" title="Droite : 25,9 %" style="width:25.87%;background:#0F55CC"></div><div class="bb-seg" title="Extrême droite : 6,4 %" style="width:6.39%;background:#20124D"></div><div class="trip-mid-line"></div></div>
         
         <a class="trip-side" href="/scrutins/regionales-2004.html" title="Régionales 2004">
-          <div class="trip-bar trip-bar-side"><div class="bb-seg" title="Gauche : 61,4 %" style="width:61.46%;background:#CC0100"></div><div class="bb-seg" title="Droite : 31,6 %" style="width:31.63%;background:#0F55CC"></div><div class="bb-seg" title="Extrême droite : 6,9 %" style="width:6.91%;background:#20124D"></div></div>
+          <div class="trip-bar trip-bar-side"><div class="bb-seg" title="Gauche : 59,1 %" style="width:59.10%;background:#CC0100"></div><div class="bb-seg" title="Droite : 32,5 %" style="width:32.50%;background:#0F55CC"></div><div class="bb-seg" title="Extrême droite : 8,4 %" style="width:8.40%;background:#20124D"></div></div>
           <span class="trip-side-label">Régionales 2004 <span class="trip-side-meta">(précédent)</span></span>
         </a>
       </div>
@@ -411,7 +448,7 @@ footer.s-foot a:hover { color: var(--text-chrome); }
       </p>
 
       <h3>Par bureau de vote</h3>
-      <p class="s-bureau-cta">🏛️ Pour les résultats détaillés bureau par bureau, <a href="/LRVcarte.html#election=R%C3%A9gionales%202010">rendez-vous sur la carte interactive →</a></p>
+      <p class="s-bureau-cta">📍 Pour les résultats détaillés bureau par bureau, <a href="/LRVcarte.html#election=R%C3%A9gionales%202010">rendez-vous sur la carte interactive →</a></p>
 
       
       <h3>Par quartier</h3>
@@ -512,11 +549,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
 
       <h3>Résultats par candidat·e</h3>
       <div class="s-cands"><div class="cand-list">
-        <div class="cand-row winner">
+        <div class="cand-row winner" title="Ségolène Royal — Parti socialiste">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Ségolène Royal</span>
-              <span class="cand-sub">Parti socialiste</span>
+              <span class="cand-name"><span class="cn-prenom-full">Ségolène </span><span class="cn-prenom-short">S. </span>Royal</span>
+              <span class="cand-sub"><span class="cand-parti-full">Parti socialiste</span><span class="cand-parti-short">PS</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">14 392 voix</span>
@@ -526,11 +563,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:65.4%;background:#CC0100"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="Dominique Bussereau — Union pour un mouvement populaire">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Dominique Bussereau</span>
-              <span class="cand-sub">Union pour un mouvement populaire</span>
+              <span class="cand-name"><span class="cn-prenom-full">Dominique </span><span class="cn-prenom-short">D. </span>Bussereau</span>
+              <span class="cand-sub"><span class="cand-parti-full">Union pour un mouvement populaire</span><span class="cand-parti-short">UMP</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">7 603 voix</span>
@@ -561,7 +598,7 @@ footer.s-foot a:hover { color: var(--text-chrome); }
       </p>
 
       <h3>Par bureau de vote</h3>
-      <p class="s-bureau-cta">🏛️ Pour les résultats détaillés bureau par bureau, <a href="/LRVcarte.html#election=R%C3%A9gionales%202010">rendez-vous sur la carte interactive →</a></p>
+      <p class="s-bureau-cta">📍 Pour les résultats détaillés bureau par bureau, <a href="/LRVcarte.html#election=R%C3%A9gionales%202010">rendez-vous sur la carte interactive →</a></p>
 
       
       <h3>Par quartier</h3>
@@ -673,6 +710,68 @@ document.addEventListener('DOMContentLoaded', function() {
     location.href = '/LRVcarte.html';
   });
 
+  // ── Cascade de troncature des noms candidats (alignée sur LRVcarte) ───
+  // Mesure si le nom ou le parti déborde sur 2 lignes (mobile) ou si le sub
+  // passe sur la ligne suivante (desktop), et applique les classes adaptées.
+  function lineHeightOf(el) {
+    var s = getComputedStyle(el);
+    var lh = parseFloat(s.lineHeight);
+    if (isNaN(lh)) lh = parseFloat(s.fontSize) * 1.2;
+    return lh || 0;
+  }
+  function isMultiline(el) {
+    var lh = lineHeightOf(el);
+    if (!lh) return false;
+    return el.offsetHeight > lh * 1.5;
+  }
+  function isSubOnNextLine(nameEl, subEl) {
+    if (!nameEl || !subEl) return false;
+    var nameRect = nameEl.getBoundingClientRect();
+    var subRect = subEl.getBoundingClientRect();
+    return subRect.top >= nameRect.bottom - 4;
+  }
+  function applyCandTruncationCascade(rootEl) {
+    var containers = (rootEl || document).querySelectorAll('.cand-row-namepart');
+    containers.forEach(function(np) {
+      var nameEl = np.querySelector('.cand-name');
+      var subEl  = np.querySelector('.cand-sub');
+      if (!nameEl || !subEl) return;
+      nameEl.classList.remove('prenom-abbrev', 'prenom-hidden');
+      subEl.classList.remove('parti-abbrev');
+      var parentDir = getComputedStyle(np).flexDirection;
+      var isColumn = (parentDir === 'column' || parentDir === 'column-reverse');
+      if (isColumn) {
+        function nameOver() { void nameEl.offsetHeight; return isMultiline(nameEl); }
+        function subOver()  { void subEl.offsetHeight;  return isMultiline(subEl);  }
+        if (nameOver()) {
+          nameEl.classList.add('prenom-abbrev');
+          if (nameOver()) {
+            nameEl.classList.remove('prenom-abbrev');
+            nameEl.classList.add('prenom-hidden');
+          }
+        }
+        if (subOver()) {
+          subEl.classList.add('parti-abbrev');
+        }
+        return;
+      }
+      // Desktop : sub passe sur la 2e ligne → on cascade
+      if (!isSubOnNextLine(nameEl, subEl)) return;
+      nameEl.classList.add('prenom-abbrev');
+      if (!isSubOnNextLine(nameEl, subEl)) return;
+      subEl.classList.add('parti-abbrev');
+      if (!isSubOnNextLine(nameEl, subEl)) return;
+      nameEl.classList.add('prenom-hidden');
+    });
+  }
+  applyCandTruncationCascade();
+  // Re-mesure au resize (debounced 150ms) : couvre rotation tel, barre URL Chrome
+  var rt;
+  window.addEventListener('resize', function() {
+    clearTimeout(rt);
+    rt = setTimeout(applyCandTruncationCascade, 150);
+  }, { passive: true });
+
   // ── Tooltip custom sur la carte SVG ───────────────────────────────────
   // On retire les <title> natifs (pour éviter le double tooltip browser + custom)
   // et on attache des handlers hover qui affichent un div .svg-tip flottant.
@@ -692,8 +791,11 @@ document.addEventListener('DOMContentLoaded', function() {
       var num = p.dataset.num || '';
       var den = p.dataset.den || '';
       var win = p.dataset.winner || '';
+      var agg = p.dataset.agg === '1';
       var el = ensureTip();
-      el.innerHTML = '<span class="stip-num">N°' + num + (den ? ' · <span class="stip-den">' + den + '</span>' : '') + '</span>'
+      var prefix = agg ? 'Bureaux ' : 'N°';
+      var suffix = agg ? ' (zone agrégée)' : '';
+      el.innerHTML = '<span class="stip-num">' + prefix + num + suffix + (den ? ' · <span class="stip-den">' + den + '</span>' : '') + '</span>'
         + (win ? '<span class="stip-win">' + win + '</span>' : '');
       el.classList.add('show');
     });

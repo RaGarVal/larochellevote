@@ -106,6 +106,42 @@ function slugifyElection(label) {
     .replace(/^-+|-+$/g, '');
 }
 
+/** Remplace les tirets ASCII par des tirets insécables U+2011 dans les noms composés
+ *  (ex: "Lacoste-Lareymondie" → ne peut plus se couper en fin de ligne). */
+function nbDash(s) {
+  return String(s == null ? '' : s).replace(/-/g, '‑');
+}
+
+/** Abrège un prénom en initiales : "Jean-Luc" → "J.-L." */
+function abbreviatePrenom(prenom) {
+  if (!prenom) return '';
+  return prenom.split('-')
+    .map(p => p.trim()).filter(p => p.length)
+    .map(p => p.charAt(0).toUpperCase() + '.')
+    .join('-');
+}
+
+/** Construit le HTML d'un nom de candidat avec spans cn-prenom-full / cn-prenom-short
+ *  pour la cascade de troncature. Gère individus et binômes. Tirets non-breaking dans nom. */
+function candNameHTML(cd, ctx) {
+  if (cd.binome && Array.isArray(cd.binome) && cd.binome.length === 2) {
+    const persons = orderedBinomePersons(cd, ctx);
+    return persons.map(m => {
+      const nomNB = nbDash(m.n || '');
+      if (!m.p) return nomNB;
+      const short = abbreviatePrenom(m.p);
+      return `<span class="cn-prenom-full">${esc(m.p)} </span><span class="cn-prenom-short">${esc(short)} </span>${esc(nomNB)}`;
+    }).join(' / ');
+  }
+  const person = cd.person ? ctx.PERSONS[cd.person] : null;
+  const prenom = (person && person.p) || cd.p || '';
+  const nom = (person && person.n) || cd.n || '';
+  const nomNB = nbDash(nom);
+  if (!prenom) return esc(nomNB);
+  const short = abbreviatePrenom(prenom);
+  return `<span class="cn-prenom-full">${esc(prenom)} </span><span class="cn-prenom-short">${esc(short)} </span>${esc(nomNB)}`;
+}
+
 /** Échappement HTML basique */
 function esc(s) {
   return String(s == null ? '' : s)
@@ -263,25 +299,47 @@ function computeBlocsFromVoix(voixParCand, totalExprimes, candData, blocLegacy) 
   return out;
 }
 
-/** Trouve les scrutins voisins (précédent et suivant) du même type d'élection */
+/** Trouve les scrutins voisins (précédent et suivant) du même type.
+ *  - Pour les cantonales/départementales : on regroupe TOUTES les élections
+ *    cantonales (cantonale, cantonales, départementale, départementales) et on
+ *    filtre par `serie` si elle est définie (A vs B → on saute les scrutins
+ *    de l'autre série dont les cantons sont disjoints). */
 function adjacentElections(label, ELECTIONS, ctx) {
-  // On cherche par "type" (préfixe avant le premier nombre)
-  const m = label.match(/^(.+?)\s*(\d{4})/);
-  if (!m) return { prev: null, next: null };
-  const type = m[1].trim();
-  const year = parseInt(m[2]);
-  // Liste des élections du même type, avec leur année
-  const sameType = Object.keys(ELECTIONS)
-    .filter(k => {
+  const curEl = ELECTIONS[label] || {};
+  const curYear = parseInt((label.match(/(\d{4})/) || [])[1] || 0);
+  if (!curYear) return { prev: null, next: null };
+
+  const isCantonal = ctx.isCantonalElection && ctx.isCantonalElection(label);
+  let sameType;
+  if (isCantonal) {
+    sameType = Object.keys(ELECTIONS).filter(l => ctx.isCantonalElection(l));
+    // Si l'élection courante a une série (A/B des cantonales pre-2015),
+    // on filtre pour rester dans la même série — sinon les voisins auraient
+    // des cantons disjoints.
+    if (curEl.serie) {
+      sameType = sameType.filter(l => {
+        const e = ELECTIONS[l];
+        return !e.serie || e.serie === curEl.serie;
+      });
+    }
+  } else {
+    // Préfixe avant le premier nombre
+    const m = label.match(/^(.+?)\s*(\d{4})/);
+    if (!m) return { prev: null, next: null };
+    const type = m[1].trim();
+    sameType = Object.keys(ELECTIONS).filter(k => {
       const km = k.match(/^(.+?)\s*(\d{4})/);
       return km && km[1].trim() === type;
-    })
+    });
+  }
+
+  const sorted = sameType
     .map(k => ({ label: k, year: parseInt(k.match(/(\d{4})/)[1]) }))
     .sort((a, b) => a.year - b.year);
-  const idx = sameType.findIndex(e => e.label === label);
+  const idx = sorted.findIndex(e => e.label === label);
   return {
-    prev: idx > 0 ? sameType[idx - 1].label : null,
-    next: idx >= 0 && idx < sameType.length - 1 ? sameType[idx + 1].label : null,
+    prev: idx > 0 ? sorted[idx - 1].label : null,
+    next: idx >= 0 && idx < sorted.length - 1 ? sorted[idx + 1].label : null,
   };
 }
 
@@ -367,6 +425,20 @@ const DATES = {
 };
 
 // ─── Carte SVG inline ───────────────────────────────────────────────────────
+
+/** Pour un binôme paritaire, retourne le tableau des persons réordonné avec
+ *  la femme devant l'homme. Si pas de F clairement identifiée, on garde l'ordre
+ *  d'origine (cas legacy où le champ s n'est pas renseigné). */
+function orderedBinomePersons(cd, ctx) {
+  if (!cd.binome || !Array.isArray(cd.binome)) return null;
+  const persons = cd.binome.map(pid => ctx.PERSONS[pid] || {});
+  let femaleIdx = -1;
+  persons.forEach((p, i) => {
+    if (p && p.s === 'F' && femaleIdx === -1) femaleIdx = i;
+  });
+  if (femaleIdx === 1) return [persons[1], persons[0]];
+  return persons;
+}
 
 /** Résout un cid brut → cid normalisé présent dans CAND_DATA.
  *  Cas particulier : référendums où bd.w et bd._voix utilisent "Oui"/"Non"
@@ -462,34 +534,118 @@ function partiColor(pa, ctx) {
   return found;
 }
 
-/** Pour un sheet donné, retourne { numero → { color, winnerName, winnerPct } } */
-function bureauColorsForSheet(sheet, ctx, electionLabel) {
+/** Bureau au format agrégé : "0017-19" → liste ['0017','0018','0019'].
+ *  Présents sur l'ère 1988 pour les bureaux dont la géo n'a pas pu être déduite. */
+function isAggregatedNum(num) {
+  return /^\d{4}-\d{2}$/.test(num);
+}
+function aggregatedBureauList(num) {
+  const m = num.match(/^(\d{2})(\d{2})-(\d{2})$/);
+  if (!m) return [num];
+  const prefix = m[1];
+  const start = parseInt(m[2]);
+  const end = parseInt(m[3]);
+  const out = [];
+  for (let i = start; i <= end; i++) {
+    out.push(prefix + String(i).padStart(2, '0'));
+  }
+  return out;
+}
+
+/** Pour un sheet donné, retourne { numero → { color, winnerName, winnerPct } }.
+ *  Les `numero` peuvent être agrégés (XXXX-YY) — dans ce cas on somme les voix
+ *  des bureaux composants et on détermine un winner agrégé. */
+function bureauColorsForSheet(sheet, ctx, electionLabel, geojson) {
   const out = {};
-  Object.entries(sheet || {}).forEach(([ns, bd]) => {
-    if (!bd) return;
-    const rawW = bd.w;
-    if (!rawW) {
-      out[ns] = { color: '#eee', winnerName: '', winnerPct: 0 };
-      return;
+
+  // Détecte les ex-aequo : si plusieurs candidats sont strictement au même
+  // nombre de voix entières que le leader, on les retourne tous (sinon null).
+  function detectTie(voixMap) {
+    const sorted = Object.entries(voixMap).sort((a, b) => b[1] - a[1]);
+    if (sorted.length < 2 || sorted[0][1] === 0) return null;
+    const maxV = sorted[0][1];
+    const tied = sorted.filter(([, v]) => v === maxV);
+    return tied.length >= 2 ? tied.map(([cid]) => cid) : null;
+  }
+
+  function nameAndPctFromCid(cid, sheet, voixMap, exprimes) {
+    const w = resolveCid(cid, electionLabel, ctx);
+    const cd = ctx.CAND_DATA[w] || {};
+    const person = cd.person ? ctx.PERSONS[cd.person] : null;
+    const winnerName = cd.binome
+      ? orderedBinomePersons(cd, ctx).map(p => (p.p ? p.p + ' ' : '') + (p.n || '')).join(' / ')
+      : ((person && person.p) || cd.p || '') + ' ' + ((person && person.n) || cd.n || cid);
+    const voix = voixMap[cid] || 0;
+    const pct = exprimes > 0 ? +(voix / exprimes * 100).toFixed(1) : 0;
+    return { name: winnerName.trim(), pct, color: colorOfCand(w, ctx) };
+  }
+
+  // Helper : calcule la couleur d'un bureau (ou d'une zone agrégée) depuis un
+  // ensemble de bureaux composants. Si la liste contient 1 bureau → direct.
+  // Si plusieurs (agrégat) → on somme les _voix puis on cherche le winner.
+  // Détecte aussi les ex-aequo (motif hachuré dans le SVG via `tiedColors`).
+  function colorFor(bureauList) {
+    if (!bureauList || !bureauList.length) return { color: '#eee', winnerName: '', winnerPct: 0 };
+    // Agréger les voix des bureaux composants (taille 1 = cas normal, sinon agrégat)
+    const sumVoix = {};
+    let sumExprimes = 0;
+    bureauList.forEach(ns => {
+      const bd = sheet[ns];
+      if (!bd) return;
+      sumExprimes += (bd.e || 0);
+      if (bd._voix) {
+        Object.entries(bd._voix).forEach(([cid, v]) => {
+          sumVoix[cid] = (sumVoix[cid] || 0) + v;
+        });
+      }
+    });
+    const sorted = Object.entries(sumVoix).sort((a, b) => b[1] - a[1]);
+    if (!sorted.length) return { color: '#eee', winnerName: '', winnerPct: 0 };
+
+    // Ex-aequo : plusieurs candidats au même nombre de voix max
+    const tiedCids = detectTie(sumVoix);
+    if (tiedCids) {
+      const tiedInfos = tiedCids.map(cid => nameAndPctFromCid(cid, sheet, sumVoix, sumExprimes));
+      return {
+        color: null, // remplacé par un fill="url(#tie-XX)" au rendu SVG
+        tiedColors: tiedInfos.map(t => t.color),
+        winnerName: tiedInfos.map(t => t.name).join(' ▤ '),
+        winnerPct: tiedInfos[0].pct,
+        isTie: true,
+      };
     }
+
+    // Pas d'ex-aequo : winner unique (depuis voix agrégées)
+    const [rawW, winnerVoix] = sorted[0];
     const w = resolveCid(rawW, electionLabel, ctx);
     const cd = ctx.CAND_DATA[w] || {};
     const person = cd.person ? ctx.PERSONS[cd.person] : null;
     const winnerName = cd.binome
-      ? cd.binome.map(pid => {
-          const p = ctx.PERSONS[pid] || {};
-          return (p.p ? p.p + ' ' : '') + (p.n || '');
-        }).join(' / ')
+      ? orderedBinomePersons(cd, ctx).map(p => (p.p ? p.p + ' ' : '') + (p.n || '')).join(' / ')
       : ((person && person.p) || cd.p || '') + ' ' + ((person && person.n) || cd.n || rawW);
-    out[ns] = {
+    return {
       color: colorOfCand(w, ctx),
       winnerName: winnerName.trim(),
-      // Lookup pct via rawW (clé d'origine dans bd.c) ou w (résolu) au cas où
-      winnerPct: bd.c && (bd.c[rawW] != null ? bd.c[rawW] : bd.c[w]) != null
-        ? (bd.c[rawW] != null ? bd.c[rawW] : bd.c[w])
-        : 0,
+      winnerPct: sumExprimes > 0 ? +(winnerVoix / sumExprimes * 100).toFixed(1) : 0,
     };
-  });
+  }
+
+  // Si on a un geojson, on itère sur ses features (qui peuvent contenir des
+  // numéros agrégés `0017-19` pour l'ère 1988).
+  if (geojson && geojson.features) {
+    geojson.features.forEach(f => {
+      const num = f.properties && f.properties.numero;
+      if (!num) return;
+      if (isAggregatedNum(num)) {
+        out[num] = colorFor(aggregatedBureauList(num));
+      } else {
+        out[num] = colorFor([num]);
+      }
+    });
+  } else {
+    // Fallback : itération directe sur le sheet (pas d'agrégats)
+    Object.keys(sheet || {}).forEach(ns => { out[ns] = colorFor([ns]); });
+  }
   return out;
 }
 
@@ -576,28 +732,64 @@ function geoJSONtoSVG(geojson, bureauColors, bureauInfo, opts) {
   // - data-name : dénomination + winner (pour le tooltip JS)
   // - <title> en fallback pour user no-JS
   // - opacity réduite + couleur grisée pour les bureaux hors-canton (page canton)
+  // Collecter les patterns pour les ex-aequo et leur attribuer un id unique
+  const tiePatterns = [];
+  function tieFillFor(num, tiedColors) {
+    const id = 'tie-' + num.replace(/[^0-9-]/g, '');
+    tiePatterns.push({ id, colors: tiedColors });
+    return 'url(#' + id + ')';
+  }
+
   const paths = features.map(f => {
     const num = f.properties.numero;
     const info = bureauInfo[num] || {};
     const inCanton = !highlightCantonId || String(info.c) === String(highlightCantonId);
     const colorData = bureauColors[num] || { color: '#eee', winnerName: '', winnerPct: 0 };
-    // Hors canton : grisé homogène pour silencer visuellement
-    const fillColor = inCanton ? colorData.color : '#dcd6cc';
+    // Si ex-aequo (et bureau in canton), utiliser un pattern hachuré ; sinon couleur unie ; hors canton, gris.
+    let fillColor;
+    if (!inCanton) {
+      fillColor = '#dcd6cc';
+    } else if (colorData.isTie && colorData.tiedColors) {
+      fillColor = tieFillFor(num, colorData.tiedColors);
+    } else {
+      fillColor = colorData.color;
+    }
     const d = geomToPath(f.geometry);
-    const numClean = String(parseInt(num));
-    const denom = info.den || info.nom || '';
+    // Pour les bureaux agrégés "0017-19", on affiche "n° 17 à 19 (zone agrégée)"
+    // sinon le numéro simple.
+    let numLabel, numDataAttr;
+    if (isAggregatedNum(num)) {
+      const list = aggregatedBureauList(num);
+      numLabel = 'Bureaux ' + parseInt(list[0]) + ' à ' + parseInt(list[list.length - 1]) + ' (zone agrégée)';
+      numDataAttr = parseInt(list[0]) + '–' + parseInt(list[list.length - 1]);
+    } else {
+      numLabel = 'Bureau n°' + parseInt(num);
+      numDataAttr = String(parseInt(num));
+    }
+    const denom = info.den || info.nom || (f.properties.denomination) || (f.properties.nom) || '';
     const winnerLine = inCanton && colorData.winnerName
       ? `${colorData.winnerName} (${colorData.winnerPct.toFixed(1).replace('.', ',')} %)`
       : '';
-    const tipText = `Bureau n°${numClean} · ${denom}`
+    const tipText = `${numLabel}${denom ? ' · ' + denom : ''}`
       + (winnerLine ? ` — ${winnerLine}` : (inCanton ? '' : ' (hors canton)'));
     return `<path d="${d}" fill="${fillColor}" stroke="#fff" stroke-width="0.6"`
       + (inCanton ? '' : ' class="off-canton"')
-      + ` data-num="${numClean}" data-den="${esc(denom)}" data-winner="${esc(winnerLine || (inCanton ? '' : 'Hors canton'))}"`
+      + ` data-num="${esc(numDataAttr)}" data-den="${esc(denom)}" data-winner="${esc(winnerLine || (inCanton ? '' : 'Hors canton'))}"`
+      + (isAggregatedNum(num) ? ' data-agg="1"' : '')
       + `><title>${esc(tipText)}</title></path>`;
   }).join('');
 
-  return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" class="s-mini-map" role="img" aria-label="Carte des bureaux de vote">${paths}</svg>`;
+  // Patterns hachurés pour les ex-aequo : pour chaque bureau tied, 2 (ou n) bandes diagonales colorées
+  const defs = tiePatterns.length ? '<defs>' + tiePatterns.map(tp => {
+    const colors = tp.colors;
+    const n = colors.length;
+    const tileSize = 6; // 6px de pattern = bandes assez visibles à toute échelle
+    const stripeW = tileSize / n;
+    const rects = colors.map((c, i) => `<rect x="${(i*stripeW).toFixed(2)}" width="${stripeW.toFixed(2)}" height="${tileSize}" fill="${c}"/>`).join('');
+    return `<pattern id="${tp.id}" width="${tileSize}" height="${tileSize}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">${rects}</pattern>`;
+  }).join('') + '</defs>' : '';
+
+  return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" class="s-mini-map" role="img" aria-label="Carte des bureaux de vote">${defs}${paths}</svg>`;
 }
 
 // ─── Construction des données d'une page ────────────────────────────────────
@@ -630,16 +822,19 @@ function buildPageData(pageSpec, ctx) {
     const cands = Object.entries(agg.voix_par_cand).map(([rawCid, voix]) => {
       const cid = resolveCid(rawCid, label, ctx);
       const cd = ctx.CAND_DATA[cid] || {};
-      // Nom à afficher : binôme ou individu
-      let displayName;
+      // Nom à afficher : binôme (femme devant) ou individu. Tirets non-breaking
+      // dans les noms composés pour éviter les cassures laides en fin de ligne.
+      let displayName, nomFamille;
       if (cd.binome && Array.isArray(cd.binome)) {
-        const persons = cd.binome.map(pid => ctx.PERSONS[pid] || {});
-        displayName = persons.map(p => (p.p ? p.p + ' ' : '') + (p.n || '')).join(' / ');
+        const persons = orderedBinomePersons(cd, ctx);
+        displayName = persons.map(p => (p.p ? nbDash(p.p) + ' ' : '') + nbDash(p.n || '')).join(' / ');
+        nomFamille = persons.map(p => nbDash(p.n || '')).join(' / ');
       } else {
         const person = cd.person ? ctx.PERSONS[cd.person] : null;
         const prenom = (person && person.p) || cd.p || '';
         const nom    = (person && person.n) || cd.n || cid;
-        displayName  = (prenom ? prenom + ' ' : '') + nom;
+        displayName  = (prenom ? nbDash(prenom) + ' ' : '') + nbDash(nom);
+        nomFamille = nbDash(nom);
       }
       // Étiquette parti : pour les binômes hétérogènes, "PA_F+PA_H"
       let paLabel = cd.pa || '';
@@ -661,6 +856,8 @@ function buildPageData(pageSpec, ctx) {
       return {
         cid,
         nom: displayName,
+        nomFamille,
+        nameHTML: candNameHTML(cd, ctx),
         pa: paLabel,
         paFull,
         bloc: cd.b || '',
@@ -685,15 +882,15 @@ function buildPageData(pageSpec, ctx) {
           const cd = ctx.CAND_DATA[cid] || {};
           let displayName, nomFamille;
           if (cd.binome) {
-            const persons = cd.binome.map(pid => ctx.PERSONS[pid] || {});
-            displayName = persons.map(p => (p.p ? p.p + ' ' : '') + (p.n || '')).join(' / ');
-            nomFamille = persons.map(p => p.n || '').join(' / ');
+            const persons = orderedBinomePersons(cd, ctx);
+            displayName = persons.map(p => (p.p ? nbDash(p.p) + ' ' : '') + nbDash(p.n || '')).join(' / ');
+            nomFamille = persons.map(p => nbDash(p.n || '')).join(' / ');
           } else {
             const person = cd.person ? ctx.PERSONS[cd.person] : null;
             const prenom = (person && person.p) || cd.p || '';
             const nom = (person && person.n) || cd.n || cid;
-            displayName = (prenom + ' ' + nom).trim();
-            nomFamille = nom;
+            displayName = (nbDash(prenom) + ' ' + nbDash(nom)).trim();
+            nomFamille = nbDash(nom);
           }
           return { cid, nom: displayName, nomFamille, pa: cd.pa || '', voix, pct: pctOf(voix, qAgg.exprimes), color: colorOfCand(cid, ctx) };
         })
@@ -715,15 +912,15 @@ function buildPageData(pageSpec, ctx) {
             const cd = ctx.CAND_DATA[cid2] || {};
             let displayName, nomFamille;
             if (cd.binome) {
-              const persons = cd.binome.map(pid => ctx.PERSONS[pid] || {});
-              displayName = persons.map(p => (p.p ? p.p + ' ' : '') + (p.n || '')).join(' / ');
-              nomFamille = persons.map(p => p.n || '').join(' / ');
+              const persons = orderedBinomePersons(cd, ctx);
+              displayName = persons.map(p => (p.p ? nbDash(p.p) + ' ' : '') + nbDash(p.n || '')).join(' / ');
+              nomFamille = persons.map(p => nbDash(p.n || '')).join(' / ');
             } else {
               const person = cd.person ? ctx.PERSONS[cd.person] : null;
               const prenom = (person && person.p) || cd.p || '';
               const nom = (person && person.n) || cd.n || cid2;
-              displayName = (prenom + ' ' + nom).trim();
-              nomFamille = nom;
+              displayName = (nbDash(prenom) + ' ' + nbDash(nom)).trim();
+              nomFamille = nbDash(nom);
             }
             return { cid: cid2, nom: displayName, nomFamille, pa: cd.pa || '', voix, pct: pctOf(voix, cAgg.exprimes), color: colorOfCand(cid2, ctx) };
           })
@@ -738,32 +935,40 @@ function buildPageData(pageSpec, ctx) {
     const blocs = computeBlocsFromVoix(agg.voix_par_cand, agg.exprimes, ctx.CAND_DATA, ctx.BLOC_LEGACY);
 
     // Helper : récupère les blocs pour un autre scrutin (au même niveau ville/canton)
-    function blocsForLabel(otherLabel) {
+    // Préférence d'appariement T1↔T1, T2↔T2, TU↔TU — avec fallback si le voisin
+    // n'a pas le même tour (ex. élection T1+T2 vs élection TU).
+    function blocsForLabel(otherLabel, currentTour) {
       if (!otherLabel) return null;
       const otherEl = ctx.ELECTIONS[otherLabel];
       if (!otherEl) return null;
-      // Si on est sur une page canton, on cherche les mêmes bureaux du canton chez le voisin
-      let otherSheet;
+      let otherSheets;
       if (canton && otherEl.par_canton) {
         if (!otherEl.par_canton[canton]) return null; // série incompatible
-        const sheets = otherEl.par_canton[canton].sheets;
-        // Préfère le tour le plus tardif (T2 > T1 > TU)
-        otherSheet = sheets.T2 || sheets.T1 || sheets.TU;
+        otherSheets = otherEl.par_canton[canton].sheets;
       } else if (!canton && !otherEl.par_canton) {
-        otherSheet = otherEl.sheets.T2 || otherEl.sheets.T1 || otherEl.sheets.TU;
+        otherSheets = otherEl.sheets;
       } else {
-        return null; // niveaux incompatibles (page ville vs scrutin canton, ou inverse)
+        return null; // niveaux incompatibles
+      }
+      if (!otherSheets) return null;
+      // Ordre de priorité : même tour d'abord, puis fallback raisonnable
+      const tourPriority = currentTour === 'T1' ? ['T1', 'TU', 'T2']
+                         : currentTour === 'T2' ? ['T2', 'TU', 'T1']
+                         : ['TU', 'T1', 'T2'];
+      let otherSheet = null;
+      for (const tk of tourPriority) {
+        if (otherSheets[tk]) { otherSheet = otherSheets[tk]; break; }
       }
       if (!otherSheet) return null;
       const oa = aggregateSheet(otherSheet);
       return computeBlocsFromVoix(oa.voix_par_cand, oa.exprimes, ctx.CAND_DATA, ctx.BLOC_LEGACY);
     }
-    const prevBlocs = adj.prev ? blocsForLabel(adj.prev) : null;
-    const nextBlocs = adj.next ? blocsForLabel(adj.next) : null;
+    const prevBlocs = adj.prev ? blocsForLabel(adj.prev, t) : null;
+    const nextBlocs = adj.next ? blocsForLabel(adj.next, t) : null;
 
     // Carte SVG inline pour ce tour
     const geo = getGeoJSONForEra(era, ctx);
-    const bureauColors = bureauColorsForSheet(sheets[t], ctx, label);
+    const bureauColors = bureauColorsForSheet(sheets[t], ctx, label, geo);
     // Pour les pages canton : on affiche TOUTE la ville mais on grise les bureaux
     // hors canton, pour permettre au lecteur de se repérer géographiquement.
     // bureauColors ne contient que les bureaux du canton (sheets[t] est filtré
@@ -939,6 +1144,16 @@ function renderHTML(data, opts) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+  /* Force la vue mobile (viewport=720) si le flag localStorage est activé. */
+  (function () {
+    try {
+      if (localStorage.getItem('lrvote_force_mobile') === '1') {
+        document.querySelector('meta[name=viewport]').setAttribute('content', 'width=720, user-scalable=yes');
+      }
+    } catch (_) {}
+  })();
+</script>
 <title>${esc(title)} à La Rochelle — Résultats bureau par bureau — La Rochelle Vote</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <meta name="description" content="${esc(metaDesc)}">
@@ -1049,9 +1264,30 @@ section.s-block p { font-size: 1rem; line-height: 1.6; color: var(--text-body); 
 .cand-row { display: flex; flex-direction: column; gap: 6px; }
 .cand-row-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
 .cand-row-namepart { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-.cand-name { font-size: 1.15rem; font-weight: 700; line-height: 1.1; color: var(--text-chrome); }
+.cand-name { font-size: 1.15rem; font-weight: 700; line-height: 1.1; color: var(--text-chrome); min-width: 0; }
 .cand-row.winner .cand-name { font-weight: 800; }
 .cand-sub { font-size: 0.82rem; color: var(--text-chrome-muted); }
+/* Cascade de troncature (alignée sur LRVcarte) : par défaut on affiche les versions
+   longues ; le JS applique .prenom-abbrev / .prenom-hidden / .parti-abbrev quand
+   le contenu déborde sur 2 lignes (ou wrap en column mobile). */
+.cn-prenom-full { display: inline; }
+.cn-prenom-short { display: none; }
+.cand-name.prenom-abbrev .cn-prenom-full { display: none; }
+.cand-name.prenom-abbrev .cn-prenom-short { display: inline; }
+.cand-name.prenom-hidden .cn-prenom-full,
+.cand-name.prenom-hidden .cn-prenom-short { display: none; }
+.cand-parti-full { display: inline; }
+.cand-parti-short { display: none; }
+.cand-sub.parti-abbrev .cand-parti-full { display: none; }
+.cand-sub.parti-abbrev .cand-parti-short { display: inline; }
+
+/* Palier intermédiaire (tablette / fenêtre étroite) : juste réduit polices. */
+@media (max-width: 900px) and (min-width: 721px) {
+  .cand-name { font-size: 1.05rem; }
+  .cand-sub { font-size: 0.78rem; }
+  .cand-pct { font-size: 1.2rem; }
+  .cand-voix { font-size: 0.78rem; }
+}
 .cand-row-pctvoix { display: flex; align-items: baseline; gap: 8px; flex-shrink: 0; }
 .cand-voix { font-size: 0.82rem; color: var(--text-chrome-muted); font-variant-numeric: tabular-nums; }
 .cand-sep { color: var(--text-chrome-muted); font-size: 0.8rem; }
@@ -1136,10 +1372,16 @@ footer.s-foot a:hover { color: var(--text-chrome); }
   .pbox { padding: 6px; gap: 2px; }
   .pbox-val { font-size: 0.82rem; }
   .pbox-lbl { font-size: 0.6rem; letter-spacing: 0.2px; }
-  /* Lignes candidat·e plus compactes */
-  .cand-name { font-size: 1rem; }
-  .cand-pct { font-size: 1.15rem; }
-  .cand-sub, .cand-voix { font-size: 0.78rem; }
+  /* Mobile (≤720px) : layout column nom/parti à gauche, %/voix à droite.
+     La cascade JS applique .prenom-abbrev / .prenom-hidden / .parti-abbrev quand
+     un élément déborde sur 2 lignes — pas de forçage CSS du nom court. */
+  .cand-row-namepart { flex-direction: column; align-items: flex-start; gap: 2px; flex-wrap: nowrap; }
+  .cand-row-pctvoix { flex-direction: column; align-items: flex-end; gap: 1px; }
+  .cand-sep { display: none; }
+  .cand-row-pctvoix .cand-pct { order: 1; font-size: 1.3rem; }
+  .cand-row-pctvoix .cand-voix { order: 2; font-size: 0.7rem; }
+  .cand-name { font-size: 1.1rem; font-weight: 700; line-height: 1.15; }
+  .cand-sub { font-size: 0.72rem; }
   /* Listes agrégées : layout compact à 2 lignes sur mobile */
   .agg-row { grid-template-columns: 1fr auto; grid-template-areas: 'name abst' 'win win' 'bar bar'; gap: 4px 10px; font-size: 0.82rem; padding: 8px; }
   .agg-name { grid-area: name; }
@@ -1228,12 +1470,20 @@ footer.s-foot a:hover { color: var(--text-chrome); }
         const isCantNoun = isCantonale;
         const noun = isCantNoun ? 'binôme' : 'candidat·e';
         function row(c, i) {
+          // Cascade de troncature aligné sur LRVcarte :
+          // .cand-name contient des spans cn-prenom-full/short (basculés via .prenom-abbrev/.prenom-hidden)
+          // .cand-sub contient des spans cand-parti-full/short (basculés via .parti-abbrev)
+          const partiShort = esc(c.pa || '');
+          const partiFull = esc(c.paFull || c.pa || '');
+          const partiSpan = partiFull && partiFull !== partiShort
+            ? `<span class="cand-parti-full">${partiFull}</span><span class="cand-parti-short">${partiShort}</span>`
+            : partiFull;
           return `
-        <div class="cand-row${i===0 ? ' winner' : ''}">
+        <div class="cand-row${i===0 ? ' winner' : ''}" title="${esc(c.nom)}${partiFull && partiFull !== partiShort ? ' — ' + partiFull : ''}">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">${esc(c.nom)}</span>
-              <span class="cand-sub">${esc(c.paFull || c.pa)}</span>
+              <span class="cand-name">${c.nameHTML}</span>
+              ${partiSpan ? `<span class="cand-sub">${partiSpan}</span>` : ''}
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">${fmtNum(c.voix)} voix</span>
@@ -1258,6 +1508,9 @@ footer.s-foot a:hover { color: var(--text-chrome); }
       })()}
 
       ${!isReferendum ? (() => {
+        // Triptyque actif sur les pages ville ET canton. neighborSlug retourne
+        // null si le voisin n'a pas le même canton id (série A↔B incompatible
+        // ou départementale↔cantonale), évitant les liens trompeurs.
         const nextSlug = adj.next ? neighborSlug(adj.next, canton) : null;
         const prevSlug = adj.prev ? neighborSlug(adj.prev, canton) : null;
         const hasNext = nextSlug && td.nextBlocs;
@@ -1282,7 +1535,7 @@ footer.s-foot a:hover { color: var(--text-chrome); }
       })() : ''}
 
       <h3>Par bureau de vote</h3>
-      <p class="s-bureau-cta">🏛️ Pour les résultats détaillés bureau par bureau, <a href="${esc(urlCarte)}">rendez-vous sur la carte interactive →</a></p>
+      <p class="s-bureau-cta">📍 Pour les résultats détaillés bureau par bureau, <a href="${esc(urlCarte)}">rendez-vous sur la carte interactive →</a></p>
 
       ${!canton && td.quartiers && td.quartiers.length ? (() => {
         function row(q, href) {
@@ -1339,6 +1592,68 @@ document.addEventListener('DOMContentLoaded', function() {
     location.href = '/LRVcarte.html';
   });
 
+  // ── Cascade de troncature des noms candidats (alignée sur LRVcarte) ───
+  // Mesure si le nom ou le parti déborde sur 2 lignes (mobile) ou si le sub
+  // passe sur la ligne suivante (desktop), et applique les classes adaptées.
+  function lineHeightOf(el) {
+    var s = getComputedStyle(el);
+    var lh = parseFloat(s.lineHeight);
+    if (isNaN(lh)) lh = parseFloat(s.fontSize) * 1.2;
+    return lh || 0;
+  }
+  function isMultiline(el) {
+    var lh = lineHeightOf(el);
+    if (!lh) return false;
+    return el.offsetHeight > lh * 1.5;
+  }
+  function isSubOnNextLine(nameEl, subEl) {
+    if (!nameEl || !subEl) return false;
+    var nameRect = nameEl.getBoundingClientRect();
+    var subRect = subEl.getBoundingClientRect();
+    return subRect.top >= nameRect.bottom - 4;
+  }
+  function applyCandTruncationCascade(rootEl) {
+    var containers = (rootEl || document).querySelectorAll('.cand-row-namepart');
+    containers.forEach(function(np) {
+      var nameEl = np.querySelector('.cand-name');
+      var subEl  = np.querySelector('.cand-sub');
+      if (!nameEl || !subEl) return;
+      nameEl.classList.remove('prenom-abbrev', 'prenom-hidden');
+      subEl.classList.remove('parti-abbrev');
+      var parentDir = getComputedStyle(np).flexDirection;
+      var isColumn = (parentDir === 'column' || parentDir === 'column-reverse');
+      if (isColumn) {
+        function nameOver() { void nameEl.offsetHeight; return isMultiline(nameEl); }
+        function subOver()  { void subEl.offsetHeight;  return isMultiline(subEl);  }
+        if (nameOver()) {
+          nameEl.classList.add('prenom-abbrev');
+          if (nameOver()) {
+            nameEl.classList.remove('prenom-abbrev');
+            nameEl.classList.add('prenom-hidden');
+          }
+        }
+        if (subOver()) {
+          subEl.classList.add('parti-abbrev');
+        }
+        return;
+      }
+      // Desktop : sub passe sur la 2e ligne → on cascade
+      if (!isSubOnNextLine(nameEl, subEl)) return;
+      nameEl.classList.add('prenom-abbrev');
+      if (!isSubOnNextLine(nameEl, subEl)) return;
+      subEl.classList.add('parti-abbrev');
+      if (!isSubOnNextLine(nameEl, subEl)) return;
+      nameEl.classList.add('prenom-hidden');
+    });
+  }
+  applyCandTruncationCascade();
+  // Re-mesure au resize (debounced 150ms) : couvre rotation tel, barre URL Chrome
+  var rt;
+  window.addEventListener('resize', function() {
+    clearTimeout(rt);
+    rt = setTimeout(applyCandTruncationCascade, 150);
+  }, { passive: true });
+
   // ── Tooltip custom sur la carte SVG ───────────────────────────────────
   // On retire les <title> natifs (pour éviter le double tooltip browser + custom)
   // et on attache des handlers hover qui affichent un div .svg-tip flottant.
@@ -1358,8 +1673,11 @@ document.addEventListener('DOMContentLoaded', function() {
       var num = p.dataset.num || '';
       var den = p.dataset.den || '';
       var win = p.dataset.winner || '';
+      var agg = p.dataset.agg === '1';
       var el = ensureTip();
-      el.innerHTML = '<span class="stip-num">N°' + num + (den ? ' · <span class="stip-den">' + den + '</span>' : '') + '</span>'
+      var prefix = agg ? 'Bureaux ' : 'N°';
+      var suffix = agg ? ' (zone agrégée)' : '';
+      el.innerHTML = '<span class="stip-num">' + prefix + num + suffix + (den ? ' · <span class="stip-den">' + den + '</span>' : '') + '</span>'
         + (win ? '<span class="stip-win">' + win + '</span>' : '');
       el.classList.add('show');
     });

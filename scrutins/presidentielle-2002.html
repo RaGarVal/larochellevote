@@ -3,14 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+  /* Force la vue mobile (viewport=720) si le flag localStorage est activé. */
+  (function () {
+    try {
+      if (localStorage.getItem('lrvote_force_mobile') === '1') {
+        document.querySelector('meta[name=viewport]').setAttribute('content', 'width=720, user-scalable=yes');
+      }
+    } catch (_) {}
+  })();
+</script>
 <title>Présidentielle 2002 à La Rochelle — Résultats bureau par bureau — La Rochelle Vote</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<meta name="description" content="Résultats détaillés de Présidentielle 2002 à La Rochelle, bureau par bureau. Top 3 : Jacques Chirac (88,8 %), Jean-Marie Le Pen (11,2 %). Abstention : 21,2 %.">
+<meta name="description" content="Résultats détaillés de Présidentielle 2002 à La Rochelle, bureau par bureau. Top 3 : Jacques Chirac (88,8 %), Jean‑Marie Le Pen (11,2 %). Abstention : 21,2 %.">
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="La Rochelle Vote">
 <meta property="og:locale" content="fr_FR">
 <meta property="og:title" content="Présidentielle 2002 à La Rochelle — Résultats bureau par bureau">
-<meta property="og:description" content="Résultats détaillés de Présidentielle 2002 à La Rochelle, bureau par bureau. Top 3 : Jacques Chirac (88,8 %), Jean-Marie Le Pen (11,2 %). Abstention : 21,2 %.">
+<meta property="og:description" content="Résultats détaillés de Présidentielle 2002 à La Rochelle, bureau par bureau. Top 3 : Jacques Chirac (88,8 %), Jean‑Marie Le Pen (11,2 %). Abstention : 21,2 %.">
 <meta property="og:image" content="https://larochellevote.fr/share.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -18,7 +28,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@LaRochelleVote">
 <meta name="twitter:title" content="Présidentielle 2002 à La Rochelle — Résultats bureau par bureau">
-<meta name="twitter:description" content="Résultats détaillés de Présidentielle 2002 à La Rochelle, bureau par bureau. Top 3 : Jacques Chirac (88,8 %), Jean-Marie Le Pen (11,2 %). Abstention : 21,2 %.">
+<meta name="twitter:description" content="Résultats détaillés de Présidentielle 2002 à La Rochelle, bureau par bureau. Top 3 : Jacques Chirac (88,8 %), Jean‑Marie Le Pen (11,2 %). Abstention : 21,2 %.">
 <meta name="twitter:image" content="https://larochellevote.fr/share.png">
 <link rel="canonical" href="https://larochellevote.fr/scrutins/presidentielle-2002.html">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -113,9 +123,30 @@ section.s-block p { font-size: 1rem; line-height: 1.6; color: var(--text-body); 
 .cand-row { display: flex; flex-direction: column; gap: 6px; }
 .cand-row-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
 .cand-row-namepart { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-.cand-name { font-size: 1.15rem; font-weight: 700; line-height: 1.1; color: var(--text-chrome); }
+.cand-name { font-size: 1.15rem; font-weight: 700; line-height: 1.1; color: var(--text-chrome); min-width: 0; }
 .cand-row.winner .cand-name { font-weight: 800; }
 .cand-sub { font-size: 0.82rem; color: var(--text-chrome-muted); }
+/* Cascade de troncature (alignée sur LRVcarte) : par défaut on affiche les versions
+   longues ; le JS applique .prenom-abbrev / .prenom-hidden / .parti-abbrev quand
+   le contenu déborde sur 2 lignes (ou wrap en column mobile). */
+.cn-prenom-full { display: inline; }
+.cn-prenom-short { display: none; }
+.cand-name.prenom-abbrev .cn-prenom-full { display: none; }
+.cand-name.prenom-abbrev .cn-prenom-short { display: inline; }
+.cand-name.prenom-hidden .cn-prenom-full,
+.cand-name.prenom-hidden .cn-prenom-short { display: none; }
+.cand-parti-full { display: inline; }
+.cand-parti-short { display: none; }
+.cand-sub.parti-abbrev .cand-parti-full { display: none; }
+.cand-sub.parti-abbrev .cand-parti-short { display: inline; }
+
+/* Palier intermédiaire (tablette / fenêtre étroite) : juste réduit polices. */
+@media (max-width: 900px) and (min-width: 721px) {
+  .cand-name { font-size: 1.05rem; }
+  .cand-sub { font-size: 0.78rem; }
+  .cand-pct { font-size: 1.2rem; }
+  .cand-voix { font-size: 0.78rem; }
+}
 .cand-row-pctvoix { display: flex; align-items: baseline; gap: 8px; flex-shrink: 0; }
 .cand-voix { font-size: 0.82rem; color: var(--text-chrome-muted); font-variant-numeric: tabular-nums; }
 .cand-sep { color: var(--text-chrome-muted); font-size: 0.8rem; }
@@ -200,10 +231,16 @@ footer.s-foot a:hover { color: var(--text-chrome); }
   .pbox { padding: 6px; gap: 2px; }
   .pbox-val { font-size: 0.82rem; }
   .pbox-lbl { font-size: 0.6rem; letter-spacing: 0.2px; }
-  /* Lignes candidat·e plus compactes */
-  .cand-name { font-size: 1rem; }
-  .cand-pct { font-size: 1.15rem; }
-  .cand-sub, .cand-voix { font-size: 0.78rem; }
+  /* Mobile (≤720px) : layout column nom/parti à gauche, %/voix à droite.
+     La cascade JS applique .prenom-abbrev / .prenom-hidden / .parti-abbrev quand
+     un élément déborde sur 2 lignes — pas de forçage CSS du nom court. */
+  .cand-row-namepart { flex-direction: column; align-items: flex-start; gap: 2px; flex-wrap: nowrap; }
+  .cand-row-pctvoix { flex-direction: column; align-items: flex-end; gap: 1px; }
+  .cand-sep { display: none; }
+  .cand-row-pctvoix .cand-pct { order: 1; font-size: 1.3rem; }
+  .cand-row-pctvoix .cand-voix { order: 2; font-size: 0.7rem; }
+  .cand-name { font-size: 1.1rem; font-weight: 700; line-height: 1.15; }
+  .cand-sub { font-size: 0.72rem; }
   /* Listes agrégées : layout compact à 2 lignes sur mobile */
   .agg-row { grid-template-columns: 1fr auto; grid-template-areas: 'name abst' 'win win' 'bar bar'; gap: 4px 10px; font-size: 0.82rem; padding: 8px; }
   .agg-name { grid-area: name; }
@@ -274,11 +311,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
 
       <h3>Résultats par candidat·e</h3>
       <div class="s-cands"><div class="cand-list">
-        <div class="cand-row winner">
+        <div class="cand-row winner" title="Lionel Jospin — Parti socialiste">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Lionel Jospin</span>
-              <span class="cand-sub">Parti socialiste</span>
+              <span class="cand-name"><span class="cn-prenom-full">Lionel </span><span class="cn-prenom-short">L. </span>Jospin</span>
+              <span class="cand-sub"><span class="cand-parti-full">Parti socialiste</span><span class="cand-parti-short">PS</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">6 797 voix</span>
@@ -288,11 +325,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:22.0%;background:#CC0100"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="Jacques Chirac — Rassemblement pour la République">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Jacques Chirac</span>
-              <span class="cand-sub">Rassemblement pour la République</span>
+              <span class="cand-name"><span class="cn-prenom-full">Jacques </span><span class="cn-prenom-short">J. </span>Chirac</span>
+              <span class="cand-sub"><span class="cand-parti-full">Rassemblement pour la République</span><span class="cand-parti-short">RPR</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">5 883 voix</span>
@@ -302,11 +339,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:19.1%;background:#0F55CC"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="Jean‑Marie Le Pen — Front national">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Jean-Marie Le Pen</span>
-              <span class="cand-sub">Front national</span>
+              <span class="cand-name"><span class="cn-prenom-full">Jean-Marie </span><span class="cn-prenom-short">J.-M. </span>Le Pen</span>
+              <span class="cand-sub"><span class="cand-parti-full">Front national</span><span class="cand-parti-short">FN</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">3 312 voix</span>
@@ -316,11 +353,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:10.7%;background:#063763"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="Noël Mamère — Les Verts">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Noël Mamère</span>
-              <span class="cand-sub">Les Verts</span>
+              <span class="cand-name"><span class="cn-prenom-full">Noël </span><span class="cn-prenom-short">N. </span>Mamère</span>
+              <span class="cand-sub"><span class="cand-parti-full">Les Verts</span><span class="cand-parti-short">LV</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">2 177 voix</span>
@@ -330,11 +367,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:7.1%;background:#6AA84F"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="François Bayrou — Union pour la démocratie française">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">François Bayrou</span>
-              <span class="cand-sub">Union pour la démocratie française</span>
+              <span class="cand-name"><span class="cn-prenom-full">François </span><span class="cn-prenom-short">F. </span>Bayrou</span>
+              <span class="cand-sub"><span class="cand-parti-full">Union pour la démocratie française</span><span class="cand-parti-short">UDF</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">1 973 voix</span>
@@ -344,11 +381,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:6.4%;background:#6D9EEB"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="Arlette Laguiller — Lutte ouvrière">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Arlette Laguiller</span>
-              <span class="cand-sub">Lutte ouvrière</span>
+              <span class="cand-name"><span class="cn-prenom-full">Arlette </span><span class="cn-prenom-short">A. </span>Laguiller</span>
+              <span class="cand-sub"><span class="cand-parti-full">Lutte ouvrière</span><span class="cand-parti-short">LO</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">1 840 voix</span>
@@ -358,11 +395,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:6.0%;background:#980000"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="Jean‑Pierre Chevènement — Pôle républicain">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Jean-Pierre Chevènement</span>
-              <span class="cand-sub">Pôle républicain</span>
+              <span class="cand-name"><span class="cn-prenom-full">Jean-Pierre </span><span class="cn-prenom-short">J.-P. </span>Chevènement</span>
+              <span class="cand-sub"><span class="cand-parti-full">Pôle républicain</span><span class="cand-parti-short">Pôle rep.</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">1 740 voix</span>
@@ -375,11 +412,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
         <details class="cand-fold">
           <summary>+ 9 autres candidat·es</summary>
           <div class="cand-list">
-        <div class="cand-row winner">
+        <div class="cand-row winner" title="Olivier Besancenot — Ligue communiste révolutionnaire">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Olivier Besancenot</span>
-              <span class="cand-sub">Ligue communiste révolutionnaire</span>
+              <span class="cand-name"><span class="cn-prenom-full">Olivier </span><span class="cn-prenom-short">O. </span>Besancenot</span>
+              <span class="cand-sub"><span class="cand-parti-full">Ligue communiste révolutionnaire</span><span class="cand-parti-short">LCR</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">1 447 voix</span>
@@ -389,11 +426,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:4.7%;background:#980000"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="Robert Hue — Parti communiste français">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Robert Hue</span>
-              <span class="cand-sub">Parti communiste français</span>
+              <span class="cand-name"><span class="cn-prenom-full">Robert </span><span class="cn-prenom-short">R. </span>Hue</span>
+              <span class="cand-sub"><span class="cand-parti-full">Parti communiste français</span><span class="cand-parti-short">PCF</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">1 247 voix</span>
@@ -403,11 +440,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:4.0%;background:#FF0000"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="Alain Madelin — Démocratie libérale">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Alain Madelin</span>
-              <span class="cand-sub">Démocratie libérale</span>
+              <span class="cand-name"><span class="cn-prenom-full">Alain </span><span class="cn-prenom-short">A. </span>Madelin</span>
+              <span class="cand-sub"><span class="cand-parti-full">Démocratie libérale</span><span class="cand-parti-short">DL</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">1 038 voix</span>
@@ -417,11 +454,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:3.4%;background:#6D9EEB"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="Christiane Taubira — Parti radical de gauche">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Christiane Taubira</span>
-              <span class="cand-sub">Parti radical de gauche</span>
+              <span class="cand-name"><span class="cn-prenom-full">Christiane </span><span class="cn-prenom-short">C. </span>Taubira</span>
+              <span class="cand-sub"><span class="cand-parti-full">Parti radical de gauche</span><span class="cand-parti-short">PRG</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">1 011 voix</span>
@@ -431,11 +468,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:3.3%;background:#E06667"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="Jean Saint‑Josse — Chasse, pêche, nature et traditions">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Jean Saint-Josse</span>
-              <span class="cand-sub">Chasse, pêche, nature et traditions</span>
+              <span class="cand-name"><span class="cn-prenom-full">Jean </span><span class="cn-prenom-short">J. </span>Saint‑Josse</span>
+              <span class="cand-sub"><span class="cand-parti-full">Chasse, pêche, nature et traditions</span><span class="cand-parti-short">CPNT</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">850 voix</span>
@@ -445,10 +482,10 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:2.8%;background:#7F6001"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="Corinne Lepage">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Corinne Lepage</span>
+              <span class="cand-name"><span class="cn-prenom-full">Corinne </span><span class="cn-prenom-short">C. </span>Lepage</span>
               <span class="cand-sub">Cap21</span>
             </div>
             <div class="cand-row-pctvoix">
@@ -459,11 +496,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:2.1%;background:#93C47D"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="Bruno Mégret — Mouvement national républicain">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Bruno Mégret</span>
-              <span class="cand-sub">Mouvement national républicain</span>
+              <span class="cand-name"><span class="cn-prenom-full">Bruno </span><span class="cn-prenom-short">B. </span>Mégret</span>
+              <span class="cand-sub"><span class="cand-parti-full">Mouvement national républicain</span><span class="cand-parti-short">MNR</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">451 voix</span>
@@ -473,11 +510,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:1.5%;background:#20124D"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="Christine Boutin — Forum des républicains sociaux">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Christine Boutin</span>
-              <span class="cand-sub">Forum des républicains sociaux</span>
+              <span class="cand-name"><span class="cn-prenom-full">Christine </span><span class="cn-prenom-short">C. </span>Boutin</span>
+              <span class="cand-sub"><span class="cand-parti-full">Forum des républicains sociaux</span><span class="cand-parti-short">FRS</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">283 voix</span>
@@ -487,11 +524,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:0.9%;background:#0C5394"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="Daniel Gluckstein — Parti des travailleurs">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Daniel Gluckstein</span>
-              <span class="cand-sub">Parti des travailleurs</span>
+              <span class="cand-name"><span class="cn-prenom-full">Daniel </span><span class="cn-prenom-short">D. </span>Gluckstein</span>
+              <span class="cand-sub"><span class="cand-parti-full">Parti des travailleurs</span><span class="cand-parti-short">PT</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">159 voix</span>
@@ -508,13 +545,13 @@ footer.s-foot a:hover { color: var(--text-chrome); }
       <div class="trip-wrap">
         
         <a class="trip-side" href="/scrutins/presidentielle-2007.html" title="Présidentielle 2007">
-          <div class="trip-bar trip-bar-side"><div class="bb-seg" title="Gauche : 57,2 %" style="width:57.20%;background:#CC0100"></div><div class="bb-seg" title="Droite : 42,8 %" style="width:42.80%;background:#0F55CC"></div></div>
+          <div class="trip-bar trip-bar-side"><div class="bb-seg" title="Gauche : 46,5 %" style="width:46.50%;background:#CC0100"></div><div class="bb-seg" title="Centre : 17,8 %" style="width:17.80%;background:#F1C232"></div><div class="bb-seg" title="Droite : 29,8 %" style="width:29.80%;background:#0F55CC"></div><div class="bb-seg" title="Extrême droite : 5,9 %" style="width:5.90%;background:#20124D"></div></div>
           <span class="trip-side-label">Présidentielle 2007 <span class="trip-side-meta">(suivant)</span></span>
         </a>
         <div class="trip-bar trip-bar-current"><div class="bb-seg" title="Gauche : 53,2 %" style="width:53.20%;background:#CC0100"></div><div class="bb-seg" title="Droite : 34,6 %" style="width:34.60%;background:#0F55CC"></div><div class="bb-seg" title="Extrême droite : 12,2 %" style="width:12.20%;background:#20124D"></div><div class="trip-mid-line"></div></div>
         
         <a class="trip-side" href="/scrutins/presidentielle-1995.html" title="Présidentielle 1995">
-          <div class="trip-bar trip-bar-side"><div class="bb-seg" title="Gauche : 54,2 %" style="width:54.20%;background:#CC0100"></div><div class="bb-seg" title="Droite : 45,8 %" style="width:45.80%;background:#0F55CC"></div></div>
+          <div class="trip-bar trip-bar-side"><div class="bb-seg" title="Gauche : 48,9 %" style="width:48.90%;background:#CC0100"></div><div class="bb-seg" title="Droite : 40,9 %" style="width:40.90%;background:#0F55CC"></div><div class="bb-seg" title="Extrême droite : 9,9 %" style="width:9.90%;background:#20124D"></div><div class="bb-seg" title="Divers : 0,3 %" style="width:0.30%;background:#A0E1E2"></div></div>
           <span class="trip-side-label">Présidentielle 1995 <span class="trip-side-meta">(précédent)</span></span>
         </a>
       </div>
@@ -523,7 +560,7 @@ footer.s-foot a:hover { color: var(--text-chrome); }
       </p>
 
       <h3>Par bureau de vote</h3>
-      <p class="s-bureau-cta">🏛️ Pour les résultats détaillés bureau par bureau, <a href="/LRVcarte.html#election=Pr%C3%A9sidentielle%202002">rendez-vous sur la carte interactive →</a></p>
+      <p class="s-bureau-cta">📍 Pour les résultats détaillés bureau par bureau, <a href="/LRVcarte.html#election=Pr%C3%A9sidentielle%202002">rendez-vous sur la carte interactive →</a></p>
 
       
       <h3>Par quartier</h3>
@@ -618,11 +655,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
 
       <h3>Résultats par candidat·e</h3>
       <div class="s-cands"><div class="cand-list">
-        <div class="cand-row winner">
+        <div class="cand-row winner" title="Jacques Chirac — Rassemblement pour la République">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Jacques Chirac</span>
-              <span class="cand-sub">Rassemblement pour la République</span>
+              <span class="cand-name"><span class="cn-prenom-full">Jacques </span><span class="cn-prenom-short">J. </span>Chirac</span>
+              <span class="cand-sub"><span class="cand-parti-full">Rassemblement pour la République</span><span class="cand-parti-short">RPR</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">30 654 voix</span>
@@ -632,11 +669,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:88.8%;background:#0F55CC"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="Jean‑Marie Le Pen — Front national">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Jean-Marie Le Pen</span>
-              <span class="cand-sub">Front national</span>
+              <span class="cand-name"><span class="cn-prenom-full">Jean-Marie </span><span class="cn-prenom-short">J.-M. </span>Le Pen</span>
+              <span class="cand-sub"><span class="cand-parti-full">Front national</span><span class="cand-parti-short">FN</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">3 877 voix</span>
@@ -667,7 +704,7 @@ footer.s-foot a:hover { color: var(--text-chrome); }
       </p>
 
       <h3>Par bureau de vote</h3>
-      <p class="s-bureau-cta">🏛️ Pour les résultats détaillés bureau par bureau, <a href="/LRVcarte.html#election=Pr%C3%A9sidentielle%202002">rendez-vous sur la carte interactive →</a></p>
+      <p class="s-bureau-cta">📍 Pour les résultats détaillés bureau par bureau, <a href="/LRVcarte.html#election=Pr%C3%A9sidentielle%202002">rendez-vous sur la carte interactive →</a></p>
 
       
       <h3>Par quartier</h3>
@@ -773,6 +810,68 @@ document.addEventListener('DOMContentLoaded', function() {
     location.href = '/LRVcarte.html';
   });
 
+  // ── Cascade de troncature des noms candidats (alignée sur LRVcarte) ───
+  // Mesure si le nom ou le parti déborde sur 2 lignes (mobile) ou si le sub
+  // passe sur la ligne suivante (desktop), et applique les classes adaptées.
+  function lineHeightOf(el) {
+    var s = getComputedStyle(el);
+    var lh = parseFloat(s.lineHeight);
+    if (isNaN(lh)) lh = parseFloat(s.fontSize) * 1.2;
+    return lh || 0;
+  }
+  function isMultiline(el) {
+    var lh = lineHeightOf(el);
+    if (!lh) return false;
+    return el.offsetHeight > lh * 1.5;
+  }
+  function isSubOnNextLine(nameEl, subEl) {
+    if (!nameEl || !subEl) return false;
+    var nameRect = nameEl.getBoundingClientRect();
+    var subRect = subEl.getBoundingClientRect();
+    return subRect.top >= nameRect.bottom - 4;
+  }
+  function applyCandTruncationCascade(rootEl) {
+    var containers = (rootEl || document).querySelectorAll('.cand-row-namepart');
+    containers.forEach(function(np) {
+      var nameEl = np.querySelector('.cand-name');
+      var subEl  = np.querySelector('.cand-sub');
+      if (!nameEl || !subEl) return;
+      nameEl.classList.remove('prenom-abbrev', 'prenom-hidden');
+      subEl.classList.remove('parti-abbrev');
+      var parentDir = getComputedStyle(np).flexDirection;
+      var isColumn = (parentDir === 'column' || parentDir === 'column-reverse');
+      if (isColumn) {
+        function nameOver() { void nameEl.offsetHeight; return isMultiline(nameEl); }
+        function subOver()  { void subEl.offsetHeight;  return isMultiline(subEl);  }
+        if (nameOver()) {
+          nameEl.classList.add('prenom-abbrev');
+          if (nameOver()) {
+            nameEl.classList.remove('prenom-abbrev');
+            nameEl.classList.add('prenom-hidden');
+          }
+        }
+        if (subOver()) {
+          subEl.classList.add('parti-abbrev');
+        }
+        return;
+      }
+      // Desktop : sub passe sur la 2e ligne → on cascade
+      if (!isSubOnNextLine(nameEl, subEl)) return;
+      nameEl.classList.add('prenom-abbrev');
+      if (!isSubOnNextLine(nameEl, subEl)) return;
+      subEl.classList.add('parti-abbrev');
+      if (!isSubOnNextLine(nameEl, subEl)) return;
+      nameEl.classList.add('prenom-hidden');
+    });
+  }
+  applyCandTruncationCascade();
+  // Re-mesure au resize (debounced 150ms) : couvre rotation tel, barre URL Chrome
+  var rt;
+  window.addEventListener('resize', function() {
+    clearTimeout(rt);
+    rt = setTimeout(applyCandTruncationCascade, 150);
+  }, { passive: true });
+
   // ── Tooltip custom sur la carte SVG ───────────────────────────────────
   // On retire les <title> natifs (pour éviter le double tooltip browser + custom)
   // et on attache des handlers hover qui affichent un div .svg-tip flottant.
@@ -792,8 +891,11 @@ document.addEventListener('DOMContentLoaded', function() {
       var num = p.dataset.num || '';
       var den = p.dataset.den || '';
       var win = p.dataset.winner || '';
+      var agg = p.dataset.agg === '1';
       var el = ensureTip();
-      el.innerHTML = '<span class="stip-num">N°' + num + (den ? ' · <span class="stip-den">' + den + '</span>' : '') + '</span>'
+      var prefix = agg ? 'Bureaux ' : 'N°';
+      var suffix = agg ? ' (zone agrégée)' : '';
+      el.innerHTML = '<span class="stip-num">' + prefix + num + suffix + (den ? ' · <span class="stip-den">' + den + '</span>' : '') + '</span>'
         + (win ? '<span class="stip-win">' + win + '</span>' : '');
       el.classList.add('show');
     });

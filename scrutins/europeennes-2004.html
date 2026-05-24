@@ -3,6 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+  /* Force la vue mobile (viewport=720) si le flag localStorage est activé. */
+  (function () {
+    try {
+      if (localStorage.getItem('lrvote_force_mobile') === '1') {
+        document.querySelector('meta[name=viewport]').setAttribute('content', 'width=720, user-scalable=yes');
+      }
+    } catch (_) {}
+  })();
+</script>
 <title>Européennes 2004 à La Rochelle — Résultats bureau par bureau — La Rochelle Vote</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <meta name="description" content="Résultats détaillés de Européennes 2004 à La Rochelle, bureau par bureau. Top 3 : Bernard Poignant (34,9 %), Roselyne Bachelot (14,7 %), Philippe de Villiers (9,8 %). Abstention : 56,3 %.">
@@ -113,9 +123,30 @@ section.s-block p { font-size: 1rem; line-height: 1.6; color: var(--text-body); 
 .cand-row { display: flex; flex-direction: column; gap: 6px; }
 .cand-row-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
 .cand-row-namepart { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-.cand-name { font-size: 1.15rem; font-weight: 700; line-height: 1.1; color: var(--text-chrome); }
+.cand-name { font-size: 1.15rem; font-weight: 700; line-height: 1.1; color: var(--text-chrome); min-width: 0; }
 .cand-row.winner .cand-name { font-weight: 800; }
 .cand-sub { font-size: 0.82rem; color: var(--text-chrome-muted); }
+/* Cascade de troncature (alignée sur LRVcarte) : par défaut on affiche les versions
+   longues ; le JS applique .prenom-abbrev / .prenom-hidden / .parti-abbrev quand
+   le contenu déborde sur 2 lignes (ou wrap en column mobile). */
+.cn-prenom-full { display: inline; }
+.cn-prenom-short { display: none; }
+.cand-name.prenom-abbrev .cn-prenom-full { display: none; }
+.cand-name.prenom-abbrev .cn-prenom-short { display: inline; }
+.cand-name.prenom-hidden .cn-prenom-full,
+.cand-name.prenom-hidden .cn-prenom-short { display: none; }
+.cand-parti-full { display: inline; }
+.cand-parti-short { display: none; }
+.cand-sub.parti-abbrev .cand-parti-full { display: none; }
+.cand-sub.parti-abbrev .cand-parti-short { display: inline; }
+
+/* Palier intermédiaire (tablette / fenêtre étroite) : juste réduit polices. */
+@media (max-width: 900px) and (min-width: 721px) {
+  .cand-name { font-size: 1.05rem; }
+  .cand-sub { font-size: 0.78rem; }
+  .cand-pct { font-size: 1.2rem; }
+  .cand-voix { font-size: 0.78rem; }
+}
 .cand-row-pctvoix { display: flex; align-items: baseline; gap: 8px; flex-shrink: 0; }
 .cand-voix { font-size: 0.82rem; color: var(--text-chrome-muted); font-variant-numeric: tabular-nums; }
 .cand-sep { color: var(--text-chrome-muted); font-size: 0.8rem; }
@@ -200,10 +231,16 @@ footer.s-foot a:hover { color: var(--text-chrome); }
   .pbox { padding: 6px; gap: 2px; }
   .pbox-val { font-size: 0.82rem; }
   .pbox-lbl { font-size: 0.6rem; letter-spacing: 0.2px; }
-  /* Lignes candidat·e plus compactes */
-  .cand-name { font-size: 1rem; }
-  .cand-pct { font-size: 1.15rem; }
-  .cand-sub, .cand-voix { font-size: 0.78rem; }
+  /* Mobile (≤720px) : layout column nom/parti à gauche, %/voix à droite.
+     La cascade JS applique .prenom-abbrev / .prenom-hidden / .parti-abbrev quand
+     un élément déborde sur 2 lignes — pas de forçage CSS du nom court. */
+  .cand-row-namepart { flex-direction: column; align-items: flex-start; gap: 2px; flex-wrap: nowrap; }
+  .cand-row-pctvoix { flex-direction: column; align-items: flex-end; gap: 1px; }
+  .cand-sep { display: none; }
+  .cand-row-pctvoix .cand-pct { order: 1; font-size: 1.3rem; }
+  .cand-row-pctvoix .cand-voix { order: 2; font-size: 0.7rem; }
+  .cand-name { font-size: 1.1rem; font-weight: 700; line-height: 1.15; }
+  .cand-sub { font-size: 0.72rem; }
   /* Listes agrégées : layout compact à 2 lignes sur mobile */
   .agg-row { grid-template-columns: 1fr auto; grid-template-areas: 'name abst' 'win win' 'bar bar'; gap: 4px 10px; font-size: 0.82rem; padding: 8px; }
   .agg-name { grid-area: name; }
@@ -274,11 +311,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
 
       <h3>Résultats par candidat·e</h3>
       <div class="s-cands"><div class="cand-list">
-        <div class="cand-row winner">
+        <div class="cand-row winner" title="Bernard Poignant — Parti socialiste">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Bernard Poignant</span>
-              <span class="cand-sub">Parti socialiste</span>
+              <span class="cand-name"><span class="cn-prenom-full">Bernard </span><span class="cn-prenom-short">B. </span>Poignant</span>
+              <span class="cand-sub"><span class="cand-parti-full">Parti socialiste</span><span class="cand-parti-short">PS</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">7 029 voix</span>
@@ -288,11 +325,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:34.9%;background:#CC0100"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="Roselyne Bachelot — Union pour un mouvement populaire">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Roselyne Bachelot</span>
-              <span class="cand-sub">Union pour un mouvement populaire</span>
+              <span class="cand-name"><span class="cn-prenom-full">Roselyne </span><span class="cn-prenom-short">R. </span>Bachelot</span>
+              <span class="cand-sub"><span class="cand-parti-full">Union pour un mouvement populaire</span><span class="cand-parti-short">UMP</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">2 948 voix</span>
@@ -302,11 +339,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:14.7%;background:#0F55CC"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="Philippe de Villiers — Mouvement pour la France">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Philippe de Villiers</span>
-              <span class="cand-sub">Mouvement pour la France</span>
+              <span class="cand-name"><span class="cn-prenom-full">Philippe </span><span class="cn-prenom-short">P. </span>de Villiers</span>
+              <span class="cand-sub"><span class="cand-parti-full">Mouvement pour la France</span><span class="cand-parti-short">MPF</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">1 971 voix</span>
@@ -316,11 +353,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:9.8%;background:#0C5394"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="Philippe Morillon — Union pour la démocratie française">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Philippe Morillon</span>
-              <span class="cand-sub">Union pour la démocratie française</span>
+              <span class="cand-name"><span class="cn-prenom-full">Philippe </span><span class="cn-prenom-short">P. </span>Morillon</span>
+              <span class="cand-sub"><span class="cand-parti-full">Union pour la démocratie française</span><span class="cand-parti-short">UDF</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">1 964 voix</span>
@@ -330,11 +367,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:9.8%;background:#6D9EEB"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="Marie‑Hélène Aubert — Les Verts">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Marie-Hélène Aubert</span>
-              <span class="cand-sub">Les Verts</span>
+              <span class="cand-name"><span class="cn-prenom-full">Marie-Hélène </span><span class="cn-prenom-short">M.-H. </span>Aubert</span>
+              <span class="cand-sub"><span class="cand-parti-full">Les Verts</span><span class="cand-parti-short">LV</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">1 762 voix</span>
@@ -344,11 +381,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:8.8%;background:#6AA84F"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="Patrick Le Hyaric — Parti communiste français">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Patrick Le Hyaric</span>
-              <span class="cand-sub">Parti communiste français</span>
+              <span class="cand-name"><span class="cn-prenom-full">Patrick </span><span class="cn-prenom-short">P. </span>Le Hyaric</span>
+              <span class="cand-sub"><span class="cand-parti-full">Parti communiste français</span><span class="cand-parti-short">PCF</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">1 238 voix</span>
@@ -358,11 +395,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:6.2%;background:#FF0000"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="Samuel Maréchal — Front national">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Samuel Maréchal</span>
-              <span class="cand-sub">Front national</span>
+              <span class="cand-name"><span class="cn-prenom-full">Samuel </span><span class="cn-prenom-short">S. </span>Maréchal</span>
+              <span class="cand-sub"><span class="cand-parti-full">Front national</span><span class="cand-parti-short">FN</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">963 voix</span>
@@ -375,11 +412,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
         <details class="cand-fold">
           <summary>+ 6 autres candidat·es</summary>
           <div class="cand-list">
-        <div class="cand-row winner">
+        <div class="cand-row winner" title="Jo Le Guen — Parti radical de gauche">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Jo Le Guen</span>
-              <span class="cand-sub">Parti radical de gauche</span>
+              <span class="cand-name"><span class="cn-prenom-full">Jo </span><span class="cn-prenom-short">J. </span>Le Guen</span>
+              <span class="cand-sub"><span class="cand-parti-full">Parti radical de gauche</span><span class="cand-parti-short">PRG</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">669 voix</span>
@@ -389,11 +426,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:3.3%;background:#E06667"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="Hélène Defrance — Lutte ouvrière">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Hélène Defrance</span>
-              <span class="cand-sub">Lutte ouvrière</span>
+              <span class="cand-name"><span class="cn-prenom-full">Hélène </span><span class="cn-prenom-short">H. </span>Defrance</span>
+              <span class="cand-sub"><span class="cand-parti-full">Lutte ouvrière</span><span class="cand-parti-short">LO</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">464 voix</span>
@@ -403,11 +440,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:2.3%;background:#980000"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="Autres (9 listes)">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Autres (9 listes)</span>
-              <span class="cand-sub"></span>
+              <span class="cand-name"></span>
+              
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">424 voix</span>
@@ -417,11 +454,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:2.1%;background:#bbbbbb"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="Michel Hunault — Divers droite">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Michel Hunault</span>
-              <span class="cand-sub">Divers droite</span>
+              <span class="cand-name"><span class="cn-prenom-full">Michel </span><span class="cn-prenom-short">M. </span>Hunault</span>
+              <span class="cand-sub"><span class="cand-parti-full">Divers droite</span><span class="cand-parti-short">DVD</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">351 voix</span>
@@ -431,11 +468,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:1.7%;background:#3C78D8"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="Fabrice Sanchez — Chasse, pêche, nature et traditions">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">Fabrice Sanchez</span>
-              <span class="cand-sub">Chasse, pêche, nature et traditions</span>
+              <span class="cand-name"><span class="cn-prenom-full">Fabrice </span><span class="cn-prenom-short">F. </span>Sanchez</span>
+              <span class="cand-sub"><span class="cand-parti-full">Chasse, pêche, nature et traditions</span><span class="cand-parti-short">CPNT</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">205 voix</span>
@@ -445,11 +482,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:1.0%;background:#7F6001"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="François Le Pivert — Parti des travailleurs">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
-              <span class="cand-name">François Le Pivert</span>
-              <span class="cand-sub">Parti des travailleurs</span>
+              <span class="cand-name"><span class="cn-prenom-full">François </span><span class="cn-prenom-short">F. </span>Le Pivert</span>
+              <span class="cand-sub"><span class="cand-parti-full">Parti des travailleurs</span><span class="cand-parti-short">PT</span></span>
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">131 voix</span>
@@ -481,7 +518,7 @@ footer.s-foot a:hover { color: var(--text-chrome); }
       </p>
 
       <h3>Par bureau de vote</h3>
-      <p class="s-bureau-cta">🏛️ Pour les résultats détaillés bureau par bureau, <a href="/LRVcarte.html#election=Europ%C3%A9ennes%202004">rendez-vous sur la carte interactive →</a></p>
+      <p class="s-bureau-cta">📍 Pour les résultats détaillés bureau par bureau, <a href="/LRVcarte.html#election=Europ%C3%A9ennes%202004">rendez-vous sur la carte interactive →</a></p>
 
       
       <h3>Par quartier</h3>
@@ -593,6 +630,68 @@ document.addEventListener('DOMContentLoaded', function() {
     location.href = '/LRVcarte.html';
   });
 
+  // ── Cascade de troncature des noms candidats (alignée sur LRVcarte) ───
+  // Mesure si le nom ou le parti déborde sur 2 lignes (mobile) ou si le sub
+  // passe sur la ligne suivante (desktop), et applique les classes adaptées.
+  function lineHeightOf(el) {
+    var s = getComputedStyle(el);
+    var lh = parseFloat(s.lineHeight);
+    if (isNaN(lh)) lh = parseFloat(s.fontSize) * 1.2;
+    return lh || 0;
+  }
+  function isMultiline(el) {
+    var lh = lineHeightOf(el);
+    if (!lh) return false;
+    return el.offsetHeight > lh * 1.5;
+  }
+  function isSubOnNextLine(nameEl, subEl) {
+    if (!nameEl || !subEl) return false;
+    var nameRect = nameEl.getBoundingClientRect();
+    var subRect = subEl.getBoundingClientRect();
+    return subRect.top >= nameRect.bottom - 4;
+  }
+  function applyCandTruncationCascade(rootEl) {
+    var containers = (rootEl || document).querySelectorAll('.cand-row-namepart');
+    containers.forEach(function(np) {
+      var nameEl = np.querySelector('.cand-name');
+      var subEl  = np.querySelector('.cand-sub');
+      if (!nameEl || !subEl) return;
+      nameEl.classList.remove('prenom-abbrev', 'prenom-hidden');
+      subEl.classList.remove('parti-abbrev');
+      var parentDir = getComputedStyle(np).flexDirection;
+      var isColumn = (parentDir === 'column' || parentDir === 'column-reverse');
+      if (isColumn) {
+        function nameOver() { void nameEl.offsetHeight; return isMultiline(nameEl); }
+        function subOver()  { void subEl.offsetHeight;  return isMultiline(subEl);  }
+        if (nameOver()) {
+          nameEl.classList.add('prenom-abbrev');
+          if (nameOver()) {
+            nameEl.classList.remove('prenom-abbrev');
+            nameEl.classList.add('prenom-hidden');
+          }
+        }
+        if (subOver()) {
+          subEl.classList.add('parti-abbrev');
+        }
+        return;
+      }
+      // Desktop : sub passe sur la 2e ligne → on cascade
+      if (!isSubOnNextLine(nameEl, subEl)) return;
+      nameEl.classList.add('prenom-abbrev');
+      if (!isSubOnNextLine(nameEl, subEl)) return;
+      subEl.classList.add('parti-abbrev');
+      if (!isSubOnNextLine(nameEl, subEl)) return;
+      nameEl.classList.add('prenom-hidden');
+    });
+  }
+  applyCandTruncationCascade();
+  // Re-mesure au resize (debounced 150ms) : couvre rotation tel, barre URL Chrome
+  var rt;
+  window.addEventListener('resize', function() {
+    clearTimeout(rt);
+    rt = setTimeout(applyCandTruncationCascade, 150);
+  }, { passive: true });
+
   // ── Tooltip custom sur la carte SVG ───────────────────────────────────
   // On retire les <title> natifs (pour éviter le double tooltip browser + custom)
   // et on attache des handlers hover qui affichent un div .svg-tip flottant.
@@ -612,8 +711,11 @@ document.addEventListener('DOMContentLoaded', function() {
       var num = p.dataset.num || '';
       var den = p.dataset.den || '';
       var win = p.dataset.winner || '';
+      var agg = p.dataset.agg === '1';
       var el = ensureTip();
-      el.innerHTML = '<span class="stip-num">N°' + num + (den ? ' · <span class="stip-den">' + den + '</span>' : '') + '</span>'
+      var prefix = agg ? 'Bureaux ' : 'N°';
+      var suffix = agg ? ' (zone agrégée)' : '';
+      el.innerHTML = '<span class="stip-num">' + prefix + num + suffix + (den ? ' · <span class="stip-den">' + den + '</span>' : '') + '</span>'
         + (win ? '<span class="stip-win">' + win + '</span>' : '');
       el.classList.add('show');
     });

@@ -3,6 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+  /* Force la vue mobile (viewport=720) si le flag localStorage est activé. */
+  (function () {
+    try {
+      if (localStorage.getItem('lrvote_force_mobile') === '1') {
+        document.querySelector('meta[name=viewport]').setAttribute('content', 'width=720, user-scalable=yes');
+      }
+    } catch (_) {}
+  })();
+</script>
 <title>Référendum 2005 à La Rochelle — Résultats bureau par bureau — La Rochelle Vote</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <meta name="description" content="Résultats détaillés de Référendum 2005 à La Rochelle, bureau par bureau. Top 3 : Oui (51,2 %), Non (48,8 %). Abstention : 30,8 %.">
@@ -113,9 +123,30 @@ section.s-block p { font-size: 1rem; line-height: 1.6; color: var(--text-body); 
 .cand-row { display: flex; flex-direction: column; gap: 6px; }
 .cand-row-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
 .cand-row-namepart { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-.cand-name { font-size: 1.15rem; font-weight: 700; line-height: 1.1; color: var(--text-chrome); }
+.cand-name { font-size: 1.15rem; font-weight: 700; line-height: 1.1; color: var(--text-chrome); min-width: 0; }
 .cand-row.winner .cand-name { font-weight: 800; }
 .cand-sub { font-size: 0.82rem; color: var(--text-chrome-muted); }
+/* Cascade de troncature (alignée sur LRVcarte) : par défaut on affiche les versions
+   longues ; le JS applique .prenom-abbrev / .prenom-hidden / .parti-abbrev quand
+   le contenu déborde sur 2 lignes (ou wrap en column mobile). */
+.cn-prenom-full { display: inline; }
+.cn-prenom-short { display: none; }
+.cand-name.prenom-abbrev .cn-prenom-full { display: none; }
+.cand-name.prenom-abbrev .cn-prenom-short { display: inline; }
+.cand-name.prenom-hidden .cn-prenom-full,
+.cand-name.prenom-hidden .cn-prenom-short { display: none; }
+.cand-parti-full { display: inline; }
+.cand-parti-short { display: none; }
+.cand-sub.parti-abbrev .cand-parti-full { display: none; }
+.cand-sub.parti-abbrev .cand-parti-short { display: inline; }
+
+/* Palier intermédiaire (tablette / fenêtre étroite) : juste réduit polices. */
+@media (max-width: 900px) and (min-width: 721px) {
+  .cand-name { font-size: 1.05rem; }
+  .cand-sub { font-size: 0.78rem; }
+  .cand-pct { font-size: 1.2rem; }
+  .cand-voix { font-size: 0.78rem; }
+}
 .cand-row-pctvoix { display: flex; align-items: baseline; gap: 8px; flex-shrink: 0; }
 .cand-voix { font-size: 0.82rem; color: var(--text-chrome-muted); font-variant-numeric: tabular-nums; }
 .cand-sep { color: var(--text-chrome-muted); font-size: 0.8rem; }
@@ -200,10 +231,16 @@ footer.s-foot a:hover { color: var(--text-chrome); }
   .pbox { padding: 6px; gap: 2px; }
   .pbox-val { font-size: 0.82rem; }
   .pbox-lbl { font-size: 0.6rem; letter-spacing: 0.2px; }
-  /* Lignes candidat·e plus compactes */
-  .cand-name { font-size: 1rem; }
-  .cand-pct { font-size: 1.15rem; }
-  .cand-sub, .cand-voix { font-size: 0.78rem; }
+  /* Mobile (≤720px) : layout column nom/parti à gauche, %/voix à droite.
+     La cascade JS applique .prenom-abbrev / .prenom-hidden / .parti-abbrev quand
+     un élément déborde sur 2 lignes — pas de forçage CSS du nom court. */
+  .cand-row-namepart { flex-direction: column; align-items: flex-start; gap: 2px; flex-wrap: nowrap; }
+  .cand-row-pctvoix { flex-direction: column; align-items: flex-end; gap: 1px; }
+  .cand-sep { display: none; }
+  .cand-row-pctvoix .cand-pct { order: 1; font-size: 1.3rem; }
+  .cand-row-pctvoix .cand-voix { order: 2; font-size: 0.7rem; }
+  .cand-name { font-size: 1.1rem; font-weight: 700; line-height: 1.15; }
+  .cand-sub { font-size: 0.72rem; }
   /* Listes agrégées : layout compact à 2 lignes sur mobile */
   .agg-row { grid-template-columns: 1fr auto; grid-template-areas: 'name abst' 'win win' 'bar bar'; gap: 4px 10px; font-size: 0.82rem; padding: 8px; }
   .agg-name { grid-area: name; }
@@ -274,11 +311,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
 
       <h3>Résultats par candidat·e</h3>
       <div class="s-cands"><div class="cand-list">
-        <div class="cand-row winner">
+        <div class="cand-row winner" title="Oui">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
               <span class="cand-name">Oui</span>
-              <span class="cand-sub"></span>
+              
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">16 061 voix</span>
@@ -288,11 +325,11 @@ footer.s-foot a:hover { color: var(--text-chrome); }
           </div>
           <div class="bar-bg"><div class="bar-fg" style="width:51.2%;background:#0F8A8A"></div></div>
         </div>
-        <div class="cand-row">
+        <div class="cand-row" title="Non">
           <div class="cand-row-head">
             <div class="cand-row-namepart">
               <span class="cand-name">Non</span>
-              <span class="cand-sub"></span>
+              
             </div>
             <div class="cand-row-pctvoix">
               <span class="cand-voix">15 331 voix</span>
@@ -306,7 +343,7 @@ footer.s-foot a:hover { color: var(--text-chrome); }
       
 
       <h3>Par bureau de vote</h3>
-      <p class="s-bureau-cta">🏛️ Pour les résultats détaillés bureau par bureau, <a href="/LRVcarte.html#election=R%C3%A9f%C3%A9rendum%202005">rendez-vous sur la carte interactive →</a></p>
+      <p class="s-bureau-cta">📍 Pour les résultats détaillés bureau par bureau, <a href="/LRVcarte.html#election=R%C3%A9f%C3%A9rendum%202005">rendez-vous sur la carte interactive →</a></p>
 
       
       <h3>Par quartier</h3>
@@ -418,6 +455,68 @@ document.addEventListener('DOMContentLoaded', function() {
     location.href = '/LRVcarte.html';
   });
 
+  // ── Cascade de troncature des noms candidats (alignée sur LRVcarte) ───
+  // Mesure si le nom ou le parti déborde sur 2 lignes (mobile) ou si le sub
+  // passe sur la ligne suivante (desktop), et applique les classes adaptées.
+  function lineHeightOf(el) {
+    var s = getComputedStyle(el);
+    var lh = parseFloat(s.lineHeight);
+    if (isNaN(lh)) lh = parseFloat(s.fontSize) * 1.2;
+    return lh || 0;
+  }
+  function isMultiline(el) {
+    var lh = lineHeightOf(el);
+    if (!lh) return false;
+    return el.offsetHeight > lh * 1.5;
+  }
+  function isSubOnNextLine(nameEl, subEl) {
+    if (!nameEl || !subEl) return false;
+    var nameRect = nameEl.getBoundingClientRect();
+    var subRect = subEl.getBoundingClientRect();
+    return subRect.top >= nameRect.bottom - 4;
+  }
+  function applyCandTruncationCascade(rootEl) {
+    var containers = (rootEl || document).querySelectorAll('.cand-row-namepart');
+    containers.forEach(function(np) {
+      var nameEl = np.querySelector('.cand-name');
+      var subEl  = np.querySelector('.cand-sub');
+      if (!nameEl || !subEl) return;
+      nameEl.classList.remove('prenom-abbrev', 'prenom-hidden');
+      subEl.classList.remove('parti-abbrev');
+      var parentDir = getComputedStyle(np).flexDirection;
+      var isColumn = (parentDir === 'column' || parentDir === 'column-reverse');
+      if (isColumn) {
+        function nameOver() { void nameEl.offsetHeight; return isMultiline(nameEl); }
+        function subOver()  { void subEl.offsetHeight;  return isMultiline(subEl);  }
+        if (nameOver()) {
+          nameEl.classList.add('prenom-abbrev');
+          if (nameOver()) {
+            nameEl.classList.remove('prenom-abbrev');
+            nameEl.classList.add('prenom-hidden');
+          }
+        }
+        if (subOver()) {
+          subEl.classList.add('parti-abbrev');
+        }
+        return;
+      }
+      // Desktop : sub passe sur la 2e ligne → on cascade
+      if (!isSubOnNextLine(nameEl, subEl)) return;
+      nameEl.classList.add('prenom-abbrev');
+      if (!isSubOnNextLine(nameEl, subEl)) return;
+      subEl.classList.add('parti-abbrev');
+      if (!isSubOnNextLine(nameEl, subEl)) return;
+      nameEl.classList.add('prenom-hidden');
+    });
+  }
+  applyCandTruncationCascade();
+  // Re-mesure au resize (debounced 150ms) : couvre rotation tel, barre URL Chrome
+  var rt;
+  window.addEventListener('resize', function() {
+    clearTimeout(rt);
+    rt = setTimeout(applyCandTruncationCascade, 150);
+  }, { passive: true });
+
   // ── Tooltip custom sur la carte SVG ───────────────────────────────────
   // On retire les <title> natifs (pour éviter le double tooltip browser + custom)
   // et on attache des handlers hover qui affichent un div .svg-tip flottant.
@@ -437,8 +536,11 @@ document.addEventListener('DOMContentLoaded', function() {
       var num = p.dataset.num || '';
       var den = p.dataset.den || '';
       var win = p.dataset.winner || '';
+      var agg = p.dataset.agg === '1';
       var el = ensureTip();
-      el.innerHTML = '<span class="stip-num">N°' + num + (den ? ' · <span class="stip-den">' + den + '</span>' : '') + '</span>'
+      var prefix = agg ? 'Bureaux ' : 'N°';
+      var suffix = agg ? ' (zone agrégée)' : '';
+      el.innerHTML = '<span class="stip-num">' + prefix + num + suffix + (den ? ' · <span class="stip-den">' + den + '</span>' : '') + '</span>'
         + (win ? '<span class="stip-win">' + win + '</span>' : '');
       el.classList.add('show');
     });
