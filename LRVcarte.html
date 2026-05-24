@@ -2413,6 +2413,71 @@ function colorOfCandidate(name) {
 }
 function winnerColor(data) { if (!data || !data.w) return '#ccc'; return colorOfCandidate(data.w); }
 
+// ─── 'En savoir plus' : liens Wikipédia (élection) + LRVanalyse (objet) ─────
+// Helper pour dériver l'URL Wikipédia FR d'une élection. Combine un mapping
+// d'overrides (cas spéciaux : municipales LR, référendums avec sous-titre,
+// partielle sans page WP dédiée) et une dérivation par pattern.
+function getElectionWikipediaURL(label) {
+  if (!label) return null;
+  const OVERRIDES = {
+    'Référendum 2000': 'https://fr.wikipedia.org/wiki/R%C3%A9f%C3%A9rendum_fran%C3%A7ais_de_2000_sur_le_quinquennat',
+    'Référendum 2005': 'https://fr.wikipedia.org/wiki/R%C3%A9f%C3%A9rendum_fran%C3%A7ais_sur_le_trait%C3%A9_%C3%A9tablissant_une_constitution_pour_l%27Europe',
+    'Municipales 1995': 'https://fr.wikipedia.org/wiki/%C3%89lections_municipales_de_1995_%C3%A0_La_Rochelle',
+    'Municipales 2001': 'https://fr.wikipedia.org/wiki/%C3%89lections_municipales_de_2001_%C3%A0_La_Rochelle',
+    'Municipales 2008': 'https://fr.wikipedia.org/wiki/%C3%89lections_municipales_de_2008_%C3%A0_La_Rochelle',
+    'Municipales 2014': 'https://fr.wikipedia.org/wiki/%C3%89lections_municipales_de_2014_%C3%A0_La_Rochelle',
+    'Municipales 2020': 'https://fr.wikipedia.org/wiki/%C3%89lections_municipales_de_2020_%C3%A0_La_Rochelle',
+    'Municipales 2026': 'https://fr.wikipedia.org/wiki/%C3%89lections_municipales_de_2026_%C3%A0_La_Rochelle',
+    'Cantonale partielle 2002': null  // pas de page WP dédiée pour les partielles
+  };
+  if (label in OVERRIDES) return OVERRIDES[label];
+  const ym = label.match(/(\d{4})/);
+  if (!ym) return null;
+  const y = ym[1];
+  const enc = s => encodeURIComponent(s).replace(/%20/g, '_');
+  if (/^Présidentielle/i.test(label))   return 'https://fr.wikipedia.org/wiki/' + enc('Élection présidentielle française de ' + y);
+  if (/^Européennes/i.test(label))      return 'https://fr.wikipedia.org/wiki/' + enc('Élections européennes de ' + y + ' en France');
+  if (/^Législatives/i.test(label))     return 'https://fr.wikipedia.org/wiki/' + enc('Élections législatives françaises de ' + y);
+  if (/^Régionales/i.test(label)) {
+    const region = parseInt(y) < 2015 ? 'Poitou-Charentes' : 'Nouvelle-Aquitaine';
+    return 'https://fr.wikipedia.org/wiki/' + enc('Élections régionales de ' + y + ' en ' + region);
+  }
+  if (/^Cantonales/i.test(label))       return 'https://fr.wikipedia.org/wiki/' + enc('Élections cantonales françaises de ' + y);
+  if (/^Départementales/i.test(label))  return 'https://fr.wikipedia.org/wiki/' + enc('Élections départementales françaises de ' + y);
+  if (/^Référendum/i.test(label))       return 'https://fr.wikipedia.org/wiki/' + enc('Référendum français de ' + y);
+  return null;
+}
+
+// URL LRVanalyse pour pré-sélectionner un niveau + objet courant.
+function getAnalyseURL(level, id) {
+  if (level === 'ville') return 'LRVanalyse.html';
+  const params = new URLSearchParams();
+  params.set('niveau', level);
+  if (id) params.set(level, String(id));
+  return 'LRVanalyse.html#' + params.toString();
+}
+
+// Rendu HTML du bloc 'En savoir plus' en bas de fiche (bureau/quartier/canton/ville).
+// `level` ∈ {bureau, quartier, canton, ville} ; `id` = identifiant (bureau num, nom
+// quartier, num canton) ; `targetLabel` = libellé contextuel ("ce bureau de vote
+// n° 0050", "le quartier de Tasdon", etc.).
+function renderMoreLinks(level, id, targetLabel) {
+  const wpUrl = getElectionWikipediaURL(currentElection);
+  const analyseUrl = getAnalyseURL(level, id);
+  let h = '<div class="fiche-section-more" style="margin-top:20px;padding-top:14px;border-top:1px solid var(--rule);font-size:0.78rem;line-height:1.55;display:flex;flex-direction:column;gap:8px">';
+  h += '<a href="' + analyseUrl + '" style="color:var(--text-meta);text-decoration:none;display:inline-flex;align-items:center;gap:6px">'
+     + '<span style="opacity:.55">→</span> En savoir plus sur l\'histoire électorale de <strong style="color:var(--text-modal);font-weight:600">' + _esc(targetLabel) + '</strong></a>';
+  if (wpUrl) {
+    h += '<a href="' + wpUrl + '" target="_blank" rel="noopener" style="color:var(--text-meta);text-decoration:none;display:inline-flex;align-items:center;gap:6px">'
+       + '<span style="opacity:.55">→</span> En savoir plus sur <strong style="color:var(--text-modal);font-weight:600">' + _esc(currentElection) + '</strong> <span style="opacity:.55;font-size:.85em">(Wikipédia ↗)</span></a>';
+  }
+  h += '</div>';
+  return h;
+}
+
+// Helper local : escape HTML basique pour les liens 'En savoir plus'.
+function _esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
 // ── EX-AEQUO : hachures diagonales pour les bureaux où plusieurs candidats sont
 // strictement à égalité en tête. Convention cartographique classique pour
 // "valeur partagée". On détecte sur _voix (entiers, précis), pas sur c (pct
@@ -4728,6 +4793,7 @@ function renderGlobalFiche() {
   // Liste des cantons (juste après les quartiers, uniquement si l'ère canton est définie)
   h += renderCantonListGlobal();
 
+  h += renderMoreLinks('ville', null, 'La Rochelle');
   document.getElementById('ov-body').innerHTML = h; document.getElementById('ov-body').scrollTop = 0;
   initGlobalMinimap(winCol);
 }
@@ -5580,6 +5646,7 @@ function renderFiche(feature) {
     h += '<div class="fiche-section-participation" style="margin-bottom:14px">' + particiHTML(data.i, data.a, abst_nb_r, blancsPct_r, data.bn || 0, data.e) + '</div>';
     // Split : mini-carte à gauche + (question + duel) à droite
     h += '<div class="split"><div id="mm-wrap"></div>' + sig_r + '</div>';
+    h += renderMoreLinks('bureau', ns, isAgg ? 'ces bureaux agrégés' : ('ce bureau de vote n° ' + parseInt(ns)));
     document.getElementById('ov-body').innerHTML = h; document.getElementById('ov-body').scrollTop = 0;
     const gjR = getMapGeoJSON();
     const freshR = gjR.features.find(f => numStr(f) === ns) || feature;
@@ -5604,7 +5671,7 @@ function renderFiche(feature) {
   h += '<div class="fiche-section-blocs" style="margin-bottom:18px"><div class="sec-ttl">Blocs politiques</div>'
     + renderBlocTriptych(data, histoKey) + '</div>';
 
-
+  h += renderMoreLinks('bureau', ns, isAgg ? 'ces bureaux agrégés' : ('ce bureau de vote n° ' + parseInt(ns)));
   document.getElementById('ov-body').innerHTML = h; document.getElementById('ov-body').scrollTop = 0;
 
   // Récupère la géométrie à jour depuis le GeoJSON du scrutin courant
@@ -5744,6 +5811,7 @@ function renderQuartier(){
   }
   h+='</div>';
   } // end if not Saint-Eloi 1988
+  h += renderMoreLinks('quartier', q, 'le quartier ' + formatDenomination(q));
   document.getElementById('ov-body').innerHTML=h; document.getElementById('ov-body').scrollTop=0;
   if(totE>0){
     const qNums=new Set(bureauNums);if(mmMap){mmMap.remove();mmMap=null;}
@@ -5895,6 +5963,7 @@ function renderCanton(){
     h += '<button class="show-more-btn" onclick="var e=document.getElementById(\''+uid2+'\');e.style.display=\'block\';this.remove()">+ '+hiddenNums.length+' autre'+(hiddenNums.length>1?'s':'')+' bureau'+(hiddenNums.length>1?'x':'')+'</button>';
   }
   h += '</div>';
+  h += renderMoreLinks('canton', cid, 'le canton ' + fmtCanton(cid));
   document.getElementById('ov-body').innerHTML = h;
   document.getElementById('ov-body').scrollTop = 0;
   // Mini-carte : tous les bureaux du canton
