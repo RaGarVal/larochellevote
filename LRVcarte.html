@@ -5993,7 +5993,11 @@ function renderCanton(){
     h += '<button class="show-more-btn" onclick="var e=document.getElementById(\''+uid2+'\');e.style.display=\'block\';this.remove()">+ '+hiddenNums.length+' autre'+(hiddenNums.length>1?'s':'')+' bureau'+(hiddenNums.length>1?'x':'')+'</button>';
   }
   h += '</div>';
-  h += renderMoreLinks('canton', cid, 'du canton ', fmtCanton(cid));
+  // LRVanalyse attend un cantonKey au format '<era>:<cid>' (ex. '1985:9' pour
+  // canton 9 historique, '2015:1' pour canton moderne). Sans ce préfixe d'ère,
+  // un cid '9' serait mal mappé puisque les ères 1985 et 2015 ont toutes les
+  // deux des cantons avec ce numéro (et pas le même bureau physique derrière).
+  h += renderMoreLinks('canton', cantonEra + ':' + cid, 'du canton ', fmtCanton(cid));
   document.getElementById('ov-body').innerHTML = h;
   document.getElementById('ov-body').scrollTop = 0;
   // Mini-carte : tous les bureaux du canton
