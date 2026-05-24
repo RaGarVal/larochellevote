@@ -1,13 +1,14 @@
 {
-  "date": "2026-05-23",
-  "niveau": "global",
-  "election": "Présidentielle 2007",
+  "date": "2026-05-24",
+  "niveau": "bureau",
+  "election": "Régionales 2010",
   "tour": "T1",
-  "bureau": "0033",
+  "bureau": "0006",
   "quartier": null,
+  "canton": null,
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Présidentielle 2007|T1|0033",
-  "chars": 236,
-  "generated_at": "2026-05-23T06:00:54.999Z"
+  "signature": "bureau|Régionales 2010|T1|0006",
+  "chars": 273,
+  "generated_at": "2026-05-24T06:00:54.833Z"
 }

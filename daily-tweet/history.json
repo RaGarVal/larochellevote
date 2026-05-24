@@ -176,5 +176,16 @@
     "quartier": null,
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-05-24",
+    "signature": "bureau|Régionales 2010|T1|0006",
+    "niveau": "bureau",
+    "election": "Régionales 2010",
+    "tour": "T1",
+    "bureau": "0006",
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
   }
 ]
