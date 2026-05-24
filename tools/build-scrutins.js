@@ -1548,8 +1548,10 @@ footer.s-foot a:hover { color: var(--text-chrome); }
         const FOLD = 7;
         const visible = td.cands.slice(0, FOLD);
         const hidden = td.cands.slice(FOLD);
-        const isCantNoun = isCantonale;
-        const noun = isCantNoun ? 'binôme' : 'candidat·e';
+        // Les binômes paritaires existent uniquement à partir des Départementales 2015.
+        // Avant (Cantonales pré-2015, partielles), on parle de candidat·e individuel·le.
+        const isBinomeElection = /^Départementales\b/i.test(label);
+        const noun = isBinomeElection ? 'binôme' : 'candidat·e';
         function row(c, i) {
           // Cascade de troncature aligné sur LRVcarte :
           // .cand-name contient des spans cn-prenom-full/short (basculés via .prenom-abbrev/.prenom-hidden)
