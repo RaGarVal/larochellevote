@@ -2461,34 +2461,35 @@ function getAnalyseURL(level, id) {
   return 'LRVanalyse.html#' + params.toString();
 }
 
-// Descriptor d'élection avec article : 'les élections Cantonales 2001',
-// "l'élection Présidentielle 2017", "le Référendum 2005". Règle :
-// - Référendum : pas d'élection devant, juste 'le Référendum YYYY'
-// - 1er mot au pluriel (-s) : 'les élections + label' (Cantonales, Européennes...)
-// - sinon (singulier) : "l'élection + label" (Présidentielle, Cantonale partielle...)
+// Descriptor d'élection : sépare préfixe (article) et partie distinctive en gras.
+// - Référendum : 'le ' + 'Référendum YYYY'
+// - 1er mot pluriel (-s) : 'les élections ' + label (Cantonales, Européennes...)
+// - sinon singulier : "l'élection " + label
 function getElectionDescriptor(label) {
-  if (!label) return "l'élection";
-  if (/^Référendum/i.test(label)) return 'le ' + label;
+  if (!label) return { prefix: "l'élection ", bold: '' };
+  if (/^Référendum/i.test(label)) return { prefix: 'le ', bold: label };
   const firstWord = label.split(' ')[0];
-  if (/s$/i.test(firstWord)) return 'les élections ' + label;
-  return "l'élection " + label;
+  if (/s$/i.test(firstWord)) return { prefix: 'les élections ', bold: label };
+  return { prefix: "l'élection ", bold: label };
 }
 
 // Rendu HTML du bloc 'En savoir plus' en bas de fiche (bureau/quartier/canton/ville).
-// `level` ∈ {bureau, quartier, canton, ville} ; `id` = identifiant (bureau ID 2026
-// canonique, nom quartier, num canton) ; `targetLabel` = libellé contextuel
-// AVEC préposition incluse, e.g. "du bureau de vote n° 0050 · Dénomination",
-// "du quartier Tasdon", "du canton La Rochelle-1", "de La Rochelle".
-function renderMoreLinks(level, id, targetLabel) {
+// `level` ∈ {bureau, quartier, canton, ville} ; `id` = identifiant ;
+// `prefix` = texte non-gras précédant le gras (ex. 'du bureau de vote ') ;
+// `bold` = partie distinctive en gras (ex. 'n° 50 · Dénomination', 'Tasdon').
+function renderMoreLinks(level, id, prefix, bold) {
   const wpUrl = getElectionWikipediaURL(currentElection);
   const analyseUrl = getAnalyseURL(level, id);
-  const electionDesc = getElectionDescriptor(currentElection);
+  const ed = getElectionDescriptor(currentElection);
   let h = '<div class="fiche-section-more" style="margin-top:20px;padding-top:14px;border-top:1px solid var(--rule);font-size:0.78rem;line-height:1.55;display:flex;flex-direction:column;gap:8px">';
   h += '<a href="' + analyseUrl + '" style="color:var(--text-meta);text-decoration:none;display:inline-flex;align-items:center;gap:6px">'
-     + '<span style="opacity:.55">→</span> En savoir plus sur l\'histoire électorale <strong style="color:var(--text-modal);font-weight:600">' + _esc(targetLabel) + '</strong></a>';
+     + '<span style="opacity:.55">→</span> En savoir plus sur l\'histoire électorale '
+     + _esc(prefix) + '<strong style="color:var(--text-modal);font-weight:600">' + _esc(bold) + '</strong></a>';
   if (wpUrl) {
     h += '<a href="' + wpUrl + '" target="_blank" rel="noopener" style="color:var(--text-meta);text-decoration:none;display:inline-flex;align-items:center;gap:6px">'
-       + '<span style="opacity:.55">→</span> En savoir plus sur <strong style="color:var(--text-modal);font-weight:600">' + _esc(electionDesc) + '</strong> <span style="opacity:.55;font-size:.85em">(Wikipédia ↗)</span></a>';
+       + '<span style="opacity:.55">→</span> En savoir plus sur '
+       + _esc(ed.prefix) + '<strong style="color:var(--text-modal);font-weight:600">' + _esc(ed.bold) + '</strong>'
+       + ' <span style="opacity:.55;font-size:.85em">(Wikipédia ↗)</span></a>';
   }
   h += '</div>';
   return h;
@@ -4812,7 +4813,7 @@ function renderGlobalFiche() {
   // Liste des cantons (juste après les quartiers, uniquement si l'ère canton est définie)
   h += renderCantonListGlobal();
 
-  h += renderMoreLinks('ville', null, 'de La Rochelle');
+  h += renderMoreLinks('ville', null, 'de ', 'La Rochelle');
   document.getElementById('ov-body').innerHTML = h; document.getElementById('ov-body').scrollTop = 0;
   initGlobalMinimap(winCol);
 }
@@ -5668,7 +5669,9 @@ function renderFiche(feature) {
     // Lien LRVanalyse : utiliser histoKey (ID 2026 canonique de la lignée) pour
     // que la page analyse suive le MÊME bureau à travers les redécoupages.
     // Label avec préposition + numéro affiché + dénomination (UX du contexte courant).
-    h += renderMoreLinks('bureau', histoKey, isAgg ? 'des bureaux agrégés' : ('du bureau de vote n° ' + parseInt(ns) + (info.denomination ? ' · ' + info.denomination : '')));
+    h += isAgg
+       ? renderMoreLinks('bureau', histoKey, 'des ', 'bureaux agrégés')
+       : renderMoreLinks('bureau', histoKey, 'du bureau de vote ', 'n° ' + parseInt(ns) + (info.denomination ? ' · ' + info.denomination : ''));
     document.getElementById('ov-body').innerHTML = h; document.getElementById('ov-body').scrollTop = 0;
     const gjR = getMapGeoJSON();
     const freshR = gjR.features.find(f => numStr(f) === ns) || feature;
@@ -5696,7 +5699,9 @@ function renderFiche(feature) {
   // Lien LRVanalyse : histoKey (ID 2026 canonique) pour suivre la lignée du
   // bureau à travers les redécoupages successifs. Label avec préposition,
   // numéro affiché et dénomination (ce que le user voit dans la fiche courante).
-  h += renderMoreLinks('bureau', histoKey, isAgg ? 'des bureaux agrégés' : ('du bureau de vote n° ' + parseInt(ns) + (info.denomination ? ' · ' + info.denomination : '')));
+  h += isAgg
+     ? renderMoreLinks('bureau', histoKey, 'des ', 'bureaux agrégés')
+     : renderMoreLinks('bureau', histoKey, 'du bureau de vote ', 'n° ' + parseInt(ns) + (info.denomination ? ' · ' + info.denomination : ''));
   document.getElementById('ov-body').innerHTML = h; document.getElementById('ov-body').scrollTop = 0;
 
   // Récupère la géométrie à jour depuis le GeoJSON du scrutin courant
@@ -5836,7 +5841,7 @@ function renderQuartier(){
   }
   h+='</div>';
   } // end if not Saint-Eloi 1988
-  h += renderMoreLinks('quartier', q, 'du quartier ' + formatDenomination(q));
+  h += renderMoreLinks('quartier', q, 'du quartier ', formatDenomination(q));
   document.getElementById('ov-body').innerHTML=h; document.getElementById('ov-body').scrollTop=0;
   if(totE>0){
     const qNums=new Set(bureauNums);if(mmMap){mmMap.remove();mmMap=null;}
@@ -5988,7 +5993,7 @@ function renderCanton(){
     h += '<button class="show-more-btn" onclick="var e=document.getElementById(\''+uid2+'\');e.style.display=\'block\';this.remove()">+ '+hiddenNums.length+' autre'+(hiddenNums.length>1?'s':'')+' bureau'+(hiddenNums.length>1?'x':'')+'</button>';
   }
   h += '</div>';
-  h += renderMoreLinks('canton', cid, 'du canton ' + fmtCanton(cid));
+  h += renderMoreLinks('canton', cid, 'du canton ', fmtCanton(cid));
   document.getElementById('ov-body').innerHTML = h;
   document.getElementById('ov-body').scrollTop = 0;
   // Mini-carte : tous les bureaux du canton
