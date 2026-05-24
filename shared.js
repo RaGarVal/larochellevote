@@ -311,17 +311,19 @@ function setupAppMenu(opts) {
   const mobileToggleItem = _showMobToggle
     ? { dynamic: 'forcedMobile', action: toggleForcedMobile }
     : null;
+  // Paths absolus depuis la racine du site — fonctionnent depuis n'importe quel
+  // sous-dossier (utile pour /scrutins/<slug>.html notamment).
   const ITEMS = [
-    { ico: '🏠', label: 'Accueil', action: () => location.href = 'index.html' },
+    { ico: '🏠', label: 'Accueil', action: () => location.href = '/' },
     { sep: true },
     tourItem,
-    { ico: '📐', label: 'Méthodologie & sources', action: () => location.href = 'methodologie.html' },
+    { ico: '📐', label: 'Méthodologie & sources', action: () => location.href = '/methodologie.html' },
     { ico: '📤', label: 'Partager cette vue',     action: () => { if (window.openShareModal) window.openShareModal(); } },
     { sep: true },
     { dynamic: 'theme', action: toggleTheme },
     ...(mobileToggleItem ? [mobileToggleItem] : []),
     { sep: true },
-    { ico: '📂', label: 'À propos', action: () => location.href = 'apropos.html' }
+    { ico: '📂', label: 'À propos', action: () => location.href = '/apropos.html' }
   ];
   function resolveItem(it){
     if (it.dynamic === 'theme') {
@@ -387,8 +389,8 @@ function setupAppMenu(opts) {
         if (el.classList.contains('is-current')) return;
         const dest = el.dataset.go;
         closeMenu();
-        if (dest === 'carte')   location.href = 'LRVcarte.html';
-        if (dest === 'analyse') location.href = 'LRVanalyse.html';
+        if (dest === 'carte')   location.href = '/LRVcarte.html';
+        if (dest === 'analyse') location.href = '/LRVanalyse.html';
       });
     });
     menu.querySelectorAll('.app-menu-item').forEach(el => {

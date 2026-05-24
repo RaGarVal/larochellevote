@@ -173,34 +173,28 @@ function pctOf(voix, exprimes) {
   return +(voix / exprimes * 100).toFixed(1);
 }
 
-/** Split d'un libellé quartier "A/B" en parts individuelles (bureaux partagés) */
-function getQuartierParts(q) {
-  if (!q) return [];
-  return String(q).split('/').map(s => s.trim()).filter(Boolean);
-}
-
-/** Agrège par quartier : { quartier → { abst_pct, exprimes, voix_par_cand, nb_bureaux } } */
+/** Agrège par quartier : utilise le libellé `q` tel qu'il est dans BUREAU_INFO pour
+ *  l'ère donnée (pas de split "A/B"). Un quartier composé "Tasdon/Les Minimes"
+ *  reste une seule entrée, fidèle au découpage de l'époque. */
 function aggregateByQuartier(sheet, bureauInfo) {
   const out = {};
   Object.entries(sheet || {}).forEach(([ns, bd]) => {
     if (!bd) return;
     const info = bureauInfo[ns];
-    if (!info || !info.q || info.q === 'Nul') return;
-    const parts = getQuartierParts(info.q);
-    parts.forEach(q => {
-      if (!out[q]) out[q] = { inscrits: 0, exprimes: 0, abstention_voix: 0, bn_voix: 0, voix_par_cand: {}, nb_bureaux: 0 };
-      const agg = out[q];
-      agg.nb_bureaux++;
-      agg.inscrits += (bd.i || 0);
-      agg.exprimes += (bd.e || 0);
-      agg.abstention_voix += Math.round((bd.i || 0) * (bd.a || 0) / 100);
-      agg.bn_voix += (bd.bn || 0);
-      if (bd._voix) {
-        Object.entries(bd._voix).forEach(([cid, v]) => {
-          agg.voix_par_cand[cid] = (agg.voix_par_cand[cid] || 0) + v;
-        });
-      }
-    });
+    if (!info || !info.q || info.q === 'Nul' || info.q === '?') return;
+    const q = info.q;
+    if (!out[q]) out[q] = { inscrits: 0, exprimes: 0, abstention_voix: 0, bn_voix: 0, voix_par_cand: {}, nb_bureaux: 0 };
+    const agg = out[q];
+    agg.nb_bureaux++;
+    agg.inscrits += (bd.i || 0);
+    agg.exprimes += (bd.e || 0);
+    agg.abstention_voix += Math.round((bd.i || 0) * (bd.a || 0) / 100);
+    agg.bn_voix += (bd.bn || 0);
+    if (bd._voix) {
+      Object.entries(bd._voix).forEach(([cid, v]) => {
+        agg.voix_par_cand[cid] = (agg.voix_par_cand[cid] || 0) + v;
+      });
+    }
   });
   return out;
 }
@@ -374,6 +368,20 @@ const DATES = {
 
 // ─── Carte SVG inline ───────────────────────────────────────────────────────
 
+/** Résout un cid brut → cid normalisé présent dans CAND_DATA.
+ *  Cas particulier : référendums où bd.w et bd._voix utilisent "Oui"/"Non"
+ *  mais CAND_DATA est indexé par "oui@referendum-YYYY". */
+function resolveCid(cid, electionLabel, ctx) {
+  if (!cid) return cid;
+  if (ctx.CAND_DATA[cid]) return cid;
+  if (electionLabel) {
+    const slug = slugifyElection(electionLabel);
+    const candidate = cid.toLowerCase() + '@' + slug;
+    if (ctx.CAND_DATA[candidate]) return candidate;
+  }
+  return cid;
+}
+
 /** Récupère la couleur d'un candidat :
  *  1. cd.c si défini
  *  2. Sinon, fallback sur un autre candidat du même parti `pa` qui a une couleur
@@ -414,6 +422,33 @@ function colorOfCand(cid, ctx) {
   return final;
 }
 
+/** Pour un binôme à 2 vrais partis différents (aucun DV*), retourne [c1, c2]
+ *  pour rendu bicolore. Sinon null (couleur unique via colorOfCand). */
+function binomeBicolor(cid, ctx) {
+  const cd = ctx.CAND_DATA[cid] || {};
+  if (!cd.binome || !cd.binome_partis || cd.binome_partis.length !== 2) return null;
+  const [pa1, pa2] = cd.binome_partis;
+  if (!pa1 || !pa2 || pa1 === pa2) return null;
+  if (/^DV/i.test(pa1) || /^DV/i.test(pa2)) return null;
+  // Ordre paritaire : femme devant si sexes connus
+  let femaleIdx = -1;
+  cd.binome.forEach((pid, i) => {
+    const p = ctx.PERSONS[pid];
+    if (p && p.s === 'F' && femaleIdx === -1) femaleIdx = i;
+  });
+  const partis = femaleIdx === 1 ? [pa2, pa1] : [pa1, pa2];
+  const c1 = partiColor(partis[0], ctx) || '#bbbbbb';
+  const c2 = partiColor(partis[1], ctx) || '#bbbbbb';
+  return [c1, c2];
+}
+
+/** Background CSS d'une barre de candidat : couleur unique ou gradient diagonal */
+function barBackground(cid, ctx) {
+  const bi = binomeBicolor(cid, ctx);
+  if (bi) return `linear-gradient(135deg, ${bi[0]} 50%, ${bi[1]} 50%)`;
+  return colorOfCand(cid, ctx);
+}
+
 /** Cherche la couleur représentative d'un parti via les candidats existants */
 function partiColor(pa, ctx) {
   if (!pa) return null;
@@ -428,15 +463,16 @@ function partiColor(pa, ctx) {
 }
 
 /** Pour un sheet donné, retourne { numero → { color, winnerName, winnerPct } } */
-function bureauColorsForSheet(sheet, ctx) {
+function bureauColorsForSheet(sheet, ctx, electionLabel) {
   const out = {};
   Object.entries(sheet || {}).forEach(([ns, bd]) => {
     if (!bd) return;
-    const w = bd.w;
-    if (!w) {
+    const rawW = bd.w;
+    if (!rawW) {
       out[ns] = { color: '#eee', winnerName: '', winnerPct: 0 };
       return;
     }
+    const w = resolveCid(rawW, electionLabel, ctx);
     const cd = ctx.CAND_DATA[w] || {};
     const person = cd.person ? ctx.PERSONS[cd.person] : null;
     const winnerName = cd.binome
@@ -444,11 +480,14 @@ function bureauColorsForSheet(sheet, ctx) {
           const p = ctx.PERSONS[pid] || {};
           return (p.p ? p.p + ' ' : '') + (p.n || '');
         }).join(' / ')
-      : ((person && person.p) || cd.p || '') + ' ' + ((person && person.n) || cd.n || w);
+      : ((person && person.p) || cd.p || '') + ' ' + ((person && person.n) || cd.n || rawW);
     out[ns] = {
       color: colorOfCand(w, ctx),
       winnerName: winnerName.trim(),
-      winnerPct: bd.c && bd.c[w] != null ? bd.c[w] : 0,
+      // Lookup pct via rawW (clé d'origine dans bd.c) ou w (résolu) au cas où
+      winnerPct: bd.c && (bd.c[rawW] != null ? bd.c[rawW] : bd.c[w]) != null
+        ? (bd.c[rawW] != null ? bd.c[rawW] : bd.c[w])
+        : 0,
     };
   });
   return out;
@@ -463,23 +502,20 @@ function getGeoJSONForEra(era, ctx) {
 /** Convertit un GeoJSON en SVG inline.
  *  - bureauColors : { numero → { color, winnerName, winnerPct } }
  *  - bureauInfo : pour les title hover (denomination, quartier)
- *  - filterCantonId : si défini, ne garde que les bureaux dont c == filterCantonId
+ *  - highlightCantonId : si défini, on garde TOUS les bureaux de la ville mais on
+ *    grise ceux qui ne sont pas dans ce canton (permet de se repérer)
  *  - filterBureaux : si défini (Set), ne garde que ces numéros
  *  - width / height : dimensions du viewport SVG
  */
 function geoJSONtoSVG(geojson, bureauColors, bureauInfo, opts) {
-  const { width = 600, height = 480, filterCantonId, filterBureaux } = opts || {};
+  const { width = 600, height = 480, highlightCantonId, filterBureaux } = opts || {};
   if (!geojson || !geojson.features) return '';
 
-  // Filtrer les features pour ne garder que les bureaux pertinents
+  // Filtrer : seulement le bureau 0057 (non-géo) et les bureaux explicitement exclus
   let features = geojson.features.filter(f => {
     const num = f.properties && f.properties.numero;
     if (!num) return false;
     if (filterBureaux && !filterBureaux.has(num)) return false;
-    if (filterCantonId) {
-      const info = bureauInfo[num];
-      if (!info || String(info.c) !== String(filterCantonId)) return false;
-    }
     // Bureau non-géographique 0057 (Français de l'étranger)
     if (num === '0057') return false;
     return true;
@@ -536,14 +572,29 @@ function geoJSONtoSVG(geojson, bureauColors, bureauInfo, opts) {
   }
 
   // Générer les paths
+  // - data-num : numéro du bureau (pour le tooltip JS)
+  // - data-name : dénomination + winner (pour le tooltip JS)
+  // - <title> en fallback pour user no-JS
+  // - opacity réduite + couleur grisée pour les bureaux hors-canton (page canton)
   const paths = features.map(f => {
     const num = f.properties.numero;
     const info = bureauInfo[num] || {};
-    const colorData = bureauColors[num] || { color: '#eee', winnerName: '—', winnerPct: 0 };
+    const inCanton = !highlightCantonId || String(info.c) === String(highlightCantonId);
+    const colorData = bureauColors[num] || { color: '#eee', winnerName: '', winnerPct: 0 };
+    // Hors canton : grisé homogène pour silencer visuellement
+    const fillColor = inCanton ? colorData.color : '#dcd6cc';
     const d = geomToPath(f.geometry);
-    const title = `Bureau n°${parseInt(num)} · ${info.den || info.nom || ''}` +
-                  (colorData.winnerName ? ` — ${colorData.winnerName} (${colorData.winnerPct.toFixed(1).replace('.', ',')} %)` : '');
-    return `<path d="${d}" fill="${colorData.color}" stroke="#fff" stroke-width="0.6"><title>${esc(title)}</title></path>`;
+    const numClean = String(parseInt(num));
+    const denom = info.den || info.nom || '';
+    const winnerLine = inCanton && colorData.winnerName
+      ? `${colorData.winnerName} (${colorData.winnerPct.toFixed(1).replace('.', ',')} %)`
+      : '';
+    const tipText = `Bureau n°${numClean} · ${denom}`
+      + (winnerLine ? ` — ${winnerLine}` : (inCanton ? '' : ' (hors canton)'));
+    return `<path d="${d}" fill="${fillColor}" stroke="#fff" stroke-width="0.6"`
+      + (inCanton ? '' : ' class="off-canton"')
+      + ` data-num="${numClean}" data-den="${esc(denom)}" data-winner="${esc(winnerLine || (inCanton ? '' : 'Hors canton'))}"`
+      + `><title>${esc(tipText)}</title></path>`;
   }).join('');
 
   return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" class="s-mini-map" role="img" aria-label="Carte des bureaux de vote">${paths}</svg>`;
@@ -568,12 +619,16 @@ function buildPageData(pageSpec, ctx) {
     if (!NON_GEO.has(ns)) filteredBureauInfo[ns] = b;
   });
 
+  // Scrutins voisins (même type) — utiles pour le triptych
+  const adj = adjacentElections(label, ctx.ELECTIONS, ctx);
+
   // Pour chaque tour, agréger ville
   const byTour = {};
   tours.forEach(t => {
     const agg = aggregateSheet(sheets[t]);
     // Construire le tableau des candidats avec leurs voix et pct
-    const cands = Object.entries(agg.voix_par_cand).map(([cid, voix]) => {
+    const cands = Object.entries(agg.voix_par_cand).map(([rawCid, voix]) => {
+      const cid = resolveCid(rawCid, label, ctx);
       const cd = ctx.CAND_DATA[cid] || {};
       // Nom à afficher : binôme ou individu
       let displayName;
@@ -586,13 +641,32 @@ function buildPageData(pageSpec, ctx) {
         const nom    = (person && person.n) || cd.n || cid;
         displayName  = (prenom ? prenom + ' ' : '') + nom;
       }
+      // Étiquette parti : pour les binômes hétérogènes, "PA_F+PA_H"
+      let paLabel = cd.pa || '';
+      if (cd.binome && cd.binome_partis && cd.binome_partis.length === 2) {
+        const [p1, p2] = cd.binome_partis;
+        if (p1 && p2 && p1 !== p2 && !/^DV/i.test(p1) && !/^DV/i.test(p2)) {
+          let femaleIdx = -1;
+          cd.binome.forEach((pid, i) => {
+            const p = ctx.PERSONS[pid];
+            if (p && p.s === 'F' && femaleIdx === -1) femaleIdx = i;
+          });
+          paLabel = femaleIdx === 1 ? p2 + '+' + p1 : p1 + '+' + p2;
+        }
+      }
+      // Nom complet du parti (depuis PARTI_NAMES)
+      const paFull = paLabel.indexOf('+') >= 0
+        ? paLabel.split('+').map(c => (ctx.PARTI_NAMES && ctx.PARTI_NAMES[c]) || c).join(' + ')
+        : ((ctx.PARTI_NAMES && ctx.PARTI_NAMES[paLabel]) || paLabel);
       return {
         cid,
         nom: displayName,
-        pa: cd.pa || '',
+        pa: paLabel,
+        paFull,
         bloc: cd.b || '',
         voix,
         pct: pctOf(voix, agg.exprimes),
+        barBg: barBackground(cid, ctx),
       };
     }).sort((a, b) => b.voix - a.voix);
 
@@ -606,18 +680,22 @@ function buildPageData(pageSpec, ctx) {
     const parQuartier = aggregateByQuartier(sheets[t], filteredBureauInfo);
     const quartiers = Object.entries(parQuartier).map(([qName, qAgg]) => {
       const qCands = Object.entries(qAgg.voix_par_cand)
-        .map(([cid, voix]) => {
+        .map(([rawCid, voix]) => {
+          const cid = resolveCid(rawCid, label, ctx);
           const cd = ctx.CAND_DATA[cid] || {};
-          let displayName;
+          let displayName, nomFamille;
           if (cd.binome) {
             const persons = cd.binome.map(pid => ctx.PERSONS[pid] || {});
             displayName = persons.map(p => (p.p ? p.p + ' ' : '') + (p.n || '')).join(' / ');
+            nomFamille = persons.map(p => p.n || '').join(' / ');
           } else {
             const person = cd.person ? ctx.PERSONS[cd.person] : null;
-            displayName = ((person && person.p) || cd.p || '') + ' ' + ((person && person.n) || cd.n || cid);
-            displayName = displayName.trim();
+            const prenom = (person && person.p) || cd.p || '';
+            const nom = (person && person.n) || cd.n || cid;
+            displayName = (prenom + ' ' + nom).trim();
+            nomFamille = nom;
           }
-          return { cid, nom: displayName, pa: cd.pa || '', voix, pct: pctOf(voix, qAgg.exprimes) };
+          return { cid, nom: displayName, nomFamille, pa: cd.pa || '', voix, pct: pctOf(voix, qAgg.exprimes), color: colorOfCand(cid, ctx) };
         })
         .sort((a, b) => b.voix - a.voix);
       const abst_pct_q = qAgg.inscrits > 0 ? +(qAgg.abstention_voix / qAgg.inscrits * 100).toFixed(1) : 0;
@@ -632,18 +710,22 @@ function buildPageData(pageSpec, ctx) {
       const parCanton = aggregateByCanton(sheets[t], filteredBureauInfo, cantonEra, ctx.CANTON_CORRESPONDANCES);
       cantons = Object.entries(parCanton).map(([cid, cAgg]) => {
         const cCands = Object.entries(cAgg.voix_par_cand)
-          .map(([cid2, voix]) => {
+          .map(([rawCid2, voix]) => {
+            const cid2 = resolveCid(rawCid2, label, ctx);
             const cd = ctx.CAND_DATA[cid2] || {};
-            let displayName;
+            let displayName, nomFamille;
             if (cd.binome) {
               const persons = cd.binome.map(pid => ctx.PERSONS[pid] || {});
               displayName = persons.map(p => (p.p ? p.p + ' ' : '') + (p.n || '')).join(' / ');
+              nomFamille = persons.map(p => p.n || '').join(' / ');
             } else {
               const person = cd.person ? ctx.PERSONS[cd.person] : null;
-              displayName = ((person && person.p) || cd.p || '') + ' ' + ((person && person.n) || cd.n || cid2);
-              displayName = displayName.trim();
+              const prenom = (person && person.p) || cd.p || '';
+              const nom = (person && person.n) || cd.n || cid2;
+              displayName = (prenom + ' ' + nom).trim();
+              nomFamille = nom;
             }
-            return { cid: cid2, nom: displayName, pa: cd.pa || '', voix, pct: pctOf(voix, cAgg.exprimes) };
+            return { cid: cid2, nom: displayName, nomFamille, pa: cd.pa || '', voix, pct: pctOf(voix, cAgg.exprimes), color: colorOfCand(cid2, ctx) };
           })
           .sort((a, b) => b.voix - a.voix);
         const abst_pct_c = cAgg.inscrits > 0 ? +(cAgg.abstention_voix / cAgg.inscrits * 100).toFixed(1) : 0;
@@ -652,15 +734,45 @@ function buildPageData(pageSpec, ctx) {
       }).sort((a, b) => parseInt(a.cid) - parseInt(b.cid));
     }
 
-    // Blocs ville
+    // Blocs ville (ou canton si page canton) — pour le scrutin courant
     const blocs = computeBlocsFromVoix(agg.voix_par_cand, agg.exprimes, ctx.CAND_DATA, ctx.BLOC_LEGACY);
+
+    // Helper : récupère les blocs pour un autre scrutin (au même niveau ville/canton)
+    function blocsForLabel(otherLabel) {
+      if (!otherLabel) return null;
+      const otherEl = ctx.ELECTIONS[otherLabel];
+      if (!otherEl) return null;
+      // Si on est sur une page canton, on cherche les mêmes bureaux du canton chez le voisin
+      let otherSheet;
+      if (canton && otherEl.par_canton) {
+        if (!otherEl.par_canton[canton]) return null; // série incompatible
+        const sheets = otherEl.par_canton[canton].sheets;
+        // Préfère le tour le plus tardif (T2 > T1 > TU)
+        otherSheet = sheets.T2 || sheets.T1 || sheets.TU;
+      } else if (!canton && !otherEl.par_canton) {
+        otherSheet = otherEl.sheets.T2 || otherEl.sheets.T1 || otherEl.sheets.TU;
+      } else {
+        return null; // niveaux incompatibles (page ville vs scrutin canton, ou inverse)
+      }
+      if (!otherSheet) return null;
+      const oa = aggregateSheet(otherSheet);
+      return computeBlocsFromVoix(oa.voix_par_cand, oa.exprimes, ctx.CAND_DATA, ctx.BLOC_LEGACY);
+    }
+    const prevBlocs = adj.prev ? blocsForLabel(adj.prev) : null;
+    const nextBlocs = adj.next ? blocsForLabel(adj.next) : null;
 
     // Carte SVG inline pour ce tour
     const geo = getGeoJSONForEra(era, ctx);
-    const bureauColors = bureauColorsForSheet(sheets[t], ctx);
-    const mapSVG = geo ? geoJSONtoSVG(geo, bureauColors, filteredBureauInfo, {
+    const bureauColors = bureauColorsForSheet(sheets[t], ctx, label);
+    // Pour les pages canton : on affiche TOUTE la ville mais on grise les bureaux
+    // hors canton, pour permettre au lecteur de se repérer géographiquement.
+    // bureauColors ne contient que les bureaux du canton (sheets[t] est filtré
+    // par canton dans par_canton) — il faut donc passer la BUREAU_INFO ENTIÈRE
+    // (filtrée juste pour exclure 0057), pas seulement les bureaux du canton.
+    const fullBureauInfo = filteredBureauInfo; // déjà filtré sur l'ère, sans 0057
+    const mapSVG = geo ? geoJSONtoSVG(geo, bureauColors, fullBureauInfo, {
       width: 600, height: 480,
-      filterCantonId: canton || null,
+      highlightCantonId: canton || null,
     }) : '';
 
     byTour[t] = {
@@ -673,12 +785,11 @@ function buildPageData(pageSpec, ctx) {
       quartiers,
       cantons,
       blocs,
+      prevBlocs,
+      nextBlocs,
       mapSVG,
     };
   });
-
-  // Scrutins voisins (même type) — utiles pour le triptych
-  const adj = adjacentElections(label, ctx.ELECTIONS, ctx);
 
   // Dates du scrutin
   const dates = DATES[label] || {};
@@ -743,13 +854,27 @@ function renderHTML(data, opts) {
       ? `Scrutin des ${datesArr[0]} et ${datesArr[1]}.`
       : '';
 
-  // Slug URL pour les liens cohérents
-  const urlCarte = '/LRVcarte.html#election=' + encodeURIComponent(label) + (canton ? '&canton=' + canton : '') + '&tab=global';
+  // Slug URL pour les liens cohérents — sans `tab=global`, pour ouvrir la carte
+  // directement (et pas la modale fiche globale) sur l'élection sélectionnée.
+  const urlCarte = '/LRVcarte.html#election=' + encodeURIComponent(label) + (canton ? '&canton=' + canton : '');
   const urlAnalyse = '/LRVanalyse.html#level=' + (canton ? 'canton&canton=' + canton : 'ville') + '&election=' + encodeURIComponent(label);
 
-  // Couleurs des blocs politiques (depuis BLOC_CONFIG ; reprises en dur ici pour le HTML statique)
-  const BLOC_COLORS = { G: '#CC0100', C: '#F1C232', D: '#0F55CC', EXD: '#20124D', '?': '#888888' };
-  const BLOC_LABELS = { G: 'Gauche', C: 'Centre', D: 'Droite', EXD: 'Extrême-droite', '?': 'Divers' };
+  // Couleurs et libellés des blocs politiques (source de vérité = ctx.BLOC_CONFIG depuis donnees.js)
+  const BC = opts.ctx && opts.ctx.BLOC_CONFIG ? opts.ctx.BLOC_CONFIG : {};
+  const BLOC_COLORS = {
+    G:   (BC.G && BC.G.color)   || '#CC0100',
+    C:   (BC.C && BC.C.color)   || '#F1C232',
+    D:   (BC.D && BC.D.color)   || '#0F55CC',
+    EXD: (BC.EXD && BC.EXD.color) || '#20124D',
+    '?': (BC['?'] && BC['?'].color) || '#A0E1E2',
+  };
+  const BLOC_LABELS = {
+    G:   (BC.G && BC.G.label)   || 'Gauche',
+    C:   (BC.C && BC.C.label)   || 'Centre',
+    D:   (BC.D && BC.D.label)   || 'Droite',
+    EXD: (BC.EXD && BC.EXD.label) || 'Extrême droite',
+    '?': (BC['?'] && BC['?'].label) || 'Divers',
+  };
 
   /** Rendu d'une barre empilée par blocs (segments de couleur) */
   function renderBlocBar(blocs, height) {
@@ -760,6 +885,35 @@ function renderHTML(data, opts) {
       .map(b => `<div class="bb-seg" title="${BLOC_LABELS[b]} : ${fmtPct(blocs[b])} %" style="width:${((blocs[b]||0)/total*100).toFixed(2)}%;background:${BLOC_COLORS[b]}"></div>`)
       .join('');
     return `<div class="bb" style="height:${height}px">${segs}</div>`;
+  }
+
+  /** Segments de blocs en flex, à insérer dans un container avec hauteur fixée */
+  function renderBlocSegs(blocs) {
+    const order = ['G', 'C', 'D', 'EXD', '?'];
+    const total = order.reduce((s, b) => s + (blocs[b] || 0), 0) || 1;
+    return order
+      .filter(b => (blocs[b] || 0) > 0)
+      .map(b => `<div class="bb-seg" title="${BLOC_LABELS[b]} : ${fmtPct(blocs[b])} %" style="width:${((blocs[b]||0)/total*100).toFixed(2)}%;background:${BLOC_COLORS[b]}"></div>`)
+      .join('');
+  }
+
+  /** Segments Oui/Non pour les référendums (à partir d'un voix_par_cand) */
+  function renderRefSegs(voixParCand, exprimes) {
+    if (!exprimes) return '';
+    // Trouver les voix Oui et Non (clés brutes ou résolues)
+    let ouiVoix = 0, nonVoix = 0;
+    Object.entries(voixParCand).forEach(([k, v]) => {
+      const kl = k.toLowerCase();
+      if (kl === 'oui' || kl.startsWith('oui@')) ouiVoix += v;
+      else if (kl === 'non' || kl.startsWith('non@')) nonVoix += v;
+    });
+    const tot = ouiVoix + nonVoix || 1;
+    const ouiPct = +(ouiVoix / exprimes * 100).toFixed(1);
+    const nonPct = +(nonVoix / exprimes * 100).toFixed(1);
+    let segs = '';
+    if (ouiVoix > 0) segs += `<div class="bb-seg" title="Oui : ${fmtPct(ouiPct)} %" style="width:${(ouiVoix/tot*100).toFixed(2)}%;background:#0F8A8A"></div>`;
+    if (nonVoix > 0) segs += `<div class="bb-seg" title="Non : ${fmtPct(nonPct)} %" style="width:${(nonVoix/tot*100).toFixed(2)}%;background:#8E2C5C"></div>`;
+    return segs;
   }
 
   // Avertissement canton hors LR (ère 1985 → cantons 5, 8, 9)
@@ -824,21 +978,46 @@ html, body { height: 100%; }
   --text-chrome: #1A1A1A; --text-chrome-muted: #5A5A5A; --border-chrome: #E6DFD5;
   --bg-page: #F0EAE0; --bg-card: #FFFFFF; --bg-blockquote: #FBF7EE;
   --text-body: #2A2A2A; --accent-warm: #B49B7E;
+  /* Variables utilisées par les composants partagés (menu burger, share modal, Cmd+K) */
+  --bg-modal: #FFFFFF; --border-modal: #E6DFD5;
+  --bg-modal-hover: #FAF6F0; --bg-modal-accent: #EFE8DD;
+  --text-modal: #1A1A1A; --text-modal-muted: #5A5A5A;
+  --bg-tooltip: #1A1A1A; --text-tooltip: #F7F3EE;
+  --bg-active: #1A1A1A; --text-active: #FFFFFF;
 }
 [data-theme="dark"] {
   --bg-chrome: #16151A; --bg-chrome-hover: #2D2A30; --bg-chrome-accent: #383438;
   --text-chrome: #ECE6DD; --text-chrome-muted: #9D968B; --border-chrome: #2D2A30;
   --bg-page: #0F0E13; --bg-card: #21202A; --bg-blockquote: rgba(180, 155, 126, 0.08);
   --text-body: #D8D2C7; --accent-warm: #C9A878;
+  --bg-modal: #21202A; --border-modal: #3A3640;
+  --bg-modal-hover: #2D2C36; --bg-modal-accent: #3A3640;
+  --text-modal: #ECE6DD; --text-modal-muted: #9D968B;
+  --bg-tooltip: #ECE6DD; --text-tooltip: #16151A;
+  --bg-active: #8A7758; --text-active: #ECE6DD;
 }
 body { font-family: 'Space Grotesk', system-ui, sans-serif; background: var(--bg-page); color: var(--text-chrome); -webkit-font-smoothing: antialiased; display: flex; flex-direction: column; min-height: 100vh; }
+/* ── Topbar (mêmes styles que LRVcarte / methodologie) ── */
 #topbar { background: var(--bg-chrome); color: var(--text-chrome); display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 66px; flex-shrink: 0; z-index: 50; border-bottom: 1px solid var(--border-chrome); }
-.tb-logo { display: flex; align-items: baseline; gap: 4px; text-decoration: none; color: inherit; flex-shrink: 0; font-size: 2.1rem; line-height: 1; }
+.tb-logo { display: flex; align-items: center; gap: 4px; text-decoration: none; color: inherit; flex-shrink: 0; background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-family: inherit; font-size: 2.1rem; line-height: 1; align-items: baseline; }
 .tb-brand-light, .tb-brand-bold { letter-spacing: -0.02em; white-space: nowrap; }
 .tb-brand-light { font-size: 0.95em; font-weight: 400; }
 .tb-brand-bold { font-weight: 700; }
-.tb-nav { margin-left: auto; display: flex; align-items: center; gap: 22px; flex-shrink: 0; }
-.tb-nav-link { font-size: .86rem; font-weight: 500; color: var(--text-chrome-muted); text-decoration: none; padding: 4px 0; border-bottom: 2px solid transparent; transition: color .15s; }
+.tb-logo:hover .tb-brand-bold, .tb-logo:hover .tb-brand-light { opacity: 0.7; }
+.tb-logo-burger { width: 16px; height: 16px; color: var(--text-chrome-muted); margin-right: 6px; align-self: center; transition: color .15s; }
+.tb-logo:hover .tb-logo-burger { color: var(--text-chrome); }
+.tb-logo[aria-expanded="true"] .tb-logo-burger { color: var(--text-chrome); }
+.sail-mini { width: 1cap; height: 1cap; display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex-shrink: 0; align-self: center; }
+[data-theme="dark"] .sail-mini { filter: drop-shadow(0 0 1.5px rgba(236,230,221,0.35)); }
+.sail-mini .sail-row { position: relative; width: var(--w); height: calc((100% - 5px) / 6); background-color: var(--c1, #CC0100); overflow: hidden; }
+.sail-mini .sail-row::after { content: ''; position: absolute; inset: 0; background-color: var(--c2, #F1C232); clip-path: inset(0 0 0 100%); transition: clip-path 0.55s cubic-bezier(0.33, 0, 0.4, 1); }
+.sail-mini .sail-row.sliding::after { clip-path: inset(0 0 0 0%); }
+.sail-mini .sail-row.no-trans::after { transition: none; }
+.tb-search-btn { background: none; border: 1px solid var(--border-chrome); border-radius: 6px; width: 30px; height: 30px; cursor: pointer; color: var(--text-chrome-muted); transition: all .15s; display: flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0; }
+.tb-search-btn:hover { background: var(--bg-chrome-hover); color: var(--text-chrome); }
+.tb-search-btn svg { width: 15px; height: 15px; }
+.tb-nav { display: flex; align-items: center; gap: 22px; flex-shrink: 0; }
+.tb-nav-link { font-size: .86rem; font-weight: 500; color: var(--text-chrome-muted); text-decoration: none; padding: 4px 0; border-bottom: 2px solid transparent; transition: color .15s, border-color .15s; }
 .tb-nav-link:hover { color: var(--text-chrome); }
 main.scrutin { flex: 1; padding: 50px 24px 60px; display: flex; justify-content: center; }
 .s-wrap { width: 100%; max-width: 880px; display: flex; flex-direction: column; gap: 28px; }
@@ -850,11 +1029,11 @@ section.s-block { display: flex; flex-direction: column; gap: 14px; }
 section.s-block h2 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em; border-bottom: 2px solid var(--text-chrome); padding-bottom: 8px; }
 section.s-block h3 { font-size: 1.08rem; font-weight: 600; margin-top: 8px; color: var(--text-chrome); }
 section.s-block p { font-size: 1rem; line-height: 1.6; color: var(--text-body); }
-.s-particip { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; padding: 18px; background: var(--bg-card); border: 1px solid var(--border-chrome); border-radius: 8px; }
-.s-particip .stat { display: flex; flex-direction: column; gap: 4px; }
-.s-particip .stat-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-chrome-muted); }
-.s-particip .stat-val { font-size: 1.4rem; font-weight: 700; color: var(--text-chrome); }
-.s-particip .stat-sub { font-size: 0.78rem; color: var(--text-chrome-muted); }
+/* Participation : layout identique à la fiche globale ville (LRVcarte particiHTML) */
+.partici-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-bottom: 0; }
+.pbox { background: var(--bg-modal-hover); border-radius: 6px; padding: 8px 8px; min-width: 0; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 3px; }
+.pbox-lbl { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-chrome-muted); font-weight: 700; white-space: nowrap; }
+.pbox-val { font-size: 0.92rem; font-weight: 800; color: var(--text-chrome); line-height: 1.1; white-space: nowrap; }
 .s-table { width: 100%; border-collapse: collapse; background: var(--bg-card); border: 1px solid var(--border-chrome); border-radius: 8px; overflow: hidden; }
 .s-table thead { background: var(--bg-chrome-accent); }
 .s-table th { font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-chrome-muted); text-align: left; padding: 10px 14px; }
@@ -864,28 +1043,73 @@ section.s-block p { font-size: 1rem; line-height: 1.6; color: var(--text-body); 
 .s-table .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
 .s-table .winner { font-weight: 700; }
 .s-warn { background: #FFF7E6; border: 1px solid #E6C77E; color: #8A6A2C; padding: 12px 16px; border-radius: 6px; font-size: 0.9rem; line-height: 1.5; font-style: italic; }
-.s-map-wrap { background: var(--bg-card); border: 1px solid var(--border-chrome); border-radius: 8px; padding: 14px; }
+/* Lignes candidat·e — reproduit le style cand-row de LRVcarte */
+.s-cands { background: var(--bg-modal-hover); border-radius: 8px; padding: 16px 18px; }
+.cand-list { display: flex; flex-direction: column; gap: 14px; }
+.cand-row { display: flex; flex-direction: column; gap: 6px; }
+.cand-row-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
+.cand-row-namepart { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.cand-name { font-size: 1.15rem; font-weight: 700; line-height: 1.1; color: var(--text-chrome); }
+.cand-row.winner .cand-name { font-weight: 800; }
+.cand-sub { font-size: 0.82rem; color: var(--text-chrome-muted); }
+.cand-row-pctvoix { display: flex; align-items: baseline; gap: 8px; flex-shrink: 0; }
+.cand-voix { font-size: 0.82rem; color: var(--text-chrome-muted); font-variant-numeric: tabular-nums; }
+.cand-sep { color: var(--text-chrome-muted); font-size: 0.8rem; }
+.cand-pct { font-size: 1.35rem; font-weight: 700; line-height: 1; color: var(--text-chrome); font-variant-numeric: tabular-nums; }
+.cand-pct .pct-sym { font-size: 0.55em; margin-left: 2px; font-weight: 600; color: var(--text-chrome-muted); }
+.bar-bg { width: 100%; height: 8px; background: var(--bg-chrome-accent); border-radius: 4px; overflow: hidden; }
+.bar-fg { height: 100%; border-radius: 4px; transition: width .3s; }
+.cand-fold { margin-top: 10px; }
+.cand-fold summary { cursor: pointer; font-size: 0.88rem; color: var(--text-chrome-muted); padding: 6px 0; user-select: none; }
+.cand-fold summary:hover { color: var(--text-chrome); }
+.cand-fold[open] summary { margin-bottom: 12px; }
+.cand-fold .cand-list { padding-top: 4px; }
+.s-map-wrap { background: var(--bg-card); border: 1px solid var(--border-chrome); border-radius: 8px; padding: 14px; position: relative; }
 .s-mini-map { width: 100%; height: auto; max-height: 480px; display: block; }
-.s-mini-map path { transition: opacity .15s; }
-.s-mini-map path:hover { opacity: 0.75; }
+.s-mini-map path { transition: opacity .15s; cursor: pointer; }
+.s-mini-map path:hover { opacity: 0.78; stroke: var(--text-chrome); stroke-width: 1.2; }
+.s-mini-map path.off-canton { opacity: 0.65; }
+.s-mini-map path.off-canton:hover { opacity: 0.85; }
+/* Tooltip carte custom (style cohérent avec le reste du site) */
+.svg-tip { position: fixed; background: var(--bg-tooltip); color: var(--text-tooltip); padding: 7px 11px; border-radius: 6px; font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 0.78rem; line-height: 1.4; pointer-events: none; z-index: 10000; opacity: 0; transform: translate(-50%, calc(-100% - 10px)); transition: opacity .12s; box-shadow: 0 4px 12px rgba(0,0,0,.18); max-width: 260px; }
+.svg-tip.show { opacity: 1; }
+.svg-tip .stip-num { font-weight: 700; font-size: 0.86rem; display: block; }
+.svg-tip .stip-den { opacity: 0.9; }
+.svg-tip .stip-win { display: block; margin-top: 3px; font-weight: 600; }
 .bb { display: flex; width: 100%; border-radius: 4px; overflow: hidden; border: 1px solid var(--border-chrome); }
 .bb-seg { transition: opacity .15s; }
 .bb-seg:hover { opacity: 0.85; }
 .s-blocs-legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.86rem; color: var(--text-body); margin-top: 8px; }
 .bl-item { display: inline-flex; align-items: center; gap: 6px; }
 .bl-dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
-.s-triptych { margin-top: 10px; }
-.s-triptych summary { cursor: pointer; font-size: 0.88rem; color: var(--text-chrome-muted); padding: 6px 0; user-select: none; }
-.s-triptych summary:hover { color: var(--text-chrome); }
-.trip { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
-.trip-row { display: flex; align-items: center; padding: 8px 12px; background: var(--bg-card); border: 1px solid var(--border-chrome); border-radius: 6px; }
-.trip-row.trip-current { background: var(--bg-chrome-accent); }
-.trip-label { flex: 1; font-size: 0.92rem; }
-.trip-meta { font-size: 0.78rem; color: var(--text-chrome-muted); }
-.trip-link { color: var(--text-chrome); text-decoration: none; font-size: 1.1rem; padding: 2px 8px; border-radius: 4px; transition: background .15s; }
-.trip-link:hover { background: var(--bg-chrome-hover); }
+/* Triptyque blocs politiques — reproduit le visuel de la fiche globale LRVcarte
+   (3 barres empilées : suivant en haut, actuel au milieu, précédent en bas) */
+.trip-wrap { border-radius: 6px; overflow: hidden; }
+.trip-bar { display: flex; width: 100%; position: relative; }
+.trip-bar-current { height: 72px; }
+.trip-bar-side { height: 20px; }
+.trip-mid-line { position: absolute; top: 0; bottom: 0; left: 50%; width: 0; border-left: 1.5px dashed rgba(255,255,255,0.65); pointer-events: none; z-index: 2; }
+.trip-side { position: relative; display: block; text-decoration: none; opacity: 0.42; cursor: pointer; transition: opacity .15s; }
+.trip-side:hover { opacity: 0.85; }
+.trip-side-label { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 0.62rem; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.5); pointer-events: none; white-space: nowrap; }
+.trip-side-meta { font-weight: 500; opacity: 0.85; }
 .cell-meta { color: var(--text-chrome-muted); font-size: 0.86em; }
+/* Listes quartiers / cantons cliquables — chaque row pointe vers la fiche LRVcarte */
+.agg-list { display: flex; flex-direction: column; gap: 4px; background: var(--bg-modal-hover); border-radius: 8px; padding: 8px; }
+.agg-row { display: grid; grid-template-columns: 1.4fr 0.9fr 2fr 1.6fr; gap: 12px; align-items: center; padding: 8px 12px; background: var(--bg-card); border: 1px solid var(--border-chrome); border-radius: 6px; text-decoration: none; color: var(--text-chrome); transition: background .15s, border-color .15s; font-size: 0.86rem; }
+.agg-row:hover { background: var(--bg-modal-hover); border-color: var(--accent-warm); }
+.agg-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.agg-abst { color: var(--text-chrome-muted); font-variant-numeric: tabular-nums; font-size: 0.78rem; white-space: nowrap; }
+.agg-winner { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.agg-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+.agg-pct { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; margin-left: 4px; color: var(--text-chrome); }
+.agg-bar { position: relative; display: flex; height: 18px; width: 100%; border-radius: 3px; overflow: hidden; }
+.agg-bar-mid { position: absolute; top: 0; bottom: 0; left: 50%; width: 0; border-left: 1.5px dashed rgba(255,255,255,0.7); pointer-events: none; z-index: 2; }
+.s-bureau-cta { font-size: 0.92rem; color: var(--text-chrome-muted); padding: 12px 16px; background: var(--bg-modal-hover); border-left: 3px solid var(--accent-warm); border-radius: 0 6px 6px 0; margin: 6px 0; }
+.s-bureau-cta a { color: var(--text-chrome); font-weight: 600; text-decoration: underline; text-decoration-color: var(--accent-warm); text-underline-offset: 3px; }
+.s-bureau-cta a:hover { color: var(--accent-warm); }
 .s-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+.s-cta-top { margin-top: 18px; }
 .s-cta a { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--bg-chrome); color: var(--text-chrome); text-decoration: none; border: 1px solid var(--border-chrome); border-radius: 6px; font-size: 0.9rem; font-weight: 600; transition: all .15s; }
 .s-cta a:hover { background: var(--bg-chrome-hover); border-color: var(--accent-warm); }
 .s-cta a.primary { background: var(--text-chrome); color: var(--bg-page); border-color: var(--text-chrome); }
@@ -896,7 +1120,10 @@ footer.s-foot a:hover { color: var(--text-chrome); }
 
 @media (max-width: 720px) {
   #topbar { height: 56px; padding: 0 12px; gap: 8px; }
-  .tb-logo { font-size: 1.6rem; gap: 3px; }
+  .tb-nav { display: none; }
+  .tb-logo { font-size: 1.6rem; gap: 3px; flex-shrink: 0; }
+  .tb-search-btn { flex-shrink: 0; margin-left: auto; }
+  #tb-page-title { display: none; }
   main.scrutin { padding: 24px 14px 40px; }
   .s-wrap { gap: 22px; }
   header.s-head { padding-bottom: 18px; }
@@ -904,23 +1131,48 @@ footer.s-foot a:hover { color: var(--text-chrome); }
   header.s-head .lead { font-size: 0.94rem; }
   section.s-block h2 { font-size: 1.15rem; }
   .s-table th, .s-table td { padding: 8px 10px; font-size: 0.86rem; }
-  .s-particip { padding: 14px; gap: 10px; }
-  .s-particip .stat-val { font-size: 1.2rem; }
+  /* Participation : 2 colonnes sur mobile (5 stats → 2/2/1) */
+  .partici-grid { grid-template-columns: repeat(2, 1fr); gap: 4px; }
+  .pbox { padding: 6px; gap: 2px; }
+  .pbox-val { font-size: 0.82rem; }
+  .pbox-lbl { font-size: 0.6rem; letter-spacing: 0.2px; }
+  /* Lignes candidat·e plus compactes */
+  .cand-name { font-size: 1rem; }
+  .cand-pct { font-size: 1.15rem; }
+  .cand-sub, .cand-voix { font-size: 0.78rem; }
+  /* Listes agrégées : layout compact à 2 lignes sur mobile */
+  .agg-row { grid-template-columns: 1fr auto; grid-template-areas: 'name abst' 'win win' 'bar bar'; gap: 4px 10px; font-size: 0.82rem; padding: 8px; }
+  .agg-name { grid-area: name; }
+  .agg-winner { grid-area: win; font-size: 0.78rem; }
+  .agg-abst { grid-area: abst; text-align: right; }
+  .agg-bar { grid-area: bar; height: 10px; }
 }
 </style>
 </head>
 <body>
 
 <div id="topbar">
-  <a href="/" class="tb-logo">
+  <button type="button" class="tb-logo" id="tb-logo-btn" aria-label="Menu" aria-haspopup="true" aria-expanded="false">
+    <svg class="tb-logo-burger" viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
     <span class="tb-brand-light">LR</span>
+    <div class="sail-mini">
+      <div class="sail-row" style="--w:17%"></div>
+      <div class="sail-row" style="--w:33%"></div>
+      <div class="sail-row" style="--w:50%"></div>
+      <div class="sail-row" style="--w:67%"></div>
+      <div class="sail-row" style="--w:83%"></div>
+      <div class="sail-row" style="--w:100%"></div>
+    </div>
     <span class="tb-brand-bold">Vote</span>
-  </a>
+  </button>
   <nav class="tb-nav">
     <a href="/LRVcarte.html" class="tb-nav-link">La carte</a>
     <a href="/LRVanalyse.html" class="tb-nav-link">L'analyse</a>
-    <a href="/methodologie.html" class="tb-nav-link">Méthodologie</a>
   </nav>
+  <div style="flex:1"></div>
+  <button class="tb-search-btn" id="tb-search-btn" title="Rechercher (⌘K / Ctrl+K)" aria-label="Rechercher">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg>
+  </button>
 </div>
 
 <main class="scrutin">
@@ -930,6 +1182,10 @@ footer.s-foot a:hover { color: var(--text-chrome); }
       <div class="eyebrow">Scrutin</div>
       <h1>${esc(title)}${/La Rochelle/.test(title) ? '' : ' à La Rochelle'}</h1>
       <p class="lead">${dateLead ? esc(dateLead) + ' ' : ''}Résultats détaillés bureau par bureau, agrégés à l'échelle ${canton ? 'de la partie rochelaise du canton' : 'de la commune'}.</p>
+      <div class="s-cta s-cta-top">
+        <a href="${esc(urlCarte)}">🗺️ Aller sur la carte interactive</a>
+        <a href="${esc(urlAnalyse)}">📊 Aller sur l'analyse historique</a>
+      </div>
     </header>
 
     ${cantonWarning ? `<div class="s-warn">${esc(cantonWarning)}</div>` : ''}
@@ -952,67 +1208,103 @@ footer.s-foot a:hover { color: var(--text-chrome); }
       <div class="s-map-wrap">${td.mapSVG}</div>
       ` : ''}
 
-      <h3>Participation</h3>
-      <div class="s-particip">
-        <div class="stat"><span class="stat-label">Inscrits</span><span class="stat-val">${fmtNum(td.inscrits)}</span></div>
-        <div class="stat"><span class="stat-label">Abstention</span><span class="stat-val">${fmtPct(td.abst_pct)} %</span><span class="stat-sub">${fmtNum(td.abstention_voix)} personnes</span></div>
-        <div class="stat"><span class="stat-label">Blancs/nuls</span><span class="stat-val">${fmtPct(td.bn_pct)} %</span><span class="stat-sub">${fmtNum(td.bn_voix)} bulletins</span></div>
-        <div class="stat"><span class="stat-label">Exprimés</span><span class="stat-val">${fmtNum(td.exprimes)}</span></div>
-      </div>
-
-      <h3>Résultats par candidat</h3>
-      <table class="s-table">
-        <thead>
-          <tr><th>Candidat·e</th><th>Parti</th><th class="num">Voix</th><th class="num">%</th></tr>
-        </thead>
-        <tbody>
-${td.cands.map((c, i) => `          <tr${i===0 ? ' class="winner"' : ''}><td>${esc(c.nom)}</td><td>${esc(c.pa)}</td><td class="num">${fmtNum(c.voix)}</td><td class="num">${fmtPct(c.pct)} %</td></tr>`).join('\n')}
-        </tbody>
-      </table>
-
-      ${!isReferendum ? `
-      <h3>Blocs politiques</h3>
-      ${renderBlocBar(td.blocs, 36)}
-      <p class="s-blocs-legend">
-        ${['G','C','D','EXD','?'].filter(b => (td.blocs[b]||0) > 0).map(b => `<span class="bl-item"><span class="bl-dot" style="background:${BLOC_COLORS[b]}"></span>${BLOC_LABELS[b]} ${fmtPct(td.blocs[b])} %</span>`).join('')}
-      </p>
       ${(() => {
+        const part_pct = td.inscrits > 0 ? +(td.votants / td.inscrits * 100).toFixed(1) : 0;
+        return `
+      <div class="partici-grid">
+        <div class="pbox"><div class="pbox-lbl">Inscrits</div><div class="pbox-val">${fmtNum(td.inscrits)}</div></div>
+        <div class="pbox"><div class="pbox-lbl">Votants</div><div class="pbox-val">${fmtNum(td.votants)} · ${fmtPct(part_pct)} %</div></div>
+        <div class="pbox"><div class="pbox-lbl">Abstention</div><div class="pbox-val">${fmtNum(td.abstention_voix)} · ${fmtPct(td.abst_pct)} %</div></div>
+        <div class="pbox"><div class="pbox-lbl">Exprimés</div><div class="pbox-val">${fmtNum(td.exprimes)}</div></div>
+        <div class="pbox"><div class="pbox-lbl">Blancs / nuls</div><div class="pbox-val">${fmtNum(td.bn_voix)} · ${fmtPct(td.bn_pct)} %</div></div>
+      </div>`;
+      })()}
+
+      <h3>Résultats par candidat·e</h3>
+      ${(() => {
+        const FOLD = 7;
+        const visible = td.cands.slice(0, FOLD);
+        const hidden = td.cands.slice(FOLD);
+        const isCantNoun = isCantonale;
+        const noun = isCantNoun ? 'binôme' : 'candidat·e';
+        function row(c, i) {
+          return `
+        <div class="cand-row${i===0 ? ' winner' : ''}">
+          <div class="cand-row-head">
+            <div class="cand-row-namepart">
+              <span class="cand-name">${esc(c.nom)}</span>
+              <span class="cand-sub">${esc(c.paFull || c.pa)}</span>
+            </div>
+            <div class="cand-row-pctvoix">
+              <span class="cand-voix">${fmtNum(c.voix)} voix</span>
+              <span class="cand-sep">·</span>
+              <span class="cand-pct">${fmtPct(c.pct)}<span class="pct-sym">%</span></span>
+            </div>
+          </div>
+          <div class="bar-bg"><div class="bar-fg" style="width:${Math.max(c.pct, 0.5).toFixed(1)}%;background:${c.barBg}"></div></div>
+        </div>`;
+        }
+        let out = '<div class="s-cands"><div class="cand-list">' + visible.map(row).join('') + '</div>';
+        if (hidden.length) {
+          const label = '+ ' + hidden.length + ' autre' + (hidden.length > 1 ? 's ' : ' ') + noun + (hidden.length > 1 ? 's' : '');
+          out += `
+        <details class="cand-fold">
+          <summary>${esc(label)}</summary>
+          <div class="cand-list">${hidden.map(row).join('')}</div>
+        </details>`;
+        }
+        out += '</div>';
+        return out;
+      })()}
+
+      ${!isReferendum ? (() => {
         const nextSlug = adj.next ? neighborSlug(adj.next, canton) : null;
         const prevSlug = adj.prev ? neighborSlug(adj.prev, canton) : null;
-        if (!nextSlug && !prevSlug) return '';
+        const hasNext = nextSlug && td.nextBlocs;
+        const hasPrev = prevSlug && td.prevBlocs;
+        function sideBar(blocs, otherLabel, slug, position) {
+          return `
+        <a class="trip-side" href="/scrutins/${slug}.html" title="${esc(otherLabel)}">
+          <div class="trip-bar trip-bar-side">${renderBlocSegs(blocs)}</div>
+          <span class="trip-side-label">${esc(otherLabel)} <span class="trip-side-meta">(${position})</span></span>
+        </a>`;
+        }
         return `
-      <details class="s-triptych">
-        <summary>Comparer aux scrutins voisins</summary>
-        <div class="trip">
-          ${nextSlug ? `<div class="trip-row"><div class="trip-label">${esc(adj.next)} <span class="trip-meta">(suivant)</span></div><a class="trip-link" href="/scrutins/${nextSlug}.html">→</a></div>` : ''}
-          <div class="trip-row trip-current"><div class="trip-label"><strong>${esc(label)}</strong> <span class="trip-meta">(actuel)</span></div></div>
-          ${prevSlug ? `<div class="trip-row"><div class="trip-label">${esc(adj.prev)} <span class="trip-meta">(précédent)</span></div><a class="trip-link" href="/scrutins/${prevSlug}.html">→</a></div>` : ''}
-        </div>
-      </details>`;
-      })()}
-      ` : ''}
+      <h3>Blocs politiques</h3>
+      <div class="trip-wrap">
+        ${hasNext ? sideBar(td.nextBlocs, adj.next, nextSlug, 'suivant') : ''}
+        <div class="trip-bar trip-bar-current">${renderBlocSegs(td.blocs)}<div class="trip-mid-line"></div></div>
+        ${hasPrev ? sideBar(td.prevBlocs, adj.prev, prevSlug, 'précédent') : ''}
+      </div>
+      <p class="s-blocs-legend">
+        ${['G','C','D','EXD','?'].filter(b => (td.blocs[b]||0) > 0).map(b => `<span class="bl-item"><span class="bl-dot" style="background:${BLOC_COLORS[b]}"></span>${BLOC_LABELS[b]} ${fmtPct(td.blocs[b])} %</span>`).join('')}
+      </p>`;
+      })() : ''}
 
-      ${td.quartiers && td.quartiers.length ? `
+      <h3>Par bureau de vote</h3>
+      <p class="s-bureau-cta">🏛️ Pour les résultats détaillés bureau par bureau, <a href="${esc(urlCarte)}">rendez-vous sur la carte interactive →</a></p>
+
+      ${!canton && td.quartiers && td.quartiers.length ? (() => {
+        function row(q, href) {
+          const w = q.winner;
+          const color = w ? w.color : '#bbbbbb';
+          const segs = isReferendum
+            ? renderRefSegs(q.voix_par_cand, q.exprimes)
+            : renderBlocSegs(q.blocs);
+          return `
+        <a class="agg-row" href="${esc(href)}">
+          <span class="agg-name">${esc(q.nom)}</span>
+          <span class="agg-abst">${fmtPct(q.abst_pct)} % abst.</span>
+          <span class="agg-winner"><span class="agg-dot" style="background:${color}"></span>${w ? esc(w.nomFamille || w.nom) : '—'}<span class="agg-pct">${w ? fmtPct(w.pct) + ' %' : ''}</span></span>
+          <span class="agg-bar">${segs}<div class="agg-bar-mid"></div></span>
+        </a>`;
+        }
+        return `
       <h3>Par quartier</h3>
-      <table class="s-table">
-        <thead>
-          <tr><th>Quartier</th><th class="num">Abst.</th><th>${isReferendum ? 'Réponse en tête' : 'Arrivé·e en tête'}</th><th class="num">%</th></tr>
-        </thead>
-        <tbody>
-${td.quartiers.map(q => `          <tr><td>${esc(q.nom)}</td><td class="num">${fmtPct(q.abst_pct)} %</td><td>${q.winner ? esc(q.winner.nom) + (q.winner.pa ? ' <span class="cell-meta">(' + esc(q.winner.pa) + ')</span>' : '') : '—'}</td><td class="num">${q.winner ? fmtPct(q.winner.pct) + ' %' : '—'}</td></tr>`).join('\n')}
-        </tbody>
-      </table>` : ''}
-
-      ${td.cantons && td.cantons.length ? `
-      <h3>Par canton</h3>
-      <table class="s-table">
-        <thead>
-          <tr><th>Canton</th><th class="num">Abst.</th><th>${isReferendum ? 'Réponse en tête' : 'Arrivé·e en tête'}</th><th class="num">%</th></tr>
-        </thead>
-        <tbody>
-${td.cantons.map(c => `          <tr><td>La Rochelle-${esc(c.cid)}</td><td class="num">${fmtPct(c.abst_pct)} %</td><td>${c.winner ? esc(c.winner.nom) + (c.winner.pa ? ' <span class="cell-meta">(' + esc(c.winner.pa) + ')</span>' : '') : '—'}</td><td class="num">${c.winner ? fmtPct(c.winner.pct) + ' %' : '—'}</td></tr>`).join('\n')}
-        </tbody>
-      </table>` : ''}
+      <div class="agg-list">
+        ${td.quartiers.map(q => row(q, '/LRVcarte.html#election=' + encodeURIComponent(label) + '&quartier=' + encodeURIComponent(q.nom))).join('')}
+      </div>`;
+      })() : ''}
 
     </section>`;
     }).join('\n')}
@@ -1021,8 +1313,8 @@ ${td.cantons.map(c => `          <tr><td>La Rochelle-${esc(c.cid)}</td><td class
       <h2>Explorer ce scrutin</h2>
       <p>Pour voir le détail bureau par bureau sur la carte interactive, comparer ce scrutin à d'autres, ou explorer un quartier en particulier&nbsp;:</p>
       <div class="s-cta">
-        <a class="primary" href="${esc(urlCarte)}">🗺️ Carte interactive</a>
-        <a href="${esc(urlAnalyse)}">📊 Analyse comparative</a>
+        <a href="${esc(urlCarte)}">🗺️ Aller sur la carte interactive</a>
+        <a href="${esc(urlAnalyse)}">📊 Aller sur l'analyse historique</a>
         ${wpUrl ? `<a href="${esc(wpUrl)}" target="_blank" rel="noopener">📖 Page Wikipédia</a>` : ''}
       </div>
     </section>
@@ -1034,6 +1326,54 @@ ${td.cantons.map(c => `          <tr><td>La Rochelle-${esc(c.cid)}</td><td class
 
   </div>
 </main>
+
+<!-- shared.js fournit setupAppMenu + setupSailAnimation (pas de dépendance donnees.js) -->
+<script src="/shared.js" defer></script>
+<script defer>
+document.addEventListener('DOMContentLoaded', function() {
+  if (typeof setupAppMenu === 'function') setupAppMenu();
+  if (typeof setupSailAnimation === 'function') setupSailAnimation();
+  // Bouton recherche : redirige vers LRVcarte (où Cmd+K est complet avec les données chargées)
+  var sb = document.getElementById('tb-search-btn');
+  if (sb) sb.addEventListener('click', function() {
+    location.href = '/LRVcarte.html';
+  });
+
+  // ── Tooltip custom sur la carte SVG ───────────────────────────────────
+  // On retire les <title> natifs (pour éviter le double tooltip browser + custom)
+  // et on attache des handlers hover qui affichent un div .svg-tip flottant.
+  var tip = null;
+  function ensureTip() {
+    if (tip) return tip;
+    tip = document.createElement('div');
+    tip.className = 'svg-tip';
+    document.body.appendChild(tip);
+    return tip;
+  }
+  document.querySelectorAll('.s-mini-map path').forEach(function(p) {
+    // Supprime le <title> natif pour éviter le tooltip browser
+    var t = p.querySelector('title');
+    if (t) t.remove();
+    p.addEventListener('mouseenter', function(e) {
+      var num = p.dataset.num || '';
+      var den = p.dataset.den || '';
+      var win = p.dataset.winner || '';
+      var el = ensureTip();
+      el.innerHTML = '<span class="stip-num">N°' + num + (den ? ' · <span class="stip-den">' + den + '</span>' : '') + '</span>'
+        + (win ? '<span class="stip-win">' + win + '</span>' : '');
+      el.classList.add('show');
+    });
+    p.addEventListener('mousemove', function(e) {
+      if (!tip) return;
+      tip.style.left = e.clientX + 'px';
+      tip.style.top = e.clientY + 'px';
+    });
+    p.addEventListener('mouseleave', function() {
+      if (tip) tip.classList.remove('show');
+    });
+  });
+});
+</script>
 
 </body>
 </html>
