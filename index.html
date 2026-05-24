@@ -484,9 +484,11 @@
     padding: 22px 0 4px;
     border-top: 1px solid var(--rule);
     color: var(--ink-soft);
-    font-size: 12.5px;
+    font-size: 13px;
     line-height: 1.7;
-    max-width: 880px;
+    /* Pleine largeur du main (jusqu'à 1240px) plutôt que la largeur de
+       lecture typographique étroite (~880px). Sur très grand écran, ça
+       reste cohérent avec .viz-section qui s'étend jusqu'à 1310px. */
   }
   .figures-mention h2 {
     font-size: 11px;
