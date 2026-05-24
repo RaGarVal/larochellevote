@@ -495,36 +495,64 @@
     color: var(--ink);
     font-weight: 600;
   }
-  /* <details> 'autres figures' : style très discret, comme un lien italique
-     en fin de paragraphe. Pas de fond, pas de border, chevron minimaliste. */
-  .figures-more { margin-top: 6px; }
-  .figures-more summary {
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 400;
-    font-style: italic;
-    color: var(--ink-soft);
-    opacity: 0.7;
-    list-style: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    transition: opacity .15s;
+  /* Pattern 'fade + chevron' : le texte complet est dans le DOM (SEO),
+     mais visuellement tronqué par un max-height + gradient de fond qui
+     suggère qu'il y a une suite. Toggle via checkbox CSS (zéro JS). */
+  .figures-toggle {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 1px; height: 1px;
   }
-  .figures-more summary::-webkit-details-marker { display: none; }
-  .figures-more summary::after {
+  .figures-content {
+    position: relative;
+    max-height: 8em;          /* ~5 lignes visibles */
+    overflow: hidden;
+    transition: max-height 0.5s ease;
+  }
+  .figures-content::after {
     content: '';
-    width: 6px; height: 6px;
-    border-right: 1px solid currentColor;
-    border-bottom: 1px solid currentColor;
-    transform: rotate(45deg) translate(-1px, -1px);
-    transition: transform .2s;
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 5em;
+    pointer-events: none;
+    background: linear-gradient(to bottom, transparent, var(--bg) 85%);
+    transition: opacity 0.3s;
   }
-  .figures-more[open] summary::after {
-    transform: rotate(-135deg) translate(-1px, -1px);
+  .figures-toggle:checked ~ .figures-content {
+    max-height: 200em;        /* large : déroule tout */
   }
-  .figures-more summary:hover { opacity: 1; }
-  .figures-more p { margin: 10px 0 0; }
+  .figures-toggle:checked ~ .figures-content::after {
+    opacity: 0;
+  }
+  /* Chevron cliquable centré sous le bloc. Petit, discret. */
+  .figures-expand {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 0 2px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .figures-chevron {
+    display: inline-block;
+    width: 12px; height: 12px;
+    border-right: 1.5px solid var(--ink-soft);
+    border-bottom: 1.5px solid var(--ink-soft);
+    transform: rotate(45deg);
+    opacity: 0.55;
+    transition: opacity 0.15s, transform 0.3s;
+  }
+  .figures-expand:hover .figures-chevron { opacity: 1; }
+  .figures-toggle:checked ~ .figures-expand .figures-chevron {
+    transform: rotate(-135deg);
+  }
+  /* A11y : focus visible sur le label quand l'utilisateur tabule */
+  .figures-toggle:focus-visible ~ .figures-expand .figures-chevron {
+    outline: 2px solid var(--ink);
+    outline-offset: 4px;
+    border-radius: 2px;
+  }
 
   /* ───────── RESPONSIVE ───────── */
   @media (max-width: 760px) {
@@ -710,21 +738,19 @@
   </nav>
 
   <section class="figures-mention" aria-label="Figures politiques recensées">
-    <p>
-      Le projet documente les parcours électoraux locaux des personnalités qui ont marqué
-      ou marquent encore La Rochelle comme <strong>Michel Crépeau</strong> (maire radical
-      de gauche de 1971 à 1999), <strong>Maxime Bono</strong> (maire PS de 1999 à 2014),
-      <strong>Jean-François Fountaine</strong> (maire divers gauche de 2014 à 2025),
-      <strong>Olivier Falorni</strong> (député divers gauche puis centriste de 2012 à
-      2026 et actuel maire centriste de La Rochelle), <strong>Jean-Louis Léonard</strong>
-      (député RPR de 1993 à 1997, candidat à la mairie en 1995) ou
-      <strong>Ségolène Royal</strong> (présidente PS de région de 2004 à 2014, candidate
-      aux législatives de 2012).
-    </p>
-    <details class="figures-more">
-      <summary>et d'autres figures locales</summary>
+    <input type="checkbox" id="figures-toggle" class="figures-toggle">
+    <div class="figures-content">
       <p>
-        Ce sont aussi des figures locales, engagées dans les batailles électorales comme
+        Le projet documente les parcours électoraux locaux des personnalités qui ont
+        marqué ou marquent encore La Rochelle comme <strong>Michel Crépeau</strong>
+        (maire radical de gauche de 1971 à 1999), <strong>Maxime Bono</strong> (maire PS
+        de 1999 à 2014), <strong>Jean-François Fountaine</strong> (maire divers gauche
+        de 2014 à 2025), <strong>Olivier Falorni</strong> (député divers gauche puis
+        centriste de 2012 à 2026 et actuel maire centriste de La Rochelle),
+        <strong>Jean-Louis Léonard</strong> (député RPR de 1993 à 1997, candidat à la
+        mairie en 1995) ou <strong>Ségolène Royal</strong> (présidente PS de région de
+        2004 à 2014, candidate aux législatives de 2012). Ce sont aussi des figures
+        locales, engagées dans les batailles électorales comme
         <strong>Jean Harel</strong> (conseiller général RPR de La Rochelle-2 puis
         La Rochelle-4), régulièrement candidat aux municipales et législatives ;
         <strong>François Blaizot</strong> (président centriste du département de 1985 à
@@ -748,7 +774,11 @@
         2015 à 2021). Plus de 390 candidats et candidates qui se sont présentés à
         La Rochelle depuis 1988 sont répertoriés.
       </p>
-    </details>
+    </div>
+    <label for="figures-toggle" class="figures-expand" title="Déployer la suite"
+           aria-label="Afficher l'ensemble du texte ou le replier">
+      <span class="figures-chevron" aria-hidden="true"></span>
+    </label>
   </section>
 
   <footer class="colophon">
