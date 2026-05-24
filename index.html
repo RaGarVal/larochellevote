@@ -495,6 +495,36 @@
     color: var(--ink);
     font-weight: 600;
   }
+  /* Bloc 'Voir d'autres figures locales' : <details> natif, chevron CSS. */
+  .figures-more { margin-top: 12px; }
+  .figures-more summary {
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    list-style: none;          /* hide default ▶ marker (Firefox) */
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 4px 10px 4px 4px;
+    border-radius: 4px;
+    user-select: none;
+    transition: color .15s, background .15s;
+  }
+  .figures-more summary::-webkit-details-marker { display: none; }  /* Safari/Chrome */
+  .figures-more summary::after {
+    content: '';
+    width: 8px; height: 8px;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(45deg) translate(-2px, -2px);
+    transition: transform .2s;
+  }
+  .figures-more[open] summary::after {
+    transform: rotate(-135deg) translate(-2px, -2px);
+  }
+  .figures-more summary:hover { color: var(--ink); background: var(--rule); }
+  .figures-more p { margin: 12px 0 0; }
 
   /* ───────── RESPONSIVE ───────── */
   @media (max-width: 760px) {
@@ -689,30 +719,36 @@
       2026 et actuel maire centriste de La Rochelle), <strong>Jean-Louis Léonard</strong>
       (député RPR de 1993 à 1997, candidat à la mairie en 1995) ou
       <strong>Ségolène Royal</strong> (présidente PS de région de 2004 à 2014, candidate
-      aux législatives de 2012). Ce sont aussi des figures locales, engagées dans les
-      batailles électorales comme <strong>Jean Harel</strong> (conseiller général RPR de
-      La Rochelle-2 puis La Rochelle-4), régulièrement candidat aux municipales et
-      législatives ; <strong>François Blaizot</strong> (président centriste du département
-      de 1985 à 1994) et plusieurs fois candidat aux législatives ;
-      <strong>Dominique Morvant</strong> (conseillère générale de La Rochelle-4 de 2004 à
-      2011), plusieurs fois candidate aux municipales et législatives tout comme
-      <strong>Bruno Léal</strong>. Des leaders de la gauche comme
-      <strong>Jack Proust</strong> (conseiller général radical de gauche de La Rochelle-5
-      de 1992 à 2011) ; <strong>Jean-Marc Soubeste</strong> (conseiller départemental EELV
-      de La Rochelle-3 depuis 2021) ; <strong>André Dubosc</strong>, proche de
-      <strong>Michel Crépeau</strong> et un des premiers leaders écologistes locaux ;
-      <strong>Jacques Bessière</strong> et <strong>Léon Belly</strong>, longtemps
-      candidats communistes aux élections locales ; <strong>Marylise Fleuret-Pagnoux</strong>
-      (conseillère générale radicale de gauche de La Rochelle-3 de 1998 à 2015 puis
-      conseillère départementale de La Rochelle-1 depuis 2015) ;
-      <strong>Jean-Pierre Mandroux</strong> (conseiller général PS de La Rochelle-7 de
-      2001 à 2015) ; <strong>Denis Leroy</strong> (conseiller général PS de La Rochelle-6
-      de 2004 à 2015) ; <strong>Patricia Friou</strong> (suppléante
-      d'<strong>Olivier Falorni</strong> et conseillère générale PS de La Rochelle-4 de
-      2011 à 2015, puis conseillère départementale divers gauche de La Rochelle-2 de
-      2015 à 2021). Plus de 390 candidats et candidates qui se sont présentés à
-      La Rochelle depuis 1988 sont répertoriés.
+      aux législatives de 2012).
     </p>
+    <details class="figures-more">
+      <summary>Voir d'autres figures locales</summary>
+      <p>
+        Ce sont aussi des figures locales, engagées dans les batailles électorales comme
+        <strong>Jean Harel</strong> (conseiller général RPR de La Rochelle-2 puis
+        La Rochelle-4), régulièrement candidat aux municipales et législatives ;
+        <strong>François Blaizot</strong> (président centriste du département de 1985 à
+        1994) et plusieurs fois candidat aux législatives ;
+        <strong>Dominique Morvant</strong> (conseillère générale de La Rochelle-4 de 2004
+        à 2011), plusieurs fois candidate aux municipales et législatives tout comme
+        <strong>Bruno Léal</strong>. Des leaders de la gauche comme
+        <strong>Jack Proust</strong> (conseiller général radical de gauche de
+        La Rochelle-5 de 1992 à 2011) ; <strong>Jean-Marc Soubeste</strong> (conseiller
+        départemental EELV de La Rochelle-3 depuis 2021) ; <strong>André Dubosc</strong>,
+        proche de <strong>Michel Crépeau</strong> et un des premiers leaders écologistes
+        locaux ; <strong>Jacques Bessière</strong> et <strong>Léon Belly</strong>,
+        longtemps candidats communistes aux élections locales ;
+        <strong>Marylise Fleuret-Pagnoux</strong> (conseillère générale radicale de gauche
+        de La Rochelle-3 de 1998 à 2015 puis conseillère départementale de La Rochelle-1
+        depuis 2015) ; <strong>Jean-Pierre Mandroux</strong> (conseiller général PS de
+        La Rochelle-7 de 2001 à 2015) ; <strong>Denis Leroy</strong> (conseiller général
+        PS de La Rochelle-6 de 2004 à 2015) ; <strong>Patricia Friou</strong> (suppléante
+        d'<strong>Olivier Falorni</strong> et conseillère générale PS de La Rochelle-4 de
+        2011 à 2015, puis conseillère départementale divers gauche de La Rochelle-2 de
+        2015 à 2021). Plus de 390 candidats et candidates qui se sont présentés à
+        La Rochelle depuis 1988 sont répertoriés.
+      </p>
+    </details>
   </section>
 
   <footer class="colophon">
