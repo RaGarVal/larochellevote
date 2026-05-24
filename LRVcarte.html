@@ -4002,10 +4002,11 @@ function renderCandidates(data, ns, cityAvg, extr, compact, extrLabel) {
   visible.forEach(([name, pct]) => { h += candRow(name, pct); });
   if (hidden.length) {
     const nb = hidden.length;
-    // Cantonale/départementale : on parle de "binômes" plutôt que de "candidats"
-    // (chaque entrée de la liste représente un binôme paritaire, pas un individu).
-    const _isCantNoun = (typeof isCantonalElection === 'function') && isCantonalElection(currentElection);
-    const _noun = _isCantNoun ? 'binôme' : 'candidat';
+    // Les binômes paritaires existent uniquement à partir des Départementales 2015.
+    // Pour les Cantonales pré-2015 (et partielles), on garde "candidat" — les
+    // candidats étaient individuels à l'époque.
+    const _isBinomeElec = /^Départementales\b/i.test(currentElection);
+    const _noun = _isBinomeElec ? 'binôme' : 'candidat';
     const label = '+ ' + nb + ' autre' + (nb > 1 ? 's' : '') + ' ' + _noun + (nb > 1 ? 's' : '');
     if (compact) {
       const uid = 'cm_' + ns + '_c';
