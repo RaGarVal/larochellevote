@@ -2435,15 +2435,19 @@ function getElectionWikipediaURL(label) {
   if (!ym) return null;
   const y = ym[1];
   const enc = s => encodeURIComponent(s).replace(/%20/g, '_');
+  // Préférence : page Wikipédia déclinée au niveau Charente-Maritime quand elle
+  // existe (Législatives, Cantonales, Départementales). Plus pertinent pour LR
+  // que la page nationale. Pour Présidentielles / Européennes / Référendums :
+  // pas de version locale (scrutins nationaux), on garde la page nationale.
   if (/^Présidentielle/i.test(label))   return 'https://fr.wikipedia.org/wiki/' + enc('Élection présidentielle française de ' + y);
   if (/^Européennes/i.test(label))      return 'https://fr.wikipedia.org/wiki/' + enc('Élections européennes de ' + y + ' en France');
-  if (/^Législatives/i.test(label))     return 'https://fr.wikipedia.org/wiki/' + enc('Élections législatives françaises de ' + y);
+  if (/^Législatives/i.test(label))     return 'https://fr.wikipedia.org/wiki/' + enc('Élections législatives de ' + y + ' en Charente-Maritime');
   if (/^Régionales/i.test(label)) {
     const region = parseInt(y) < 2015 ? 'Poitou-Charentes' : 'Nouvelle-Aquitaine';
     return 'https://fr.wikipedia.org/wiki/' + enc('Élections régionales de ' + y + ' en ' + region);
   }
-  if (/^Cantonales/i.test(label))       return 'https://fr.wikipedia.org/wiki/' + enc('Élections cantonales françaises de ' + y);
-  if (/^Départementales/i.test(label))  return 'https://fr.wikipedia.org/wiki/' + enc('Élections départementales françaises de ' + y);
+  if (/^Cantonales/i.test(label))       return 'https://fr.wikipedia.org/wiki/' + enc('Élections cantonales de ' + y + ' en Charente-Maritime');
+  if (/^Départementales/i.test(label))  return 'https://fr.wikipedia.org/wiki/' + enc('Élections départementales de ' + y + ' en Charente-Maritime');
   if (/^Référendum/i.test(label))       return 'https://fr.wikipedia.org/wiki/' + enc('Référendum français de ' + y);
   return null;
 }
