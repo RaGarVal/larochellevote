@@ -495,36 +495,36 @@
     color: var(--ink);
     font-weight: 600;
   }
-  /* Bloc 'Voir d'autres figures locales' : <details> natif, chevron CSS. */
-  .figures-more { margin-top: 12px; }
+  /* <details> 'autres figures' : style très discret, comme un lien italique
+     en fin de paragraphe. Pas de fond, pas de border, chevron minimaliste. */
+  .figures-more { margin-top: 6px; }
   .figures-more summary {
     cursor: pointer;
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 400;
+    font-style: italic;
     color: var(--ink-soft);
-    list-style: none;          /* hide default ▶ marker (Firefox) */
+    opacity: 0.7;
+    list-style: none;
     display: inline-flex;
     align-items: center;
-    gap: 7px;
-    padding: 4px 10px 4px 4px;
-    border-radius: 4px;
-    user-select: none;
-    transition: color .15s, background .15s;
+    gap: 5px;
+    transition: opacity .15s;
   }
-  .figures-more summary::-webkit-details-marker { display: none; }  /* Safari/Chrome */
+  .figures-more summary::-webkit-details-marker { display: none; }
   .figures-more summary::after {
     content: '';
-    width: 8px; height: 8px;
-    border-right: 1.5px solid currentColor;
-    border-bottom: 1.5px solid currentColor;
-    transform: rotate(45deg) translate(-2px, -2px);
+    width: 6px; height: 6px;
+    border-right: 1px solid currentColor;
+    border-bottom: 1px solid currentColor;
+    transform: rotate(45deg) translate(-1px, -1px);
     transition: transform .2s;
   }
   .figures-more[open] summary::after {
-    transform: rotate(-135deg) translate(-2px, -2px);
+    transform: rotate(-135deg) translate(-1px, -1px);
   }
-  .figures-more summary:hover { color: var(--ink); background: var(--rule); }
-  .figures-more p { margin: 12px 0 0; }
+  .figures-more summary:hover { opacity: 1; }
+  .figures-more p { margin: 10px 0 0; }
 
   /* ───────── RESPONSIVE ───────── */
   @media (max-width: 760px) {
@@ -722,7 +722,7 @@
       aux législatives de 2012).
     </p>
     <details class="figures-more">
-      <summary>Voir d'autres figures locales</summary>
+      <summary>et d'autres figures locales</summary>
       <p>
         Ce sont aussi des figures locales, engagées dans les batailles électorales comme
         <strong>Jean Harel</strong> (conseiller général RPR de La Rochelle-2 puis
