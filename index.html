@@ -476,6 +476,28 @@
   .colo-link:hover { color: var(--ink); text-decoration: underline; }
   .colo-sep { margin: 0 8px; opacity: 0.5; }
 
+  /* ───────── FIGURES POLITIQUES ─────────
+     Section informative / SEO en bas de page, sous les portes mais avant le
+     colophon. Sobre, texte continu, contexte sémantique pour l'indexation. */
+  .figures-mention {
+    margin-top: 40px;
+    padding: 22px 0 4px;
+    border-top: 1px solid var(--rule);
+    color: var(--ink-soft);
+    font-size: 12.5px;
+    line-height: 1.7;
+    max-width: 880px;
+  }
+  .figures-mention h2 {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin: 0 0 10px;
+  }
+  .figures-mention p { margin: 0; }
+
   /* ───────── RESPONSIVE ───────── */
   @media (max-width: 760px) {
     .page { padding: 28px 16px 48px; }
@@ -507,6 +529,7 @@
 
     /* Colophon : autoriser le wrap, réduire le padding */
     .colophon { flex-wrap: wrap; gap: 10px; padding-top: 24px; margin-top: 16px; font-size: 11px; }
+    .figures-mention { margin-top: 28px; padding-top: 18px; font-size: 12px; line-height: 1.6; }
   }
 
   /* Mobile : on masque les deux boutons flottants (recherche + thème).
@@ -657,6 +680,37 @@
       </div>
     </a>
   </nav>
+
+  <section class="figures-mention" aria-labelledby="figures-h2">
+    <h2 id="figures-h2">Figures politiques recensées</h2>
+    <p>
+      Le projet documente les parcours électoraux locaux des personnalités qui ont marqué
+      ou marquent encore La Rochelle comme Michel Crépeau (maire radical de gauche de 1971
+      à 1999), Maxime Bono (maire PS de 1999 à 2014), Jean-François Fountaine (maire divers
+      gauche de 2014 à 2025), Olivier Falorni (député divers gauche puis centriste de 2012
+      à 2026 et actuel maire centriste de La Rochelle), Jean-Louis Léonard (député RPR de
+      1993 à 1997, candidat à la mairie en 1995) ou Ségolène Royal (présidente PS de région
+      de 2004 à 2014, candidate aux législatives de 2012). Ce sont aussi des figures
+      locales, engagées dans les batailles électorales comme Jean Harel (conseiller général
+      RPR de La Rochelle-2 puis La Rochelle-4), régulièrement candidat aux municipales et
+      législatives ; François Blaizot (président centriste du département de 1985 à 1994)
+      et plusieurs fois candidat aux législatives ; Dominique Morvant (conseillère générale
+      de La Rochelle-4 de 2004 à 2011), plusieurs fois candidate aux municipales et
+      législatives tout comme Bruno Léal. Des leaders de la gauche comme Jack Proust
+      (conseiller général radical de gauche de La Rochelle-5 de 1992 à 2011) ; Jean-Marc
+      Soubeste (conseiller départemental EELV de La Rochelle-3 depuis 2021) ; André Dubosc,
+      proche de Michel Crépeau et un des premiers leaders écologistes locaux ; Jacques
+      Bessière et Léon Belly, longtemps candidats communistes aux élections locales ;
+      Marylise Fleuret-Pagnoux (conseillère générale radicale de gauche de La Rochelle-3
+      de 1998 à 2015 puis conseillère départementale de La Rochelle-1 depuis 2015) ;
+      Jean-Pierre Mandroux (conseiller général PS de La Rochelle-7 de 2001 à 2015) ;
+      Denis Leroy (conseiller général PS de La Rochelle-6 de 2004 à 2015) ; Patricia Friou
+      (suppléante d'Olivier Falorni et conseillère générale PS de La Rochelle-4 de 2011 à
+      2015, puis conseillère départementale divers gauche de La Rochelle-2 de 2015 à 2021).
+      Plus de 390 candidats et candidates qui se sont présentés à La Rochelle depuis 1988
+      sont répertoriés.
+    </p>
+  </section>
 
   <footer class="colophon">
     <span>
