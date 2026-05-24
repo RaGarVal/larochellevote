@@ -339,6 +339,40 @@ section.s a:hover { color: var(--accent-warm); }
   margin-right: 4px;
 }
 
+/* §6 Figures politiques : liste escamotable */
+.figures-fold {
+  margin-top: 8px;
+}
+.figures-fold summary {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-chrome);
+  border-radius: 6px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-chrome);
+  user-select: none;
+  transition: background .15s, border-color .15s;
+}
+.figures-fold summary:hover {
+  background: var(--bg-chrome-hover);
+  border-color: var(--accent-warm);
+}
+.figures-fold summary::-webkit-details-marker { display: none; }
+.figures-fold summary::before {
+  content: '▸';
+  display: inline-block;
+  font-size: 0.8rem;
+  color: var(--accent-warm);
+  transition: transform .15s;
+}
+.figures-fold[open] summary::before { transform: rotate(90deg); }
+.figures-fold[open] summary { margin-bottom: 14px; }
+
 /* Zone "à compléter" pour l'auteur */
 .todo-note {
   background: var(--bg-todo);
@@ -449,9 +483,9 @@ footer.doc-foot a:hover { color: var(--text-chrome); }
         <li><a href="#sources"><span class="num">1.</span> Sources des données</a></li>
         <li><a href="#lecture"><span class="num">2.</span> Lecture des données</a></li>
         <li><a href="#limites"><span class="num">3.</span> Limites connues</a></li>
-        <li><a href="#glossaire"><span class="num">4.</span> Glossaire</a></li>
-        <li><a href="#confidentialite"><span class="num">5.</span> Confidentialité &amp; technique</a></li>
-        <li><a href="#figures"><span class="num">6.</span> Figures politiques</a></li>
+        <li><a href="#figures"><span class="num">4.</span> Figures politiques</a></li>
+        <li><a href="#glossaire"><span class="num">5.</span> Glossaire</a></li>
+        <li><a href="#confidentialite"><span class="num">6.</span> Confidentialité &amp; technique</a></li>
       </ol>
     </nav>
 
@@ -723,9 +757,85 @@ footer.doc-foot a:hover { color: var(--text-chrome); }
       </blockquote>
     </section>
 
-    <!-- ─────────────── §4 GLOSSAIRE ─────────────── -->
+    <!-- ─────────────── §4 FIGURES POLITIQUES ─────────────── -->
+    <section class="s" id="figures">
+      <h2><span class="num">4.</span> Figures politiques</h2>
+      <p>
+        Le projet est aussi un impressionnant recueil de centaines de personnalités candidates
+        aux élections au fil des décennies, nationalement bien sûr, mais aussi et surtout
+        localement. Certaines reviennent plus que d'autres dans les résultats, et d'autres ont
+        encore plus marqué la vie politique locale&nbsp;: les maires, les député·es, les
+        conseiller·ères généraux·ales ou conseiller·ères départementaux·ales… À terme, chaque
+        figure aura sa propre fiche détaillée (chantier en cours). Cette sélection est
+        volontairement éditoriale et amenée à évoluer&nbsp;: toute suggestion d'ajout ou de
+        correction est bienvenue via la page <a href="apropos.html">À propos</a>.
+      </p>
+      <p>
+        Suit un extrait de la liste de ces personnalités. Pour chaque personne, l'étiquette
+        correspond au parti de sa candidature la plus récente connue, et l'intervalle indique
+        l'amplitude de ses candidatures documentées sur le site, avec le nombre d'apparitions
+        pour le moment recensées. Ne sont prises en compte que les candidatures
+        titulaires ou têtes de liste — les colistier·ères et suppléant·es ne sont pas comptés.
+      </p>
+
+      <details class="figures-fold">
+        <summary>Voir la liste par bloc politique</summary>
+
+      <h3>4.1 Gauche <span class="bloc-chip" style="background:#CC0100">G</span></h3>
+      <ul>
+        <li><strong>Bessière, Jacques</strong> (PCF) — 1988-2004, 4 candidatures</li>
+        <li><strong>Bono, Maxime</strong> (PS) — 2001-2008, 4 candidatures</li>
+        <li><strong>Bucherie, Alain</strong> (LV) — 2001-2004, 3 candidatures</li>
+        <li><strong>Colin, Antoine</strong> (LO) — 2002-2026, 11 candidatures</li>
+        <li><strong>Crépeau, Michel</strong> (PRS) — 1988-1997, 4 candidatures</li>
+        <li><strong>Dillenbourg, Jack</strong> (PS) — 2001-2008, 3 candidatures</li>
+        <li><strong>Dumerc, Jacques</strong> (PT) — 1995-2007, 6 candidatures</li>
+        <li><strong>Fleuret-Pagnoux, Marylise</strong> (PRG) — 2004-2021, 4 candidatures</li>
+        <li><strong>Friou, Patricia</strong> (DVG) — 2011-2021, 3 candidatures</li>
+        <li><strong>Gautronneau, Gilles</strong> (PRG) — 2002-2015, 4 candidatures</li>
+        <li><strong>Jlalji, Brahim</strong> (PCF) — 2004-2017, 5 candidatures</li>
+        <li><strong>Leroy, Denis</strong> (PS) — 2004-2015, 3 candidatures</li>
+        <li><strong>Mandroux, Jean-Pierre</strong> (PS) — 2001-2015, 3 candidatures</li>
+        <li><strong>Proust, Jack</strong> (PRG) — 2004, 1 candidature</li>
+        <li><strong>Queneudec-Mémain, Esther</strong> (PCF) — 1997-2012, 7 candidatures</li>
+        <li><strong>Royal, Ségolène</strong> (PS) — 2004-2012, 4 candidatures</li>
+        <li><strong>Soubeste, Jean-Marc</strong> (NFP) — 2011-2024, 7 candidatures</li>
+      </ul>
+
+      <h3>4.2 Centre <span class="bloc-chip" style="background:#F1C232; color:#1A1A1A">C</span></h3>
+      <ul>
+        <li><strong>Delorme-Blaizot, Élisabeth</strong> (MoDem) — 2007-2015, 2 candidatures</li>
+        <li><strong>Falorni, Olivier</strong> (DVC) — 2012-2026, 6 candidatures</li>
+      </ul>
+
+      <h3>4.3 Droite <span class="bloc-chip" style="background:#0F55CC">D</span></h3>
+      <ul>
+        <li><strong>Blaizot, François</strong> (UPF) — 1992, 1 candidature</li>
+        <li><strong>Chastenet, Philippe</strong> (UDF) — 1995-2002, 3 candidatures</li>
+        <li><strong>Douard, Jean-François</strong> (UMP) — 1993-2008, 4 candidatures</li>
+        <li><strong>Harel, Jean</strong> (RPR) — 1988, 1 candidature</li>
+        <li><strong>Léal, Bruno</strong> (LR) — 2011-2021, 5 candidatures</li>
+        <li><strong>Morvant, Dominique</strong> (UMP) — 2004-2014, 5 candidatures</li>
+      </ul>
+
+      <h3>4.4 Extrême-droite <span class="bloc-chip" style="background:#20124D">EXD</span></h3>
+      <ul>
+        <li><strong>Catalan, Maurice</strong> (FN) — 1993-2004, 3 candidatures</li>
+        <li><strong>Galvaire, Jean-François</strong> (FN) — 1992-1998, 4 candidatures</li>
+        <li><strong>de Lacoste-Lareymondie, Jean-Marc</strong> (FN) — 2007-2017, 6 candidatures</li>
+      </ul>
+
+      <h3>4.5 Divers</h3>
+      <ul>
+        <li><strong>Huljack, Guy</strong> (MEI) — 1993-2002, 3 candidatures</li>
+      </ul>
+
+      </details>
+    </section>
+
+    <!-- ─────────────── §5 GLOSSAIRE ─────────────── -->
     <section class="s" id="glossaire">
-      <h2><span class="num">4.</span> Glossaire</h2>
+      <h2><span class="num">5.</span> Glossaire</h2>
       <ul>
         <li><strong>Bureau de vote</strong> — unité géographique élémentaire d'enregistrement et de
           comptage des suffrages. 30 bureaux à La&nbsp;Rochelle en 1965, 40 en 1988, 61 en 2026.</li>
@@ -758,9 +868,9 @@ footer.doc-foot a:hover { color: var(--text-chrome); }
       </ul>
     </section>
 
-    <!-- ─────────────── §5 CONFIDENTIALITÉ & TECHNIQUE ─────────────── -->
+    <!-- ─────────────── §6 CONFIDENTIALITÉ & TECHNIQUE ─────────────── -->
     <section class="s" id="confidentialite">
-      <h2><span class="num">5.</span> Confidentialité &amp; technique</h2>
+      <h2><span class="num">6.</span> Confidentialité &amp; technique</h2>
       <p>
         Le site <strong>ne collecte aucune donnée personnelle identifiable</strong>&nbsp;: pas de
         cookie de tracking, pas de compte utilisateur, pas de profilage. Tout fonctionne
@@ -783,66 +893,6 @@ footer.doc-foot a:hover { color: var(--text-chrome); }
         Le site est hébergé en statique (HTML/CSS/JS) sur GitHub Pages, derrière un domaine custom
         <code>larochellevote.fr</code>. Pas de serveur applicatif, pas de base de données distante.
       </p>
-    </section>
-
-    <!-- ─────────────── §6 FIGURES POLITIQUES ─────────────── -->
-    <section class="s" id="figures">
-      <h2><span class="num">6.</span> Figures politiques</h2>
-      <p>
-        Voici les principales figures politiques ayant marqué les scrutins rochelais depuis 1988,
-        regroupées par bloc politique. Pour chaque personne, l'étiquette correspond au parti de sa
-        candidature la plus récente connue, et l'intervalle indique l'amplitude de ses candidatures
-        documentées sur le site.
-      </p>
-
-      <h3>6.1 Gauche <span class="bloc-chip" style="background:#CC0100">G</span></h3>
-      <ul>
-        <li><strong>Bessière, Jacques</strong> (PCF) — 1988-2004</li>
-        <li><strong>Bono, Maxime</strong> (PS) — 2001-2008</li>
-        <li><strong>Bucherie, Alain</strong> (LV) — 2001-2004</li>
-        <li><strong>Colin, Antoine</strong> (LO) — 2002-2026</li>
-        <li><strong>Crépeau, Michel</strong> (PRS) — 1988-1997</li>
-        <li><strong>Dillenbourg, Jack</strong> (PS) — 2001-2008</li>
-        <li><strong>Dumerc, Jacques</strong> (PT) — 1995-2007</li>
-        <li><strong>Fleuret-Pagnoux, Marylise</strong> (PRG) — 2004-2021</li>
-        <li><strong>Friou, Patricia</strong> (DVG) — 2011-2021</li>
-        <li><strong>Gautronneau, Gilles</strong> (PRG) — 2002-2015</li>
-        <li><strong>Jlalji, Brahim</strong> (PCF) — 2004-2017</li>
-        <li><strong>Leroy, Denis</strong> (PS) — 2004-2015</li>
-        <li><strong>Mandroux, Jean-Pierre</strong> (PS) — 2001-2015</li>
-        <li><strong>Proust, Jack</strong> (PRG) — 2004</li>
-        <li><strong>Queneudec-Mémain, Esther</strong> (PCF) — 1997-2012</li>
-        <li><strong>Royal, Ségolène</strong> (PS) — 2004-2012</li>
-        <li><strong>Soubeste, Jean-Marc</strong> (NFP) — 2011-2024</li>
-      </ul>
-
-      <h3>6.2 Centre <span class="bloc-chip" style="background:#F1C232; color:#1A1A1A">C</span></h3>
-      <ul>
-        <li><strong>Delorme-Blaizot, Élisabeth</strong> (MoDem) — 2007-2015</li>
-        <li><strong>Falorni, Olivier</strong> (DVC) — 2012-2026</li>
-      </ul>
-
-      <h3>6.3 Droite <span class="bloc-chip" style="background:#0F55CC">D</span></h3>
-      <ul>
-        <li><strong>Blaizot, François</strong> (UPF) — 1992</li>
-        <li><strong>Chastenet, Philippe</strong> (UDF) — 1995-2002</li>
-        <li><strong>Douard, Jean-François</strong> (UMP) — 1993-2008</li>
-        <li><strong>Harel, Jean</strong> (RPR) — 1988</li>
-        <li><strong>Léal, Bruno</strong> (LR) — 2011-2021</li>
-        <li><strong>Morvant, Dominique</strong> (UMP) — 2004-2014</li>
-      </ul>
-
-      <h3>6.4 Extrême-droite <span class="bloc-chip" style="background:#20124D">EXD</span></h3>
-      <ul>
-        <li><strong>Catalan, Maurice</strong> (FN) — 1993-2004</li>
-        <li><strong>Galvaire, Jean-François</strong> (FN) — 1992-1998</li>
-        <li><strong>de Lacoste-Lareymondie, Jean-Marc</strong> (FN) — 2007-2017</li>
-      </ul>
-
-      <h3>6.5 Divers</h3>
-      <ul>
-        <li><strong>Huljack, Guy</strong> (MEI) — 1993-2002</li>
-      </ul>
     </section>
 
     <footer class="doc-foot">

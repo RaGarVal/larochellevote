@@ -4,7 +4,7 @@
 
 // Date de dernière mise à jour des données (format ISO YYYY-MM-DD).
 // À actualiser à chaque rafraîchissement notable du jeu de données.
-const LAST_UPDATE = '2026-04-30';
+const LAST_UPDATE = '2026-05-24';
 
 // Formatage convivial : '2026-04-30' → 'avril 2026'
 function formatLastUpdate(iso) {
