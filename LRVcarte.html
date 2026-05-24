@@ -2430,7 +2430,10 @@ function getElectionWikipediaURL(label) {
     'Municipales 2014': 'https://fr.wikipedia.org/wiki/%C3%89lections_municipales_de_2014_%C3%A0_La_Rochelle',
     'Municipales 2020': 'https://fr.wikipedia.org/wiki/%C3%89lections_municipales_de_2020_%C3%A0_La_Rochelle',
     'Municipales 2026': 'https://fr.wikipedia.org/wiki/%C3%89lections_municipales_de_2026_%C3%A0_La_Rochelle',
-    'Cantonale partielle 2002': null  // pas de page WP dédiée pour les partielles
+    'Cantonale partielle 2002': null,  // pas de page WP dédiée pour les partielles
+    // Cantonales 2001 : pas de page Charente-Maritime → fallback nationale.
+    // (2004, 2008, 2011 ont leur page Charente-Maritime confirmée.)
+    'Cantonales 2001': 'https://fr.wikipedia.org/wiki/%C3%89lections_cantonales_fran%C3%A7aises_de_2001'
   };
   if (label in OVERRIDES) return OVERRIDES[label];
   const ym = label.match(/(\d{4})/);
