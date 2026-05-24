@@ -77,9 +77,14 @@ function loadData() {
   ];
   const sharedSuffix = ';Object.assign(globalThis,{' + sharedNames.join(',') + '});';
 
+  // geodata.js — contours géographiques des bureaux (GEOJSON pour 2026 + MAPS_DATA par ère)
+  const geoSrc = fs.readFileSync(path.join(ROOT, 'geodata.js'), 'utf8');
+  const geoSuffix = ';Object.assign(globalThis,{GEOJSON, MAPS_DATA});';
+
   vm.createContext(sandbox);
   vm.runInContext(donneesSrc + donneesSuffix, sandbox, { filename: 'donnees.js' });
   vm.runInContext(sharedSrc + sharedSuffix,  sandbox, { filename: 'shared.js' });
+  vm.runInContext(geoSrc + geoSuffix,        sandbox, { filename: 'geodata.js' });
 
   // ERAS/CURRENT_ERA/ERAS_CANTON/CURRENT_ERA_CANTON sont posés sur window par shared.js
   sandbox.ERAS = windowStub.ERAS;
@@ -367,6 +372,183 @@ const DATES = {
   'Régionales 2021':     { T1: '20 juin 2021', T2: '27 juin 2021' },
 };
 
+// ─── Carte SVG inline ───────────────────────────────────────────────────────
+
+/** Récupère la couleur d'un candidat :
+ *  1. cd.c si défini
+ *  2. Sinon, fallback sur un autre candidat du même parti `pa` qui a une couleur
+ *  3. Sinon gris #bbbbbb
+ *  Cache mémoïsé par cid + par parti. */
+const _colorCache = new Map();
+const _partiColorCache = new Map();
+function colorOfCand(cid, ctx) {
+  if (_colorCache.has(cid)) return _colorCache.get(cid);
+  const cd = ctx.CAND_DATA[cid] || {};
+  let col = null;
+  if (cd.c) col = cd.c;
+  // Cas binôme : règle paritaire — couleur de la candidate (sauf F=DV* et H=vrai)
+  else if (cd.binome && cd.binome_partis) {
+    // Trouver la femme (s='F')
+    let femaleIdx = -1;
+    cd.binome.forEach((pid, i) => {
+      const p = ctx.PERSONS[pid];
+      if (p && p.s === 'F' && femaleIdx === -1) femaleIdx = i;
+    });
+    // Exception : si F est DV* et H est un vrai parti → on prend H
+    if (femaleIdx >= 0) {
+      const paF = cd.binome_partis[femaleIdx];
+      const paH = cd.binome_partis[1 - femaleIdx];
+      if (/^DV/i.test(paF) && paH && !/^DV/i.test(paH)) {
+        col = partiColor(paH, ctx);
+      } else {
+        col = partiColor(paF, ctx);
+      }
+    } else {
+      // Pas de F connue, prendre le 1er vrai parti
+      col = partiColor(cd.binome_partis.find(p => p && !/^DV/i.test(p)) || cd.binome_partis[0], ctx);
+    }
+  }
+  else if (cd.pa) col = partiColor(cd.pa, ctx);
+  const final = col || '#bbbbbb';
+  _colorCache.set(cid, final);
+  return final;
+}
+
+/** Cherche la couleur représentative d'un parti via les candidats existants */
+function partiColor(pa, ctx) {
+  if (!pa) return null;
+  if (_partiColorCache.has(pa)) return _partiColorCache.get(pa);
+  // Parcourir CAND_DATA, prendre le premier candidat avec ce pa et une couleur
+  let found = null;
+  for (const [cid, cd] of Object.entries(ctx.CAND_DATA)) {
+    if (cd.pa === pa && cd.c) { found = cd.c; break; }
+  }
+  _partiColorCache.set(pa, found);
+  return found;
+}
+
+/** Pour un sheet donné, retourne { numero → { color, winnerName, winnerPct } } */
+function bureauColorsForSheet(sheet, ctx) {
+  const out = {};
+  Object.entries(sheet || {}).forEach(([ns, bd]) => {
+    if (!bd) return;
+    const w = bd.w;
+    if (!w) {
+      out[ns] = { color: '#eee', winnerName: '', winnerPct: 0 };
+      return;
+    }
+    const cd = ctx.CAND_DATA[w] || {};
+    const person = cd.person ? ctx.PERSONS[cd.person] : null;
+    const winnerName = cd.binome
+      ? cd.binome.map(pid => {
+          const p = ctx.PERSONS[pid] || {};
+          return (p.p ? p.p + ' ' : '') + (p.n || '');
+        }).join(' / ')
+      : ((person && person.p) || cd.p || '') + ' ' + ((person && person.n) || cd.n || w);
+    out[ns] = {
+      color: colorOfCand(w, ctx),
+      winnerName: winnerName.trim(),
+      winnerPct: bd.c && bd.c[w] != null ? bd.c[w] : 0,
+    };
+  });
+  return out;
+}
+
+/** Récupère le GeoJSON pour une ère donnée (ère 2026 = GEOJSON, autres = MAPS_DATA[era]) */
+function getGeoJSONForEra(era, ctx) {
+  if (era === '2026' || era === ctx.CURRENT_ERA) return ctx.GEOJSON;
+  return (ctx.MAPS_DATA && ctx.MAPS_DATA[era]) || null;
+}
+
+/** Convertit un GeoJSON en SVG inline.
+ *  - bureauColors : { numero → { color, winnerName, winnerPct } }
+ *  - bureauInfo : pour les title hover (denomination, quartier)
+ *  - filterCantonId : si défini, ne garde que les bureaux dont c == filterCantonId
+ *  - filterBureaux : si défini (Set), ne garde que ces numéros
+ *  - width / height : dimensions du viewport SVG
+ */
+function geoJSONtoSVG(geojson, bureauColors, bureauInfo, opts) {
+  const { width = 600, height = 480, filterCantonId, filterBureaux } = opts || {};
+  if (!geojson || !geojson.features) return '';
+
+  // Filtrer les features pour ne garder que les bureaux pertinents
+  let features = geojson.features.filter(f => {
+    const num = f.properties && f.properties.numero;
+    if (!num) return false;
+    if (filterBureaux && !filterBureaux.has(num)) return false;
+    if (filterCantonId) {
+      const info = bureauInfo[num];
+      if (!info || String(info.c) !== String(filterCantonId)) return false;
+    }
+    // Bureau non-géographique 0057 (Français de l'étranger)
+    if (num === '0057') return false;
+    return true;
+  });
+
+  if (!features.length) return '';
+
+  // Bounding box
+  let minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity;
+  function walkCoords(c) {
+    if (typeof c[0] === 'number') {
+      const [lon, lat] = c;
+      if (lon < minLon) minLon = lon; if (lon > maxLon) maxLon = lon;
+      if (lat < minLat) minLat = lat; if (lat > maxLat) maxLat = lat;
+    } else {
+      c.forEach(walkCoords);
+    }
+  }
+  features.forEach(f => walkCoords(f.geometry.coordinates));
+
+  // Projection plate-carrée avec ajustement aspect (lat à La Rochelle ≈ 46°)
+  const latRad = (minLat + maxLat) / 2 * Math.PI / 180;
+  const lonScale = Math.cos(latRad);
+  const dLon = (maxLon - minLon) * lonScale;
+  const dLat = (maxLat - minLat);
+  const PAD = 8;
+  const usableW = width - 2 * PAD;
+  const usableH = height - 2 * PAD;
+  const scale = Math.min(usableW / dLon, usableH / dLat);
+  const projW = dLon * scale;
+  const projH = dLat * scale;
+  const offX = (width - projW) / 2;
+  const offY = (height - projH) / 2;
+  const proj = (lon, lat) => {
+    const x = offX + (lon - minLon) * lonScale * scale;
+    const y = offY + (maxLat - lat) * scale; // y inversé (SVG)
+    return [x, y];
+  };
+
+  function ringToPath(ring) {
+    return ring.map((c, i) => {
+      const [x, y] = proj(c[0], c[1]);
+      return (i === 0 ? 'M' : 'L') + x.toFixed(2) + ',' + y.toFixed(2);
+    }).join(' ') + ' Z';
+  }
+  function polygonToPath(coords) {
+    // coords = array of rings (outer + holes)
+    return coords.map(ringToPath).join(' ');
+  }
+  function geomToPath(geom) {
+    if (geom.type === 'Polygon') return polygonToPath(geom.coordinates);
+    if (geom.type === 'MultiPolygon') return geom.coordinates.map(polygonToPath).join(' ');
+    return '';
+  }
+
+  // Générer les paths
+  const paths = features.map(f => {
+    const num = f.properties.numero;
+    const info = bureauInfo[num] || {};
+    const colorData = bureauColors[num] || { color: '#eee', winnerName: '—', winnerPct: 0 };
+    const d = geomToPath(f.geometry);
+    const title = `Bureau n°${parseInt(num)} · ${info.den || info.nom || ''}` +
+                  (colorData.winnerName ? ` — ${colorData.winnerName} (${colorData.winnerPct.toFixed(1).replace('.', ',')} %)` : '');
+    return `<path d="${d}" fill="${colorData.color}" stroke="#fff" stroke-width="0.6"><title>${esc(title)}</title></path>`;
+  }).join('');
+
+  return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" class="s-mini-map" role="img" aria-label="Carte des bureaux de vote">${paths}</svg>`;
+}
+
 // ─── Construction des données d'une page ────────────────────────────────────
 
 function buildPageData(pageSpec, ctx) {
@@ -473,6 +655,14 @@ function buildPageData(pageSpec, ctx) {
     // Blocs ville
     const blocs = computeBlocsFromVoix(agg.voix_par_cand, agg.exprimes, ctx.CAND_DATA, ctx.BLOC_LEGACY);
 
+    // Carte SVG inline pour ce tour
+    const geo = getGeoJSONForEra(era, ctx);
+    const bureauColors = bureauColorsForSheet(sheets[t], ctx);
+    const mapSVG = geo ? geoJSONtoSVG(geo, bureauColors, filteredBureauInfo, {
+      width: 600, height: 480,
+      filterCantonId: canton || null,
+    }) : '';
+
     byTour[t] = {
       ...agg,
       abst_pct,
@@ -483,6 +673,7 @@ function buildPageData(pageSpec, ctx) {
       quartiers,
       cantons,
       blocs,
+      mapSVG,
     };
   });
 
@@ -673,6 +864,10 @@ section.s-block p { font-size: 1rem; line-height: 1.6; color: var(--text-body); 
 .s-table .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
 .s-table .winner { font-weight: 700; }
 .s-warn { background: #FFF7E6; border: 1px solid #E6C77E; color: #8A6A2C; padding: 12px 16px; border-radius: 6px; font-size: 0.9rem; line-height: 1.5; font-style: italic; }
+.s-map-wrap { background: var(--bg-card); border: 1px solid var(--border-chrome); border-radius: 8px; padding: 14px; }
+.s-mini-map { width: 100%; height: auto; max-height: 480px; display: block; }
+.s-mini-map path { transition: opacity .15s; }
+.s-mini-map path:hover { opacity: 0.75; }
 .bb { display: flex; width: 100%; border-radius: 4px; overflow: hidden; border: 1px solid var(--border-chrome); }
 .bb-seg { transition: opacity .15s; }
 .bb-seg:hover { opacity: 0.85; }
@@ -752,6 +947,10 @@ footer.s-foot a:hover { color: var(--text-chrome); }
     <section class="s-block">
       ${showTourTitle ? `<h2>${esc(tour)}</h2>` : ''}
       ${winnerLine}
+
+      ${td.mapSVG ? `
+      <div class="s-map-wrap">${td.mapSVG}</div>
+      ` : ''}
 
       <h3>Participation</h3>
       <div class="s-particip">

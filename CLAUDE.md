@@ -19,6 +19,9 @@ Notes pour les sessions Claude Code. Convention : commentaires et UX en françai
 | `daily-capture.js` | Génère le tweet quotidien (Puppeteer + capture image) |
 | `post-bluesky.js` | Publie sur Bluesky |
 | `candidats_blocs.xlsx` | Source Excel des mappings (fournie par le user) |
+| `scrutins/*.html` | **Pages scrutin statiques** (générées) — une par scrutin/canton, vitrines SEO Google + partage social |
+| `tools/build-scrutins.js` | Générateur des pages `/scrutins/` + `sitemap.xml` (ré-exécuter après modif de `donnees.js`) |
+| `tools/check-scrutins.js` | Sanity check des pages `/scrutins/` (winners cohérents, pas d'`undefined`) |
 
 ## 🔑 Conventions de données
 
@@ -292,7 +295,40 @@ LOCAL=1 FORCE_NIVEAU=bureau FORCE_ELECTION="Législatives 2012" FORCE_TOUR=T1 FO
 
 # Régénérer les icônes PWA
 node tools/generate-pwa-icons.js
+
+# Régénérer toutes les pages scrutin statiques (62 fichiers + sitemap.xml)
+node tools/build-scrutins.js
+
+# Régénérer une seule page (debug)
+node tools/build-scrutins.js --only presidentielle-2022
+
+# Sanity check des pages scrutin (à lancer après build)
+node tools/check-scrutins.js
 ```
+
+## 📄 Pages scrutin statiques (`/scrutins/`)
+
+Ces pages sont des **vitrines SEO**, complètement isolées du parcours utilisateur normal du site :
+- Pas de lien depuis LRVcarte / LRVanalyse / index vers `/scrutins/…`
+- Pas de lien depuis `/scrutins/…` vers d'autres pages `/scrutins/…` sauf le triptych de voisins (scrutins du même type, précédent et suivant)
+- Cmd+K et la navigation principale continuent de pointer vers `LRVcarte.html#election=…`
+- Les pages `/scrutins/` ramènent vers la carte interactive et l'analyse via leur CTA principal
+
+**Quand les régénérer** : après toute modification de `donnees.js` qui change un agrégat ville/quartier/canton (ajout d'élection, correction de saisie, refonte des candidatures). Le script lit aussi `geodata.js` et `shared.js`. Pas besoin de régénérer si on ne touche que les pages éditoriales (méthodo, à propos, etc.).
+
+**Couverture** :
+- 1 page par élection classique (Présidentielle, Législatives, Municipales, Européennes, Régionales, Référendum)
+- 1 page par canton pour les cantonales / départementales (3 pages pour Départementales 2021, 4 pour Cantonales 2008, etc.)
+- T1 + T2 sur la même page avec sections distinctes
+- Total actuel : 62 pages
+
+**Avertissements canton hors LR** : les cantons 5, 8, 9 de l'ère 1985 comprenaient des communes hors La Rochelle. Reproduit comme bandeau jaune sur les pages cantons concernées.
+
+**Limites connues** :
+- Pas d'image OG dédiée par scrutin (utilise `share.png` générique pour l'instant). À enrichir via `daily-capture.js` (FORCE_NIVEAU=global) si on veut des vignettes spécifiques pour le partage social.
+- La table `DATES` est dupliquée entre `daily-capture.js` et `tools/build-scrutins.js` — à factoriser le jour où on touche aux deux.
+- Le triptych voisins pour les cantonales : si la série change (A ↔ B) ou si on passe aux départementales (cid 1-3) depuis une cantonale (cid 1-9), le lien voisin est omis pour éviter un mismatch (au lieu de pointer vers un canton incompatible).
+
 
 ---
 

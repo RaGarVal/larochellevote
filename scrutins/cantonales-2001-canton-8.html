@@ -82,6 +82,10 @@ section.s-block p { font-size: 1rem; line-height: 1.6; color: var(--text-body); 
 .s-table .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
 .s-table .winner { font-weight: 700; }
 .s-warn { background: #FFF7E6; border: 1px solid #E6C77E; color: #8A6A2C; padding: 12px 16px; border-radius: 6px; font-size: 0.9rem; line-height: 1.5; font-style: italic; }
+.s-map-wrap { background: var(--bg-card); border: 1px solid var(--border-chrome); border-radius: 8px; padding: 14px; }
+.s-mini-map { width: 100%; height: auto; max-height: 480px; display: block; }
+.s-mini-map path { transition: opacity .15s; }
+.s-mini-map path:hover { opacity: 0.75; }
 .bb { display: flex; width: 100%; border-radius: 4px; overflow: hidden; border: 1px solid var(--border-chrome); }
 .bb-seg { transition: opacity .15s; }
 .bb-seg:hover { opacity: 0.85; }
@@ -152,6 +156,10 @@ footer.s-foot a:hover { color: var(--text-chrome); }
     <section class="s-block">
       
       <p>Le <strong>11 mars 2001</strong>, <strong>Michel Rogeon</strong> (PRG) arrive en tête avec <strong>52,0 %</strong> (385 voix).</p>
+
+      
+      <div class="s-map-wrap"><svg viewBox="0 0 600 480" xmlns="http://www.w3.org/2000/svg" class="s-mini-map" role="img" aria-label="Carte des bureaux de vote"><path d="M237.81,471.69 L247.08,472.00 L259.80,470.44 L300.11,465.46 L319.29,459.86 L339.34,453.95 L360.25,448.04 L382.89,441.19 L405.95,434.66 L429.45,427.81 L450.58,421.59 L443.25,405.71 L435.06,388.29 L426.86,365.57 L419.10,337.87 L414.15,327.60 L407.68,313.91 L382.03,260.38 L371.03,240.78 L365.21,232.69 L357.88,222.11 L351.41,213.08 L347.97,208.10 L343.01,202.19 L332.01,189.43 L320.59,176.36 L308.08,161.73 L292.35,143.06 L278.98,127.50 L266.69,113.50 L261.09,105.09 L256.35,97.94 L252.68,91.71 L245.78,79.26 L239.53,66.19 L233.28,49.70 L224.44,17.02 L223.15,8.00 L190.38,20.76 L195.77,33.83 L199.22,42.54 L204.18,55.61 L209.14,66.51 L215.17,82.38 L224.01,102.60 L229.40,115.36 L234.14,129.06 L238.02,137.77 L240.61,144.31 L244.92,151.77 L245.78,154.58 L247.29,163.29 L247.94,170.76 L255.27,172.00 L264.97,174.80 L273.38,177.60 L278.33,179.16 L283.94,181.96 L291.27,186.32 L296.23,190.05 L265.40,324.18 L276.61,326.98 L261.95,392.64 L237.81,471.69 Z" fill="#E06667" stroke="#fff" stroke-width="0.6"><title>Bureau n°49 · Fabre-d&#39;Églantine — Michel Rogeon (49,8 %)</title></path><path d="M215.60,168.27 L205.04,209.04 L192.75,260.69 L185.85,290.88 L179.39,318.58 L167.53,367.75 L161.93,390.47 L154.60,417.54 L149.42,437.15 L214.09,469.20 L227.46,471.38 L237.81,471.69 L261.95,392.64 L276.61,326.98 L265.40,324.18 L296.23,190.05 L291.27,186.32 L283.94,181.96 L278.33,179.16 L273.38,177.60 L264.97,174.80 L255.27,172.00 L247.94,170.76 L237.59,169.51 L227.89,168.58 L219.70,168.27 L215.60,168.27 Z" fill="#E06667" stroke="#fff" stroke-width="0.6"><title>Bureau n°48 · Condorcet — Michel Rogeon (53,5 %)</title></path></svg></div>
+      
 
       <h3>Participation</h3>
       <div class="s-particip">
