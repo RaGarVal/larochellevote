@@ -2422,9 +2422,11 @@ function getElectionWikipediaURL(label) {
   const OVERRIDES = {
     'Référendum 2000': 'https://fr.wikipedia.org/wiki/R%C3%A9f%C3%A9rendum_fran%C3%A7ais_de_2000_sur_le_quinquennat',
     'Référendum 2005': 'https://fr.wikipedia.org/wiki/R%C3%A9f%C3%A9rendum_fran%C3%A7ais_sur_le_trait%C3%A9_%C3%A9tablissant_une_constitution_pour_l%27Europe',
-    'Municipales 1995': 'https://fr.wikipedia.org/wiki/%C3%89lections_municipales_de_1995_%C3%A0_La_Rochelle',
+    // 1995 et 2008 : pas de page Wikipédia dédiée à La Rochelle ni à la
+    // Charente-Maritime → fallback sur la page nationale.
+    'Municipales 1995': 'https://fr.wikipedia.org/wiki/%C3%89lections_municipales_fran%C3%A7aises_de_1995',
     'Municipales 2001': 'https://fr.wikipedia.org/wiki/%C3%89lections_municipales_de_2001_%C3%A0_La_Rochelle',
-    'Municipales 2008': 'https://fr.wikipedia.org/wiki/%C3%89lections_municipales_de_2008_%C3%A0_La_Rochelle',
+    'Municipales 2008': 'https://fr.wikipedia.org/wiki/%C3%89lections_municipales_fran%C3%A7aises_de_2008',
     'Municipales 2014': 'https://fr.wikipedia.org/wiki/%C3%89lections_municipales_de_2014_%C3%A0_La_Rochelle',
     'Municipales 2020': 'https://fr.wikipedia.org/wiki/%C3%89lections_municipales_de_2020_%C3%A0_La_Rochelle',
     'Municipales 2026': 'https://fr.wikipedia.org/wiki/%C3%89lections_municipales_de_2026_%C3%A0_La_Rochelle',
