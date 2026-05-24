@@ -20,8 +20,10 @@ Notes pour les sessions Claude Code. Convention : commentaires et UX en françai
 | `post-bluesky.js` | Publie sur Bluesky |
 | `candidats_blocs.xlsx` | Source Excel des mappings (fournie par le user) |
 | `scrutins/*.html` | **Pages scrutin statiques** (générées) — une par scrutin/canton, vitrines SEO Google + partage social |
+| `scrutins/share/*.png` | Images OG (1200×630, ~100 KB) — vraies vignettes LRVcarte (carte choroplèthe + fiche) générées via Puppeteer |
 | `tools/build-scrutins.js` | Générateur des pages `/scrutins/` + `sitemap.xml` (ré-exécuter après modif de `donnees.js`) |
 | `tools/check-scrutins.js` | Sanity check des pages `/scrutins/` (winners cohérents, pas d'`undefined`) |
+| `tools/generate-scrutin-og-images.js` | Génère les vignettes OG via Puppeteer + `window.composeFiche` (à relancer si rendu LRVcarte évolue) |
 
 ## 🔑 Conventions de données
 
@@ -304,6 +306,13 @@ node tools/build-scrutins.js --only presidentielle-2022
 
 # Sanity check des pages scrutin (à lancer après build)
 node tools/check-scrutins.js
+
+# Régénérer toutes les images OG (1200×630) — nécessite un serveur HTTP local
+python3 -m http.server 8765 &
+node tools/generate-scrutin-og-images.js
+
+# Régénérer une seule image OG (debug)
+node tools/generate-scrutin-og-images.js --only presidentielle-2022
 ```
 
 ## 📄 Pages scrutin statiques (`/scrutins/`)

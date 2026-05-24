@@ -376,6 +376,22 @@ function getElectionWikipediaURL(label) {
   return null;
 }
 
+/** Convertit une date française "21 avril 2002" / "1er juin 1997" en ISO YYYY-MM-DD */
+const _MONTH_FR = {
+  'janvier':'01','février':'02','mars':'03','avril':'04','mai':'05','juin':'06',
+  'juillet':'07','août':'08','septembre':'09','octobre':'10','novembre':'11','décembre':'12'
+};
+function dateFrToISO(s) {
+  if (!s) return null;
+  const m = s.match(/^(\d{1,2})(?:er)?\s+(\S+)\s+(\d{4})/);
+  if (!m) return null;
+  const day = m[1].padStart(2, '0');
+  const month = _MONTH_FR[m[2].toLowerCase()];
+  const year = m[3];
+  if (!month) return null;
+  return `${year}-${month}-${day}`;
+}
+
 /** Dates connues des scrutins (dupliquées depuis daily-capture.js — à factoriser un jour) */
 const DATES = {
   'Présidentielle 1988': { T1: '24 avril 1988', T2: '8 mai 1988' },
@@ -1064,6 +1080,64 @@ function renderHTML(data, opts) {
   const urlCarte = '/LRVcarte.html#election=' + encodeURIComponent(label) + (canton ? '&canton=' + canton : '');
   const urlAnalyse = '/LRVanalyse.html#level=' + (canton ? 'canton&canton=' + canton : 'ville') + '&election=' + encodeURIComponent(label);
 
+  // ─── Schema.org : un Event par tour avec données enrichies ────────────────
+  const pageURL = 'https://larochellevote.fr/scrutins/' + data.slug + '.html';
+  function buildEventLD(tour) {
+    const td2 = byTour[tour];
+    const tourName = tourLabel(tour);
+    const dateISO = dateFrToISO(dates[tour]);
+    if (!dateISO) return null;
+    const evName = label + (tours.length > 1 ? ' — ' + tourName : '') + (canton ? ' (canton La Rochelle-' + canton + ')' : '');
+    const winner = td2.winner;
+    const evDesc = winner
+      ? `${winner.nom}${winner.pa ? ' (' + winner.pa + ')' : ''} arrive en tête avec ${fmtPct(winner.pct)} % à La Rochelle. Abstention : ${fmtPct(td2.abst_pct)} %. ${fmtNum(td2.exprimes)} suffrages exprimés sur ${fmtNum(td2.inscrits)} inscrit·es.`
+      : `Scrutin du ${dates[tour]} à La Rochelle. ${fmtNum(td2.inscrits)} inscrit·es.`;
+    return {
+      '@type': 'Event',
+      'name': evName,
+      'startDate': dateISO,
+      'endDate': dateISO,
+      'eventStatus': 'https://schema.org/EventScheduled',
+      'eventAttendanceMode': 'https://schema.org/OfflineEventAttendanceMode',
+      'isAccessibleForFree': true,
+      'inLanguage': 'fr-FR',
+      'location': {
+        '@type': 'Place',
+        'name': 'La Rochelle',
+        'address': {
+          '@type': 'PostalAddress',
+          'addressLocality': 'La Rochelle',
+          'postalCode': '17000',
+          'addressRegion': 'Charente-Maritime',
+          'addressCountry': 'FR'
+        },
+        'geo': { '@type': 'GeoCoordinates', 'latitude': 46.16, 'longitude': -1.15 }
+      },
+      'description': evDesc,
+      'url': pageURL,
+      'organizer': {
+        '@type': 'GovernmentOrganization',
+        'name': 'République française',
+        'url': 'https://www.elections.interieur.gouv.fr/'
+      }
+    };
+  }
+  const events = tours.map(buildEventLD).filter(Boolean);
+  const eventLD = events.length === 1
+    ? Object.assign({ '@context': 'https://schema.org' }, events[0])
+    : { '@context': 'https://schema.org', '@graph': events };
+
+  // BreadcrumbList : aide Google à comprendre la hiérarchie du site
+  const breadcrumbLD = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    'itemListElement': [
+      { '@type': 'ListItem', 'position': 1, 'name': 'Accueil', 'item': 'https://larochellevote.fr/' },
+      { '@type': 'ListItem', 'position': 2, 'name': 'Carte interactive', 'item': 'https://larochellevote.fr/LRVcarte.html' },
+      { '@type': 'ListItem', 'position': 3, 'name': title, 'item': pageURL }
+    ]
+  };
+
   // Couleurs et libellés des blocs politiques (source de vérité = ctx.BLOC_CONFIG depuis donnees.js)
   const BC = opts.ctx && opts.ctx.BLOC_CONFIG ? opts.ctx.BLOC_CONFIG : {};
   const BLOC_COLORS = {
@@ -1162,16 +1236,23 @@ function renderHTML(data, opts) {
 <meta property="og:locale" content="fr_FR">
 <meta property="og:title" content="${esc(title)} à La Rochelle — Résultats bureau par bureau">
 <meta property="og:description" content="${esc(metaDesc)}">
-<meta property="og:image" content="https://larochellevote.fr/share.png">
+<meta property="og:image" content="https://larochellevote.fr/scrutins/share/${data.slug}.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="${esc(title)} à La Rochelle — résultats">
 <meta property="og:url" content="https://larochellevote.fr/scrutins/${data.slug}.html">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@LaRochelleVote">
 <meta name="twitter:title" content="${esc(title)} à La Rochelle — Résultats bureau par bureau">
 <meta name="twitter:description" content="${esc(metaDesc)}">
-<meta name="twitter:image" content="https://larochellevote.fr/share.png">
+<meta name="twitter:image" content="https://larochellevote.fr/scrutins/share/${data.slug}.png">
 <link rel="canonical" href="https://larochellevote.fr/scrutins/${data.slug}.html">
+<script type="application/ld+json">
+${JSON.stringify(eventLD, null, 2)}
+</script>
+<script type="application/ld+json">
+${JSON.stringify(breadcrumbLD, null, 2)}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
