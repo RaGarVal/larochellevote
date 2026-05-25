@@ -1,14 +1,14 @@
 {
-  "date": "2026-05-24",
+  "date": "2026-05-25",
   "niveau": "bureau",
-  "election": "Régionales 2010",
+  "election": "Législatives 2007",
   "tour": "T1",
-  "bureau": "0006",
+  "bureau": "0013",
   "quartier": null,
   "canton": null,
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Régionales 2010|T1|0006",
-  "chars": 273,
-  "generated_at": "2026-05-24T06:00:54.833Z"
+  "signature": "bureau|Législatives 2007|T1|0013",
+  "chars": 266,
+  "generated_at": "2026-05-25T06:01:20.189Z"
 }
