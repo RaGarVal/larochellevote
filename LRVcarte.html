@@ -319,6 +319,32 @@ select#el-select {
 }
 .tbtn.on { background: var(--bg-active); border-color: var(--bg-active); color: var(--text-active); }
 .tbtn:hover:not(.on) { border-color: var(--text-modal-muted); }
+/* Labels long/court des boutons de tour : suit le mouvement de réduction de
+   la sidebar (clamp 340-430). Sous 1280px on bascule en T1/T2/TU pour gagner
+   de la place dans la sidebar. */
+.tbtn .tb-long { display: inline; }
+.tbtn .tb-short { display: none; }
+@media (max-width: 1280px) {
+  .tbtn { padding: 5px 14px; }
+  .tbtn .tb-long { display: none; }
+  .tbtn .tb-short { display: inline; }
+}
+/* Tooltip JS pour les boutons de tour (cf. #sidebar overflow:hidden empêche
+   un tooltip CSS classique de déborder hors de la sidebar). Le div est créé
+   à la volée en position:fixed au hover. */
+#tour-btn-tip {
+  position: fixed;
+  background: var(--bg-tooltip); color: var(--text-tooltip);
+  padding: 5px 9px; border-radius: 4px;
+  font-size: 0.72rem; font-weight: 500;
+  white-space: nowrap; pointer-events: none;
+  z-index: 10000;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  opacity: 0;
+  transition: opacity 0.12s;
+  transform: translateX(-50%);
+}
+#tour-btn-tip.show { opacity: 1; }
 
 /* Info panel (preview bureau / global) — flex:0 1 auto = sidebar épouse le contenu */
 #sb-info { flex: 0 1 auto; min-height: 0; overflow-y: auto; padding: 14px 16px; }
@@ -1843,8 +1869,8 @@ input:focus-visible,
       </optgroup>
     </select>
     <div class="btn-grp" id="tour-btns" style="flex-shrink:0">
-      <button class="tbtn on" id="btn1" onclick="setTour(1)">1er tour</button>
-      <button class="tbtn"    id="btn2" onclick="setTour(2)">2e tour</button>
+      <button class="tbtn on" id="btn1" onclick="setTour(1)" data-tooltip="1er tour"><span class="tb-long">1er tour</span><span class="tb-short">T1</span></button>
+      <button class="tbtn"    id="btn2" onclick="setTour(2)" data-tooltip="2e tour"><span class="tb-long">2e tour</span><span class="tb-short">T2</span></button>
     </div>
   </div>
   <div id="sb-info"><div style="color:#aaa;font-style:italic;padding:16px 0;font-size:0.82rem">Cliquez sur un bureau pour afficher les résultats.</div></div>
@@ -6611,17 +6637,25 @@ function updateTourUI() {
   const hasT2 = HAS_T2.has(currentElection);
   const hasTU = HAS_TU.has(currentElection);
   const btns = document.getElementById('tour-btns');
+  // Helper : pose le label en double span (long + court) pour swap CSS
+  // selon la largeur d'écran (cf. @media .tb-long/.tb-short).
+  // Met aussi à jour data-tooltip pour le tooltip maison en mode court.
+  function setTbtnLabel(btn, longText, shortText) {
+    if (!btn) return;
+    btn.innerHTML = '<span class="tb-long">' + longText + '</span><span class="tb-short">' + shortText + '</span>';
+    btn.setAttribute('data-tooltip', longText);
+  }
   if (hasT2) {
     btns.style.display = 'flex';
-    document.getElementById('btn1').textContent = '1er tour';
-    document.getElementById('btn2').textContent = '2e tour';
+    setTbtnLabel(document.getElementById('btn1'), '1er tour', 'T1');
+    setTbtnLabel(document.getElementById('btn2'), '2e tour', 'T2');
     document.getElementById('btn1').className = 'tbtn'+(currentSheet!=='T2'?' on':'');
     document.getElementById('btn2').className = 'tbtn'+(currentSheet==='T2'?' on':'');
     document.getElementById('btn1').style.cursor = '';
     document.getElementById('btn2').style.display = '';
   } else if (hasTU) {
     btns.style.display = 'flex';
-    document.getElementById('btn1').textContent = 'Tour unique';
+    setTbtnLabel(document.getElementById('btn1'), 'Tour unique', 'TU');
     document.getElementById('btn2').textContent = '';
     document.getElementById('btn1').className = 'tbtn on';
     document.getElementById('btn2').className = 'tbtn';
@@ -6629,7 +6663,7 @@ function updateTourUI() {
     currentSheet = 'TU';
   } else {
     btns.style.display = 'flex';
-    document.getElementById('btn1').textContent = 'Tour unique';
+    setTbtnLabel(document.getElementById('btn1'), 'Tour unique', 'TU');
     document.getElementById('btn1').className = 'tbtn on';
     document.getElementById('btn1').style.cursor = 'default';
     document.getElementById('btn2').style.display = 'none';
@@ -6688,6 +6722,40 @@ function updateFooter() {
 // ── INIT ──────────────────────────────────────────────────────────────────────
 updateTourUI();
 updateFooter();
+
+// Tooltip JS pour les boutons de tour T1/T2/TU sur écrans étroits.
+// Posé en position:fixed pour contourner l'overflow:hidden de #sidebar.
+(function setupTourBtnsTooltip() {
+  let tipEl = null;
+  function ensureTip() {
+    if (tipEl) return tipEl;
+    tipEl = document.createElement('div');
+    tipEl.id = 'tour-btn-tip';
+    document.body.appendChild(tipEl);
+    return tipEl;
+  }
+  function isShortMode() {
+    return window.matchMedia('(max-width: 1280px)').matches;
+  }
+  ['btn1', 'btn2'].forEach(function(id) {
+    const b = document.getElementById(id);
+    if (!b) return;
+    b.addEventListener('mouseenter', function() {
+      if (!isShortMode()) return;
+      const txt = b.getAttribute('data-tooltip');
+      if (!txt) return;
+      const r = b.getBoundingClientRect();
+      const el = ensureTip();
+      el.textContent = txt;
+      el.style.left = (r.left + r.width / 2) + 'px';
+      el.style.top = (r.bottom + 6) + 'px';
+      el.classList.add('show');
+    });
+    b.addEventListener('mouseleave', function() {
+      if (tipEl) tipEl.classList.remove('show');
+    });
+  });
+})();
 updateTopbar();
 loadMap();
 updateModeButtonsAvailability();
