@@ -646,6 +646,9 @@ select#el-select {
   color: var(--text-modal);
 }
 .map-tooltip::before { display: none; }
+/* Pendant un pan/zoom de la carte, on masque l'ensemble des tooltips pour
+   éviter qu'ils ne restent figés ou ne s'accumulent. */
+.map-is-moving .leaflet-tooltip-pane { display: none !important; }
 .sig-block { display: flex; flex-direction: column; }
 .sig-block .sec-ttl { margin-bottom: 8px; }
 
@@ -3064,14 +3067,50 @@ map.invalidateSize(false);
 fitMapToCity(false);
 
 // Verrous pan + zoom APRÈS le fit initial pour ne pas perturber le cadrage.
-//  - maxBounds : pad(0.3) = ~30 % d'élargissement, on peut un peu déborder mais
-//    pas se retrouver à Bordeaux ou Paris en draguant.
+//  - maxBounds : pad(0.7) = ~70 % d'élargissement autour de La Rochelle. On peut
+//    voir l'île de Ré, Rochefort, Île d'Aix, etc. dans le contexte régional,
+//    mais pas se retrouver à Bordeaux ou Paris en draguant.
 //  - maxBoundsViscosity 1.0 : le pan est strict (la carte rebondit au bord).
 //  - minZoom 11.5 : on peut dézoomer un poil pour le contexte, mais pas voir
 //    toute la France.
-map.setMaxBounds(LR_BOUNDS.pad(0.3));
+map.setMaxBounds(LR_BOUNDS.pad(0.7));
 map.options.maxBoundsViscosity = 1.0;
 map.setMinZoom(11.5);
+
+// Tooltips figés pendant un pan/zoom : on combine 3 mécanismes pour éviter
+// qu'ils n'apparaissent au mauvais endroit ou ne s'accumulent.
+//  1) Pendant le mouvement, classe CSS qui masque l'ensemble du pane tooltip.
+//  2) À chaque mouseover/openTooltip pendant le mouvement, on ferme aussitôt.
+//  3) À la fin du mouvement, cleanup DOM différé (3 passes : immédiat, 50ms,
+//     200ms) pour catcher les tooltips créés par Leaflet en post-moveend.
+let _mapIsMoving = false;
+function _cleanupTooltips() {
+  if (typeof mainLayer !== 'undefined' && mainLayer && mainLayer.eachLayer) {
+    try { mainLayer.eachLayer(function(l) { if (l.closeTooltip) l.closeTooltip(); }); } catch (_) {}
+  }
+  document.querySelectorAll('.leaflet-tooltip').forEach(function(el) {
+    if (el.parentNode) el.parentNode.removeChild(el);
+  });
+}
+function _setMapMoving(isMoving) {
+  _mapIsMoving = isMoving;
+  const container = map.getContainer();
+  if (container) container.classList.toggle('map-is-moving', isMoving);
+  if (isMoving) {
+    _cleanupTooltips();
+  } else {
+    _cleanupTooltips();
+    setTimeout(_cleanupTooltips, 50);
+    setTimeout(_cleanupTooltips, 200);
+  }
+}
+map.on('movestart zoomstart', function() { _setMapMoving(true); });
+map.on('moveend zoomend',     function() { _setMapMoving(false); });
+// Filet de sécurité : si Leaflet émet un tooltipopen pendant le mouvement
+// (ex. mouseover déclenché par le pan), on le ferme immédiatement.
+map.on('tooltipopen', function(e) {
+  if (_mapIsMoving && e.tooltip && e.tooltip.close) e.tooltip.close();
+});
 
 // Le loader (#map-loader) est visible depuis le parse HTML. Une fois Leaflet
 // prêt (whenReady fire après le premier layout), on le masque en douceur.
