@@ -66,7 +66,7 @@ const CANDIDATURES = {"esther-queneudec-memain@cantonale-partielle-2002":{"p":"E
 
 const BLOC_CONFIG={"G":{"label":"Gauche","color":"#CC0100"},"C":{"label":"Centre","color":"#F1C232"},"D":{"label":"Droite","color":"#0F55CC"},"EXD":{"label":"Extrême droite","color":"#20124D"},"?":{"label":"Divers","color":"#A0E1E2"}};
 
-const BLOC_LEGACY={'exg':'G','g':'G','c':'C','d':'D','exd':'EXD','divers':'?'};
+const BLOC_LEGACY={'exg':'G','g':'G','grg':'G','eco':'G','c':'C','d':'D','ds':'D','exd':'EXD','autre':'?','divers':'?'};
 const REDECOUPAGES = {
   // Notes de redécoupage — ajouter les lignes ici :
   // Format clé : "<id>|<eraBureau>" pour bureau, "quartier:<nom>|<eraBureau>" pour quartier,
