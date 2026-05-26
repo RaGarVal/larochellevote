@@ -198,5 +198,16 @@
     "quartier": null,
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-05-26",
+    "signature": "bureau|Législatives 2002|T1|0005",
+    "niveau": "bureau",
+    "election": "Législatives 2002",
+    "tour": "T1",
+    "bureau": "0005",
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
   }
 ]
