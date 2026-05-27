@@ -212,13 +212,13 @@
   },
   {
     "date": "2026-05-27",
-    "signature": "carte|Départementales 2021|T1|cand:jean-marc-soubeste+marion-pichot@departementales-2021",
-    "niveau": "carte",
-    "election": "Départementales 2021",
+    "signature": "bureau|Municipales 2020|T1|0037",
+    "niveau": "bureau",
+    "election": "Municipales 2020",
     "tour": "T1",
-    "bureau": null,
+    "bureau": "0037",
     "quartier": null,
-    "subtype": "candidat",
-    "candidat": "jean-marc-soubeste+marion-pichot@departementales-2021"
+    "subtype": null,
+    "candidat": null
   }
 ]

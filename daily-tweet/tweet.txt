@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🧩 Le 20 juin 2021, pour les départementales (1er tour), dominique-guego+marie-nedellec@departementales-2021 (PS) arrive en tête avec 11,3 % à La Rochelle.
+🏙️ Le 15 mars 2020, pour les municipales (1er tour), Olivier Falorni (DVG) arrive en tête avec 35,7 % dans le bureau n°37 · Place du Canton à Tasdon.
 
-Les résultats de ce scrutin, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=D%C3%A9partementales+2021&tour=T1&tab=global
+Les résultats de ce bureau, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Municipales+2020&tour=T1&bureau=0037

@@ -1,14 +1,14 @@
 {
   "date": "2026-05-27",
-  "niveau": "global",
-  "election": "Départementales 2021",
+  "niveau": "bureau",
+  "election": "Municipales 2020",
   "tour": "T1",
-  "bureau": null,
+  "bureau": "0037",
   "quartier": null,
   "canton": null,
-  "subtype": "candidat",
-  "candidat": "jean-marc-soubeste+marion-pichot@departementales-2021",
-  "signature": "carte|Départementales 2021|T1|cand:jean-marc-soubeste+marion-pichot@departementales-2021",
-  "chars": 274,
-  "generated_at": "2026-05-27T06:01:19.381Z"
+  "subtype": null,
+  "candidat": null,
+  "signature": "bureau|Municipales 2020|T1|0037",
+  "chars": 268,
+  "generated_at": "2026-05-27T06:13:57.831Z"
 }
