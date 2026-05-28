@@ -1,14 +1,14 @@
 {
-  "date": "2026-05-27",
-  "niveau": "bureau",
-  "election": "Municipales 2020",
+  "date": "2026-05-28",
+  "niveau": "global",
+  "election": "Présidentielle 1995",
   "tour": "T1",
-  "bureau": "0037",
+  "bureau": null,
   "quartier": null,
   "canton": null,
-  "subtype": null,
+  "subtype": "gagnants",
   "candidat": null,
-  "signature": "bureau|Municipales 2020|T1|0037",
-  "chars": 268,
-  "generated_at": "2026-05-27T06:13:57.831Z"
+  "signature": "carte|Présidentielle 1995|T1",
+  "chars": 235,
+  "generated_at": "2026-05-28T06:01:25.952Z"
 }

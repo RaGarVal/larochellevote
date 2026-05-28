@@ -220,5 +220,16 @@
     "quartier": null,
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-05-28",
+    "signature": "carte|Présidentielle 1995|T1",
+    "niveau": "carte",
+    "election": "Présidentielle 1995",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "gagnants",
+    "candidat": null
   }
 ]
