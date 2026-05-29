@@ -1,14 +1,14 @@
 {
-  "date": "2026-05-28",
+  "date": "2026-05-29",
   "niveau": "global",
-  "election": "Présidentielle 1995",
+  "election": "Départementales 2021",
   "tour": "T1",
-  "bureau": null,
+  "bureau": "0043",
   "quartier": null,
   "canton": null,
-  "subtype": "gagnants",
+  "subtype": null,
   "candidat": null,
-  "signature": "carte|Présidentielle 1995|T1",
-  "chars": 235,
-  "generated_at": "2026-05-28T06:01:25.952Z"
+  "signature": "bureau|Départementales 2021|T1|0043",
+  "chars": 274,
+  "generated_at": "2026-05-29T06:01:21.343Z"
 }

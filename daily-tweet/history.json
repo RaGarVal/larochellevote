@@ -231,5 +231,16 @@
     "quartier": null,
     "subtype": "gagnants",
     "candidat": null
+  },
+  {
+    "date": "2026-05-29",
+    "signature": "bureau|Départementales 2021|T1|0043",
+    "niveau": "bureau",
+    "election": "Départementales 2021",
+    "tour": "T1",
+    "bureau": "0043",
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
   }
 ]
