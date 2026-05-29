@@ -1,14 +1,14 @@
 {
   "date": "2026-05-29",
   "niveau": "global",
-  "election": "Départementales 2021",
+  "election": "Cantonale partielle 2002",
   "tour": "T1",
-  "bureau": "0043",
+  "bureau": "0051",
   "quartier": null,
   "canton": null,
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Départementales 2021|T1|0043",
-  "chars": 274,
-  "generated_at": "2026-05-29T06:01:21.343Z"
+  "signature": "bureau|Cantonale partielle 2002|T1|0051",
+  "chars": 248,
+  "generated_at": "2026-05-29T06:34:44.027Z"
 }
