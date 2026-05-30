@@ -1,14 +1,14 @@
 {
-  "date": "2026-05-29",
+  "date": "2026-05-30",
   "niveau": "global",
-  "election": "Cantonale partielle 2002",
+  "election": "Législatives 2024",
   "tour": "T1",
-  "bureau": "0051",
+  "bureau": "0029",
   "quartier": null,
   "canton": null,
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Cantonale partielle 2002|T1|0051",
-  "chars": 248,
-  "generated_at": "2026-05-29T06:34:44.027Z"
+  "signature": "bureau|Législatives 2024|T1|0029",
+  "chars": 237,
+  "generated_at": "2026-05-30T06:01:05.302Z"
 }

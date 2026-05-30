@@ -242,5 +242,16 @@
     "quartier": null,
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-05-30",
+    "signature": "bureau|Législatives 2024|T1|0029",
+    "niveau": "bureau",
+    "election": "Législatives 2024",
+    "tour": "T1",
+    "bureau": "0029",
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
   }
 ]
