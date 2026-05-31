@@ -1,14 +1,14 @@
 {
-  "date": "2026-05-30",
+  "date": "2026-05-31",
   "niveau": "global",
-  "election": "Législatives 2024",
+  "election": "Législatives 1993",
   "tour": "T1",
-  "bureau": "0029",
+  "bureau": "0038",
   "quartier": null,
   "canton": null,
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Législatives 2024|T1|0029",
-  "chars": 237,
-  "generated_at": "2026-05-30T06:01:05.302Z"
+  "signature": "bureau|Législatives 1993|T1|0038",
+  "chars": 240,
+  "generated_at": "2026-05-31T06:00:56.105Z"
 }

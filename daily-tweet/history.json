@@ -253,5 +253,16 @@
     "quartier": null,
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-05-31",
+    "signature": "bureau|Législatives 1993|T1|0038",
+    "niveau": "bureau",
+    "election": "Législatives 1993",
+    "tour": "T1",
+    "bureau": "0038",
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
   }
 ]
