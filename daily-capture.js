@@ -244,6 +244,7 @@ const DATES = {
   'Européennes 2024':    { TU: '9 juin 2024'         },
   'Référendum 2000':     { TU: '24 septembre 2000'   },
   'Référendum 2005':     { TU: '29 mai 2005'         },
+  'Cantonale partielle 1999': { T1: '20 juin 1999', T2: '27 juin 1999' },
   'Cantonales 2001':       { T1: '11 mars 2001', T2: '18 mars 2001' },
   'Cantonale partielle 2002': { T1: '22 septembre 2002', T2: '29 septembre 2002' },
   'Cantonales 2004':       { T1: '21 mars 2004', T2: '28 mars 2004' },
