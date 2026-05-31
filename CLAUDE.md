@@ -216,6 +216,7 @@ Script Python qui applique :
 - **`LRVcarte.html`** : ajouter `<option value="<Nom>">...</option>` dans le bon `<optgroup>` du dropdown élections (autour de la ligne 1515).
 - **`LRVcarte.html`** : ajouter le nom dans `const HAS_TU = new Set([...])` si l'élection est à tour unique (autour de la ligne 1672).
 - **`daily-capture.js`** : vérifier que `DATES["<Nom>"]` existe (autour de la ligne 171).
+- **`daily-capture.js`** : **revoir `SCRUTIN_TARGETS`** (haut du fichier) si on ajoute un nouveau **type** de scrutin ou si l'ajout déséquilibre les cibles voulues (la somme doit rester à 100 %). Cibles actuelles : législatives 25 / présidentielle 18 / européennes 17 / municipales 16 / régionales 15 / departementales 5 / referendum 4 — pondération manuelle, plus dynamique au prorata des tours.
 - **`index.html`, `LRVcarte.html`, `LRVanalyse.html`** : mettre à jour le nombre d'élections dans la description JSON-LD (`"N élections et 2 référendums organisés..."`).
 - **`methodologie.html`** : retirer de la phrase "Depuis 1988, il manque..." si applicable.
 

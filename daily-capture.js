@@ -52,6 +52,24 @@ const SUB_CARTE = {
   candidat: 0.60,
 };
 
+// ── Cibles MANUELLES par scrutin ──────────────────────────────────────────────
+// Override de la pondération dynamique (qui suivrait sinon le nombre de tours x élections).
+// Rationnel : on sous-représente volontairement les cantonales/départementales (5 %) car
+// elles sont infra-communales et moins lisibles, et on rééquilibre les autres scrutins
+// pour donner aux européennes et municipales une place plus juste qu'au prorata des tours.
+//
+// ⚠ À AJUSTER quand un nouveau type de scrutin est ajouté, ou quand des élections
+// supplémentaires sont saisies — la somme doit rester à 100 %.
+const SCRUTIN_TARGETS = {
+  legislatives:    0.25,
+  presidentielle:  0.18,
+  europeennes:     0.17,
+  municipales:     0.16,
+  regionales:      0.15,
+  departementales: 0.05,  // inclut Cantonales (electionScrutin() les groupe)
+  referendum:      0.04,
+};
+
 // Cooldown anti-doublons (en jours) : une combinaison niveau/élection/tour/bureau/quartier
 // déjà publiée dans cette fenêtre est exclue du tirage aléatoire.
 // La même fenêtre sert au rééquilibrage auto-correctif des proba (axes niveau, scrutin, sub-carte).
@@ -540,24 +558,28 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
 
   const { elections, electionEra, electionTours, bureauxParElection, bureauxByEra, quartiersByEra, cantonsModernes } = siteData;
 
-  // ── 2bis. Cibles dynamiques par type de scrutin (option B) ────────────────
-  // Pour chaque scrutin, on compte les instances (élection × tour) disponibles ;
-  // la cible est la part normalisée. Si plus tard tu ajoutes des scrutins en base,
-  // les pondérations s'ajustent automatiquement.
+  // ── 2bis. Cibles MANUELLES par type de scrutin (cf. const SCRUTIN_TARGETS) ─
+  // Pondération choisie volontairement (cf. commentaire en tête de fichier).
+  // On filtre les scrutins absents du stock (defensive — si une cible est définie
+  // pour un scrutin sans données, elle est ignorée et la somme renormalisée).
   const scrutinTargets = (() => {
-    const counts = {};
+    const availableScrutins = new Set();
     elections.forEach(el => {
-      if (!(bureauxParElection[el] || []).length) return; // élection sans données → ignorée
-      const s = electionScrutin(el);
-      const n = (electionTours[el] || []).length || 1;
-      counts[s] = (counts[s] || 0) + n;
+      if (!(bureauxParElection[el] || []).length) return;
+      availableScrutins.add(electionScrutin(el));
     });
-    const total = Object.values(counts).reduce((a, b) => a + b, 0) || 1;
     const out = {};
-    Object.keys(counts).forEach(k => out[k] = counts[k] / total);
+    let totalKept = 0;
+    Object.entries(SCRUTIN_TARGETS).forEach(([s, w]) => {
+      if (availableScrutins.has(s)) { out[s] = w; totalKept += w; }
+    });
+    // Renormalise pour que la somme = 1 (au cas où des scrutins manquent).
+    if (totalKept > 0 && Math.abs(totalKept - 1) > 0.001) {
+      Object.keys(out).forEach(k => out[k] /= totalKept);
+    }
     return out;
   })();
-  console.log(`🎯 Cibles scrutin (dynamiques) :`, Object.fromEntries(
+  console.log(`🎯 Cibles scrutin (manuelles) :`, Object.fromEntries(
     Object.entries(scrutinTargets).map(([k, v]) => [k, (v * 100).toFixed(1) + '%'])
   ));
   // Pour les besoins du tirage aléatoire d'un quartier (qui doit exister pour l'élection
@@ -615,10 +637,17 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
     if (forcedElection) {
       election = forcedElection;
     } else {
-      // Filtrer les scrutins qui ont au moins une élection disponible (defensive)
-      const availableScrutins = Object.keys(scrutinProba).filter(s =>
-        elections.some(el => electionScrutin(el) === s && (bureauxParElection[el] || []).length > 0)
-      );
+      // Filtrer les scrutins qui ont au moins une élection disponible (defensive).
+      // Cas particulier : aux niveaux 'global' (totalisation ville) et 'quartier'
+      // (un quartier peut chevaucher plusieurs cantons), les Cantonales/Départementales
+      // n'ont pas de résultat cohérent — un seul canton vote à la fois. On les exclut.
+      // electionScrutin() retourne 'departementales' aussi bien pour les Cantonales que
+      // pour les Départementales (regroupement historique).
+      const skipDepartementales = (niveau === 'global' || niveau === 'quartier');
+      const availableScrutins = Object.keys(scrutinProba).filter(s => {
+        if (skipDepartementales && s === 'departementales') return false;
+        return elections.some(el => electionScrutin(el) === s && (bureauxParElection[el] || []).length > 0);
+      });
       const proba = {};
       availableScrutins.forEach(s => proba[s] = scrutinProba[s] || 0);
       const chosenScrutin = pickWeighted(proba);
