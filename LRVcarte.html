@@ -9230,6 +9230,81 @@ function randomDiscover() {
     const tag = (t.tagName || '').toUpperCase();
     return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || t.isContentEditable;
   }
+  // Résout le numéro de bureau dans une ère donnée à partir de son b2026.
+  // BUREAU_CORRESPONDANCES[b2026][era] = string | array (cas de split historique).
+  // Retourne un array de candidats à tester (1 ou plusieurs si bureau venait d'un split).
+  function bureauNumsInEra(b2026, era){
+    const corr = (typeof BUREAU_CORRESPONDANCES !== 'undefined') ? BUREAU_CORRESPONDANCES[b2026] : null;
+    if (!corr) return [b2026]; // fallback : on tente la même clé
+    const v = corr[era];
+    if (!v) return [b2026];
+    return Array.isArray(v) ? v : [v];
+  }
+  // Vrai si le contexte courant (bureau / quartier / canton / global) a au moins
+  // une donnée dans l'élection donnée. Utilisé pour skip les scrutins infra-communaux
+  // (cantonales/départementales) quand on est sur un bureau hors canton concerné.
+  function hasDataForCurrentContext(electionLabel){
+    const el = ELECTIONS[electionLabel];
+    if (!el || !el.sheets) return false;
+    const era = String(el.my || '');
+    const tours = Object.keys(el.sheets);
+    // Cantonales/Départementales = scrutins infra-communaux → exclus en mode global
+    // (résultat ville non pertinent) ET en mode quartier (un quartier peut chevaucher
+    // plusieurs cantons, le résultat agrégé serait incohérent). Cohérent avec la règle
+    // appliquée dans daily-capture.js pour le tirage quotidien.
+    const isCantonal = (typeof isCantonalElection === 'function') && isCantonalElection(electionLabel);
+    if (isCantonal && (overlayTab === 'global' || overlayTab === 'quartier')) return false;
+    // En mode global (et fallback sans contexte), toute autre élection est pertinente.
+    if (overlayTab === 'global' || (!currentFeature && !currentQuartier && !currentCanton)) return true;
+    // Mode BUREAU : bureau courant a-t-il des données dans l'une des sheets ?
+    if (overlayTab === 'bureau' && currentFeature) {
+      const b2026 = currentFeature.properties.b2026 || numStr(currentFeature);
+      const candidates = bureauNumsInEra(b2026, era);
+      for (const tour of tours) {
+        for (const ns of candidates) {
+          if (el.sheets[tour] && el.sheets[tour][ns]) return true;
+        }
+      }
+      return false;
+    }
+    // Mode QUARTIER : au moins un bureau du quartier a-t-il des données ?
+    if (overlayTab === 'quartier' && currentQuartier) {
+      const yi = BUREAU_INFO[era] || {};
+      for (const ns of Object.keys(yi)) {
+        const q = yi[ns].q || '';
+        if (q !== currentQuartier && !q.split('/').map(s => s.trim()).includes(currentQuartier)) continue;
+        for (const tour of tours) {
+          if (el.sheets[tour] && el.sheets[tour][ns]) return true;
+        }
+      }
+      return false;
+    }
+    // Mode CANTON : au moins un bureau du canton actif a-t-il des données ?
+    // currentCanton est un cid moderne (ère 2015) ; pour les anciennes élections on
+    // utilise CANTON_CORRESPONDANCES (mapping ère 2015 → bureaux historiques par ère).
+    if (overlayTab === 'canton' && currentCanton) {
+      const yi = BUREAU_INFO[era] || {};
+      // Bureaux du canton dans l'ère courante de l'élection
+      const eraCanton = (typeof getCantonEraForBureauEra === 'function') ? getCantonEraForBureauEra(era) : null;
+      let bureauxCanton = null;
+      if (eraCanton === '2015') {
+        // Canton moderne : direct
+        bureauxCanton = Object.keys(yi).filter(ns => String(yi[ns].c || '') === currentCanton);
+      } else {
+        // Canton historique : on utilise CANTON_CORRESPONDANCES["2015:<cid>"][era]
+        const key = '2015:' + currentCanton;
+        const corr = (typeof CANTON_CORRESPONDANCES !== 'undefined') ? CANTON_CORRESPONDANCES[key] : null;
+        bureauxCanton = (corr && corr[era]) ? corr[era] : Object.keys(yi).filter(ns => String(yi[ns].c || '') === currentCanton);
+      }
+      for (const ns of (bureauxCanton || [])) {
+        for (const tour of tours) {
+          if (el.sheets[tour] && el.sheets[tour][ns]) return true;
+        }
+      }
+      return false;
+    }
+    return true;
+  }
   // elecTypePriority(label) : départage les élections de même année. Définie dans shared.js.
   function neighborElection(dir){
     const all = Object.keys(ELECTIONS);
@@ -9243,7 +9318,15 @@ function randomDiscover() {
     });
     const idx = sorted.indexOf(currentElection);
     if (idx < 0) return null;
-    return sorted[idx + dir] || null;
+    // Skip les élections où le contexte courant (bureau/quartier/canton) n'a pas
+    // de données. Utile pour les cantonales/départementales qui ne touchent qu'un
+    // canton à la fois — éviter d'envoyer l'utilisateur sur une fiche vide.
+    let i = idx + dir;
+    while (i >= 0 && i < sorted.length) {
+      if (hasDataForCurrentContext(sorted[i])) return sorted[i];
+      i += dir;
+    }
+    return null;
   }
   // Expose pour les boutons chevrons + mise à jour disabled state
   window.navigateElection = function(dir){
