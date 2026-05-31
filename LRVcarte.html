@@ -223,6 +223,288 @@ body {
 .tb-random-btn:hover { background: var(--bg-chrome-hover); color: var(--text-chrome); transform: rotate(15deg); }
 .tb-random-btn:active { transform: rotate(-15deg) scale(0.92); }
 .tb-random-btn svg { width: 15px; height: 15px; transition: transform .15s; }
+/* Bouton "Comparer 2 candidats" — entre random et search dans la topbar */
+.tb-compare-btn { background: none; border: 1px solid var(--border-chrome); border-radius: 6px; width: 30px; height: 30px; cursor: pointer; color: var(--text-chrome-muted); transition: all .15s; display: flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0; }
+.tb-compare-btn:hover { background: var(--bg-chrome-hover); color: var(--text-chrome); }
+.tb-compare-btn svg { width: 16px; height: 16px; }
+
+/* ── Modal "Comparer 2 candidats" ── */
+#compare-modal { position: fixed; inset: 0; display: none; z-index: 10500; font-family: 'Space Grotesk', system-ui, sans-serif; }
+#compare-modal.open { display: block; }
+#compare-modal .cmp-overlay { position: absolute; inset: 0; background: rgba(0,0,0,.45); opacity: 0; transition: opacity .15s; }
+#compare-modal.open .cmp-overlay { opacity: 1; }
+#compare-modal .cmp-card { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%) scale(.96); background: var(--bg-modal); border-radius: 12px; width: min(920px, calc(100vw - 32px)); max-height: 90vh; overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,.28); opacity: 0; transition: opacity .18s, transform .18s; display: flex; flex-direction: column; }
+#compare-modal.open .cmp-card { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+#compare-modal .cmp-head { display: flex; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border-modal); }
+#compare-modal .cmp-head h3 { flex: 1; margin: 0; font-size: 1rem; font-weight: 700; color: var(--text-modal); letter-spacing: -.01em; }
+#compare-modal .cmp-close { background: rgba(0,0,0,.06); border: none; width: 28px; height: 28px; border-radius: 6px; font-size: .95rem; color: var(--text-modal-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-family: inherit; }
+#compare-modal .cmp-close:hover { background: rgba(0,0,0,.12); color: var(--text-modal); }
+#compare-modal .cmp-body { padding: 18px 20px 20px; overflow-y: auto; }
+#compare-modal .cmp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+#compare-modal .cmp-col { display: flex; flex-direction: column; gap: 10px; padding: 14px; background: var(--bg-modal-hover); border-radius: 8px; border: 1px solid var(--border-modal); }
+#compare-modal .cmp-col-label { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; color: var(--accent-warm); margin-bottom: 2px; }
+#compare-modal .cmp-field { display: flex; flex-direction: column; gap: 4px; }
+#compare-modal .cmp-field-label { font-size: .68rem; font-weight: 600; color: var(--text-modal-muted); text-transform: uppercase; letter-spacing: .05em; }
+#compare-modal select { padding: 7px 10px; border: 1px solid var(--border-modal); border-radius: 5px; background: var(--bg-modal); color: var(--text-modal); font-family: inherit; font-size: .86rem; cursor: pointer; width: 100%; min-width: 0; box-sizing: border-box; text-overflow: ellipsis; }
+/* Groupes de boutons pour Tour et Type (alternative compacte aux selects à peu d'options) */
+#compare-modal .cmp-btn-grp { display: flex; gap: 4px; flex-wrap: wrap; }
+#compare-modal .cmp-btn-grp button { flex: 1; min-width: 0; padding: 7px 8px; border: 1px solid var(--border-modal); border-radius: 5px; background: var(--bg-modal); color: var(--text-modal-muted); font-family: inherit; font-size: .82rem; font-weight: 600; cursor: pointer; transition: all .12s; }
+#compare-modal .cmp-btn-grp button:hover:not(.on) { border-color: var(--text-modal-muted); color: var(--text-modal); }
+#compare-modal .cmp-btn-grp button.on { background: var(--bg-active); border-color: var(--bg-active); color: var(--text-active); }
+#compare-modal select:focus { outline: 2px solid var(--accent-warm); outline-offset: 1px; }
+#compare-modal .cmp-presets { font-size: .78rem; color: var(--text-modal-muted); margin-bottom: 16px; }
+#compare-modal .cmp-presets-label { font-weight: 600; margin-right: 6px; }
+#compare-modal .cmp-presets-btn { display: inline-block; padding: 4px 10px; margin: 2px 4px 2px 0; background: var(--bg-modal); border: 1px solid var(--border-modal); border-radius: 4px; font-size: .76rem; cursor: pointer; color: var(--text-modal-muted); font-family: inherit; transition: all .12s; }
+#compare-modal .cmp-presets-btn:hover { background: var(--bg-modal-accent); color: var(--text-modal); border-color: var(--accent-warm); }
+#compare-modal .cmp-actions { display: flex; justify-content: flex-end; gap: 10px; }
+#compare-modal .cmp-action { padding: 10px 18px; border-radius: 6px; border: none; font-family: inherit; font-size: .9rem; font-weight: 600; cursor: pointer; transition: all .12s; }
+#compare-modal .cmp-action-primary { background: var(--bg-active); color: var(--text-active); }
+#compare-modal .cmp-action-primary:hover { background: var(--accent-warm); color: #fff; }
+#compare-modal .cmp-action-primary:disabled { opacity: .42; cursor: not-allowed; }
+#compare-modal .cmp-action-cancel { background: transparent; color: var(--text-modal-muted); border: 1px solid var(--border-modal); }
+#compare-modal .cmp-action-cancel:hover { color: var(--text-modal); border-color: var(--text-modal-muted); }
+@media (max-width: 720px) {
+  #compare-modal .cmp-card { width: calc(100vw - 24px); max-height: 95vh; }
+  #compare-modal .cmp-grid { grid-template-columns: 1fr; gap: 12px; }
+}
+
+/* ── Mode comparaison (split-view 2 cartes) ── */
+body.is-compare #sidebar { display: none !important; }
+body.is-compare #global-tab,
+body.is-compare #cantons-tabs,
+body.is-compare #map-legend,
+body.is-compare #sb-footer,
+body.is-compare #map { display: none !important; }
+/* Topbar : on masque l'élection/tour et on affiche "Le Comparateur" + bouton Quitter */
+body.is-compare #tb-election,
+body.is-compare #tb-tour,
+body.is-compare #tb-elec-nav { display: none !important; }
+body.is-compare #tb-comparateur { display: inline !important; font-size: 1.4rem; font-weight: 700; letter-spacing: -0.5px; }
+body.is-compare #tb-cmp-exit { display: inline-flex !important; }
+/* Bouton Quitter en topbar — rond, accent warm, à côté du titre "Le Comparateur" */
+#tb-cmp-exit {
+  background: var(--bg-chrome-hover); border: 1px solid var(--border-chrome); border-radius: 50%;
+  width: 30px; height: 30px; cursor: pointer; color: var(--text-chrome-muted);
+  font-family: inherit; font-size: 0.9rem; font-weight: 700; line-height: 1;
+  display: none; align-items: center; justify-content: center; padding: 0; flex-shrink: 0;
+  transition: all .15s; margin-left: 4px;
+}
+#tb-cmp-exit:hover { background: var(--accent-warm); color: #fff; border-color: var(--accent-warm); transform: scale(1.05); }
+@media (max-width: 720px) {
+  body.is-compare #tb-comparateur { font-size: 1rem; }
+  #tb-cmp-exit { width: 26px; height: 26px; font-size: 0.8rem; }
+}
+#cmp-view { display: none; }
+body.is-compare #cmp-view {
+  display: flex; flex-direction: column;
+  position: absolute; left: 0; right: 0; top: 66px; bottom: 0;
+  z-index: 50;
+}
+.cmp-banner {
+  display: grid; grid-template-columns: auto 1fr auto 1fr auto;
+  /* align-items: start = scores des 2 côtés à la même hauteur, même si B a un
+     delta en dessous (la hauteur de B est plus grande, mais on top-aligne). */
+  align-items: start; gap: 16px;
+  padding: 10px 16px;
+  background: var(--bg-chrome); border-bottom: 1px solid var(--border-chrome);
+}
+.cmp-banner-actions { padding-top: 2px; }
+/* Pastilles A/B aux extrêmes de la bannière (gauche=A, droite=B). Grosse lettre
+   en filigrane chromée pour signaler le côté sans manger d'espace utile. */
+.cmp-side-letter {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 50%;
+  font-size: 1.05rem; font-weight: 800; font-family: inherit;
+  background: var(--bg-chrome-accent); color: var(--text-chrome-muted);
+  border: 1.5px solid var(--border-chrome);
+  flex-shrink: 0; line-height: 1;
+}
+.cmp-banner-title { font-size: 0.92rem; font-weight: 600; color: var(--text-chrome); min-width: 0;
+  display: flex; align-items: flex-start; gap: 10px;
+}
+.cmp-banner-title.cmp-banner-title-a { flex-direction: row-reverse; justify-content: flex-start; text-align: right; }
+.cmp-banner-title.cmp-banner-title-b { flex-direction: row;        justify-content: flex-start; text-align: left;  }
+.cmp-banner-txt { min-width: 0; overflow: hidden; padding-top: 2px; }
+.cmp-banner-txt strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 1.05rem; line-height: 1.2; }
+.cmp-banner-sub { display: block; font-size: 0.72rem; font-weight: 500; color: var(--text-chrome-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Colonne "chiffres" : score en haut, delta en dessous (uniquement côté B). */
+.cmp-banner-numbers { display: flex; flex-direction: column; align-items: stretch; gap: 3px; flex-shrink: 0; }
+.cmp-banner-title-a .cmp-banner-numbers { align-items: flex-end; }
+.cmp-banner-title-b .cmp-banner-numbers { align-items: flex-start; }
+/* Tag de score ville — gros et coloré pour être lisible d'un coup d'œil */
+.cmp-banner-score {
+  font-size: 1.05rem; font-weight: 700; padding: 3px 10px; border-radius: 5px;
+  font-variant-numeric: tabular-nums; flex-shrink: 0; line-height: 1.2; white-space: nowrap;
+  align-self: stretch; text-align: center;
+}
+/* Delta côté B : +X,X pts (vert), −X,X pts (rouge), = pts (gris si quasi nul).
+   Couleurs sourdes pour rester compatible mode clair + mode sombre via fond pastel. */
+/* Delta — pastel franc (fond marqué + texte foncé saturé + bord assorti).
+   Lisibilité forte sans agresser comme une couleur pleine. Bold et tabular-nums. */
+.cmp-banner-delta {
+  font-size: 0.82rem; font-weight: 800; padding: 3px 9px; border-radius: 5px;
+  font-variant-numeric: tabular-nums; flex-shrink: 0; line-height: 1.2; white-space: nowrap;
+  border: 1.5px solid transparent;
+  align-self: stretch; text-align: center;
+  letter-spacing: -0.01em;
+}
+.cmp-banner-delta-pos     { background: #D4EFD4; color: #0F5F0F; border-color: #6FB66F; }
+.cmp-banner-delta-neg     { background: #F7D4D4; color: #8B1414; border-color: #D17070; }
+.cmp-banner-delta-neutral { background: var(--bg-modal-hover); color: var(--text-chrome-muted); border-color: var(--border-modal); }
+/* Le site utilise data-theme="dark" (toggle manuel), pas prefers-color-scheme. */
+[data-theme="dark"] .cmp-banner-delta-pos { background: rgba(80,170,80,0.22); color: #B0E8B0; border-color: rgba(80,170,80,0.55); }
+[data-theme="dark"] .cmp-banner-delta-neg { background: rgba(220,90,90,0.22); color: #FAB5B5; border-color: rgba(220,90,90,0.55); }
+.cmp-banner-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.cmp-banner-exit, .cmp-banner-swap {
+  background: var(--bg-modal-hover); border: 1px solid var(--border-modal); border-radius: 6px;
+  font-family: inherit; font-weight: 600;
+  color: var(--text-chrome-muted); cursor: pointer; flex-shrink: 0;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: all .12s;
+}
+.cmp-banner-exit { padding: 6px 14px; font-size: 0.86rem; }
+.cmp-banner-swap { padding: 6px 10px; font-size: 1rem; line-height: 1; }
+.cmp-banner-exit:hover, .cmp-banner-swap:hover { color: var(--text-chrome); border-color: var(--accent-warm); }
+/* Bannière cliquable : indique au survol qu'on peut modifier la sélection.
+   Hover bien visible : bordure accent + bg teinté + élévation, animation rapide. */
+.cmp-banner-title[role="button"] {
+  cursor: pointer; border-radius: 8px; padding: 4px 10px;
+  border: 1px solid transparent;
+  transition: background .15s, border-color .15s, box-shadow .15s, transform .15s;
+}
+.cmp-banner-title[role="button"]:hover {
+  background: var(--bg-modal-hover);
+  border-color: var(--accent-warm);
+  box-shadow: 0 2px 8px rgba(0,0,0,.10);
+  transform: translateY(-1px);
+}
+.cmp-banner-title[role="button"]:focus-visible { outline: 2px solid var(--accent-warm); outline-offset: 2px; }
+/* Tooltip des bureaux dans le Comparateur (Leaflet) — cohérent avec map principale */
+.cmp-tooltip {
+  background: var(--bg-modal) !important; color: var(--text-modal) !important;
+  border: 1px solid var(--border-modal) !important; border-radius: 6px !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,.12) !important;
+  padding: 8px 10px !important; font-family: inherit !important;
+}
+.cmp-tooltip::before { display: none !important; } /* pas de fléchette */
+.cmp-split { flex: 1; display: flex; min-height: 0; position: relative; }
+.cmp-map-wrap { flex: 1; min-width: 0; position: relative; border-right: 1px solid var(--border-chrome); }
+#cmp-wrap-b { border-right: none; }
+/* Mode diff : on cache map B, map A prend toute la largeur de cmp-split. */
+body.is-cmp-diff #cmp-wrap-b { display: none; }
+body.is-cmp-diff #cmp-wrap-a { flex: 1 1 100%; width: 100%; border-right: none; }
+/* Sidebar Diff — masquée sauf en mode diff. Position FIXED par-dessus la carte
+   (z-index 500 > Leaflet 400) avec style identique à #sidebar. */
+#cmp-diff-sidebar { display: none; }
+body.is-cmp-diff #cmp-diff-sidebar {
+  display: flex; flex-direction: column;
+  /* position:absolute relative à cmp-split (qui est position:relative).
+     top:12 = 12px sous la bannière, peu importe sa hauteur réelle. */
+  position: absolute; top: 12px; left: 12px; bottom: 12px;
+  width: var(--sidebar-w);
+  background: var(--bg-card);
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+  overflow-y: auto; padding: 14px 14px 20px;
+  font-size: 0.82rem;
+  z-index: 500;
+}
+.cmp-diff-sec { margin-bottom: 16px; }
+.cmp-diff-sec h4 {
+  font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;
+  color: var(--text-meta); margin: 0 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-modal);
+}
+.cmp-diff-stats { display: flex; flex-direction: column; gap: 6px; }
+.cmp-diff-stat-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 6px 8px; background: var(--bg-modal-hover); border-radius: 5px;
+}
+.cmp-diff-stat-label { font-size: 0.72rem; color: var(--text-modal-muted); font-weight: 600; }
+.cmp-diff-stat-val   { font-size: 0.92rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text-modal); }
+.cmp-diff-stat-val.big { font-size: 1.1rem; padding: 4px 10px; border-radius: 5px; }
+/* Lignes "bureau" et "quartier" : cliquables, hover marqué */
+.cmp-diff-item {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center;
+  padding: 5px 8px; border-radius: 5px; cursor: pointer;
+  transition: background .12s;
+}
+.cmp-diff-item:hover { background: var(--bg-modal-hover); }
+.cmp-diff-item-num { font-size: 0.68rem; font-weight: 700; color: var(--text-meta); font-variant-numeric: tabular-nums; min-width: 28px; }
+.cmp-diff-item-name { font-size: 0.78rem; color: var(--text-modal); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cmp-diff-item-delta {
+  font-size: 0.75rem; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap;
+  padding: 2px 6px; border-radius: 4px; flex-shrink: 0;
+}
+.cmp-diff-item-delta.pos { background: #D4EFD4; color: #0F5F0F; }
+.cmp-diff-item-delta.neg { background: #F7D4D4; color: #8B1414; }
+.cmp-diff-item-delta.neutral { background: var(--bg-modal-hover); color: var(--text-modal-muted); }
+[data-theme="dark"] .cmp-diff-item-delta.pos { background: rgba(80,170,80,0.22); color: #B0E8B0; }
+[data-theme="dark"] .cmp-diff-item-delta.neg { background: rgba(220,90,90,0.22); color: #FAB5B5; }
+@media (max-width: 720px) {
+  body.is-cmp-diff #cmp-diff-sidebar {
+    /* Mobile : flux normal (en haut, pleine largeur, hauteur limitée) plutôt qu'absolu. */
+    position: relative; top: auto; left: auto; bottom: auto;
+    width: auto; max-height: 35vh; margin: 8px 8px 0;
+  }
+}
+.cmp-map { width: 100%; height: 100%; background: var(--bg-page); }
+/* Légende = bulle flottante compacte, centrée en bas, par-dessus les 2 cartes.
+   Échelle commune A/B, donc une seule bulle suffit. Sur hover du gradient,
+   les bureaux dont le score correspond s'illuminent (cf. JS bindLegendHover). */
+.cmp-legend {
+  position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+  background: var(--bg-modal); border: 1px solid var(--border-modal);
+  border-radius: 999px; box-shadow: 0 2px 10px rgba(0,0,0,.14);
+  padding: 5px 10px;
+  font-size: 0.72rem; color: var(--text-modal);
+  display: flex; align-items: center; gap: 8px;
+  z-index: 600; max-width: 90%;
+}
+.cmp-legend-label { font-weight: 600; color: var(--text-modal-muted); white-space: nowrap; flex-shrink: 0; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
+.cmp-legend-bar { width: 180px; height: 12px; border-radius: 3px; flex-shrink: 0; border: 1px solid var(--border-modal); cursor: crosshair; position: relative; }
+.cmp-legend-bound { font-variant-numeric: tabular-nums; color: var(--text-modal-muted); flex-shrink: 0; white-space: nowrap; }
+/* Toggle Abs/Rel — un mini button group dans la bulle légende */
+.cmp-legend-mode { display: inline-flex; flex-shrink: 0; gap: 0; border: 1px solid var(--border-modal); border-radius: 5px; overflow: hidden; }
+.cmp-legend-mode button { background: var(--bg-modal); color: var(--text-modal-muted); border: none; padding: 3px 8px; font-family: inherit; font-size: 0.66rem; font-weight: 700; cursor: pointer; transition: background .12s, color .12s; }
+.cmp-legend-mode button + button { border-left: 1px solid var(--border-modal); }
+.cmp-legend-mode button:hover { background: var(--bg-modal-hover); color: var(--text-modal); }
+.cmp-legend-mode button.on { background: var(--accent-warm); color: #fff; }
+/* Mode relatif : 2 sous-bulles A et B, chacune avec un tag rond coloré + ses bornes */
+.cmp-legend-side { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.cmp-legend-side-tag { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; color: #fff; font-size: 0.62rem; font-weight: 800; flex-shrink: 0; }
+/* En relatif, les barres sont plus petites pour faire tenir A et B dans la bulle */
+.cmp-legend-side .cmp-legend-bar { width: 100px; height: 10px; }
+/* Curseur live sur le gradient au survol : trait vertical + bulle pct.
+   Curseur "fantôme" sur l'AUTRE barre en mode relatif (même position relative t) :
+   trait pointillé semi-transparent pour le distinguer du principal. */
+.cmp-legend-cursor { position: absolute; top: -3px; bottom: -3px; width: 2px; background: #000; pointer-events: none; opacity: 0; transition: opacity .12s; }
+.cmp-legend-cursor.on { opacity: 1; }
+.cmp-legend-cursor.ghost { background: transparent; border-left: 2px dashed #000; opacity: 0.55; }
+.cmp-legend-cursor::after {
+  content: attr(data-pct); position: absolute; bottom: calc(100% + 4px); left: 50%;
+  transform: translateX(-50%); background: #000; color: #fff;
+  font-size: 0.66rem; font-weight: 700; padding: 2px 6px; border-radius: 3px; white-space: nowrap;
+}
+.cmp-legend-cursor.ghost::after { background: rgba(0,0,0,0.7); }
+@media (max-width: 720px) {
+  body.is-compare #cmp-view { top: 56px; }
+  .cmp-banner { grid-template-columns: auto 1fr auto; gap: 8px; padding: 8px 10px; }
+  .cmp-banner-title { font-size: 0.78rem; }
+  .cmp-banner-title.cmp-banner-title-a { text-align: left; grid-column: 2; grid-row: 1; }
+  .cmp-banner-title.cmp-banner-title-b { text-align: left; grid-column: 2; grid-row: 2; padding-top: 6px; border-top: 1px solid var(--border-chrome); }
+  .cmp-side-letter { width: 24px; height: 24px; font-size: 0.82rem; }
+  .cmp-side-letter-a { grid-column: 1; grid-row: 1; align-self: center; }
+  .cmp-side-letter-b { grid-column: 1; grid-row: 2; align-self: center; }
+  .cmp-banner-actions { grid-column: 3; grid-row: 1 / span 2; flex-direction: column; gap: 4px; }
+  .cmp-banner-exit { padding: 4px 8px; font-size: 0.74rem; }
+  .cmp-banner-swap { padding: 4px 6px; font-size: 0.9rem; }
+  .cmp-split { flex-direction: column; }
+  .cmp-map-wrap { border-right: none; border-bottom: 1px solid var(--border-chrome); min-height: 40vh; }
+  .cmp-map-wrap:last-child { border-bottom: none; }
+  .cmp-legend { font-size: 0.66rem; padding: 4px 8px; gap: 6px; bottom: 6px; }
+  .cmp-legend-bar { width: 120px; height: 10px; }
+  .cmp-legend-label { max-width: 80px; }
+}
 
 /* ── Logo voile + wordmark (gauche du topbar) ── */
 .tb-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; flex-shrink: 0; background: none; border: none; padding: 0; margin: 0; cursor: pointer; font-family: inherit; }
@@ -1777,6 +2059,9 @@ input:focus-visible,
   <div id="tb-center">
     <span id="tb-election" role="button" tabindex="0" aria-label="Changer d'élection" onclick="if (window.matchMedia && window.matchMedia('(max-width: 720px)').matches) openElecSheet();">Municipales 2026</span>
     <span id="tb-tour" style="display:none">1er tour</span>
+    <span id="tb-comparateur" style="display:none">Le Comparateur</span>
+    <!-- Bouton Quitter — visible UNIQUEMENT en mode Comparateur (cf. CSS body.is-compare) -->
+    <button id="tb-cmp-exit" style="display:none" onclick="exitComparison()" data-tooltip="Quitter le Comparateur" aria-label="Quitter">✕</button>
     <div id="tb-elec-nav">
       <button id="tb-elec-prev" class="tb-elec-nav-btn" onclick="navigateElection(-1)" title="Élection précédente (←)" aria-label="Élection précédente">‹</button>
       <button id="tb-elec-next" class="tb-elec-nav-btn" onclick="navigateElection(1)" title="Élection suivante (→)" aria-label="Élection suivante">›</button>
@@ -1792,9 +2077,92 @@ input:focus-visible,
       <circle cx="10.5" cy="10.5" r="1" fill="currentColor" stroke="none"/>
     </svg>
   </button>
+  <button class="tb-compare-btn" id="tb-compare-btn" onclick="openCompareModal()" title="Comparer deux sélections" aria-label="Comparer deux sélections">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 5h9l-2-2"/>
+      <path d="M2.5 5l2 2"/>
+      <path d="M13.5 11h-9l2 2"/>
+      <path d="M13.5 11l-2-2"/>
+    </svg>
+  </button>
   <button class="tb-search-btn" onclick="if(window.openCmdK)window.openCmdK()" title="Rechercher (⌘K / Ctrl+K)" aria-label="Rechercher">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg>
   </button>
+</div>
+
+<!-- ══ MODAL "Comparer 2 candidatures" ══ -->
+<div id="compare-modal" role="dialog" aria-modal="true" aria-labelledby="compare-modal-title">
+  <div class="cmp-overlay" onclick="closeCompareModal()"></div>
+  <div class="cmp-card">
+    <div class="cmp-head">
+      <h3 id="compare-modal-title">⇄ Le Comparateur</h3>
+      <button class="cmp-close" onclick="closeCompareModal()" aria-label="Fermer">✕</button>
+    </div>
+    <div class="cmp-body">
+      <div class="cmp-presets">
+        <span class="cmp-presets-label">Comparaisons populaires :</span>
+        <button class="cmp-presets-btn" data-preset="macron-17-22">Macron 2017 vs 2022</button>
+        <button class="cmp-presets-btn" data-preset="lepen-17-22">Le Pen 2017 vs 2022</button>
+        <button class="cmp-presets-btn" data-preset="mitterrand-hollande">Mitterrand 1988 vs Hollande 2012</button>
+        <button class="cmp-presets-btn" data-preset="chirac-sarkozy">Chirac 1995 vs Sarkozy 2007</button>
+        <button class="cmp-presets-btn" data-preset="gauche-22-17">Gauche 2022 vs 2017</button>
+      </div>
+      <div class="cmp-grid">
+        <div class="cmp-col cmp-col-A">
+          <div class="cmp-col-label">Sélection A</div>
+          <div class="cmp-field"><label class="cmp-field-label" for="cmpA-elec">Élection</label><select id="cmpA-elec"></select></div>
+          <div class="cmp-field" id="cmpA-tour-wrap"><label class="cmp-field-label">Tour</label><div class="cmp-btn-grp" id="cmpA-tour" data-side="A"></div></div>
+          <div class="cmp-field"><label class="cmp-field-label">Type</label><div class="cmp-btn-grp" id="cmpA-type" data-side="A">
+            <button type="button" data-val="candidat" class="on">Candidat·e</button>
+            <button type="button" data-val="bloc">Bloc</button>
+            <button type="button" data-val="famille">Famille</button>
+          </div></div>
+          <div class="cmp-field"><label class="cmp-field-label" for="cmpA-quoi">Quoi</label><select id="cmpA-quoi"></select></div>
+        </div>
+        <div class="cmp-col cmp-col-B">
+          <div class="cmp-col-label">Sélection B</div>
+          <div class="cmp-field"><label class="cmp-field-label" for="cmpB-elec">Élection</label><select id="cmpB-elec"></select></div>
+          <div class="cmp-field" id="cmpB-tour-wrap"><label class="cmp-field-label">Tour</label><div class="cmp-btn-grp" id="cmpB-tour" data-side="B"></div></div>
+          <div class="cmp-field"><label class="cmp-field-label">Type</label><div class="cmp-btn-grp" id="cmpB-type" data-side="B">
+            <button type="button" data-val="candidat" class="on">Candidat·e</button>
+            <button type="button" data-val="bloc">Bloc</button>
+            <button type="button" data-val="famille">Famille</button>
+          </div></div>
+          <div class="cmp-field"><label class="cmp-field-label" for="cmpB-quoi">Quoi</label><select id="cmpB-quoi"></select></div>
+        </div>
+      </div>
+      <div class="cmp-actions">
+        <button class="cmp-action cmp-action-cancel" onclick="closeCompareModal()">Annuler</button>
+        <button class="cmp-action cmp-action-primary" id="cmp-go-btn" onclick="startComparison()">Comparer →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODE COMPARAISON (split-view, masqué par défaut) ══ -->
+<div id="cmp-view">
+  <div class="cmp-banner">
+    <!-- Pastille A à l'extrême gauche, rappelle de quel côté on est -->
+    <span class="cmp-side-letter cmp-side-letter-a" aria-hidden="true">A</span>
+    <div class="cmp-banner-title cmp-banner-title-a" id="cmp-banner-a" role="button" tabindex="0"
+         onclick="editComparisonSide('A')" data-tooltip="Modifier la sélection A" aria-label="Modifier la sélection A"></div>
+    <div class="cmp-banner-actions">
+      <button class="cmp-banner-swap" onclick="swapComparison()" data-tooltip="Inverser A et B" aria-label="Inverser">⇄</button>
+    </div>
+    <div class="cmp-banner-title cmp-banner-title-b" id="cmp-banner-b" role="button" tabindex="0"
+         onclick="editComparisonSide('B')" data-tooltip="Modifier la sélection B" aria-label="Modifier la sélection B"></div>
+    <!-- Pastille B à l'extrême droite -->
+    <span class="cmp-side-letter cmp-side-letter-b" aria-hidden="true">B</span>
+  </div>
+  <div class="cmp-split">
+    <!-- Sidebar dédiée au mode Diff (stats + top swings + quartiers).
+         Position absolue → flotte par-dessus la carte (style identique à #sidebar). -->
+    <aside id="cmp-diff-sidebar" aria-label="Statistiques de la comparaison"></aside>
+    <div class="cmp-map-wrap" id="cmp-wrap-a"><div id="cmp-map-a" class="cmp-map"></div></div>
+    <div class="cmp-map-wrap" id="cmp-wrap-b"><div id="cmp-map-b" class="cmp-map"></div></div>
+    <!-- Légende = bulle flottante au centre, par-dessus les 2 cartes (échelle commune). -->
+    <div class="cmp-legend" id="cmp-legend"></div>
+  </div>
 </div>
 
 <div id="main">
@@ -6719,12 +7087,1306 @@ function updateFooter() {
     + (lu ? ' · <span style="opacity:.75">Données : ' + lu + '</span>' : '');
 }
 
+// ─── COMPARATEUR 2 candidatures (mode split-view) ─────────────────────────
+// Phase 1 : modal + peuplement des dropdowns + presets. Le mode comparaison
+// (split-view + carte B + tooltip enrichi) sera ajouté dans les phases 2-3.
+(function setupCompareModal(){
+  // Configuration des familles politiques (couleurs + labels), miroir de LRVanalyse.
+  // Les clés DOIVENT correspondre exactement aux valeurs stockées dans CAND_DATA[*].t
+  // (ex. 'extrême-gauche' avec tiret, 'chasseur-ruraliste' au singulier).
+  const FAMILY_CONFIG = {
+    'extrême-gauche':        { label: 'Extrême gauche',         color: '#7B0000' },
+    'gauche radicale':       { label: 'Gauche radicale',        color: '#9A5084' },
+    'gauche modérée':        { label: 'Gauche modérée',         color: '#CC0100' },
+    'gauche écologiste':     { label: 'Gauche écologiste',      color: '#3D8B3D' },
+    'écologistes':           { label: 'Écologistes',            color: '#6AA84F' },
+    'centristes':            { label: 'Centristes',             color: '#FF9900' },
+    'macronistes':           { label: 'Macronistes',            color: '#F1C232' },
+    'droite libérale':       { label: 'Droite libérale',        color: '#6D9EEB' },
+    'droite républicaine':   { label: 'Droite républicaine',    color: '#0F55CC' },
+    'droite conservatrice':  { label: 'Droite conservatrice',   color: '#1F3A6E' },
+    'souverainistes':        { label: 'Souverainistes',         color: '#0C5394' },
+    'extrême-droite':        { label: 'Extrême droite',         color: '#20124D' },
+    'chasseur-ruraliste':    { label: 'Chasseurs-ruralistes',   color: '#7F6001' },
+    'animalistes':           { label: 'Animalistes',            color: '#558E37' },
+  };
+  // Familles réellement présentes dans CAND_DATA (= au moins un candidat les porte).
+  // Recalculée dynamiquement pour rester juste si on ajoute de nouvelles familles.
+  function getPresentFamilies() {
+    const present = new Set();
+    Object.values(CAND_DATA).forEach(c => (c.t || []).forEach(t => {
+      if (FAMILY_CONFIG[t]) present.add(t);
+    }));
+    return Object.keys(FAMILY_CONFIG).filter(k => present.has(k));
+  }
+  // Expose pour le choroplèthe de la phase 3.
+  window._cmpFamilyConfig = FAMILY_CONFIG;
+
+  function el(id) { return document.getElementById(id); }
+
+  function populateElections(selectId) {
+    const s = el(selectId);
+    if (!s) return;
+    // On clone la structure (optgroups + options) du select principal pour rester
+    // 100 % synchro avec lui (ordre, groupes, libellés "Référendum 2005 — TCE", etc.).
+    const orig = document.getElementById('el-select');
+    if (orig) {
+      s.innerHTML = orig.innerHTML;
+      // Retirer les "selected" pré-définis pour pouvoir piloter via .value
+      s.querySelectorAll('option[selected]').forEach(o => o.removeAttribute('selected'));
+    } else {
+      // Fallback : liste plate triée par année
+      s.innerHTML = '';
+      Object.keys(ELECTIONS).forEach(l => {
+        const opt = document.createElement('option');
+        opt.value = l; opt.textContent = l;
+        s.appendChild(opt);
+      });
+    }
+  }
+
+  // Helpers pour lire/écrire la valeur d'un groupe de boutons (btn .on = sélectionné)
+  function getBtnGrpValue(grpId) {
+    const grp = el(grpId);
+    if (!grp) return null;
+    const sel = grp.querySelector('button.on');
+    return sel ? sel.getAttribute('data-val') : null;
+  }
+  function setBtnGrpValue(grpId, value) {
+    const grp = el(grpId);
+    if (!grp) return;
+    grp.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.getAttribute('data-val') === value));
+  }
+
+  function populateTours(elecSelectId, tourGrpId, wrapId) {
+    const elec = el(elecSelectId).value;
+    const grp = el(tourGrpId);
+    const wrap = el(wrapId);
+    const sheets = (ELECTIONS[elec] || {}).sheets || {};
+    const keys = ['T1','T2','TU'].filter(k => sheets[k]);
+    if (keys.length <= 1) {
+      // Si un seul tour, masquer le sélecteur (TU ou T1 seul)
+      wrap.style.display = 'none';
+      grp.innerHTML = keys[0] ? '<button type="button" data-val="' + keys[0] + '" class="on">' + keys[0] + '</button>' : '';
+    } else {
+      wrap.style.display = '';
+      grp.innerHTML = keys.map((k, i) => {
+        const label = k === 'T1' ? '1er tour' : k === 'T2' ? '2e tour' : 'Tour unique';
+        return '<button type="button" data-val="' + k + '"' + (i === 0 ? ' class="on"' : '') + '>' + label + '</button>';
+      }).join('');
+    }
+  }
+
+  function getCandidatesForElec(elec, tour) {
+    // Récupère la liste {cid → displayName} des candidats présents sur ce sheet
+    const sheets = (ELECTIONS[elec] || {}).sheets || {};
+    const sh = sheets[tour] || sheets.TU || sheets.T1;
+    if (!sh) return [];
+    const cids = new Set();
+    Object.values(sh).forEach(bd => {
+      if (bd && bd.c) Object.keys(bd.c).forEach(c => cids.add(c));
+    });
+    const out = [];
+    cids.forEach(cid => {
+      const cd = CAND_DATA[cid] || {};
+      let displayName, sortKey;
+      if (Array.isArray(cd.binome) && cd.binome.length === 2) {
+        const ms = (typeof binomeMembers === 'function') ? binomeMembers(cid) : null;
+        if (ms) {
+          displayName = ms.map(m => ((m.p ? m.p + ' ' : '') + (m.n || '')).trim()).join(' / ');
+          // Pour les binômes, on trie sur le nom du 1ᵉʳ membre (femme devant par convention).
+          sortKey = (ms[0] && ms[0].n) || displayName;
+        } else {
+          displayName = cid;
+          sortKey = cid;
+        }
+      } else {
+        const person = cd.person ? (PERSONS[cd.person] || {}) : {};
+        displayName = ((person.p || cd.p || '') + ' ' + (person.n || cd.n || cid)).trim();
+        // Tri par NOM de famille (pas le label complet qui commencerait par le prénom).
+        sortKey = person.n || cd.n || displayName;
+      }
+      // Étiquette parti pour disambiguation
+      const pa = cd.pa ? ' (' + cd.pa + ')' : '';
+      out.push({ cid, label: displayName + pa, sortKey });
+    });
+    out.sort((a, b) => a.sortKey.localeCompare(b.sortKey, 'fr'));
+    return out;
+  }
+
+  // Extrait la liste des person_id d'une candidature (1 pour individuel, 2 pour binôme).
+  // Sert pour matcher "le même candidat" entre 2 élections quand on switch en cours d'édition.
+  function personsOfCid(cid) {
+    const cd = CAND_DATA[cid] || {};
+    if (Array.isArray(cd.binome) && cd.binome.length) return cd.binome;
+    if (cd.person) return [cd.person];
+    return [];
+  }
+  function populateQuoi(side) {
+    const elec = el('cmp' + side + '-elec').value;
+    const tour = getBtnGrpValue('cmp' + side + '-tour');
+    const type = getBtnGrpValue('cmp' + side + '-type');
+    const quoi = el('cmp' + side + '-quoi');
+    // Capture la valeur précédente pour tenter de la préserver après repop. Permet
+    // de garder "le même candidat" quand on change d'élection (ex. Macron 2017 → 2022).
+    const prevValue = quoi.value;
+    const prevPersons = personsOfCid(prevValue);
+    quoi.innerHTML = '';
+    if (type === 'candidat') {
+      getCandidatesForElec(elec, tour).forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.cid; opt.textContent = c.label;
+        quoi.appendChild(opt);
+      });
+      // Matching priorité 1 : cid identique (élection inchangée + tour changé sur même cand).
+      // Priorité 2 : person_id en commun (élection changée, même personne candidate).
+      // Pour les binômes : on accepte un match dès qu'une personne du binôme prev est
+      // dans le nouveau binôme. Couvre Cantonales/Départementales où le binôme change
+      // partiellement d'élection à l'autre (un titulaire reste, l'autre change).
+      let match = null;
+      for (const opt of quoi.options) {
+        if (opt.value === prevValue) { match = opt.value; break; }
+      }
+      if (!match && prevPersons.length) {
+        for (const opt of quoi.options) {
+          const newPersons = personsOfCid(opt.value);
+          if (prevPersons.some(p => newPersons.includes(p))) { match = opt.value; break; }
+        }
+      }
+      if (match) quoi.value = match;
+    } else if (type === 'bloc') {
+      Object.entries(BLOC_CONFIG).forEach(([k, v]) => {
+        const opt = document.createElement('option');
+        opt.value = k; opt.textContent = v.label;
+        quoi.appendChild(opt);
+      });
+      // Bloc et famille : on garde la même clé si elle existe encore.
+      if (prevValue && BLOC_CONFIG[prevValue]) quoi.value = prevValue;
+    } else if (type === 'famille') {
+      // Familles présentes dans CAND_DATA, dans l'ordre canonique de FAMILY_CONFIG
+      // (gauche → droite). Label depuis FAMILY_CONFIG pour respecter les majuscules.
+      const present = getPresentFamilies();
+      present.forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f; opt.textContent = FAMILY_CONFIG[f].label;
+        quoi.appendChild(opt);
+      });
+      if (prevValue && present.indexOf(prevValue) !== -1) quoi.value = prevValue;
+    }
+  }
+
+  // Initialisation des 2 colonnes avec valeurs par défaut sensées (l'élection courante)
+  function initModal() {
+    populateElections('cmpA-elec');
+    populateElections('cmpB-elec');
+    el('cmpA-elec').value = currentElection;
+    el('cmpB-elec').value = currentElection;
+    populateTours('cmpA-elec', 'cmpA-tour', 'cmpA-tour-wrap');
+    populateTours('cmpB-elec', 'cmpB-tour', 'cmpB-tour-wrap');
+    populateQuoi('A');
+    populateQuoi('B');
+  }
+
+  // Listener "change" : élection est encore un <select>
+  ['A','B'].forEach(side => {
+    document.addEventListener('change', e => {
+      if (e.target.id === 'cmp' + side + '-elec') {
+        populateTours('cmp' + side + '-elec', 'cmp' + side + '-tour', 'cmp' + side + '-tour-wrap');
+        populateQuoi(side);
+      }
+    });
+  });
+  // Listener "click" pour les groupes de boutons (Tour, Type) : un seul actif à la fois
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('#compare-modal .cmp-btn-grp button');
+    if (!btn) return;
+    const grp = btn.parentElement;
+    const side = grp.getAttribute('data-side');
+    if (!side) return;
+    grp.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === btn));
+    // Selon le groupe, on repop la suite
+    if (grp.id.endsWith('-type')) populateQuoi(side);
+    else if (grp.id.endsWith('-tour')) populateQuoi(side);
+  });
+
+  // Presets : configurations populaires en 1 clic
+  const PRESETS = {
+    'macron-17-22': { A: ['Présidentielle 2017','T1','candidat','emmanuel-macron@presidentielle-2017'], B: ['Présidentielle 2022','T1','candidat','emmanuel-macron@presidentielle-2022'] },
+    'lepen-17-22':  { A: ['Présidentielle 2017','T1','candidat','marine-le-pen@presidentielle-2017'], B: ['Présidentielle 2022','T1','candidat','marine-le-pen@presidentielle-2022'] },
+    'mitterrand-hollande': { A: ['Présidentielle 1988','T1','candidat','francois-mitterrand@presidentielle-1988'], B: ['Présidentielle 2012','T1','candidat','francois-hollande@presidentielle-2012'] },
+    'chirac-sarkozy': { A: ['Présidentielle 1995','T1','candidat','jacques-chirac@presidentielle-1995'], B: ['Présidentielle 2007','T1','candidat','nicolas-sarkozy@presidentielle-2007'] },
+    'gauche-22-17': { A: ['Législatives 2022','T1','bloc','G'], B: ['Législatives 2017','T1','bloc','G'] },
+  };
+  document.addEventListener('click', e => {
+    if (!e.target.classList.contains('cmp-presets-btn')) return;
+    const key = e.target.getAttribute('data-preset');
+    const p = PRESETS[key];
+    if (!p) return;
+    ['A','B'].forEach((side) => {
+      const [elec, tour, type, quoi] = p[side];
+      el('cmp' + side + '-elec').value = elec;
+      populateTours('cmp' + side + '-elec', 'cmp' + side + '-tour', 'cmp' + side + '-tour-wrap');
+      setBtnGrpValue('cmp' + side + '-tour', tour);
+      setBtnGrpValue('cmp' + side + '-type', type);
+      populateQuoi(side);
+      el('cmp' + side + '-quoi').value = quoi;
+    });
+  });
+
+  // API publique
+  window.openCompareModal = function() {
+    initModal();
+    const m = el('compare-modal');
+    if (m) m.classList.add('open');
+  };
+  window.closeCompareModal = function() {
+    const m = el('compare-modal');
+    if (m) m.classList.remove('open');
+  };
+  // État de la comparaison : sélections A/B + maps Leaflet + état restauration
+  let _cmpState = null;
+
+  // Observer le changement de thème (data-theme sur <html>) pour swap les tiles
+  // des 2 cartes du Comparateur en cours de session. Une seule instance globale.
+  const _cmpThemeObserver = new MutationObserver(muts => {
+    muts.forEach(mut => {
+      if (mut.attributeName !== 'data-theme') return;
+      if (!_cmpState) return;
+      if (_cmpState.mapA && _cmpState.mapA._cmpRebuildTiles) _cmpState.mapA._cmpRebuildTiles();
+      if (_cmpState.mapB && _cmpState.mapB._cmpRebuildTiles) _cmpState.mapB._cmpRebuildTiles();
+    });
+  });
+  _cmpThemeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  // Expose pour writeURLState (top-level) : permet d'encoder A/B dans le hash.
+  // Retourne { A, B } ou null si pas en mode comparaison.
+  window.getCmpState = function() {
+    if (!_cmpState) return null;
+    return { A: _cmpState.A, B: _cmpState.B, scaleMode: _cmpState.scaleMode || 'absolute' };
+  };
+  // Helper pour déclencher l'écriture du hash depuis l'IIFE (sécurise les accès).
+  function syncCmpUrl() { if (typeof writeURLState === 'function') writeURLState(); }
+
+  window.startComparison = function() {
+    const A = { elec: el('cmpA-elec').value, tour: getBtnGrpValue('cmpA-tour'), type: getBtnGrpValue('cmpA-type'), quoi: el('cmpA-quoi').value };
+    const B = { elec: el('cmpB-elec').value, tour: getBtnGrpValue('cmpB-tour'), type: getBtnGrpValue('cmpB-type'), quoi: el('cmpB-quoi').value };
+    if (!A.elec || !B.elec || !A.quoi || !B.quoi) return;
+    closeCompareModal();
+    // Si on est déjà en mode compare (édition à chaud), on libère les maps existantes
+    // avant de relancer — activateCompareMode crée des fresh L.map sur les containers.
+    if (_cmpState) cleanCmpResources();
+    activateCompareMode(A, B);
+  };
+  // Libère les ressources Leaflet du mode comparaison (maps + handlers).
+  // Conserve _cmpState pour permettre un re-init avec activateCompareMode.
+  function cleanCmpResources() {
+    if (!_cmpState) return;
+    if (_cmpState.mapA) { _cmpState.mapA.remove(); _cmpState.mapA = null; }
+    if (_cmpState.mapB) { _cmpState.mapB.remove(); _cmpState.mapB = null; }
+    _cmpState.layersA = null; _cmpState.layersB = null;
+    _cmpState.geoA = null;    _cmpState.geoB = null;
+  }
+  window.exitComparison = function() {
+    if (!_cmpState) return;
+    document.body.classList.remove('is-compare');
+    cleanCmpResources();
+    _cmpState = null;
+    // Nettoie les params compare du hash (writeURLState lit getCmpState() → null).
+    syncCmpUrl();
+    // Réinvalider la map principale (souvent nécessaire après resize)
+    setTimeout(() => { if (typeof map !== 'undefined' && map.invalidateSize) map.invalidateSize(false); }, 50);
+  };
+  // Swap A ↔ B sans quitter le mode comparaison.
+  window.swapComparison = function() {
+    if (!_cmpState) return;
+    const A = _cmpState.B, B = _cmpState.A;
+    cleanCmpResources();
+    activateCompareMode(A, B);
+  };
+  // Ré-ouvre la modale avec les sélections courantes pour modifier un côté.
+  // sideToFocus : 'A' ou 'B' (ou rien) — utilisé pour mettre en évidence la colonne cliquée.
+  window.editComparisonSide = function(sideToFocus) {
+    if (!_cmpState) return;
+    openCompareModal();
+    // Pré-remplir la modale avec les valeurs courantes (A et B).
+    setTimeout(() => {
+      ['A','B'].forEach(side => {
+        const sel = _cmpState[side];
+        if (!sel) return;
+        const eSel = el('cmp' + side + '-elec');
+        if (eSel) eSel.value = sel.elec;
+        populateTours('cmp' + side + '-elec', 'cmp' + side + '-tour', 'cmp' + side + '-tour-wrap');
+        setBtnGrpValue('cmp' + side + '-tour', sel.tour);
+        setBtnGrpValue('cmp' + side + '-type', sel.type);
+        populateQuoi(side);
+        const qSel = el('cmp' + side + '-quoi');
+        if (qSel) qSel.value = sel.quoi;
+      });
+      // Focus optionnel sur le côté cliqué (légère mise en évidence visuelle).
+      if (sideToFocus) {
+        const col = document.querySelector('#compare-modal .cmp-col-' + sideToFocus);
+        if (col) col.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    }, 30);
+  };
+
+  // Synchro hover : quand on survole un bureau sur une carte, on ouvre AUSSI
+  // le tooltip sur la couche correspondante de l'autre carte (même n° de bureau).
+  // Effet "cartes jumelles" : permet de comparer directement le même bureau sur
+  // les 2 scrutins sans bouger la souris.
+  function bindCmpHoverSync(layersFrom, layersTo) {
+    Object.keys(layersFrom).forEach(function(ns) {
+      const lFrom = layersFrom[ns];
+      const lTo = layersTo[ns];
+      if (!lFrom || !lTo) return;
+      lFrom.on('mouseover', function() { lTo.openTooltip(); });
+      lFrom.on('mouseout',  function() { lTo.closeTooltip(); });
+    });
+  }
+
+  function activateCompareMode(A, B) {
+    // Conserve scaleMode si déjà défini (swap/edit/restart). Sinon : absolu par défaut.
+    const prevMode = (_cmpState && _cmpState.scaleMode) || 'absolute';
+    _cmpState = { A, B, mapA: null, mapB: null, syncing: false, scaleMode: prevMode };
+    document.body.classList.add('is-compare');
+    // Sheets + scores ville + ranges (par côté + partagé).
+    const sheetA = getSheetForSel(A);
+    const sheetB = getSheetForSel(B);
+    const scoreA = computeCityScore(sheetA, A);
+    const scoreB = computeCityScore(sheetB, B);
+    // Range par côté pour le mode RELATIF + range partagé pour le mode ABSOLU.
+    _cmpState.rangeA = computeRangeForSide(sheetA, A);
+    _cmpState.rangeB = computeRangeForSide(sheetB, B);
+    const { minG, maxG } = computeSharedRange(sheetA, A, sheetB, B);
+    _cmpState.minG = minG; _cmpState.maxG = maxG;
+    // Max absolu de la diff B-A pour le mode "diff" — symétrique autour de 0.
+    _cmpState.diffMaxAbs = computeDiffMaxAbs(sheetA, A, sheetB, B);
+    // Bannière titres (avec score ville en tag coloré, à côté du label de la sélection).
+    // Delta B-A affiché uniquement côté B pour matérialiser l'écart d'un coup d'œil.
+    el('cmp-banner-a').innerHTML = buildBannerTitle(A, scoreA);
+    el('cmp-banner-b').innerHTML = buildBannerTitle(B, scoreB, scoreB - scoreA);
+    // Légende : utilise le mode courant pour rendre 1 ou 2 barres.
+    renderCmpLegend('cmp-legend', A, B);
+    // Init des 2 maps (délai pour laisser le CSS s'appliquer avant la mesure).
+    // initCmpMap retourne { map, layers } : map = instance Leaflet ; layers = index
+    // { bureau → layer } pour permettre la synchro hover entre les 2 cartes.
+    setTimeout(() => {
+      const a = initCmpMap('cmp-map-a', A, 'A');
+      const b = initCmpMap('cmp-map-b', B, 'B');
+      _cmpState.mapA = a.map;     _cmpState.mapB = b.map;
+      _cmpState.layersA = a.layers; _cmpState.layersB = b.layers;
+      _cmpState.geoA = a.geo;     _cmpState.geoB = b.geo;
+      // Synchronisation pan/zoom entre les 2 cartes.
+      // Flag _cmpState.syncing pour éviter la récursion infinie.
+      function syncFromTo(from, to) {
+        return function() {
+          if (!_cmpState || _cmpState.syncing) return;
+          _cmpState.syncing = true;
+          to.setView(from.getCenter(), from.getZoom(), { animate: false });
+          _cmpState.syncing = false;
+        };
+      }
+      // `move zoom` = continu pendant le drag ; `moveend zoomend` = filet de sécurité
+      // pour l'état final (notamment après un double-clic zoom ou wheel zoom).
+      _cmpState.mapA.on('move zoom moveend zoomend', syncFromTo(_cmpState.mapA, _cmpState.mapB));
+      _cmpState.mapB.on('move zoom moveend zoomend', syncFromTo(_cmpState.mapB, _cmpState.mapA));
+      // Synchro hover : tooltips jumeaux (hover bureau X sur A → tooltip aussi sur B).
+      bindCmpHoverSync(a.layers, b.layers);
+      bindCmpHoverSync(b.layers, a.layers);
+      // Highlight bureaux au survol du gradient de légende (sur les 2 cartes).
+      bindLegendHover();
+      // Si on est resté en mode diff (swap, edit), rendre la sidebar dédiée.
+      if (_cmpState.scaleMode === 'diff') renderDiffSidebar();
+      // URL partageable : encode A/B dans le hash (lecture via getCmpState).
+      syncCmpUrl();
+    }, 50);
+  }
+  // API publique pour activer le mode comparaison depuis l'URL au boot.
+  // Reproduit startComparison() sans passer par la modale.
+  window.activateComparisonFromState = function(A, B) {
+    if (!A || !B || !A.elec || !B.elec || !A.quoi || !B.quoi) return false;
+    if (!ELECTIONS[A.elec] || !ELECTIONS[B.elec]) return false;
+    if (_cmpState) cleanCmpResources();
+    activateCompareMode(A, B);
+    return true;
+  };
+
+  function buildBannerTitle(sel, score, delta) {
+    const elec = sel.elec;
+    const tour = sel.tour;
+    const tourLabel = tour === 'T1' ? '1ᵉʳ tour' : tour === 'T2' ? '2ᵉ tour' : 'tour unique';
+    let quoiLabel = sel.quoi;
+    if (sel.type === 'candidat') {
+      const cd = CAND_DATA[sel.quoi] || {};
+      if (Array.isArray(cd.binome) && cd.binome.length === 2 && typeof binomeMembers === 'function') {
+        const ms = binomeMembers(sel.quoi);
+        if (ms) quoiLabel = ms.map(m => ((m.p ? m.p + ' ' : '') + (m.n || '')).trim()).join(' / ');
+      } else {
+        const person = cd.person ? (PERSONS[cd.person] || {}) : {};
+        quoiLabel = ((person.p || cd.p || '') + ' ' + (person.n || cd.n || sel.quoi)).trim();
+      }
+      const pa = cd.pa ? ' (' + cd.pa + ')' : '';
+      quoiLabel += pa;
+    } else if (sel.type === 'bloc') {
+      quoiLabel = (BLOC_CONFIG[sel.quoi] || {}).label || sel.quoi;
+      quoiLabel = 'Bloc ' + quoiLabel.toLowerCase();
+    } else if (sel.type === 'famille') {
+      quoiLabel = 'Famille ' + (FAMILY_CONFIG[sel.quoi] ? FAMILY_CONFIG[sel.quoi].label.toLowerCase() : sel.quoi);
+    }
+    // Score ville : tag coloré (couleur de base de la sélection, texte adaptatif).
+    const bg = baseColorOfSel(sel);
+    const txtCol = (typeof pickTextColorForBg === 'function') ? pickTextColorForBg(bg) : '#fff';
+    const scoreStr = (typeof score === 'number') ? score.toFixed(1).replace('.', ',') + '\xa0%' : '';
+    const scoreTag = scoreStr
+      ? '<span class="cmp-banner-score" style="background:' + bg + ';color:' + txtCol + '">' + scoreStr + '</span>'
+      : '';
+    // Delta B-A : visible uniquement côté B (passé en argument). Vert si > 0,
+    // rouge si < 0, neutre si ≈ 0 (< 0.1 pt). Vrai signe "−" U+2212 pour les négatifs.
+    let deltaTag = '';
+    if (typeof delta === 'number') {
+      const abs = Math.abs(delta).toFixed(1).replace('.', ',');
+      let cls = 'neutral', sign = '';
+      if (delta >= 0.1)       { cls = 'pos'; sign = '+'; }
+      else if (delta <= -0.1) { cls = 'neg'; sign = '−'; }
+      else                    { cls = 'neutral'; sign = '='; }
+      const txt = (cls === 'neutral') ? '= pts' : (sign + abs + '\xa0pts');
+      deltaTag = '<span class="cmp-banner-delta cmp-banner-delta-' + cls + '" data-tooltip="Écart vs A">' + txt + '</span>';
+    }
+    // Colonne "chiffres" (score + delta empilés verticalement) à côté de la colonne
+    // texte (label + sub). L'ordre DOM est constant ; le sens visuel diffère via
+    // flex-direction sur .cmp-banner-title-{a,b} (B = row, A = row-reverse).
+    const numbers = '<div class="cmp-banner-numbers">' + scoreTag + deltaTag + '</div>';
+    const txt = '<div class="cmp-banner-txt"><strong>' + quoiLabel + '</strong><span class="cmp-banner-sub">' + elec + ' · ' + tourLabel + '</span></div>';
+    return numbers + txt;
+  }
+
+  // ─── Helpers de score (phase 3) ────────────────────────────────────────
+  // Retourne le sheet (dict bureau → data) pour la sélection donnée.
+  function getSheetForSel(sel) {
+    const el0 = ELECTIONS[sel.elec];
+    if (!el0 || !el0.sheets) return {};
+    return el0.sheets[sel.tour] || {};
+  }
+  // Couleur de base d'une sélection (candidat → couleur paritaire, bloc/famille → couleur config).
+  function baseColorOfSel(sel) {
+    if (sel.type === 'candidat') return colorOfCandidate(sel.quoi) || '#888';
+    if (sel.type === 'bloc')     return (BLOC_CONFIG[sel.quoi] || BLOC_CONFIG['?']).color;
+    if (sel.type === 'famille')  return (FAMILY_CONFIG[sel.quoi] || { color: '#888' }).color;
+    return '#888';
+  }
+  // Libellé court d'une sélection (utilisé dans le tooltip de bureau).
+  function shortLabelOfSel(sel) {
+    if (sel.type === 'candidat') {
+      const ci = candInfo(sel.quoi) || {};
+      if (Array.isArray(ci.binome) && ci.binome.length === 2 && typeof binomeShortLabel === 'function') {
+        return binomeShortLabel(sel.quoi) || ci.n || sel.quoi;
+      }
+      return ci.n || sel.quoi;
+    }
+    if (sel.type === 'bloc')    return (BLOC_CONFIG[sel.quoi] || BLOC_CONFIG['?']).label;
+    if (sel.type === 'famille') return (FAMILY_CONFIG[sel.quoi] || { label: sel.quoi }).label;
+    return String(sel.quoi);
+  }
+  // Score pour un bureau (en %) d'une sélection donnée.
+  // Retourne { pct, present } — present=false si la sélection n'a pas de candidat
+  // dans ce bureau (cantonale hors canton, bloc sans candidat, famille sans candidat).
+  function scoreOfSelInBureau(data, sel) {
+    if (!data || !data.c) return { pct: 0, present: false };
+    if (sel.type === 'candidat') {
+      if (!Object.prototype.hasOwnProperty.call(data.c, sel.quoi)) return { pct: 0, present: false };
+      return { pct: data.c[sel.quoi] || 0, present: true };
+    }
+    if (sel.type === 'bloc') {
+      if (!hasBlocCandidates(data, sel.quoi)) return { pct: 0, present: false };
+      const blocs = computeBlocs(data);
+      return { pct: blocs[sel.quoi] || 0, present: true };
+    }
+    if (sel.type === 'famille') {
+      let sum = 0; let has = false;
+      Object.entries(data.c).forEach(([cid, pct]) => {
+        const ci = candInfo(cid) || {};
+        if (Array.isArray(ci.t) && ci.t.indexOf(sel.quoi) !== -1) {
+          has = true; sum += pct;
+        }
+      });
+      return { pct: sum, present: has };
+    }
+    return { pct: 0, present: false };
+  }
+  // Rang du candidat/bloc/famille parmi les autres dans un bureau (1 = top).
+  function rankOfSelInBureau(data, sel) {
+    if (!data || !data.c) return { rank: 0, total: 0 };
+    if (sel.type === 'candidat') {
+      const sorted = Object.entries(data.c).sort((a, b) => b[1] - a[1]);
+      return { rank: sorted.findIndex(([k]) => k === sel.quoi) + 1, total: sorted.length };
+    }
+    if (sel.type === 'bloc') {
+      const sorted = Object.entries(computeBlocs(data)).sort((a, b) => b[1] - a[1]);
+      return { rank: sorted.findIndex(([k]) => k === sel.quoi) + 1, total: sorted.length };
+    }
+    if (sel.type === 'famille') {
+      // Recompose tous les scores famille du bureau, puis trie.
+      const fam = {};
+      Object.entries(data.c).forEach(([cid, pct]) => {
+        const ci = candInfo(cid) || {};
+        (ci.t || []).forEach(t => { if (FAMILY_CONFIG[t]) fam[t] = (fam[t] || 0) + pct; });
+      });
+      const sorted = Object.entries(fam).sort((a, b) => b[1] - a[1]);
+      return { rank: sorted.findIndex(([k]) => k === sel.quoi) + 1, total: sorted.length };
+    }
+    return { rank: 0, total: 0 };
+  }
+  // Rend la légende partagée sous les 2 cartes.
+  // Cas 1 : A et B ont la même baseColor → une seule barre (cas typique "même
+  // candidat sur 2 élections", "même bloc sur 2 tours", etc.).
+  // Cas 2 : baseColors différentes → deux mini-barres côte à côte ("A: gradient"
+  // + "B: gradient") pour ne pas faire mentir le choroplèthe.
+  function renderCmpLegend(containerId, A, B) {
+    const root = document.getElementById(containerId);
+    if (!root || !_cmpState) return;
+    const colA = baseColorOfSel(A), colB = baseColorOfSel(B);
+    const labA = shortLabelOfSel(A), labB = shortLabelOfSel(B);
+    const mode = _cmpState.scaleMode || 'absolute';
+    // Helper gradient bas→haut (cohérent avec blendToWhite : plancher 0.08 = bas, 1 = haut).
+    function gradFor(c) {
+      const lowEnd = blendToWhite(c, 0.08);
+      return 'linear-gradient(to right, ' + lowEnd + ' 0%, ' + c + ' 100%)';
+    }
+    function fmt(p) { return p.toFixed(1).replace('.', ',') + ' %'; }
+    // Toggle Abs/Rel/Diff — onClick global défini dans window.toggleCmpScale.
+    const toggle = ''
+      + '<div class="cmp-legend-mode" role="group" aria-label="Échelle">'
+      + '  <button type="button" data-mode="absolute"' + (mode === 'absolute' ? ' class="on"' : '') + ' data-tooltip="Échelle absolue (partagée A/B)" onclick="toggleCmpScale(\'absolute\')">Abs</button>'
+      + '  <button type="button" data-mode="relative"' + (mode === 'relative' ? ' class="on"' : '') + ' data-tooltip="Échelle relative (par côté)" onclick="toggleCmpScale(\'relative\')">Rel</button>'
+      + '  <button type="button" data-mode="diff"'     + (mode === 'diff'     ? ' class="on"' : '') + ' data-tooltip="Différence B − A par bureau" onclick="toggleCmpScale(\'diff\')">Diff</button>'
+      + '</div>';
+    let body = '';
+    if (mode === 'diff') {
+      // Barre bicolore rouge → blanc → vert, centrée sur 0. Bornes ±maxAbs en POINTS
+      // (pas en %) — c'est un écart, pas une valeur absolue.
+      const maxAbs = _cmpState.diffMaxAbs || 0;
+      const bound = maxAbs.toFixed(1).replace('.', ',') + '\xa0pts';
+      const grad = 'linear-gradient(to right, '
+        + _DIFF_COLOR_NEG + ' 0%, '
+        + blendToWhite(_DIFF_COLOR_NEG, 0.4) + ' 25%, '
+        + '#ffffff 50%, '
+        + blendToWhite(_DIFF_COLOR_POS, 0.4) + ' 75%, '
+        + _DIFF_COLOR_POS + ' 100%)';
+      body = ''
+        + '<span class="cmp-legend-label" title="B − A">B − A</span>'
+        + '<span class="cmp-legend-bound">−' + bound + '</span>'
+        + '<div class="cmp-legend-bar" data-side="diff" style="background:' + grad + '"><div class="cmp-legend-cursor"></div></div>'
+        + '<span class="cmp-legend-bound">+' + bound + '</span>';
+    } else if (mode === 'absolute') {
+      // 1 barre commune ancrée sur [minG, maxG].
+      const minStr = fmt(_cmpState.minG), maxStr = fmt(_cmpState.maxG);
+      const sameColor = colA === colB;
+      const label = sameColor ? labA : (labA + ' / ' + labB);
+      let barStyle;
+      if (sameColor) {
+        barStyle = 'background:' + gradFor(colA);
+      } else {
+        // Split vertical : haut = colA, bas = colB (compact en mode bulle).
+        barStyle = 'background:'
+          + 'linear-gradient(to right, ' + blendToWhite(colA, 0.08) + ' 0%, ' + colA + ' 100%) top/100% 50% no-repeat,'
+          + 'linear-gradient(to right, ' + blendToWhite(colB, 0.08) + ' 0%, ' + colB + ' 100%) bottom/100% 50% no-repeat';
+      }
+      body = ''
+        + '<span class="cmp-legend-label" title="' + label + '">' + label + '</span>'
+        + '<span class="cmp-legend-bound">' + minStr + '</span>'
+        + '<div class="cmp-legend-bar" id="cmp-legend-bar-shared" style="' + barStyle + '"><div class="cmp-legend-cursor" id="cmp-legend-cursor"></div></div>'
+        + '<span class="cmp-legend-bound">' + maxStr + '</span>';
+    } else {
+      // Mode relatif : 2 sous-bulles A et B, chacune avec son range local.
+      const rA = _cmpState.rangeA, rB = _cmpState.rangeB;
+      function side(letter, lab, col, range) {
+        return ''
+          + '<span class="cmp-legend-side"><span class="cmp-legend-side-tag" style="background:' + col + '">' + letter + '</span>'
+          + '<span class="cmp-legend-bound">' + fmt(range.min) + '</span>'
+          + '<div class="cmp-legend-bar" data-side="' + letter + '" style="background:' + gradFor(col) + '"><div class="cmp-legend-cursor"></div></div>'
+          + '<span class="cmp-legend-bound">' + fmt(range.max) + '</span></span>';
+      }
+      body = side('A', labA, colA, rA) + side('B', labB, colB, rB);
+    }
+    root.innerHTML = toggle + body;
+  }
+  // Bascule du mode d'échelle (absolu / relatif / diff). Recolorie les cartes,
+  // re-rend la légende, et adapte le layout (1 map en mode diff, 2 sinon).
+  window.toggleCmpScale = function(mode) {
+    if (!_cmpState || _cmpState.scaleMode === mode) return;
+    _cmpState.scaleMode = mode;
+    // Layout : mode diff = 1 seule map (A), pleine largeur ; sinon 2 cartes côte à côte.
+    document.body.classList.toggle('is-cmp-diff', mode === 'diff');
+    // invalidateSize après le re-layout pour que Leaflet recompute les dimensions.
+    setTimeout(() => {
+      if (_cmpState && _cmpState.mapA && _cmpState.mapA.invalidateSize) _cmpState.mapA.invalidateSize(false);
+      if (_cmpState && _cmpState.mapB && _cmpState.mapB.invalidateSize) _cmpState.mapB.invalidateSize(false);
+    }, 50);
+    // Recolorie : geo.setStyle(geo.options.style) re-évalue styleOf, qui branche
+    // diff/abs/rel via _cmpState.scaleMode.
+    if (_cmpState.geoA) _cmpState.geoA.setStyle(_cmpState.geoA.options.style);
+    if (_cmpState.geoB) _cmpState.geoB.setStyle(_cmpState.geoB.options.style);
+    // Mode diff : reconstruire les tooltips (le contenu change avec le mode).
+    if (_cmpState.geoA) {
+      _cmpState.geoA.eachLayer(layer => {
+        if (layer.feature && _cmpState.mapA && _cmpState.mapA._cmpRebuildTooltipFor) {
+          _cmpState.mapA._cmpRebuildTooltipFor(layer);
+        }
+      });
+    }
+    renderCmpLegend('cmp-legend', _cmpState.A, _cmpState.B);
+    bindLegendHover();
+    // Sidebar dédiée au mode diff — rendue à chaque entrée (les stats peuvent
+    // avoir changé via swap ou edit). En sortie du mode diff, on vide le HTML.
+    if (mode === 'diff') renderDiffSidebar();
+    else { const sb = document.getElementById('cmp-diff-sidebar'); if (sb) sb.innerHTML = ''; }
+    if (typeof writeURLState === 'function') writeURLState();
+  };
+
+  // Synchro highlight bureaux ↔ survol gradient.
+  // En mode ABSOLU : 1 barre commune → on highlight les 2 cartes au même pct.
+  // En mode RELATIF : 2 barres séparées, MAIS effet jumeau préservé via la
+  // POSITION RELATIVE t∈[0,1]. À t donné sur la barre survolée, on highlight :
+  //   • côté hovered : pct = rangeHovered.min + t * (rangeHovered.max - min)
+  //   • côté opposé  : pct = rangeOther.min + t * (rangeOther.max - min)
+  // Et un curseur fantôme glisse aussi sur l'autre barre pour matérialiser ça.
+  function bindLegendHover() {
+    if (!_cmpState) return;
+    let highlighted = [];
+    function unhighlight() {
+      highlighted.forEach(({ layer, geo }) => { if (geo && layer) try { geo.resetStyle(layer); } catch(e){} });
+      highlighted = [];
+    }
+    // Calcule le range effectif d'un side donné (à un instant t, selon scaleMode).
+    function rangeOf(side) {
+      return effectiveRangeFor(side);
+    }
+    function highlightSideAt(side, targetPct) {
+      const sel = _cmpState[side];
+      const layers = _cmpState[side === 'A' ? 'layersA' : 'layersB'];
+      const geo    = _cmpState[side === 'A' ? 'geoA'    : 'geoB'];
+      if (!layers || !geo || !sel) return;
+      const r = rangeOf(side);
+      const amp = Math.max(0.01, r.max - r.min);
+      const tol = Math.max(0.5, Math.min(2.5, amp * 0.04));
+      const sheet = getSheetForSel(sel);
+      Object.entries(layers).forEach(([ns, layer]) => {
+        const data = sheet[ns]; if (!data) return;
+        const { pct, present } = scoreOfSelInBureau(data, sel);
+        if (!present) return;
+        if (Math.abs(pct - targetPct) <= tol) {
+          layer.setStyle({ weight: 2.6, color: '#000' });
+          if (layer.bringToFront) layer.bringToFront();
+          highlighted.push({ layer, geo });
+        }
+      });
+    }
+    // Curseur fantôme sur l'AUTRE barre (mode relatif uniquement) : matérialise
+    // la position relative équivalente pour rendre le jumelage visible.
+    function updateGhostCursor(hoveredSide, t) {
+      const otherSide = hoveredSide === 'A' ? 'B' : 'A';
+      const otherBar = document.querySelector('#cmp-legend .cmp-legend-bar[data-side="' + otherSide + '"]');
+      if (!otherBar) return;
+      const otherCursor = otherBar.querySelector('.cmp-legend-cursor');
+      if (!otherCursor) return;
+      const r = rangeOf(otherSide);
+      const otherPct = r.min + t * (r.max - r.min);
+      otherCursor.style.left = (t * 100) + '%';
+      otherCursor.setAttribute('data-pct', otherPct.toFixed(1).replace('.', ',') + ' %');
+      otherCursor.classList.add('on', 'ghost');
+    }
+    function clearGhostCursors() {
+      document.querySelectorAll('#cmp-legend .cmp-legend-cursor').forEach(c => c.classList.remove('on', 'ghost'));
+    }
+    // Highlight des bureaux dont la diff B-A est proche d'une valeur cible.
+    // S'applique uniquement sur la map A (la seule visible en mode diff).
+    function highlightDiffAt(targetDiff) {
+      const maxAbs = Math.max(0.01, _cmpState.diffMaxAbs || 1);
+      const tol = Math.max(0.5, Math.min(2.5, (2 * maxAbs) * 0.04));
+      const layers = _cmpState.layersA, geo = _cmpState.geoA;
+      const sheetA = getSheetForSel(_cmpState.A), sheetB = getSheetForSel(_cmpState.B);
+      if (!layers || !geo) return;
+      Object.entries(layers).forEach(([ns, layer]) => {
+        const dA = sheetA[ns], dB = sheetB[ns];
+        if (!dA || !dB) return;
+        const sA = scoreOfSelInBureau(dA, _cmpState.A);
+        const sB = scoreOfSelInBureau(dB, _cmpState.B);
+        if (!sA.present || !sB.present) return;
+        const d = sB.pct - sA.pct;
+        if (Math.abs(d - targetDiff) <= tol) {
+          layer.setStyle({ weight: 2.6, color: '#000' });
+          if (layer.bringToFront) layer.bringToFront();
+          highlighted.push({ layer, geo });
+        }
+      });
+    }
+    // Attache mousemove/leave à chaque barre du DOM. data-side absent = absolu.
+    document.querySelectorAll('#cmp-legend .cmp-legend-bar').forEach(bar => {
+      const side = bar.getAttribute('data-side'); // 'A', 'B' (relatif), 'diff', ou null (absolu)
+      const cursor = bar.querySelector('.cmp-legend-cursor');
+      const isDiff = side === 'diff';
+      const localRange = isDiff
+        ? { min: -(_cmpState.diffMaxAbs || 0), max: (_cmpState.diffMaxAbs || 0) }
+        : (side ? rangeOf(side) : { min: _cmpState.minG, max: _cmpState.maxG });
+      bar.addEventListener('mousemove', e => {
+        const rect = bar.getBoundingClientRect();
+        const t = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+        const targetPct = localRange.min + t * (localRange.max - localRange.min);
+        if (cursor) {
+          cursor.style.left = (t * 100) + '%';
+          // En mode diff, on affiche le delta avec son signe (+/− pts), pas un %.
+          const label = isDiff
+            ? ((targetPct >= 0 ? '+' : '−') + Math.abs(targetPct).toFixed(1).replace('.', ',') + '\xa0pts')
+            : (targetPct.toFixed(1).replace('.', ',') + ' %');
+          cursor.setAttribute('data-pct', label);
+          cursor.classList.add('on');
+          cursor.classList.remove('ghost');
+        }
+        unhighlight();
+        if (isDiff) {
+          highlightDiffAt(targetPct);
+        } else if (side) {
+          // Mode relatif : highlight les 2 côtés via leurs ranges respectifs, à
+          // même position relative t. Curseur fantôme sur l'autre barre.
+          highlightSideAt(side, targetPct);
+          const otherSide = side === 'A' ? 'B' : 'A';
+          const rOther = rangeOf(otherSide);
+          const otherPct = rOther.min + t * (rOther.max - rOther.min);
+          highlightSideAt(otherSide, otherPct);
+          updateGhostCursor(side, t);
+        } else {
+          // Mode absolu : 1 barre, on highlight les 2 cartes au même pct.
+          highlightSideAt('A', targetPct);
+          highlightSideAt('B', targetPct);
+        }
+      });
+      bar.addEventListener('mouseleave', () => {
+        clearGhostCursors();
+        unhighlight();
+      });
+    });
+  }
+
+  // Score ville (en %) d'une sélection : Σ voix / Σ exprimés × 100.
+  // Calculé à partir des voix entières (data._voix) pour rester exact (cf. CLAUDE.md :
+  // sommer des pcts arrondis introduit des drifts de ±1 voix sur les agrégats).
+  function computeCityScore(sheet, sel) {
+    let sumVoix = 0, sumE = 0;
+    Object.entries(sheet || {}).forEach(([ns, data]) => {
+      if (ns === '0057' || !data) return;
+      const e = data.e || 0;
+      const voix = data._voix || null;
+      if (!voix) return; // sécurité — sheet déjà passé par l'IIFE de conversion
+      if (sel.type === 'candidat') {
+        // Bureaux où le candidat est ABSENT (cantonale hors canton) : on n'inclut
+        // pas leur e dans sumE — sinon on dilue le score sur des bureaux où le
+        // candidat n'avait aucune chance d'apparaître. Cohérent avec scoreOfSelInBureau.
+        if (!Object.prototype.hasOwnProperty.call(voix, sel.quoi)) return;
+        sumVoix += voix[sel.quoi] || 0;
+        sumE += e;
+      } else if (sel.type === 'bloc') {
+        let bureauSum = 0; let has = false;
+        Object.entries(voix).forEach(([cid, v]) => {
+          const ci = candInfo(cid) || {};
+          const b = (typeof BLOC_LEGACY !== 'undefined' && BLOC_LEGACY[ci.bk]) || ci.b || '?';
+          if (b === sel.quoi) { bureauSum += v; has = true; }
+        });
+        if (!has) return;
+        sumVoix += bureauSum;
+        sumE += e;
+      } else if (sel.type === 'famille') {
+        let bureauSum = 0; let has = false;
+        Object.entries(voix).forEach(([cid, v]) => {
+          const ci = candInfo(cid) || {};
+          if (Array.isArray(ci.t) && ci.t.indexOf(sel.quoi) !== -1) { bureauSum += v; has = true; }
+        });
+        if (!has) return;
+        sumVoix += bureauSum;
+        sumE += e;
+      }
+    });
+    return sumE > 0 ? (sumVoix / sumE) * 100 : 0;
+  }
+
+  // Range [min, max] des scores d'un côté (1 sheet, 1 sélection). Sert pour le mode
+  // RELATIF où chaque carte étire son gradient sur son amplitude locale.
+  function computeRangeForSide(sheet, sel) {
+    let mn = Infinity, mx = 0;
+    Object.entries(sheet || {}).forEach(([ns, d]) => {
+      if (ns === '0057') return;
+      const { pct, present } = scoreOfSelInBureau(d, sel);
+      if (!present) return;
+      if (pct > mx) mx = pct;
+      if (pct < mn) mn = pct;
+    });
+    return { min: mn === Infinity ? 0 : mn, max: mx };
+  }
+  // Range [min, max] partagé entre A et B (= union des 2 ranges côté). Mode ABSOLU
+  // par défaut : permet la comparaison directe A vs B sur la même échelle.
+  function computeSharedRange(sheetA, selA, sheetB, selB) {
+    const a = computeRangeForSide(sheetA, selA);
+    const b = computeRangeForSide(sheetB, selB);
+    return { minG: Math.min(a.min, b.min), maxG: Math.max(a.max, b.max) };
+  }
+  // Max absolu de la différence B-A sur toute la ville (pour le mode "diff").
+  // Symétrique autour de 0 : on prend max(|B-A|) → la palette s'étire de -max à +max,
+  // 0 toujours au milieu (blanc/gris). Permet une lecture honnête du sens du swing.
+  function computeDiffMaxAbs(sheetA, selA, sheetB, selB) {
+    let mx = 0;
+    const bureaux = new Set([...Object.keys(sheetA || {}), ...Object.keys(sheetB || {})]);
+    bureaux.forEach(ns => {
+      if (ns === '0057') return;
+      const dA = sheetA && sheetA[ns];
+      const dB = sheetB && sheetB[ns];
+      if (!dA || !dB) return;
+      const sA = scoreOfSelInBureau(dA, selA);
+      const sB = scoreOfSelInBureau(dB, selB);
+      if (!sA.present || !sB.present) return;
+      const d = Math.abs(sB.pct - sA.pct);
+      if (d > mx) mx = d;
+    });
+    return mx;
+  }
+  // Labels lisibles des types de redécoupage (cf. LRVanalyse).
+  const _REDEC_LABELS = { creation: 'Création', majeur: 'Redécoupage majeur', mineur: 'Redécoupage mineur' };
+  // Détecte les notices de redécoupage d'un bureau entre 2 ères via REDECOUPAGES.
+  // Les clés sont au format "<bureauId>|<eraBureau>" — on filtre celles dont l'ère
+  // tombe dans (min(A,B), max(A,B)]. Retourne [{ era, type, text }] dans l'ordre.
+  function bureauModifBetween(b2026, eraA, eraB) {
+    if (eraA === eraB) return [];
+    if (typeof REDECOUPAGES === 'undefined') return [];
+    const eMin = Math.min(+eraA, +eraB);
+    const eMax = Math.max(+eraA, +eraB);
+    const prefix = b2026 + '|';
+    const out = [];
+    Object.keys(REDECOUPAGES).forEach(k => {
+      if (k.indexOf(prefix) !== 0) return;
+      const eraStr = k.slice(prefix.length);
+      const era = +eraStr;
+      if (!(era > eMin && era <= eMax)) return;
+      const r = REDECOUPAGES[k];
+      if (!r) return; // null = pas de redécoupage à cette ère (entrée explicite "vide")
+      out.push({ era: eraStr, type: r.type, text: r.text });
+    });
+    return out.sort((a, b) => +a.era - +b.era);
+  }
+  // Calcule la liste des bureaux comparables { ns, pctA, pctB, diff } pour le mode diff.
+  // On ne garde que ceux où A ET B sont présents (sinon delta non défini).
+  function computeDiffBureauList(sheetA, selA, sheetB, selB) {
+    const out = [];
+    const ns_set = new Set([...Object.keys(sheetA || {}), ...Object.keys(sheetB || {})]);
+    ns_set.forEach(ns => {
+      if (ns === '0057') return;
+      const dA = sheetA[ns], dB = sheetB[ns];
+      if (!dA || !dB) return;
+      const sA = scoreOfSelInBureau(dA, selA);
+      const sB = scoreOfSelInBureau(dB, selB);
+      if (!sA.present || !sB.present) return;
+      out.push({ ns, pctA: sA.pct, pctB: sB.pct, diff: sB.pct - sA.pct });
+    });
+    return out;
+  }
+  // Somme des voix ENTIÈRES (depuis data._voix) pour une sélection dans un bureau.
+  // Source de vérité pour les agrégats — sommer des pcts arrondis introduit des
+  // drifts de ±1 voix par bureau (cf. CLAUDE.md "PRINCIPE FONDAMENTAL").
+  function sumVoixOfSelInBureau(data, sel) {
+    const voix = data && data._voix;
+    if (!voix) return 0;
+    if (sel.type === 'candidat') return voix[sel.quoi] || 0;
+    if (sel.type === 'bloc') {
+      let sum = 0;
+      Object.entries(voix).forEach(([cid, v]) => {
+        const ci = candInfo(cid) || {};
+        const b = (typeof BLOC_LEGACY !== 'undefined' && BLOC_LEGACY[ci.bk]) || ci.b || '?';
+        if (b === sel.quoi) sum += v;
+      });
+      return sum;
+    }
+    if (sel.type === 'famille') {
+      let sum = 0;
+      Object.entries(voix).forEach(([cid, v]) => {
+        const ci = candInfo(cid) || {};
+        if (Array.isArray(ci.t) && ci.t.indexOf(sel.quoi) !== -1) sum += v;
+      });
+      return sum;
+    }
+    return 0;
+  }
+  // Agrégation par quartier (clé = quartier de l'ère de A, valeur brute).
+  // Voix entières via _voix → pcts pondérés Σvoix/Σexprimés exact (pas de drift).
+  // Pas de split sur '/' : "Laleu/La Pallice" est un nom de quartier complet, pas
+  // un partage entre 2 quartiers (idem "Saint-Maurice/Port-Neuf" pour le bureau-frontière).
+  // Quartier "Nul" (bureau 0057) exclu, idem quartiers vides.
+  function computeDiffByQuartier(sheetA, selA, sheetB, selB) {
+    const eraA = String((ELECTIONS[selA.elec] || {}).my || '');
+    const yi = BUREAU_INFO[eraA] || {};
+    const agg = {}; // quartier → { voixA, eA, voixB, eB }
+    Object.keys(yi).forEach(ns => {
+      if (ns === '0057') return;
+      const dA = sheetA[ns], dB = sheetB[ns];
+      if (!dA || !dB) return;
+      const sA = scoreOfSelInBureau(dA, selA);
+      const sB = scoreOfSelInBureau(dB, selB);
+      if (!sA.present || !sB.present) return;
+      const q = (yi[ns].q || '').trim();
+      if (!q || q === 'Nul') return;
+      if (!agg[q]) agg[q] = { voixA: 0, eA: 0, voixB: 0, eB: 0 };
+      agg[q].voixA += sumVoixOfSelInBureau(dA, selA);
+      agg[q].eA    += dA.e || 0;
+      agg[q].voixB += sumVoixOfSelInBureau(dB, selB);
+      agg[q].eB    += dB.e || 0;
+    });
+    return Object.entries(agg).map(([q, a]) => {
+      const pctA = a.eA > 0 ? (a.voixA / a.eA) * 100 : 0;
+      const pctB = a.eB > 0 ? (a.voixB / a.eB) * 100 : 0;
+      return { quartier: q, pctA, pctB, diff: pctB - pctA };
+    });
+  }
+  // Rend le contenu de la sidebar Diff. Appelée à l'entrée en mode diff et au swap.
+  function renderDiffSidebar() {
+    const root = document.getElementById('cmp-diff-sidebar');
+    if (!root || !_cmpState || _cmpState.scaleMode !== 'diff') return;
+    const A = _cmpState.A, B = _cmpState.B;
+    const sheetA = getSheetForSel(A), sheetB = getSheetForSel(B);
+    // Bureaux comparables triés par diff (descendant pour B>A, ascendant pour B<A).
+    const all = computeDiffBureauList(sheetA, A, sheetB, B);
+    const topPos = [...all].sort((a, b) => b.diff - a.diff).slice(0, 5);
+    const topNeg = [...all].sort((a, b) => a.diff - b.diff).slice(0, 5);
+    // Quartiers triés par swing signé décroissant (gains B en haut, pertes B en bas).
+    const byQuartier = computeDiffByQuartier(sheetA, A, sheetB, B)
+      .sort((a, b) => b.diff - a.diff);
+    // Helpers d'affichage
+    const fmtSigned = d => (d >= 0.05 ? '+' : d <= -0.05 ? '−' : '') + Math.abs(d).toFixed(1).replace('.', ',') + '\xa0pts';
+    const clsOf = d => d >= 0.05 ? 'pos' : d <= -0.05 ? 'neg' : 'neutral';
+    const nameOfBureau = ns => {
+      const eraA = String((ELECTIONS[A.elec] || {}).my || '');
+      return ((BUREAU_INFO[eraA] || {})[ns] || {}).den || ('Bureau ' + parseInt(ns));
+    };
+    // Construction du HTML — pas de "Score ville" ici (déjà visible dans la bannière).
+    let html = '';
+    // 2. Top swing positif (B progresse le +)
+    if (topPos.length) {
+      html += '<div class="cmp-diff-sec"><h4>Où B progresse le plus</h4>';
+      topPos.forEach(r => {
+        html += '<div class="cmp-diff-item" onclick="zoomCmpToBureau(\'' + r.ns + '\')">'
+          + '<span class="cmp-diff-item-num">N°' + parseInt(r.ns) + '</span>'
+          + '<span class="cmp-diff-item-name">' + nameOfBureau(r.ns) + '</span>'
+          + '<span class="cmp-diff-item-delta ' + clsOf(r.diff) + '">' + fmtSigned(r.diff) + '</span>'
+          + '</div>';
+      });
+      html += '</div>';
+    }
+    // 3. Top swing négatif (B recule le +)
+    if (topNeg.length) {
+      html += '<div class="cmp-diff-sec"><h4>Où B recule le plus</h4>';
+      topNeg.forEach(r => {
+        html += '<div class="cmp-diff-item" onclick="zoomCmpToBureau(\'' + r.ns + '\')">'
+          + '<span class="cmp-diff-item-num">N°' + parseInt(r.ns) + '</span>'
+          + '<span class="cmp-diff-item-name">' + nameOfBureau(r.ns) + '</span>'
+          + '<span class="cmp-diff-item-delta ' + clsOf(r.diff) + '">' + fmtSigned(r.diff) + '</span>'
+          + '</div>';
+      });
+      html += '</div>';
+    }
+    // 4. Quartiers (tri par |delta| décroissant)
+    if (byQuartier.length) {
+      html += '<div class="cmp-diff-sec"><h4>Par quartier</h4>';
+      byQuartier.forEach(q => {
+        html += '<div class="cmp-diff-item">'
+          + '<span class="cmp-diff-item-num"></span>'
+          + '<span class="cmp-diff-item-name">' + q.quartier + '</span>'
+          + '<span class="cmp-diff-item-delta ' + clsOf(q.diff) + '">' + fmtSigned(q.diff) + '</span>'
+          + '</div>';
+      });
+      html += '</div>';
+    }
+    root.innerHTML = html;
+  }
+  // Zoom sur un bureau de la map diff (action déclenchée par clic dans la sidebar).
+  window.zoomCmpToBureau = function(ns) {
+    if (!_cmpState || !_cmpState.layersA) return;
+    const layer = _cmpState.layersA[ns];
+    if (!layer || !_cmpState.mapA) return;
+    // Zoom + openTooltip pour donner un feedback immédiat.
+    if (layer.getBounds && _cmpState.mapA.fitBounds) {
+      _cmpState.mapA.fitBounds(layer.getBounds(), { padding: [30, 30], maxZoom: 16 });
+    }
+    if (layer.openTooltip) setTimeout(() => layer.openTooltip(), 250);
+  };
+
+  // Couleurs des pôles diff (cohérent avec --bg-delta-pos/neg utilisés ailleurs).
+  // Rouge = B < A (l'avantage est côté A), Vert = B > A (avantage côté B).
+  const _DIFF_COLOR_POS = '#1F7A1F'; // vert (B > A)
+  const _DIFF_COLOR_NEG = '#A52525'; // rouge (B < A)
+  // Retourne le range effectif pour un côté donné, selon le mode courant.
+  function effectiveRangeFor(side) {
+    if (!_cmpState) return { min: 0, max: 0 };
+    if (_cmpState.scaleMode === 'relative') {
+      return side === 'A' ? _cmpState.rangeA : _cmpState.rangeB;
+    }
+    return { min: _cmpState.minG, max: _cmpState.maxG };
+  }
+
+  // Initialise une map Leaflet (côté A ou B) avec :
+  //   • tiles CartoCDN, fitBounds LR, animations zoom OFF (sync inter-cartes)
+  //   • polygones bureaux colorés en choroplèthe (range lu via effectiveRangeFor)
+  //   • tooltip enrichi : numéro/dénomination + tag "pct % · rang/total"
+  // Paramètres :
+  //   - containerId  : id du div hôte
+  //   - sel          : { elec, tour, type, quoi } sélection de ce côté
+  //   - side         : 'A' ou 'B' (pour effectiveRangeFor, qui dépend du mode courant)
+  function initCmpMap(containerId, sel, side) {
+    const elecData = ELECTIONS[sel.elec] || {};
+    const era = String(elecData.my || '2026');
+    const geojson = (era === '2026' || (typeof CURRENT_ERA !== 'undefined' && era === CURRENT_ERA))
+      ? GEOJSON
+      : (MAPS_DATA && MAPS_DATA[era]) || GEOJSON;
+    const m = L.map(containerId, {
+      center: [46.1597, -1.190], zoom: 13.5, zoomSnap: 0.1, zoomControl: false,
+      attributionControl: false,
+      // Anim désactivées pour que la sync inter-cartes soit instantanée
+      // (sinon l'event `zoom` ne fire qu'en fin d'animation = effet différé)
+      zoomAnimation: false, fadeAnimation: false, markerZoomAnimation: false,
+    });
+    // Tiles claires ou sombres selon le thème du site (data-theme="dark" sur <html>,
+    // toggle manuel via localStorage — cohérent avec la map principale).
+    // La ref est stockée sur la map (m._cmpTileLayer) pour qu'un MutationObserver
+    // puisse swap au toggle de thème en cours de session.
+    function buildTileLayer() {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      const url = isDark
+        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'
+        : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png';
+      return L.tileLayer(url, { maxZoom: 19, subdomains: 'abcd' });
+    }
+    m._cmpTileLayer = buildTileLayer().addTo(m);
+    m._cmpRebuildTiles = function() {
+      if (m._cmpTileLayer) { try { m.removeLayer(m._cmpTileLayer); } catch(_) {} }
+      m._cmpTileLayer = buildTileLayer().addTo(m);
+    };
+    const LR = L.latLngBounds(L.latLng(46.133, -1.230), L.latLng(46.193, -1.135));
+    m.fitBounds(LR, { padding: [20, 20] });
+    m.setMaxBounds(LR.pad(0.7));
+    m.options.maxBoundsViscosity = 1.0;
+    m.setMinZoom(11.5);
+
+    // ── Choroplèthe : sheet, baseColor, et style par bureau ──
+    const sheet = getSheetForSel(sel);
+    const baseColor = baseColorOfSel(sel);
+    // Style d'un feature en fonction de sa donnée bureau.
+    function styleOf(feature) {
+      const ns = numStr(feature);
+      const data = sheet[ns];
+      // Pas de data dans ce sheet (ex. cantonale hors canton, ou bureau non utilisé
+      // dans cette ère) → contour gris clair, semi-transparent.
+      if (!data) return { fillColor: '#eee', fillOpacity: 0.3, color: '#bbb', weight: 0.5 };
+      const { pct, present } = scoreOfSelInBureau(data, sel);
+      // Mode "diff" : sur la carte A on affiche la DIFFÉRENCE B-A par bureau,
+      // avec un gradient bicolore (rouge = B<A, vert = B>A, blanc = égalité).
+      // Map B est masquée (cf. CSS body.is-cmp-diff). On exige A ET B présents.
+      if (_cmpState && _cmpState.scaleMode === 'diff' && side === 'A') {
+        if (!present) return { fillColor: '#ddd', fillOpacity: 0.4, color: '#fff', weight: 1 };
+        const sheetB = getSheetForSel(_cmpState.B);
+        const dB = sheetB[ns];
+        if (!dB) return { fillColor: '#ddd', fillOpacity: 0.4, color: '#fff', weight: 1 };
+        const sB = scoreOfSelInBureau(dB, _cmpState.B);
+        if (!sB.present) return { fillColor: '#ddd', fillOpacity: 0.4, color: '#fff', weight: 1 };
+        const diff = sB.pct - pct;
+        const maxAbs = Math.max(0.01, _cmpState.diffMaxAbs || 1);
+        const t = Math.max(-1, Math.min(1, diff / maxAbs));
+        // Bicolore : t<0 → rouge avec intensité |t|, t>0 → vert, t≈0 → blanc.
+        const pole = t >= 0 ? _DIFF_COLOR_POS : _DIFF_COLOR_NEG;
+        const fill = blendToWhite(pole, Math.max(0.05, Math.abs(t)));
+        return { fillColor: fill, fillOpacity: 0.85, color: '#fff', weight: 1 };
+      }
+      if (!present) return { fillColor: '#ddd', fillOpacity: 0.4, color: '#fff', weight: 1 };
+      // Range lu depuis _cmpState selon le mode courant (absolu ou relatif).
+      // Permet de basculer le mode sans rebuilder les layers — il suffit d'appeler
+      // geo.setStyle(styleOf) pour recolorer (cf. switchScaleMode).
+      const { min, max } = effectiveRangeFor(side);
+      const range = max - min;
+      const t = range > 0 ? (pct - min) / range : 0.5;
+      return { fillColor: blendToWhite(baseColor, Math.max(0.08, Math.min(1, t))), fillOpacity: 0.85, color: '#fff', weight: 1 };
+    }
+
+    // Tooltip enrichi : header numéro + dénomination + tag pct % + rang.
+    function tooltipOf(feature) {
+      const ns = numStr(feature);
+      const data = sheet[ns];
+      // Dénomination = nom du lieu de vote (ex. "La Rossignolette–Saintonge"),
+      // pas le "nom officiel" du bureau (ex. "Laleu"). On lit BUREAU_INFO[era].den
+      // pour l'ère de la sélection — pas du geojson qui est figé sur l'ère courante.
+      const eraInfo = (BUREAU_INFO[era] || BUREAU_INFO[CURRENT_ERA] || {})[ns] || {};
+      const denom = eraInfo.den || (feature.properties || {}).denomination || ('Bureau ' + parseInt(ns));
+      const header = '<div style="min-width:150px">'
+        + '<div style="font-size:0.7rem;font-weight:700;color:var(--text-meta);margin-bottom:2px">Bureau n°' + parseInt(ns) + '</div>'
+        + '<div style="font-size:0.82rem;font-weight:700;color:var(--text-modal);margin-bottom:7px">' + denom + '</div>';
+      // Mode diff (sur map A) : tooltip avec A%, B%, delta coloré + badge bureau modifié.
+      if (_cmpState && _cmpState.scaleMode === 'diff' && side === 'A') {
+        const sheetB2 = getSheetForSel(_cmpState.B);
+        const dB = sheetB2[ns];
+        const sA = data ? scoreOfSelInBureau(data, sel) : { present: false };
+        const sB = dB ? scoreOfSelInBureau(dB, _cmpState.B) : { present: false };
+        // Détection redécoupage : compare l'ère de A et celle de B sur BUREAU_CORRESPONDANCES.
+        const eraA = String((ELECTIONS[_cmpState.A.elec] || {}).my || '');
+        const eraB = String((ELECTIONS[_cmpState.B.elec] || {}).my || '');
+        const b2026 = (feature.properties && feature.properties.b2026) || ns;
+        const mods = bureauModifBetween(b2026, eraA, eraB);
+        // Bloc "Bureau modifié" — affiché aussi quand sA/sB pas dispo, car c'est
+        // potentiellement la raison du gris (renumérotation, fusion/scission).
+        // Juste le badge : on prend le type le plus "fort" rencontré entre A et B.
+        let modifBlock = '';
+        if (mods.length) {
+          const rank = { creation: 3, majeur: 2, mineur: 1 };
+          const strongest = mods.reduce((a, m) => (rank[m.type] || 0) > (rank[a] || 0) ? m.type : a, '');
+          const badgeLabel = _REDEC_LABELS[strongest] || 'Bureau modifié';
+          modifBlock = '<div style="margin-top:6px">'
+            + '<span style="background:#FFE5B4;color:#7A4A00;font-weight:800;padding:2px 7px;border-radius:4px;font-size:0.7rem">⚠ ' + badgeLabel + '</span>'
+            + '</div>';
+        }
+        if (!sA.present || !sB.present) {
+          return header
+            + '<span style="background:#aaa;color:#fff;font-size:0.68rem;font-weight:700;padding:3px 8px;border-radius:4px;white-space:nowrap">Pas de comparaison</span>'
+            + modifBlock
+            + '</div>';
+        }
+        const diff = sB.pct - sA.pct;
+        const sign = diff >= 0.05 ? '+' : (diff <= -0.05 ? '−' : '');
+        const cls = diff >= 0.05 ? 'pos' : (diff <= -0.05 ? 'neg' : 'neutral');
+        const bg = cls === 'pos' ? '#D4EFD4' : cls === 'neg' ? '#F7D4D4' : '#eee';
+        const fg = cls === 'pos' ? '#0F5F0F' : cls === 'neg' ? '#8B1414' : '#666';
+        const labelA = shortLabelOfSel(_cmpState.A), labelB = shortLabelOfSel(_cmpState.B);
+        const fmtP = p => p.toFixed(1).replace('.', ',');
+        return header
+          + '<div style="display:flex;flex-direction:column;gap:4px;font-size:0.74rem;color:var(--text-modal)">'
+          + '<div><span style="color:var(--text-meta);font-weight:600">A · ' + labelA + ' :</span>\xa0<b>' + fmtP(sA.pct) + '\xa0%</b></div>'
+          + '<div><span style="color:var(--text-meta);font-weight:600">B · ' + labelB + ' :</span>\xa0<b>' + fmtP(sB.pct) + '\xa0%</b></div>'
+          + '<div style="margin-top:2px"><span style="background:' + bg + ';color:' + fg + ';font-weight:800;padding:2px 7px;border-radius:4px;font-size:0.72rem">' + sign + Math.abs(diff).toFixed(1).replace('.', ',') + '\xa0pts</span></div>'
+          + '</div>'
+          + modifBlock
+          + '</div>';
+      }
+      if (!data) return header + '<div style="font-size:0.7rem;color:var(--text-meta)">Pas de scrutin dans ce bureau</div></div>';
+      const { pct, present } = scoreOfSelInBureau(data, sel);
+      const label = shortLabelOfSel(sel);
+      if (!present) {
+        return header + '<span style="background:#aaa;color:#fff;font-size:0.68rem;font-weight:700;padding:3px 8px;border-radius:4px;white-space:nowrap">' + label + '\xa0·\xa0Pas de candidat</span></div>';
+      }
+      const { rank, total } = rankOfSelInBureau(data, sel);
+      const bg = (sel.type === 'candidat' && typeof dotBackground === 'function')
+        ? dotBackground(sel.quoi)
+        : baseColor;
+      const ordSuffix = rank > 0 ? ('\xa0·\xa0' + (rank === 1 ? '1<sup>er</sup>' : rank + '<sup>e</sup>') + '/' + total) : '';
+      const tag = '<span style="background:' + bg + ';color:' + pickTextColorForBg(baseColor) + ';font-size:0.68rem;font-weight:700;padding:3px 8px;border-radius:4px;white-space:nowrap">' + label + '\xa0' + pct.toFixed(1) + '\xa0%' + ordSuffix + '</span>';
+      return header + tag + '</div>';
+    }
+
+    // Index { bureau → layer } pour la synchro hover et highlight depuis légende.
+    const layersByNs = {};
+    const geoLayer = L.geoJSON(geojson, {
+      style: styleOf,
+      onEachFeature: function(feature, layer) {
+        const ns = numStr(feature);
+        layersByNs[ns] = layer;
+        // sticky=false : tooltip positionné sur le centroïde du polygone
+        // (déterministe, identique des 2 côtés ; sticky le ferait suivre le curseur).
+        layer.bindTooltip(tooltipOf(feature), { sticky: false, direction: 'top', className: 'cmp-tooltip' });
+      },
+    }).addTo(m);
+    // Permet à toggleCmpScale de reconstruire les tooltips au switch de mode.
+    m._cmpRebuildTooltipFor = function(layer) {
+      if (!layer || !layer.feature) return;
+      layer.unbindTooltip();
+      layer.bindTooltip(tooltipOf(layer.feature), { sticky: false, direction: 'top', className: 'cmp-tooltip' });
+    };
+    // Cleanup tooltips au mouvement (même pattern que la map principale) :
+    //  1) Classe .map-is-moving sur le container → CSS masque .leaflet-tooltip-pane.
+    //  2) tooltipopen pendant le mouvement → close immédiat.
+    //  3) Triple cleanup différé en fin de mouvement (immédiat, 50ms, 200ms) pour
+    //     catcher les tooltips ajoutés par Leaflet après moveend.
+    let _isMoving = false;
+    function cleanupTooltips() {
+      try { geoLayer.eachLayer(l => { if (l.closeTooltip) l.closeTooltip(); }); } catch (_) {}
+      const container = m.getContainer();
+      if (container) container.querySelectorAll('.leaflet-tooltip').forEach(el => { if (el.parentNode) el.parentNode.removeChild(el); });
+    }
+    function setMoving(moving) {
+      _isMoving = moving;
+      const container = m.getContainer();
+      if (container) container.classList.toggle('map-is-moving', moving);
+      if (moving) {
+        cleanupTooltips();
+      } else {
+        cleanupTooltips();
+        setTimeout(cleanupTooltips, 50);
+        setTimeout(cleanupTooltips, 200);
+      }
+    }
+    m.on('movestart zoomstart', () => setMoving(true));
+    m.on('moveend zoomend',     () => setMoving(false));
+    m.on('tooltipopen', e => { if (_isMoving && e.tooltip && e.tooltip.close) e.tooltip.close(); });
+    return { map: m, layers: layersByNs, geo: geoLayer };
+  }
+
+  // Touche Échap pour fermer
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && el('compare-modal') && el('compare-modal').classList.contains('open')) {
+      closeCompareModal();
+    }
+  });
+})();
+
 // ── INIT ──────────────────────────────────────────────────────────────────────
 updateTourUI();
 updateFooter();
 
 // Tooltip JS pour les boutons de tour T1/T2/TU sur écrans étroits.
 // Posé en position:fixed pour contourner l'overflow:hidden de #sidebar.
+// Tooltip maison pour la bannière du Comparateur — délégation sur tout élément
+// avec [data-tooltip]. Position:fixed pour éviter les soucis de overflow/clipping.
+// On réutilise le même style que #tour-btn-tip pour la cohérence visuelle.
+(function setupCmpBannerTooltip() {
+  let tipEl = null;
+  function ensureTip() {
+    if (tipEl) return tipEl;
+    tipEl = document.createElement('div');
+    tipEl.id = 'tour-btn-tip'; // même id = même style (économise un set de règles CSS)
+    document.body.appendChild(tipEl);
+    return tipEl;
+  }
+  function show(target) {
+    const txt = target.getAttribute('data-tooltip');
+    if (!txt) return;
+    const r = target.getBoundingClientRect();
+    const tip = ensureTip();
+    tip.textContent = txt;
+    tip.style.left = (r.left + r.width / 2) + 'px';
+    // Si l'élément est dans la bulle légende (en bas de l'écran), on positionne
+    // le tooltip AU-DESSUS pour éviter qu'il déborde sous la fenêtre.
+    // Ailleurs (bannière, topbar) : en dessous comme avant.
+    const above = !!target.closest('.cmp-legend');
+    if (above) {
+      // On force un layout pour récupérer offsetHeight après set du textContent.
+      tip.style.visibility = 'hidden';
+      tip.classList.add('show');
+      const h = tip.offsetHeight;
+      tip.style.top = (r.top - h - 6) + 'px';
+      tip.style.visibility = '';
+    } else {
+      tip.style.top = (r.bottom + 6) + 'px';
+      tip.classList.add('show');
+    }
+  }
+  function hide() { if (tipEl) tipEl.classList.remove('show'); }
+  // Délégation : tout élément [data-tooltip] dans les zones Comparateur (bannière,
+  // légende, et le bouton Quitter en topbar). Limite le scope pour ne pas
+  // intercepter d'autres data-tooltip ailleurs sur la page.
+  const SCOPE = '.cmp-banner [data-tooltip], .cmp-legend [data-tooltip], #tb-cmp-exit[data-tooltip]';
+  document.addEventListener('mouseover', e => { const t = e.target.closest(SCOPE); if (t) show(t); });
+  document.addEventListener('mouseout',  e => { if (e.target.closest(SCOPE)) hide(); });
+  document.addEventListener('focusin',   e => { const t = e.target.closest(SCOPE); if (t) show(t); });
+  document.addEventListener('focusout',  e => { if (e.target.closest(SCOPE)) hide(); });
+})();
+
 (function setupTourBtnsTooltip() {
   let tipEl = null;
   function ensureTip() {
@@ -6772,6 +8434,22 @@ function writeURLState() {
   _urlStateRaf = requestAnimationFrame(() => {
     _urlStateRaf = 0;
     const params = new URLSearchParams();
+    // Mode Comparateur : si actif, on encode A/B et on COURT-CIRCUITE le reste
+    // (les params de la map principale ne sont plus pertinents dans ce contexte).
+    const cmp = (typeof window.getCmpState === 'function') ? window.getCmpState() : null;
+    if (cmp && cmp.A && cmp.B) {
+      params.set('compare', '1');
+      params.set('cA_e', cmp.A.elec); params.set('cA_t', cmp.A.tour);
+      params.set('cA_y', cmp.A.type); params.set('cA_q', cmp.A.quoi);
+      params.set('cB_e', cmp.B.elec); params.set('cB_t', cmp.B.tour);
+      params.set('cB_y', cmp.B.type); params.set('cB_q', cmp.B.quoi);
+      if (cmp.scaleMode && cmp.scaleMode !== 'absolute') params.set('cmode', cmp.scaleMode);
+      const newHashCmp = params.toString();
+      const desiredCmp = newHashCmp ? location.pathname + location.search + '#' + newHashCmp : location.pathname + location.search;
+      try { history.replaceState(null, '', desiredCmp); } catch(_) {}
+      if (typeof updateAnalyseLink === 'function') updateAnalyseLink();
+      return;
+    }
     // Élection / tour : toujours sérialisés pour partage explicite
     if (currentElection) params.set('election', currentElection);
     if (currentSheet && currentSheet !== 'T1') params.set('tour', currentSheet);
@@ -6844,6 +8522,33 @@ function updateAnalyseLink() {
   // On marquera _urlStateInit = true à la fin, qu'il y ait un hash ou non
   if (!hash) { _urlStateInit = true; writeURLState(); return; }
   const params = new URLSearchParams(hash);
+  // ── Mode Comparateur : si le hash contient compare=1, on rentre directement
+  // en mode split-view avec les sélections A/B. Court-circuite tout le reste
+  // (on n'ouvre pas de fiche/bureau/quartier — la map principale est masquée).
+  if (params.get('compare') === '1') {
+    const A = { elec: params.get('cA_e'), tour: params.get('cA_t'), type: params.get('cA_y'), quoi: params.get('cA_q') };
+    const B = { elec: params.get('cB_e'), tour: params.get('cB_t'), type: params.get('cB_y'), quoi: params.get('cB_q') };
+    const cmode = params.get('cmode'); // 'relative' ou absent
+    // Petit délai pour laisser la map principale s'initialiser (loadMap n'est pas
+    // bloqué par notre return, donc on attend qu'il pose les globales currentX).
+    setTimeout(() => {
+      // Si mode relatif demandé, on le pose AVANT activateCompareMode pour que le
+      // scaleMode soit pris en compte au build des layers (sinon il flicker en absolu).
+      if (cmode === 'relative' && typeof window.toggleCmpScale === 'function') {
+        // activateCompareMode crée _cmpState avec prevMode → on doit pré-poser le mode.
+        // Hack léger : on touche _cmpState.scaleMode après activate (l'effet visible
+        // est minimal puisque les ranges sont déjà calculés).
+      }
+      if (typeof window.activateComparisonFromState === 'function') {
+        if (window.activateComparisonFromState(A, B) && cmode === 'relative') {
+          // Pas encore en relatif (init en absolute par défaut) → bascule.
+          window.toggleCmpScale('relative');
+        }
+      }
+      _urlStateInit = true;
+    }, 120);
+    return;
+  }
   const bid = params.get('bureau');
   const qname = params.get('quartier');
   const elec = params.get('election');
