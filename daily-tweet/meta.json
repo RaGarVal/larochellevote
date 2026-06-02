@@ -1,14 +1,14 @@
 {
-  "date": "2026-06-01",
-  "niveau": "global",
-  "election": "Présidentielle 1988",
-  "tour": "T1",
-  "bureau": "0014",
+  "date": "2026-06-02",
+  "niveau": "carte",
+  "election": "Référendum 2005",
+  "tour": "TU",
+  "bureau": null,
   "quartier": null,
   "canton": null,
-  "subtype": null,
+  "subtype": "gagnants",
   "candidat": null,
-  "signature": "bureau|Présidentielle 1988|T1|0014",
-  "chars": 241,
-  "generated_at": "2026-06-01T06:01:34.534Z"
+  "signature": "carte|Référendum 2005|TU",
+  "chars": 257,
+  "generated_at": "2026-06-02T06:01:08.143Z"
 }
