@@ -1,14 +1,14 @@
 {
-  "date": "2026-05-31",
-  "niveau": "global",
-  "election": "Législatives 1993",
-  "tour": "T1",
-  "bureau": "0038",
+  "date": "2026-06-02",
+  "niveau": "carte",
+  "election": "Référendum 2005",
+  "tour": "TU",
+  "bureau": null,
   "quartier": null,
   "canton": null,
-  "subtype": null,
+  "subtype": "gagnants",
   "candidat": null,
-  "signature": "bureau|Législatives 1993|T1|0038",
-  "chars": 240,
-  "generated_at": "2026-05-31T06:00:56.105Z"
+  "signature": "carte|Référendum 2005|TU",
+  "chars": 257,
+  "generated_at": "2026-06-02T06:01:08.143Z"
 }

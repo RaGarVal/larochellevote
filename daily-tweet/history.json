@@ -264,5 +264,27 @@
     "quartier": null,
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-06-01",
+    "signature": "bureau|Présidentielle 1988|T1|0014",
+    "niveau": "bureau",
+    "election": "Présidentielle 1988",
+    "tour": "T1",
+    "bureau": "0014",
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
+  },
+  {
+    "date": "2026-06-02",
+    "signature": "carte|Référendum 2005|TU",
+    "niveau": "carte",
+    "election": "Référendum 2005",
+    "tour": "TU",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "gagnants",
+    "candidat": null
   }
 ]
