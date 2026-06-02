@@ -56,7 +56,7 @@
   "mainEntity": {
     "@type": "Dataset",
     "name": "Archives électorales de La Rochelle, 1988-2026",
-    "description": "Résultats par bureau de vote pour 43 élections et 2 référendums organisés à La Rochelle entre 1988 et 2026.",
+    "description": "Résultats par bureau de vote pour 45 élections et 2 référendums organisés à La Rochelle entre 1988 et 2026.",
     "url": "https://larochellevote.fr/",
     "creator": {
       "@type": "Person",
@@ -2899,25 +2899,6 @@ function refresh() {
 // ─── Zones d'incertitude ──────────────────────────────────────────────────
 // Format : "quartier:X|eraYear" ou "bureauId|eraYear" → texte explicatif
 const ZONES_INCERTAINES = {
-  "quartier:Mireuil|1988": "Avant 1992, la frontière avec le quartier de Saint-Maurice dans le secteur de la place de l'Europe est incertaine.",
-  "quartier:Saint-Maurice|1988": "Avant 1992, la frontière avec le quartier de Mireuil, dans le secteur de la place de l'Europe, est incertaine.",
-  "0011|1988": "Le découpage de Mireuil en 1988 est incertain : les limites entre bureaux ne sont pas confirmées pour cette période.",
-  "0012|1988": "Le découpage de Mireuil en 1988 est incertain : les limites entre bureaux ne sont pas confirmées pour cette période.",
-  "0013|1988": "Le découpage de Mireuil en 1988 est incertain : les limites entre bureaux ne sont pas confirmées pour cette période.",
-  "0014|1988": "Le découpage de Mireuil en 1988 est incertain : les limites entre bureaux ne sont pas confirmées pour cette période.",
-  "0021|1988": "Le découpage de La Genette en 1988 est incertain : les données des bureaux 21, 22, 23 et 24 sont ici agrégées depuis les anciens bureaux 17, 18 et 19, dont les limites exactes ne sont pas confirmées pour cette période.",
-  "0022|1988": "Le découpage de La Genette en 1988 est incertain : les données des bureaux 21, 22, 23 et 24 sont ici agrégées depuis les anciens bureaux 17, 18 et 19, dont les limites exactes ne sont pas confirmées pour cette période.",
-  "0023|1988": "Le découpage de La Genette en 1988 est incertain : les données des bureaux 21, 22, 23 et 24 sont ici agrégées depuis les anciens bureaux 17, 18 et 19, dont les limites exactes ne sont pas confirmées pour cette période.",
-  "0024|1988": "Le découpage de La Genette en 1988 est incertain : les données des bureaux 21, 22, 23 et 24 sont ici agrégées depuis les anciens bureaux 17, 18 et 19, dont les limites exactes ne sont pas confirmées pour cette période.",
-  "quartier:Saint-Éloi|1988": "Le découpage de Saint-Éloi en 1988 est incertain : les limites entre bureaux ne sont pas confirmées pour cette période.",
-  "0043|1988": "Le découpage de la partie située au sud de la rue de la Marne, du boulevard de Cognehors et de la rue de Beaugerard pour le quartier de Lafond et pour le quartier de Saint-Éloi, est incertain avant 1992 : les données des bureaux 43, 44, 45, 46, 47, 54 et 56 sont agrégées depuis les anciens bureaux 35, 36 et 37 dont les limites exactes ne sont pas confirmées pour cette période.",
-  "0044|1988": "Le découpage de la partie située au sud de la rue de la Marne, du boulevard de Cognehors et de la rue de Beaugerard pour le quartier de Lafond et pour le quartier de Saint-Éloi, est incertain avant 1992 : les données des bureaux 43, 44, 45, 46, 47, 54 et 56 sont agrégées depuis les anciens bureaux 35, 36 et 37 dont les limites exactes ne sont pas confirmées pour cette période.",
-  "0045|1988": "Le découpage de la partie située au sud de la rue de la Marne, du boulevard de Cognehors et de la rue de Beaugerard pour le quartier de Lafond et pour le quartier de Saint-Éloi, est incertain avant 1992 : les données des bureaux 43, 44, 45, 46, 47, 54 et 56 sont agrégées depuis les anciens bureaux 35, 36 et 37 dont les limites exactes ne sont pas confirmées pour cette période.",
-  "0046|1988": "Le découpage de la partie située au sud de la rue de la Marne, du boulevard de Cognehors et de la rue de Beaugerard pour le quartier de Lafond et pour le quartier de Saint-Éloi, est incertain avant 1992 : les données des bureaux 43, 44, 45, 46, 47, 54 et 56 sont agrégées depuis les anciens bureaux 35, 36 et 37 dont les limites exactes ne sont pas confirmées pour cette période.",
-  "0047|1988": "Le découpage de la partie située au sud de la rue de la Marne, du boulevard de Cognehors et de la rue de Beaugerard pour le quartier de Lafond et pour le quartier de Saint-Éloi, est incertain avant 1992 : les données des bureaux 43, 44, 45, 46, 47, 54 et 56 sont agrégées depuis les anciens bureaux 35, 36 et 37 dont les limites exactes ne sont pas confirmées pour cette période.",
-  "0054|1988": "Le découpage de la partie située au sud de la rue de la Marne, du boulevard de Cognehors et de la rue de Beaugerard pour le quartier de Lafond et pour le quartier de Saint-Éloi, est incertain avant 1992 : les données des bureaux 43, 44, 45, 46, 47, 54 et 56 sont agrégées depuis les anciens bureaux 35, 36 et 37 dont les limites exactes ne sont pas confirmées pour cette période.",
-  "0056|1988": "Le découpage de la partie située au sud de la rue de la Marne, du boulevard de Cognehors et de la rue de Beaugerard pour le quartier de Lafond et pour le quartier de Saint-Éloi, est incertain avant 1992 : les données des bureaux 43, 44, 45, 46, 47, 54 et 56 sont agrégées depuis les anciens bureaux 35, 36 et 37 dont les limites exactes ne sont pas confirmées pour cette période.",
-  "0010|1988":                "La frontière ouest du bureau 10 est incertaine pour les scrutins de cette période.",
 };
 
 // Retourne les labels d'élection qui tombent dans une zone d'incertitude pour la vue courante

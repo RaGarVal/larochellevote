@@ -3,403 +3,421 @@
 
   <url>
     <loc>https://larochellevote.fr/</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/LRVcarte.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/LRVanalyse.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/methodologie.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/apropos.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://larochellevote.fr/scrutins/cantonale-partielle-1999-canton-6.html</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://larochellevote.fr/scrutins/cantonale-partielle-2002-canton-9.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/cantonales-2001-canton-2.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/cantonales-2001-canton-7.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/cantonales-2001-canton-8.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/cantonales-2001-canton-9.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/europeennes-1999.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/europeennes-2004.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/europeennes-2009.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/europeennes-2014.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/europeennes-2019.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/europeennes-2024.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/legislatives-1988.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/legislatives-1993.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/legislatives-1997.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/legislatives-2002.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/legislatives-2007.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/legislatives-2012.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/legislatives-2017.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/legislatives-2022.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/legislatives-2024.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://larochellevote.fr/scrutins/municipales-1989.html</loc>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/municipales-1995.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/municipales-2001.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/municipales-2008.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/municipales-2014.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/municipales-2020.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/municipales-2026.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/presidentielle-1988.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/presidentielle-1995.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/presidentielle-2002.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/presidentielle-2007.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/presidentielle-2012.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/presidentielle-2017.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/presidentielle-2022.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/regionales-1998.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/regionales-2004.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/regionales-2010.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/regionales-2015.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/regionales-2021.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/referendum-2000.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/referendum-2005.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://larochellevote.fr/scrutins/europeennes-1989.html</loc>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/europeennes-1994.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/regionales-1992.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/departementales-2021-canton-1.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/departementales-2021-canton-2.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/departementales-2021-canton-3.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/departementales-2015-canton-1.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/departementales-2015-canton-2.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/departementales-2015-canton-3.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/cantonales-2011-canton-1.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/cantonales-2011-canton-3.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/cantonales-2011-canton-4.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/cantonales-2011-canton-5.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/cantonales-2011-canton-6.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/cantonales-2008-canton-2.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/cantonales-2008-canton-7.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/cantonales-2008-canton-8.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/cantonales-2008-canton-9.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/cantonales-2004-canton-1.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/cantonales-2004-canton-3.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/cantonales-2004-canton-4.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/cantonales-2004-canton-5.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/cantonales-2004-canton-6.html</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>

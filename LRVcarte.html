@@ -65,7 +65,7 @@
     "mainEntity": {
       "@type": "Dataset",
       "name": "Archives électorales de La Rochelle, 1988-2026",
-      "description": "Résultats par bureau de vote pour 43 élections et 2 référendums organisés à La Rochelle entre 1988 et 2026.",
+      "description": "Résultats par bureau de vote pour 45 élections et 2 référendums organisés à La Rochelle entre 1988 et 2026.",
       "url": "https://larochellevote.fr/",
       "creator": {
         "@type": "Person",
@@ -1816,6 +1816,7 @@ input:focus-visible,
         <option value="Municipales 2008">Municipales 2008</option>
         <option value="Municipales 2001">Municipales 2001</option>
         <option value="Municipales 1995">Municipales 1995</option>
+        <option value="Municipales 1989">Municipales 1989</option>
       </optgroup>
       <optgroup label="Présidentielles">
         <option value="Présidentielle 2022">Présidentielle 2022</option>
@@ -1845,6 +1846,7 @@ input:focus-visible,
         <option value="Européennes 2004">Européennes 2004</option>
         <option value="Européennes 1999">Européennes 1999</option>
         <option value="Européennes 1994">Européennes 1994</option>
+        <option value="Européennes 1989">Européennes 1989</option>
       </optgroup>
       <optgroup label="Régionales">
         <option value="Régionales 2021">Régionales 2021</option>
@@ -2000,7 +2002,7 @@ const HAS_T2 = new Set(['Présidentielle 1988','Présidentielle 1995','Présiden
   'Municipales 2014','Municipales 2020','Municipales 2026',
   'Régionales 2004','Régionales 2010','Régionales 2015','Régionales 2021',
   'Cantonale partielle 1999','Cantonales 2001','Cantonale partielle 2002','Cantonales 2004','Cantonales 2008','Cantonales 2011','Départementales 2015','Départementales 2021']);
-const HAS_TU = new Set(['Régionales 1992','Régionales 1998','Européennes 1994','Européennes 1999','Européennes 2004','Européennes 2009','Européennes 2014','Européennes 2019','Européennes 2024']);
+const HAS_TU = new Set(['Municipales 1989','Régionales 1992','Régionales 1998','Européennes 1989','Européennes 1994','Européennes 1999','Européennes 2004','Européennes 2009','Européennes 2014','Européennes 2019','Européennes 2024']);
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 // Élection initiale : on prend la plus récente parmi les Municipales (la plus
@@ -2801,6 +2803,9 @@ function candDisplayNameHtml(rawName) {
   let prenom, nom;
   if (d.p && d.n) { prenom = d.p; nom = d.n; }
   else if (d.p) { prenom = d.p; nom = rawName.replace(/\s*\([^)]*\)\s*$/, '').replace(/\s+\S+$/, '').trim(); }
+  // Cas "nom connu mais prénom vide" (placeholder en attente) : on affiche
+  // juste le nom plutôt que le cid brut "X@election" qui apparaîtrait en fallback.
+  else if (d.n) return d.n;
   else return rawName.replace(/\s*\([^)]*\)\s*$/, '').trim();
   if (!prenom) return nom;
   const short = abbreviatePrenom(prenom);
@@ -3011,6 +3016,9 @@ function candDisplayName(rawName) {
     if (full) return full;
   }
   if (d.p && d.n) return d.p + ' ' + d.n;
+  // Cas "nom de famille connu mais prénom vide" (placeholder en attente) :
+  // on affiche juste le nom, plutôt que le cid brut 'X@election'.
+  if (d.n) return d.n;
   if (d.p) return d.p + ' ' + rawName.replace(/\s*\([^)]*\)\s*$/, '').replace(/\s+\S+$/, '').trim();
   return rawName.replace(/\s*\([^)]*\)\s*$/, '').trim();
 }
@@ -3278,11 +3286,14 @@ function computeSelectionRange() {
   const shData = getSheetData(); let mn = Infinity, mx = 0;
   Object.entries(shData).forEach(([ns,d]) => {
     if (ns === '0057' || !d) return;
-    // Mode candidat : si le candidat n'est pas présent dans data.c (cas typique d'un
-    // binôme cantonal hors de son canton), on n'inclut pas ce bureau dans le calcul
-    // du range — sinon le min = 0 (bureaux hors canton) fausse le gradient.
+    // Mode candidat : si le candidat n'est pas présent dans data.c sur une élection
+    // CANTONALE/DÉPARTEMENTALE (binôme cantonal hors de son canton), on n'inclut pas
+    // ce bureau — sinon min=0 (bureaux hors canton) fausse le gradient.
+    // PAN-ROCHELAISE (présid., législ., etc.) : tous les candidats votent partout, donc
+    // une clé absente = simplement 0 voix → on inclut dans le range.
     if (currentMapMode === 'candidat' && currentMapSelection) {
-      if (!d.c || !Object.prototype.hasOwnProperty.call(d.c, currentMapSelection)) return;
+      const _isCantonal = (typeof isCantonalElection === 'function') && isCantonalElection(currentElection);
+      if (_isCantonal && (!d.c || !Object.prototype.hasOwnProperty.call(d.c, currentMapSelection))) return;
     }
     // Mode bloc : pareil — si aucun candidat du bloc sélectionné n'est dans ce
     // bureau, on exclut. Sinon min=0 (bureaux "pas de candidat") tire le bas
@@ -3367,9 +3378,12 @@ function featureStyle(feature) {
   let fillColor = '#ccc';
   if (currentMapSelection && (currentMapMode === 'candidat' || currentMapMode === 'bloc')) {
     // Cas binôme cantonal hors canton : le candidat n'est pas dans data.c → on
-    // affiche un style neutre "pas de donnée" plutôt qu'une couleur 0% trompeuse.
+    // affiche un style neutre "pas de donnée" plutôt qu'une couleur 0 % trompeuse.
+    // PAN-ROCHELAISE : clé absente = 0 voix réelles → on continue avec pct=0
+    // (le bureau sera colorié au minimum du gradient).
     if (currentMapMode === 'candidat' && data.c && !Object.prototype.hasOwnProperty.call(data.c, currentMapSelection)) {
-      return { fillColor: '#ddd', fillOpacity: 0.2, color: '#fff', weight: 1 };
+      const _isCantonal = (typeof isCantonalElection === 'function') && isCantonalElection(currentElection);
+      if (_isCantonal) return { fillColor: '#ddd', fillOpacity: 0.2, color: '#fff', weight: 1 };
     }
     // Cas bloc sans candidat dans ce bureau (typique cantonales/départementales :
     // un canton peut n'avoir personne en exg ou exd). Style neutre plutôt qu'un
@@ -3416,11 +3430,12 @@ function buildTooltipHtml(feature, ns, info) {
   if (!data) return header + '</div>';
   let tag = '';
   if (currentMapSelection && (currentMapMode === 'candidat' || currentMapMode === 'bloc')) {
-    // "Pas de candidat" : (1) mode candidat, candidat absent du bureau (typique
-    // binôme cantonal hors de son canton) ; (2) mode bloc, aucun candidat du bloc
-    // sélectionné dans ce bureau. Dans les 2 cas, on n'affiche pas un "0,0 %"
-    // trompeur — le tag dit "Pas de candidat" sur fond gris neutre.
-    const noCand = (currentMapMode === 'candidat' && data.c && !Object.prototype.hasOwnProperty.call(data.c, currentMapSelection))
+    // "Pas de candidat" : (1) mode candidat CANTONALE/DÉPARTEMENTALE, candidat absent
+    // (binôme cantonal hors de son canton) ; (2) mode bloc, aucun candidat du bloc
+    // sélectionné dans ce bureau. Sur une PAN-ROCHELAISE, candidat absent = 0 voix
+    // réelles (chaque candidat est présent partout) → on affiche "0,0 %" honnête.
+    const _isCantonal = (typeof isCantonalElection === 'function') && isCantonalElection(currentElection);
+    const noCand = (currentMapMode === 'candidat' && _isCantonal && data.c && !Object.prototype.hasOwnProperty.call(data.c, currentMapSelection))
                 || (currentMapMode === 'bloc' && !hasBlocCandidates(data, currentMapSelection));
     if (noCand) {
       const labelNo = currentMapMode === 'candidat'
@@ -4318,17 +4333,7 @@ function buildBureauPreviewHTML(feature) {
     + (info.canton ? '<div class="fiche-sub" style="color:#aaa">'+fmtCanton(info.canton)+'</div>' : '')
     + '</div>'
     + '</div>';
-  if (isAgg) {
-    h += '<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:6px;padding:7px 10px;margin-bottom:10px;font-size:0.68rem;color:#7a6000;line-height:1.5">'
-      + '<strong>Avertissement</strong> \u2014 Les frontières des bureaux de ce quartier avant 1993 ne sont pas connues ; ils sont ici agrégés.'
-      + '</div>';
-  }
   const _mapYrSB = String((ELECTIONS[currentElection]||{}).my || 2026);
-  if (_mapYrSB === '1988' && ['0008','0009','0010'].includes(ns)) {
-    h += '<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:6px;padding:7px 10px;margin-bottom:10px;font-size:0.68rem;color:#7a6000;line-height:1.5">'
-      + '<strong>Avertissement</strong> \u2014 Les frontières des bureaux 8, 9 et 10 avant 1993 ne sont pas précisément connues. Ce sont ici des hypothèses.'
-      + '</div>';
-  }
   if (data) {
     const abst_nb = Math.round((data.i||0)*(data.a||0)/100);
     const votSB = (data.i||0) - abst_nb;
@@ -5302,16 +5307,7 @@ function renderBureauList(){
   var eraInfo=BUREAU_INFO[mapYear]||{};
   var curNs=currentFeature?numStr(currentFeature):null;
   var nums=Object.keys(shData).sort();
-  // Pour la carte 1988, regrouper les bureaux agrégés en une seule entrée
-  if(mapYear==='1988'){
-    var AGG_MAP={'0017':'0017-19','0018':null,'0019':null,'0035':'0035-37','0036':null,'0037':null};
-    var numsAgg=[];
-    nums.forEach(function(ns2){
-      if(!(ns2 in AGG_MAP)){numsAgg.push(ns2);return;}
-      if(AGG_MAP[ns2]!==null)numsAgg.push(AGG_MAP[ns2]);
-    });
-    nums=numsAgg;
-  }
+  // Bloc AGG_MAP 1988 retiré : on a maintenant les 40 polygones individuels via KML.
   var h='<div class="blist-hdr sb-list-toggle"><span>'+nums.length+' bureaux</span><span class="chevron">▾</span></div><div class="sb-list-body">';
   nums.forEach(function(ns2){
     var d=getBureauData(ns2)||shData[ns2];
@@ -5723,17 +5719,6 @@ function renderFiche(feature) {
     + '</div>'
     + '</div>'
     + '</div>';
-  if (isAgg) {
-    h += '<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:0.72rem;color:#7a6000;line-height:1.5">'
-      + '<strong>Avertissement</strong> — Les frontières des bureaux de ce quartier avant 1993 ne sont pas connues ; ils sont ici agrégés.'
-      + '</div>';
-  }
-  const _mapYrF = String((ELECTIONS[currentElection]||{}).my||2026);
-  if (_mapYrF === '1988' && ['0008','0009','0010'].includes(ns)) {
-    h += '<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:0.72rem;color:#7a6000;line-height:1.5">'
-      + '<strong>Avertissement</strong> — Les frontières des bureaux 8, 9 et 10 avant 1993 ne sont pas précisément connues. Ce sont ici des hypothèses.'
-      + '</div>';
-  }
 
   if (!data) {
     h += '<div style="padding:16px;color:#aaa;font-style:italic">'+_noDataMsg(ns)+'</div>';

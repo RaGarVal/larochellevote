@@ -78,11 +78,22 @@ function expectedWinnerCid(sheet) {
   return sorted[0] ? sorted[0][0] : null;
 }
 
+/** Pour un binôme paritaire : ordonne avec la femme devant si sexes connus.
+ *  Identique à orderedBinomePersons() de build-scrutins.js (règle paritaire). */
+function orderedBinomePersons(cd, ctx) {
+  if (!cd.binome || !Array.isArray(cd.binome)) return null;
+  const persons = cd.binome.map(pid => ctx.PERSONS[pid] || {});
+  let femaleIdx = -1;
+  persons.forEach((p, i) => { if (p && p.s === 'F' && femaleIdx === -1) femaleIdx = i; });
+  if (femaleIdx === 1) return [persons[1], persons[0]];
+  return persons;
+}
+
 function winnerNameFromCid(cid, ctx) {
   const cd = ctx.CAND_DATA[cid] || {};
   if (cd.binome && Array.isArray(cd.binome)) {
-    return cd.binome.map(pid => {
-      const p = ctx.PERSONS[pid] || {};
+    // Applique la règle paritaire (femme devant) — cohérent avec build-scrutins.js
+    return orderedBinomePersons(cd, ctx).map(p => {
       return (p.p ? p.p + ' ' : '') + (p.n || '');
     }).join(' / ');
   }

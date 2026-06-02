@@ -416,6 +416,7 @@ const DATES = {
   'Municipales 2014':    { T1: '23 mars 2014',  T2: '30 mars 2014' },
   'Municipales 2020':    { T1: '15 mars 2020',  T2: '28 juin 2020' },
   'Municipales 2026':    { T1: '15 mars 2026',  T2: '22 mars 2026' },
+  'Européennes 1989':    { TU: '18 juin 1989' },
   'Européennes 1994':    { TU: '12 juin 1994' },
   'Européennes 1999':    { TU: '13 juin 1999' },
   'Européennes 2004':    { TU: '13 juin 2004' },

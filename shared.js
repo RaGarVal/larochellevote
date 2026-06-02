@@ -103,18 +103,19 @@ function elecTypePriority(label) {
   // ── EXCEPTIONS "même jour" pour Cantonales/Départementales ──
   // Règle : Cantonales/Départementales sont en général à 3.5 (mars typique, avant
   // Régionales décembre). MAIS quand elles ont eu lieu LE MÊME JOUR qu'une autre
-  // élection, elles passent APRÈS (priorité 5.5) — l'autre scrutin prime.
-  //   • Cantonales 1992    = 22 mars 1992 (= Régionales 1992)         → après
-  //   • Cantonales 1998    = 15 mars 1998 (= Régionales 1998)         → après
-  //   • Cantonales 2004    = 21 mars 2004 (= Régionales 2004)         → après
-  //   • Cantonales 2008    = 9 mars 2008  (= Municipales 2008)        → après
-  //   • Départementales 2021 = 20 juin 2021 (= Régionales 2021)       → après
+  // élection, elles passent JUSTE APRÈS l'autre scrutin (qui prime) pour garder
+  // un ordre chronologique cohérent dans l'année.
+  //   • Cantonales 1992    = 22 mars 1992 (= Régionales 1992 prio 5)       → 5.2
+  //   • Cantonales 1998    = 15 mars 1998 (= Régionales 1998 prio 5)       → 5.2
+  //   • Cantonales 2004    = 21 mars 2004 (= Régionales 2004 prio 3.5)     → 3.7
+  //   • Cantonales 2008    = 9 mars 2008  (= Municipales 2008 prio 3)      → 3.2
+  //   • Départementales 2021 = 20 juin 2021 (= Régionales 2021 prio 5)     → 5.2
   // Cantonales 1988 / 2011 / Départementales 2015 : seules, restent à 3.5.
-  if (label.startsWith('Cantonales 1992'))      return 5.5;
-  if (label.startsWith('Cantonales 1998'))      return 5.5;
-  if (label.startsWith('Cantonales 2004'))      return 5.5;
-  if (label.startsWith('Cantonales 2008'))      return 5.5;
-  if (label.startsWith('Départementales 2021')) return 5.5;
+  if (label.startsWith('Cantonales 1992'))      return 5.2;
+  if (label.startsWith('Cantonales 1998'))      return 5.2;
+  if (label.startsWith('Cantonales 2004'))      return 3.7;
+  if (label.startsWith('Cantonales 2008'))      return 3.2;
+  if (label.startsWith('Départementales 2021')) return 5.2;
   // Partielles (hors cycle) : typiquement en cours d'année après les scrutins
   // normaux. On les range en queue (5.5) faute de mieux ; idéalement on
   // utiliserait la date exacte mais ce serait un autre modèle.
