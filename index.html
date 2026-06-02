@@ -1214,7 +1214,10 @@
     const eraKeys = Object.keys(BI_ALL).filter(k => /^\d{4}$/.test(k)).sort();
     const latestEra = eraKeys.length ? eraKeys[eraKeys.length - 1] : null;
     const BI_LATEST = (latestEra && BI_ALL[latestEra]) || {};
-    const nBureaux = Object.values(BI_LATEST).filter(b => b.q !== 'Nul').length;
+    // On compte tous les bureaux de l'ère actuelle, y compris le non-géographique 0057
+    // (Français de l'étranger / détenus) — il fait partie du dispositif électoral même
+    // s'il est exclu des cartes choroplèthes.
+    const nBureaux = Object.keys(BI_LATEST).length;
 
     // Quartiers : valeurs `q` distinctes sur la carte la plus récente (cohérent
     // avec la sidebar de la page analyse, qui n'éclate pas les composites comme
