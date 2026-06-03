@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🗳️ Le 29 mai 2005, pour le référendum, le Oui a obtenu 51,2 % à La Rochelle. 📍 Meilleur score dans le bureau n°22 · Le Mail à La Genette.
+🏙️ Le 15 mars 1998, pour les régionales, Philippe Marchand (PS) arrive en tête avec 52,2 % à La Rochelle.
 
-Les résultats de ce scrutin, bureau par bureau, sur https://larochellevote.fr/LRVcarte.html#election=R%C3%A9f%C3%A9rendum+2005
+Les résultats de ce scrutin, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=R%C3%A9gionales+1998&tab=global

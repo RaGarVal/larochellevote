@@ -1,14 +1,14 @@
 {
-  "date": "2026-06-02",
-  "niveau": "carte",
-  "election": "Référendum 2005",
+  "date": "2026-06-03",
+  "niveau": "global",
+  "election": "Régionales 1998",
   "tour": "TU",
   "bureau": null,
   "quartier": null,
   "canton": null,
   "subtype": "gagnants",
   "candidat": null,
-  "signature": "carte|Référendum 2005|TU",
-  "chars": 257,
-  "generated_at": "2026-06-02T06:01:08.143Z"
+  "signature": "carte|Régionales 1998|TU",
+  "chars": 225,
+  "generated_at": "2026-06-03T06:01:15.296Z"
 }
