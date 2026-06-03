@@ -286,5 +286,16 @@
     "quartier": null,
     "subtype": "gagnants",
     "candidat": null
+  },
+  {
+    "date": "2026-06-03",
+    "signature": "carte|Régionales 1998|TU",
+    "niveau": "carte",
+    "election": "Régionales 1998",
+    "tour": "TU",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "gagnants",
+    "candidat": null
   }
 ]
