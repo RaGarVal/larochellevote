@@ -1,14 +1,14 @@
 {
-  "date": "2026-06-03",
-  "niveau": "global",
-  "election": "Régionales 1998",
-  "tour": "TU",
-  "bureau": null,
+  "date": "2026-06-04",
+  "niveau": "bureau",
+  "election": "Présidentielle 1995",
+  "tour": "T1",
+  "bureau": "0032",
   "quartier": null,
   "canton": null,
-  "subtype": "gagnants",
+  "subtype": null,
   "candidat": null,
-  "signature": "carte|Régionales 1998|TU",
-  "chars": 225,
-  "generated_at": "2026-06-03T06:01:15.296Z"
+  "signature": "bureau|Présidentielle 1995|T1|0032",
+  "chars": 276,
+  "generated_at": "2026-06-04T06:01:26.321Z"
 }
