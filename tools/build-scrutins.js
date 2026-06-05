@@ -303,8 +303,11 @@ function computeBlocsFromVoix(voixParCand, totalExprimes, candData, blocLegacy) 
  *  - Pour les cantonales/départementales : on regroupe TOUTES les élections
  *    cantonales (cantonale, cantonales, départementale, départementales) et on
  *    filtre par `serie` si elle est définie (A vs B → on saute les scrutins
- *    de l'autre série dont les cantons sont disjoints). */
-function adjacentElections(label, ELECTIONS, ctx) {
+ *    de l'autre série dont les cantons sont disjoints).
+ *  - `currentCanton` (optionnel) : pour une page canton, on saute les voisins
+ *    qui ne couvrent pas ce canton (typiquement les partielles n'incluant qu'un
+ *    autre canton) pour pointer vers le vrai voisin pertinent. */
+function adjacentElections(label, ELECTIONS, ctx, currentCanton) {
   const curEl = ELECTIONS[label] || {};
   const curYear = parseInt((label.match(/(\d{4})/) || [])[1] || 0);
   if (!curYear) return { prev: null, next: null };
@@ -337,10 +340,28 @@ function adjacentElections(label, ELECTIONS, ctx) {
     .map(k => ({ label: k, year: parseInt(k.match(/(\d{4})/)[1]) }))
     .sort((a, b) => a.year - b.year);
   const idx = sorted.findIndex(e => e.label === label);
-  return {
-    prev: idx > 0 ? sorted[idx - 1].label : null,
-    next: idx >= 0 && idx < sorted.length - 1 ? sorted[idx + 1].label : null,
-  };
+
+  // Pour une page canton : on cherche le voisin le plus proche dont le par_canton
+  // contient `currentCanton`. Pour les ères modernes (Départementales 2015+),
+  // les cantons sont 1/2/3 (incompatibles avec les anciennes cantonales 1/3/4/5/6/7/8/9)
+  // — dans ce cas on s'arrête au passage de frontière par sécurité (pas de lien
+  // trompeur entre les deux générations).
+  function hasCanton(neighborLabel) {
+    if (!currentCanton) return true;
+    const e = ELECTIONS[neighborLabel];
+    if (!e || !e.par_canton) return true;
+    return !!e.par_canton[currentCanton];
+  }
+
+  let prev = null;
+  for (let i = idx - 1; i >= 0; i--) {
+    if (hasCanton(sorted[i].label)) { prev = sorted[i].label; break; }
+  }
+  let next = null;
+  for (let i = idx + 1; i < sorted.length; i++) {
+    if (hasCanton(sorted[i].label)) { next = sorted[i].label; break; }
+  }
+  return { prev, next };
 }
 
 /** URL Wikipédia (reprise de LRVcarte.getElectionWikipediaURL) */
@@ -426,6 +447,9 @@ const DATES = {
   'Européennes 2024':    { TU: '9 juin 2024' },
   'Référendum 2000':     { TU: '24 septembre 2000' },
   'Référendum 2005':     { TU: '29 mai 2005' },
+  'Cantonales 1988':     { T1: '25 septembre 1988', T2: '2 octobre 1988' },
+  'Cantonales 1994':     { T1: '20 mars 1994', T2: '27 mars 1994' },
+  'Cantonales 1998':     { T1: '15 mars 1998', T2: '22 mars 1998' },
   'Cantonales 2001':     { T1: '11 mars 2001', T2: '18 mars 2001' },
   'Cantonale partielle 2002': { T1: '22 septembre 2002', T2: '29 septembre 2002' },
   'Cantonales 2004':     { T1: '21 mars 2004', T2: '28 mars 2004' },
@@ -829,7 +853,10 @@ function buildPageData(pageSpec, ctx) {
   });
 
   // Scrutins voisins (même type) — utiles pour le triptych
-  const adj = adjacentElections(label, ctx.ELECTIONS, ctx);
+  // Sur une page canton, on saute les voisins qui ne couvrent pas ce canton
+  // (typiquement les cantonales partielles n'incluant qu'un autre canton),
+  // pour pointer vers le vrai voisin pertinent — sinon le triptyque restait vide.
+  const adj = adjacentElections(label, ctx.ELECTIONS, ctx, canton);
 
   // Pour chaque tour, agréger ville
   const byTour = {};

@@ -56,7 +56,7 @@
   "mainEntity": {
     "@type": "Dataset",
     "name": "Archives électorales de La Rochelle, 1988-2026",
-    "description": "Résultats par bureau de vote pour 45 élections et 2 référendums organisés à La Rochelle entre 1988 et 2026.",
+    "description": "Résultats par bureau de vote pour 48 élections et 2 référendums organisés à La Rochelle entre 1988 et 2026.",
     "url": "https://larochellevote.fr/",
     "creator": {
       "@type": "Person",
@@ -1697,7 +1697,10 @@ function computeBP(candScores, elecLabel) {
       const bk1 = m1.bk || '', bk2 = m2.bk || '';
       bk = (bk1 && bk1 === bk2) ? bk1 : (bk1 || bk2 || '');
     }
-    bk = bk || '?';
+    // Normalisation : 'divers' (renommage UX moderne de l'ancien '?') est replié
+    // sur '?' pour que la suite du code (BLOC_MODES src, agrégation, toggle visuel
+    // « Divers ») fonctionne sans avoir à dupliquer la gestion des deux clés.
+    if (!bk || bk === 'divers') bk = '?';
     out[bk] = (out[bk] || 0) + pct;
   });
   return out;

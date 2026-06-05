@@ -404,6 +404,16 @@ function buildRows() {
     let n = c.n || '';
     let s = c.s || '';
     let isBinome = false;
+    // Pour les candidatures individuelles : si p/n/s sont vides côté CAND_DATA mais
+    // la personne est connue dans PERSONS, on hydrate depuis là. Évite à l'utilisateur·ice
+    // de devoir re-saisir le prénom dans l'éditeur quand la personne est déjà identifiée
+    // (typiquement après une injection initiale qui n'a pas pré-rempli p/n/s).
+    if (c.person && typeof PERSONS !== 'undefined' && PERSONS[c.person]) {
+      const persInfo = PERSONS[c.person];
+      if (!p) p = persInfo.p || '';
+      if (!n) n = persInfo.n || '';
+      if (!s) s = persInfo.s || '';
+    }
     // Pour les binômes, l'identité est dans les 2 membres (PERSONS)
     if (Array.isArray(c.binome) && c.binome.length === 2 && typeof PERSONS !== 'undefined') {
       const m1 = PERSONS[c.binome[0]] || {};

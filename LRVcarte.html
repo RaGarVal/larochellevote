@@ -65,7 +65,7 @@
     "mainEntity": {
       "@type": "Dataset",
       "name": "Archives électorales de La Rochelle, 1988-2026",
-      "description": "Résultats par bureau de vote pour 45 élections et 2 référendums organisés à La Rochelle entre 1988 et 2026.",
+      "description": "Résultats par bureau de vote pour 48 élections et 2 référendums organisés à La Rochelle entre 1988 et 2026.",
       "url": "https://larochellevote.fr/",
       "creator": {
         "@type": "Person",
@@ -1865,6 +1865,9 @@ input:focus-visible,
         <option value="Cantonale partielle 2002">Cantonale partielle 2002</option>
         <option value="Cantonales 2001">Cantonales 2001</option>
         <option value="Cantonale partielle 1999">Cantonale partielle 1999</option>
+        <option value="Cantonales 1998">Cantonales 1998</option>
+        <option value="Cantonales 1994">Cantonales 1994</option>
+        <option value="Cantonales 1988">Cantonales 1988</option>
       </optgroup>
       <optgroup label="Référendums">
         <option value="Référendum 2005">Référendum 2005 — TCE</option>
@@ -2001,7 +2004,7 @@ const HAS_T2 = new Set(['Présidentielle 1988','Présidentielle 1995','Présiden
   'Législatives 2012','Législatives 2017','Législatives 2022','Législatives 2024',
   'Municipales 2014','Municipales 2020','Municipales 2026',
   'Régionales 2004','Régionales 2010','Régionales 2015','Régionales 2021',
-  'Cantonale partielle 1999','Cantonales 2001','Cantonale partielle 2002','Cantonales 2004','Cantonales 2008','Cantonales 2011','Départementales 2015','Départementales 2021']);
+  'Cantonales 1988','Cantonales 1994','Cantonales 1998','Cantonale partielle 1999','Cantonales 2001','Cantonale partielle 2002','Cantonales 2004','Cantonales 2008','Cantonales 2011','Départementales 2015','Départementales 2021']);
 const HAS_TU = new Set(['Municipales 1989','Régionales 1992','Régionales 1998','Européennes 1989','Européennes 1994','Européennes 1999','Européennes 2004','Européennes 2009','Européennes 2014','Européennes 2019','Européennes 2024']);
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
@@ -2324,6 +2327,16 @@ function candInfo(name) {
   // Applique tour_specific (M4.4) si présent
   if (merged.tour_specific && merged.tour_specific[currentSheet]) {
     Object.assign(merged, merged.tour_specific[currentSheet]);
+  }
+  // Hydratation depuis PERSONS : si la candidature pointe sur une `person` connue
+  // mais que ses champs identité (p/n/s) sont vides côté CAND_DATA, on les comble
+  // depuis PERSONS. Évite que les fiches/tooltips affichent juste le nom de famille
+  // (ou le cid brut) quand l'injection initiale n'a pas pré-rempli p/n/s.
+  if (merged.person && typeof PERSONS !== 'undefined' && PERSONS[merged.person]) {
+    const pers = PERSONS[merged.person];
+    if (!merged.p) merged.p = pers.p || '';
+    if (!merged.n) merged.n = pers.n || '';
+    if (!merged.s) merged.s = pers.s || '';
   }
   return merged;
 }
@@ -3438,10 +3451,17 @@ function buildTooltipHtml(feature, ns, info) {
     const noCand = (currentMapMode === 'candidat' && _isCantonal && data.c && !Object.prototype.hasOwnProperty.call(data.c, currentMapSelection))
                 || (currentMapMode === 'bloc' && !hasBlocCandidates(data, currentMapSelection));
     if (noCand) {
-      const labelNo = currentMapMode === 'candidat'
-        ? (candInfo(currentMapSelection).n || currentMapSelection)
-        : (BLOC_CONFIG[currentMapSelection] || BLOC_CONFIG['?']).label;
-      tag = '<span style="background:#aaa;color:#fff;font-size:0.68rem;font-weight:700;padding:3px 8px;border-radius:4px;white-space:nowrap">'+labelNo+'\xa0·\xa0Pas de candidat</span>';
+      // Cantonale/départementale + candidat sélectionné hors circonscription : on n'affiche
+      // aucun tag, le candidat n'ayant rien à voir avec ce bureau (cf. retour utilisateur).
+      // Pour le mode bloc (« aucun candidat du bloc dans ce bureau »), on garde le badge.
+      if (currentMapMode === 'candidat' && _isCantonal) {
+        // pas de tag — header seul
+      } else {
+        const labelNo = currentMapMode === 'candidat'
+          ? (candInfo(currentMapSelection).n || currentMapSelection)
+          : (BLOC_CONFIG[currentMapSelection] || BLOC_CONFIG['?']).label;
+        tag = '<span style="background:#aaa;color:#fff;font-size:0.68rem;font-weight:700;padding:3px 8px;border-radius:4px;white-space:nowrap">'+labelNo+'\xa0·\xa0Pas de candidat</span>';
+      }
     } else {
     const pct = getSelectionPct(data);
     const baseColor = currentMapMode === 'candidat'
@@ -4668,7 +4688,7 @@ function renderBlocTriptych(data, histoKey) {
   return h + '</div>';
 }
 
-function renderBlocTriptychQuartier(qData,bureauNums){
+function renderBlocTriptychQuartier(qData,bureauNums,currentCantonId){
   function aggregateBlocs(elecLabel){
     const adjEl=ELECTIONS[elecLabel];
     const adjSh=adjEl?(currentSheet==='T2'?(adjEl.sheets['T2']||adjEl.sheets['TU']||adjEl.sheets['T1']):(adjEl.sheets['TU']||adjEl.sheets['T1'])):null;
@@ -4689,7 +4709,7 @@ function renderBlocTriptychQuartier(qData,bureauNums){
     const clickable=blocs&&elec;
     return '<div style="position:relative;opacity:0.38'+(clickable?';cursor:pointer':'')+'" class="'+(clickable?'sidebar-elec':'')+'" '+(clickable?'onclick="setElection(\''+elec+'\')"':'')+'>'+inner+'<span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:0.58rem;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5);pointer-events:none">'+label+'</span></div>';}
   function mainBar(blocs,elec){return '<div style="position:relative"><div style="display:flex;height:72px;width:100%">'+barSegs(blocs,elec)+'</div><div style="position:absolute;top:0;bottom:0;left:50%;width:0;border-left:1.5px dashed rgba(255,255,255,0.65);pointer-events:none;z-index:2"></div></div>';}
-  const { prev: prevLabel, next: nextLabel } = _adjacentElections(currentElection);
+  const { prev: prevLabel, next: nextLabel } = _adjacentElections(currentElection, currentCantonId);
   const curBlocs=qData.bp?remapBlocs(qData.bp):computeBlocs(qData);
   // On précalcule les agrégats adjacents : si l'agrégat est null (aucun des
   // bureaux du quartier/canton n'a de données dans le scrutin adjacent), on
@@ -5617,7 +5637,7 @@ function elecType(label) { return label.split(' ')[0]; }
 // série A = cantons 1/3/4/5/6 ; série B = 2/7/8/9), on filtre pour rester dans
 // la même série — sinon la nav pointerait vers un scrutin où les cantons en
 // jeu sont disjoints (placeholder gris trompeur).
-function _adjacentElections(currentLabel) {
+function _adjacentElections(currentLabel, currentCantonId) {
   const curType = elecType(currentLabel);
   const curYear = parseInt(currentLabel.match(/\d{4}$/) || [0]);
   const curEl = ELECTIONS[currentLabel] || {};
@@ -5633,10 +5653,21 @@ function _adjacentElections(currentLabel) {
   } else {
     sameType = allElecOfType(curType).filter(l => l !== currentLabel);
   }
-  if (curSerie) sameType = sameType.filter(l => (ELECTIONS[l] || {}).serie === curSerie);
+  // Filtre série : on garde les scrutins sans série OU de la même série (sinon les
+  // cantonales A vs B auraient des cantons disjoints). Aligné sur tools/build-scrutins.js.
+  if (curSerie) sameType = sameType.filter(l => !(ELECTIONS[l] || {}).serie || (ELECTIONS[l] || {}).serie === curSerie);
+  // Sur une fiche canton : on saute les scrutins multi-canton qui ne couvrent pas
+  // `currentCantonId` (typiquement les partielles n'incluant qu'un autre canton),
+  // pour pointer vers le vrai voisin pertinent — sinon le triptyque restait vide.
+  const hasCanton = function(l) {
+    if (!currentCantonId) return true;
+    const e = ELECTIONS[l];
+    if (!e || !e.par_canton) return true;
+    return !!e.par_canton[currentCantonId];
+  };
   return {
-    prev: sameType.filter(l => parseInt(l.match(/\d{4}$/)) < curYear).pop(),
-    next: sameType.find(l => parseInt(l.match(/\d{4}$/)) > curYear),
+    prev: sameType.filter(l => parseInt(l.match(/\d{4}$/)) < curYear && hasCanton(l)).pop(),
+    next: sameType.find(l => parseInt(l.match(/\d{4}$/)) > curYear && hasCanton(l)),
   };
 }
 // Note : pour la fiche BUREAU, la nav prev/next est inlinée dans renderBlocTriptych
@@ -6034,7 +6065,7 @@ function renderCanton(){
     h += '<div class="fiche-section-participation" style="margin-bottom:14px">'+particiHTML(totI, abst_pct, abst_nb_tot, blancsPct, totBn, totE)+'</div>';
     h += '<div class="split"><div id="mm-wrap"></div>'+sig+'</div>';
     if (!(typeof isReferendum === 'function' && isReferendum(currentElection))) {
-      h += '<div class="fiche-section-blocs" style="margin-bottom:18px"><div class="sec-ttl">Blocs politiques</div>'+renderBlocTriptychQuartier(cData, bureauNums)+'</div>';
+      h += '<div class="fiche-section-blocs" style="margin-bottom:18px"><div class="sec-ttl">Blocs politiques</div>'+renderBlocTriptychQuartier(cData, bureauNums, cid)+'</div>';
     }
   } else {
     h += '<div style="padding:12px;color:var(--text-meta);font-style:italic">Données non disponibles pour ce scrutin dans ce canton.</div>';
