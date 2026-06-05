@@ -1,14 +1,14 @@
 {
-  "date": "2026-06-04",
-  "niveau": "bureau",
-  "election": "Présidentielle 1995",
+  "date": "2026-06-05",
+  "niveau": "canton",
+  "election": "Municipales 1995",
   "tour": "T1",
-  "bureau": "0032",
+  "bureau": null,
   "quartier": null,
-  "canton": null,
+  "canton": "1",
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Présidentielle 1995|T1|0032",
-  "chars": 276,
-  "generated_at": "2026-06-04T06:01:26.321Z"
+  "signature": "canton|Municipales 1995|T1|1",
+  "chars": 256,
+  "generated_at": "2026-06-05T06:01:08.057Z"
 }

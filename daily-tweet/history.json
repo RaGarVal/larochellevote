@@ -308,5 +308,16 @@
     "quartier": null,
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-06-05",
+    "signature": "canton|Municipales 1995|T1|1",
+    "niveau": "canton",
+    "election": "Municipales 1995",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
   }
 ]
