@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-👤 Le 23 avril 1995, pour la présidentielle (1er tour), Lionel Jospin (PS) arrive en tête avec 32,7 % dans le bureau n°32 · Vélodrome–Marius-Lacroix à Lafond.
+🏙️ Le 11 juin 1995, pour les municipales (1er tour), Michel Crépeau (Radical) arrive en tête avec 60,8 % dans le canton de La Rochelle-1.
 
-Les résultats de ce bureau, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Pr%C3%A9sidentielle+1995&tour=T1&bureau=0032
+Les résultats de ce canton, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Municipales+1995&tour=T1&canton=1
