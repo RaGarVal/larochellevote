@@ -319,5 +319,16 @@
     "quartier": null,
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-06-06",
+    "signature": "bureau|Législatives 2007|T1|0026",
+    "niveau": "bureau",
+    "election": "Législatives 2007",
+    "tour": "T1",
+    "bureau": "0026",
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
   }
 ]
