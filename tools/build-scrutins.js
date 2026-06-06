@@ -447,6 +447,8 @@ const DATES = {
   'Européennes 2024':    { TU: '9 juin 2024' },
   'Référendum 2000':     { TU: '24 septembre 2000' },
   'Référendum 2005':     { TU: '29 mai 2005' },
+  'Législatives 1986':   { TU: '16 mars 1986' },
+  'Régionales 1986':     { TU: '16 mars 1986' },
   'Cantonales 1988':     { T1: '25 septembre 1988', T2: '2 octobre 1988' },
   'Cantonales 1994':     { T1: '20 mars 1994', T2: '27 mars 1994' },
   'Cantonales 1998':     { T1: '15 mars 1998', T2: '22 mars 1998' },
@@ -893,10 +895,14 @@ function buildPageData(pageSpec, ctx) {
           paLabel = femaleIdx === 1 ? p2 + '+' + p1 : p1 + '+' + p2;
         }
       }
-      // Nom complet du parti (depuis PARTI_NAMES)
+      // Nom complet du parti (depuis PARTI_NAMES) — lookup sur le code BRUT.
       const paFull = paLabel.indexOf('+') >= 0
         ? paLabel.split('+').map(c => (ctx.PARTI_NAMES && ctx.PARTI_NAMES[c]) || c).join(' + ')
         : ((ctx.PARTI_NAMES && ctx.PARTI_NAMES[paLabel]) || paLabel);
+      // Étiquette compacte : rabote les suffixes des codes pa fins
+      // ("UDF dissident libéral" / "UDF dissident souverainiste" → "UDF dissident")
+      // pour rester lisible dans les chips/tags des pages SEO.
+      paLabel = paLabel.replace(/\s+(libéral|souverainiste)$/, '');
       return {
         cid,
         nom: displayName,

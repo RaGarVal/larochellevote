@@ -55,8 +55,8 @@
   },
   "mainEntity": {
     "@type": "Dataset",
-    "name": "Archives électorales de La Rochelle, 1988-2026",
-    "description": "Résultats par bureau de vote pour 48 élections et 2 référendums organisés à La Rochelle entre 1988 et 2026.",
+    "name": "Archives électorales de La Rochelle, 1986-2026",
+    "description": "Résultats par bureau de vote pour 50 élections et 2 référendums organisés à La Rochelle entre 1986 et 2026.",
     "url": "https://larochellevote.fr/",
     "creator": {
       "@type": "Person",
@@ -1884,8 +1884,11 @@ function init() {
   // Remplir le sélecteur de bureaux
   const selB = document.getElementById('sel-bureau');
   const bureaux2026 = BUREAU_INFO[CURRENT_ERA] || {};
+  // On garde TOUS les bureaux dans le sélecteur, y compris le non-géographique 0057
+  // (Français de l'étranger / détenus) qui a ses propres séries temporelles dignes
+  // d'analyse — l'exclusion `q !== 'Nul'` reste pour les agrégations quartier/canton
+  // (cf. lignes 2723, 5290 et 6240) où elle a un sens, mais pas pour le picker.
   Object.entries(bureaux2026)
-    .filter(([id, b]) => b.q !== 'Nul')
     .sort((a,b) => parseInt(a[0]) - parseInt(b[0]))
     .forEach(([id, b]) => {
       const o = document.createElement('option');
@@ -5654,7 +5657,7 @@ function copyRedecoupageCode() {
     },
     {
       title: 'Frise des redécoupages',
-      body: 'Sous le graphique, la frise retrace l\'<strong>histoire géographique</strong> de ce bureau : son nom et son numéro à chaque ère depuis 1988. Les macarons (verts, oranges, jaunes) signalent les redécoupages majeurs ou mineurs — survolez-les pour lire le détail. Voici par exemple le bureau N°41 — Médiathèque–Ville-en-Bois (Les Minimes).<br><br><strong>Cliquez sur la frise pour découvrir les différents tracés du bureau à travers les ères.</strong>',
+      body: 'Sous le graphique, la frise retrace l\'<strong>histoire géographique</strong> de ce bureau : son nom et son numéro à chaque ère depuis 1986. Les macarons (verts, oranges, jaunes) signalent les redécoupages majeurs ou mineurs — survolez-les pour lire le détail. Voici par exemple le bureau N°41 — Médiathèque–Ville-en-Bois (Les Minimes).<br><br><strong>Cliquez sur la frise pour découvrir les différents tracés du bureau à travers les ères.</strong>',
       target: '#frise-area',
       targetPad: { top: 90 },  // Inclut les macarons SVG qui sont juste au-dessus de la frise
       placement: 'top',

@@ -64,8 +64,8 @@
     },
     "mainEntity": {
       "@type": "Dataset",
-      "name": "Archives électorales de La Rochelle, 1988-2026",
-      "description": "Résultats par bureau de vote pour 48 élections et 2 référendums organisés à La Rochelle entre 1988 et 2026.",
+      "name": "Archives électorales de La Rochelle, 1986-2026",
+      "description": "Résultats par bureau de vote pour 50 élections et 2 référendums organisés à La Rochelle entre 1986 et 2026.",
       "url": "https://larochellevote.fr/",
       "creator": {
         "@type": "Person",
@@ -1837,6 +1837,7 @@ input:focus-visible,
         <option value="Législatives 1997">Législatives 1997</option>
         <option value="Législatives 1993">Législatives 1993</option>
         <option value="Législatives 1988">Législatives 1988</option>
+        <option value="Législatives 1986">Législatives 1986</option>
       </optgroup>
       <optgroup label="Européennes">
         <option value="Européennes 2024">Européennes 2024</option>
@@ -1855,6 +1856,7 @@ input:focus-visible,
         <option value="Régionales 2004">Régionales 2004</option>
         <option value="Régionales 1998">Régionales 1998</option>
         <option value="Régionales 1992">Régionales 1992</option>
+        <option value="Régionales 1986">Régionales 1986</option>
       </optgroup>
       <optgroup label="Cantonales / Départementales">
         <option value="Départementales 2021">Départementales 2021</option>
@@ -2005,7 +2007,7 @@ const HAS_T2 = new Set(['Présidentielle 1988','Présidentielle 1995','Présiden
   'Municipales 2014','Municipales 2020','Municipales 2026',
   'Régionales 2004','Régionales 2010','Régionales 2015','Régionales 2021',
   'Cantonales 1988','Cantonales 1994','Cantonales 1998','Cantonale partielle 1999','Cantonales 2001','Cantonale partielle 2002','Cantonales 2004','Cantonales 2008','Cantonales 2011','Départementales 2015','Départementales 2021']);
-const HAS_TU = new Set(['Municipales 1989','Régionales 1992','Régionales 1998','Européennes 1989','Européennes 1994','Européennes 1999','Européennes 2004','Européennes 2009','Européennes 2014','Européennes 2019','Européennes 2024']);
+const HAS_TU = new Set(['Législatives 1986','Régionales 1986','Municipales 1989','Régionales 1992','Régionales 1998','Européennes 1989','Européennes 1994','Européennes 1999','Européennes 2004','Européennes 2009','Européennes 2014','Européennes 2019','Européennes 2024']);
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 // Élection initiale : on prend la plus récente parmi les Municipales (la plus
@@ -2303,6 +2305,16 @@ function getPartiColor(pa) {
     });
   }
   return _partiColorCache[pa] || null;
+}
+
+// Helper "version courte" : pour les codes pa fins ("UDF dissident libéral",
+// "UDF dissident souverainiste"), on rabote le suffixe précisant la sensibilité
+// pour ne garder que l'étiquette courte ("UDF dissident") destinée aux chips/tags.
+// Le code complet reste utilisé pour le lookup PARTI_NAMES (nom long) et les
+// agrégations — c'est purement cosmétique au moment de l'affichage compact.
+function shortPa(pa) {
+  if (!pa) return pa;
+  return pa.replace(/\s+(libéral|souverainiste)$/, '');
 }
 
 function candInfo(name) {
@@ -3931,8 +3943,8 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
   }
   // Pour binôme à partis hétérogènes : code parti combiné "PA1+PA2"
   // (cohérent avec sidebar liste, légende, tooltip carte). Sinon pa simple.
-  const paL = (typeof binomePartiLabel === 'function' ? binomePartiLabel(nameL) : '') || ciL.pa || '';
-  const paR = (typeof binomePartiLabel === 'function' ? binomePartiLabel(nameR) : '') || ciR.pa || '';
+  const paL = (typeof binomePartiLabel === 'function' ? binomePartiLabel(nameL) : '') || shortPa(ciL.pa) || '';
+  const paR = (typeof binomePartiLabel === 'function' ? binomePartiLabel(nameR) : '') || shortPa(ciR.pa) || '';
   // Indicateurs meilleur/pire bureau (comme dans la vue normale)
   function arrowFor(name, c, onColor) {
     if (!extr || !ns || ns === 'ville') return '';
@@ -4033,7 +4045,7 @@ function renderCandidates(data, ns, cityAvg, extr, compact, extrLabel) {
         : (ci.n || name.replace(/\s*\([^)]*\)\s*$/,'').trim().split(/\s+/).pop() || name);
       // Binôme à partis hétérogènes : étiquette "PA1+PA2" via binomePartiLabel
       // (sinon pa simple, statu quo).
-      const partiAbr=(isBinome && typeof binomePartiLabel === 'function' ? binomePartiLabel(name) : '') || ci.pa || coal || '';
+      const partiAbr=(isBinome && typeof binomePartiLabel === 'function' ? binomePartiLabel(name) : '') || shortPa(ci.pa) || coal || '';
       // Sidebar preview : Nom (gros) + parti abrégé sur la même ligne, pct fer en bas à droite
       // Pour les binômes, classe .cand-name-binome (ellipsis CSS) + title HTML pour le full au survol.
       // Et classe .cand-namesub-binome sur le container parent pour forcer flex-wrap:nowrap
@@ -6407,7 +6419,7 @@ function renderMapLegend() {
       const coal = name.match(/\(([^)]+)\)$/);
       // Binôme à partis hétérogènes : étiquette "PA1+PA2" et carré bicolore (split
       // diagonal 135°). Sinon comportement standard (pa simple + carré uni).
-      const pa = (isBinome && typeof binomePartiLabel === 'function' ? binomePartiLabel(name) : '') || ci.pa || (coal&&coal[1]) || '';
+      const pa = (isBinome && typeof binomePartiLabel === 'function' ? binomePartiLabel(name) : '') || shortPa(ci.pa) || (coal&&coal[1]) || '';
       const dotBg = (typeof dotBackground === 'function') ? dotBackground(name) : col;
       const nb = wins[name]||0;
       const tieN = ties[name]||0;

@@ -246,6 +246,8 @@ const DATES = {
   'Européennes 2024':    { TU: '9 juin 2024'         },
   'Référendum 2000':     { TU: '24 septembre 2000'   },
   'Référendum 2005':     { TU: '29 mai 2005'         },
+  'Législatives 1986':     { TU: '16 mars 1986'        },
+  'Régionales 1986':       { TU: '16 mars 1986'        },
   'Cantonales 1988':       { T1: '25 septembre 1988', T2: '2 octobre 1988' },
   'Cantonales 1994':       { T1: '20 mars 1994', T2: '27 mars 1994' },
   'Cantonales 1998':       { T1: '15 mars 1998', T2: '22 mars 1998' },

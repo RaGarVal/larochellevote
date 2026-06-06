@@ -15,12 +15,12 @@
 </script>
 <title>À propos — La Rochelle Vote</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
-<meta name="description" content="Le projet La Rochelle Vote : archives des élections rochelaises depuis 1988 (présidentielles, législatives, municipales, cantonales, régionales, européennes). Auteur, sources, licence, contact.">
+<meta name="description" content="Le projet La Rochelle Vote : archives des élections rochelaises depuis 1986 (présidentielles, législatives, municipales, cantonales, régionales, européennes). Auteur, sources, licence, contact.">
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="La Rochelle Vote">
 <meta property="og:locale" content="fr_FR">
 <meta property="og:title" content="À propos — La Rochelle Vote">
-<meta property="og:description" content="Le projet La Rochelle Vote : archives des élections rochelaises depuis 1988 (présidentielles, législatives, municipales, cantonales, régionales, européennes). Auteur, sources, licence, contact.">
+<meta property="og:description" content="Le projet La Rochelle Vote : archives des élections rochelaises depuis 1986 (présidentielles, législatives, municipales, cantonales, régionales, européennes). Auteur, sources, licence, contact.">
 <meta property="og:image" content="https://larochellevote.fr/share.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -28,7 +28,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@LaRochelleVote">
 <meta name="twitter:title" content="À propos — La Rochelle Vote">
-<meta name="twitter:description" content="Le projet La Rochelle Vote : archives des élections rochelaises depuis 1988 (présidentielles, législatives, municipales, cantonales, régionales, européennes). Auteur, sources, licence, contact.">
+<meta name="twitter:description" content="Le projet La Rochelle Vote : archives des élections rochelaises depuis 1986 (présidentielles, législatives, municipales, cantonales, régionales, européennes). Auteur, sources, licence, contact.">
 <meta name="twitter:image" content="https://larochellevote.fr/share.png">
 <script type="application/ld+json">
 {
@@ -395,7 +395,7 @@ footer.doc-foot a:hover { color: var(--text-chrome); }
     <header class="doc-head">
       <div class="eyebrow">À propos</div>
       <h1>Le projet La&nbsp;Rochelle&nbsp;Vote</h1>
-      <p class="lead">Le site des archives électorales de La&nbsp;Rochelle, de 1988 à aujourd'hui.</p>
+      <p class="lead">Le site des archives électorales de La&nbsp;Rochelle, de 1986 à aujourd'hui.</p>
     </header>
 
     <section class="s" id="projet">
@@ -405,7 +405,7 @@ footer.doc-foot a:hover { color: var(--text-chrome); }
         géographie électorale&nbsp;: rassembler au même endroit tous les résultats, toutes les cartes,
         tous les graphiques des scrutins organisés à La&nbsp;Rochelle depuis… le plus longtemps possible,
         à la plus fine échelle possible. Au printemps 2026, le site rassemble, structure et donne à lire
-        les résultats de 48 élections et 2 référendums organisés à La&nbsp;Rochelle depuis 1988 —
+        les résultats de 50 élections et 2 référendums organisés à La&nbsp;Rochelle depuis 1986 —
         bureau par bureau, quartier par quartier, candidat·e par candidat·e.
       </p>
       <p>
@@ -461,7 +461,8 @@ footer.doc-foot a:hover { color: var(--text-chrome); }
       </p>
       <p>
         <strong>Fonds cartographiques (bureaux antérieurs à 2015)</strong>&nbsp;: numérisation
-        manuelle à partir des cartes papier fournies par le service des élections.
+        manuelle à partir des cartes papier fournies par le service des élections ou des arrêtés
+        préfectoraux trouvés aux archives.
       </p>
       <p>
         <strong>Code source</strong>&nbsp;: licence <strong>MIT</strong>. Réutilisation, adaptation
@@ -642,7 +643,7 @@ setupSailAnimation();
     const items = [];
     const b2026 = (typeof BUREAU_INFO !== 'undefined' && BUREAU_INFO['2026']) || {};
     const corr = (typeof BUREAU_CORRESPONDANCES !== 'undefined' && BUREAU_CORRESPONDANCES) || {};
-    const ERAS = ['1988','1992','1996','2004','2007','2010','2012','2015','2022','2026'];
+    const ERAS = ['1985','1988','1989','1992','1996','2004','2007','2010','2012','2015','2022','2026'];
     Object.entries(b2026).forEach(([id, b]) => {
       if (!b || b.q === 'Nul') return;
       const num = parseInt(id);
