@@ -330,5 +330,16 @@
     "quartier": null,
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-06-07",
+    "signature": "bureau|Municipales 1989|TU|0009",
+    "niveau": "bureau",
+    "election": "Municipales 1989",
+    "tour": "TU",
+    "bureau": "0009",
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
   }
 ]
