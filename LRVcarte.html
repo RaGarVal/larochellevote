@@ -7943,10 +7943,17 @@ function updateAnalyseLink() {
       const sorted = Object.entries(wins).sort((a,b)=>b[1]-a[1]).slice(0,5);
       sorted.forEach(([n, nb]) => {
         const col = (typeof colorOfCandidate === 'function') ? colorOfCandidate(n) : '#666';
-        const cd = (typeof CAND_DATA !== 'undefined' && (CAND_DATA[n + '|' + currentElection] || CAND_DATA[n])) || {};
-        const nom = cd.n || n.replace(/\s*\([^)]*\)$/, '');
-        const prenom = cd.p ? cd.p + ' ' : '';
-        const pa = cd.pa ? ' (' + cd.pa + ')' : '';
+        // On passe par candInfo() pour bénéficier de l'hydratation depuis PERSONS
+        // quand p/n sont vides dans CAND_DATA — sinon le prénom apparaissait pour
+        // certains candidats et pas d'autres, sans logique apparente.
+        const ci = (typeof candInfo === 'function') ? candInfo(n) : {};
+        const nom = ci.n || n.replace(/\s*\([^)]*\)$/, '');
+        const prenom = ci.p ? ci.p + ' ' : '';
+        // shortPa() rabote les suffixes des codes pa fins ("UDF dissident libéral"
+        // → "UDF dissident") pour rester lisible dans la légende.
+        const paRaw = ci.pa || '';
+        const paShort = (typeof shortPa === 'function') ? shortPa(paRaw) : paRaw;
+        const pa = paShort ? ' (' + paShort + ')' : '';
         const tieMark = (ties[n] || 0) > 0 ? ' ▤' : '';
         lines.push({ type:'item', color:col, label: prenom + nom + pa, val: nb + ' bur.' + tieMark });
       });
