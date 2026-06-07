@@ -46,6 +46,9 @@ function slugifyElection(label) {
 function expectedSlugs(ctx) {
   const slugs = [];
   Object.entries(ctx.ELECTIONS).forEach(([label, el]) => {
+    // Les scrutins draft n'ont pas de page SEO (cf. build-scrutins) — on
+    // les exclut aussi de la liste attendue pour que le check passe vert.
+    if (el && el.draft === true) return;
     if (el.par_canton) {
       Object.keys(el.par_canton).forEach(cid => {
         slugs.push(slugifyElection(label) + '-canton-' + cid);

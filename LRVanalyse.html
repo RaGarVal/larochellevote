@@ -2281,6 +2281,7 @@ function getVilleData(typeFilter) {
   if (window._memoVille.has(_mk)) return window._memoVille.get(_mk);
   const result = [];
   for (const [label, elData] of Object.entries(ELECTIONS)) {
+    if (typeof isDraftElection === "function" && isDraftElection(label)) continue;
     if (!matchesTypeFilter(label, typeFilter)) continue;
     // Les élections cantonales (Départementales — La Rochelle-N) ne couvrent qu'un
     // canton : pas de "résultat ville" pertinent → on les exclut du niveau Ville.
@@ -2348,6 +2349,7 @@ function getQuartierData(quartier, typeFilter) {
   if (window._memoQuartier.has(_mk)) return window._memoQuartier.get(_mk);
   const result = [];
   for (const [label, elData] of Object.entries(ELECTIONS)) {
+    if (typeof isDraftElection === "function" && isDraftElection(label)) continue;
     if (!matchesTypeFilter(label, typeFilter)) continue;
     // Élections cantonales : suspension de la fiche quartier (cohérence avec LRVcarte).
     // Un quartier peut chevaucher 2 cantons → agrégation mélangerait des binômes différents.
@@ -2438,6 +2440,7 @@ function getCantonData(cantonKey, typeFilter) {
   const wantCid = cantonKey.split(':')[1];
   const result = [];
   for (const [label, elData] of Object.entries(ELECTIONS)) {
+    if (typeof isDraftElection === "function" && isDraftElection(label)) continue;
     if (!matchesTypeFilter(label, typeFilter)) continue;
     // Élection cantonale (Départementales / Cantonales) :
     //   - Si le label contient "— La Rochelle-N" : on vérifie que N === wantCid (ancien format multi-entrées).
@@ -2523,6 +2526,7 @@ function getBureauHistData(bureauId, typeFilter) {
   const result = [];
   const corr = BUREAU_CORRESPONDANCES[bureauId] || {};
   for (const [label, elData] of Object.entries(ELECTIONS)) {
+    if (typeof isDraftElection === "function" && isDraftElection(label)) continue;
     if (!matchesTypeFilter(label, typeFilter)) continue;
     const sheet = elData.sheets?.T1 || elData.sheets?.TU;
     if (!sheet) continue;
@@ -2917,6 +2921,7 @@ function getUncertainElections() {
       if (zone.startsWith('quartier:')) return;
       if (zone === bid) {
         Object.entries(ELECTIONS).forEach(([label, el]) => {
+      if (typeof isDraftElection === "function" && isDraftElection(label)) return;
           if (String(el.my || CURRENT_ERA) === eraYear) uncertain.add(label);
         });
       }
@@ -2929,6 +2934,7 @@ function getUncertainElections() {
       if (zoneQ && (q === zoneQ || q.split('/').map(s => s.trim()).includes(zoneQ)
                                 || zoneQ.split('/').map(s => s.trim()).includes(q))) {
         Object.entries(ELECTIONS).forEach(([label, el]) => {
+      if (typeof isDraftElection === "function" && isDraftElection(label)) return;
           if (String(el.my || CURRENT_ERA) === eraYear) uncertain.add(label);
         });
       }
@@ -4933,6 +4939,7 @@ function openRedecoupageForm(prefillEraYear, prefillText, prefillType) {
   // One option per distinct era: show the year + first election using that map
   const byEra = {};
   Object.entries(ELECTIONS).forEach(([label, el]) => {
+      if (typeof isDraftElection === "function" && isDraftElection(label)) return;
     const ey = String(el.my || CURRENT_ERA);
     if (!byEra[ey]) byEra[ey] = label;  // keep first election of this era
   });
@@ -4967,6 +4974,7 @@ function openQCorrespPanel() {
   // Élections représentatives par ère
   const eraLabel = {};
   Object.entries(ELECTIONS).forEach(([lbl, el]) => {
+    if (typeof isDraftElection === "function" && isDraftElection(lbl)) return;
     const ey = String(el.my || CURRENT_ERA);
     if (!eraLabel[ey]) eraLabel[ey] = [];
     eraLabel[ey].push(lbl);

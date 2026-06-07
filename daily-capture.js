@@ -505,7 +505,10 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
   // dénomination/quartier d'un bureau corresponde bien à l'année de l'élection
   // tirée (ex. Municipales 1995 → nom du bureau en 1995, pas en 2026).
   const siteData = await page.evaluate(() => {
-    const elections = Object.keys(ELECTIONS || {});
+    // On exclut les scrutins marqués `draft: true` du tirage : ils restent
+    // accessibles via deeplink mais ne peuvent pas être sélectionnés par le
+    // robot tant que le flag n'est pas retiré.
+    const elections = Object.keys(ELECTIONS || {}).filter(l => !(ELECTIONS[l] && ELECTIONS[l].draft === true));
 
     // map : election → era (year of the découpage utilisé pour cette élection)
     const electionEra = {};

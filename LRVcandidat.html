@@ -330,6 +330,8 @@ function getCandidaturesOfPerson(pid) {
     const isIndiv = c.person === pid;
     const isBinome = Array.isArray(c.binome) && c.binome.includes(pid);
     if (!isIndiv && !isBinome) return;
+    // Cache les candidatures dont l'élection est marquée draft
+    if (typeof isDraftElection === 'function' && isDraftElection(c.election)) return;
     result.push({ cid, c, isBinome });
   });
   return result;

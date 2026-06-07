@@ -1822,9 +1822,12 @@ function main() {
   const ctx = loadData();
   console.log(`✅ ${Object.keys(ctx.ELECTIONS).length} élections chargées`);
 
-  // Construire la liste des pages à générer
+  // Construire la liste des pages à générer (on saute les scrutins draft
+  // pour qu'ils n'aient pas de page SEO publique tant que le flag n'est
+  // pas retiré).
   const pages = [];
   Object.entries(ctx.ELECTIONS).forEach(([label, el]) => {
+    if (el && el.draft === true) return;
     pagesForElection(label, el, ctx).forEach(p => pages.push(p));
   });
   console.log(`📄 ${pages.length} pages à générer`);

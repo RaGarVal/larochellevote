@@ -2693,6 +2693,19 @@ function syncFicheSails() {
   });
 }
 // MutationObserver : déclenche syncFicheSails + setupFicheMapHint dès qu'un container de fiche change.
+// Au chargement : on cache les <option> du dropdown qui correspondent à des
+// scrutins marqués `draft: true` dans donnees.js (cf. helper isDraftElection
+// dans shared.js). Le scrutin reste pleinement accessible via deeplink direct
+// (#election=...) pour l'autrice mais n'apparaît plus dans les listes publiques.
+window.addEventListener('DOMContentLoaded', () => {
+  const sel = document.getElementById('el-select');
+  if (sel && typeof isDraftElection === 'function') {
+    Array.from(sel.querySelectorAll('option')).forEach(o => {
+      if (isDraftElection(o.value)) o.remove();
+    });
+  }
+});
+
 window.addEventListener('DOMContentLoaded', () => {
   const targets = ['sb-info', 'ov-body'].map(id => document.getElementById(id)).filter(Boolean);
   if (!targets.length) return;
@@ -5686,8 +5699,12 @@ function _adjacentElections(currentLabel, currentCantonId) {
 // (avec recherche du 1er voisin valide qui a des données pour CE bureau), pas via
 // ce helper — d'où l'absence d'une variante _adjacentElectionsForBureau ici.
 function allElecOfType(type) {
-  const s = new Set(Object.keys(ELECTIONS).filter(l => elecType(l) === type));
-  Object.values(HISTORIQUE).forEach(arr => arr.forEach(r => { if(elecType(r.l)===type) s.add(r.l); }));
+  // Draft : on exclut les scrutins marqués `draft: true` du flux public
+  // (navigation, comparateur, triptyque, etc.). Le test isDraftElection
+  // protège aussi les HISTORIQUE qui pourraient référencer un label draft.
+  const isDraft = (typeof isDraftElection === 'function') ? isDraftElection : (() => false);
+  const s = new Set(Object.keys(ELECTIONS).filter(l => elecType(l) === type && !isDraft(l)));
+  Object.values(HISTORIQUE).forEach(arr => arr.forEach(r => { if(elecType(r.l)===type && !isDraft(r.l)) s.add(r.l); }));
   return [...s].sort((a,b) => parseInt(a.match(/\d{4}$/)) - parseInt(b.match(/\d{4}$/)));
 }
 
@@ -8020,11 +8037,18 @@ function updateAnalyseLink() {
     });
   }
 
+  // Multiplicateur de résolution : on rend tout en 2x pour avoir une image crisp
+  // sur écrans rétina et partage social. Le code de dessin garde les coordonnées
+  // logiques W × H grâce au ctx.scale(SCALE, SCALE), seule la sortie bitmap est
+  // doublée (2400 × 1350). Cohérent entre compose() carte ville et composeFiche().
+  const SCALE = 2;
+
   async function compose() {
     if (!window._exportMode && document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch(_) {} }
     const canvas = document.createElement('canvas');
-    canvas.width = W; canvas.height = H;
+    canvas.width = W * SCALE; canvas.height = H * SCALE;
     const ctx = canvas.getContext('2d');
+    ctx.scale(SCALE, SCALE);
 
     // Fond beige
     ctx.fillStyle = '#F0EAE0';
@@ -8184,7 +8208,9 @@ function updateAnalyseLink() {
     if (Array.isArray(ci.binome) && ci.binome.length === 2 && typeof binomeShortLabel === 'function') {
       const shortN = binomeShortLabel(name);
       // Binôme à partis hétérogènes : on retourne "PA1+PA2" via binomePartiLabel.
-      const pLbl = (typeof binomePartiLabel === 'function') ? binomePartiLabel(name) : (ci.pa || '');
+      // shortPa() rabote les suffixes des codes fins ("UDF dissident libéral"
+      // → "UDF dissident") pour l'affichage compact dans l'image de fiche.
+      const pLbl = (typeof binomePartiLabel === 'function') ? binomePartiLabel(name) : ((typeof shortPa === 'function' ? shortPa(ci.pa) : ci.pa) || '');
       if (shortN) return { prenom: '', nom: shortN, parti: pLbl };
     }
     let prenom = ci.p || '';
@@ -8200,7 +8226,7 @@ function updateAnalyseLink() {
         nom = fn;
       }
     }
-    return { prenom, nom, parti: ci.pa || '' };
+    return { prenom, nom, parti: (typeof shortPa === 'function' ? shortPa(ci.pa) : ci.pa) || '' };
   }
 
   async function drawFicheVisual(ctx, x, y, w, h, fctx) {
@@ -8232,8 +8258,10 @@ function updateAnalyseLink() {
     }
 
     // Sinon : layout standard avec barres + mini-cartouches
-    // Top 5 (ou moins) en barres horizontales
-    const TOP = 5;
+    // Règle : jusqu'à 6 candidats inclus on les met tous en barres normales
+    // (évite le cas moche où le 6ᵉ se retrouve seul en mini-cartouche pleine
+    // largeur en bas de fiche). À partir de 7, on bascule en "5 + reste".
+    const TOP = allCands.length <= 6 ? allCands.length : 5;
     const top = allCands.slice(0, TOP);
     // Reste en mini-cartouches sur 1 ligne (max 7 supplémentaires)
     const rest = allCands.slice(TOP, TOP + 7);
@@ -8493,29 +8521,73 @@ function updateAnalyseLink() {
   function drawCandMini(ctx, x, y, w, h, candEntry) {
     const [name, pct] = candEntry;
     const col = colorOfCandidate(name);
-    const { nom } = candPrenomNom(name);
-    // Cartouche mini : fond couleur parti, nom à gauche, score % à droite
+    const { nom, parti } = candPrenomNom(name);
+    // Cartouche mini : fond couleur parti, nom à gauche, score % à droite,
+    // parti entre les deux si la place le permet.
     ctx.fillStyle = col;
     ctx.fillRect(x, y, w, h);
 
     const cy = y + h/2 + 5; // baseline approximative
+    const padL = 10, padR = 10, gap = 6;
 
-    // Nom (gauche)
-    ctx.textAlign = 'left';
+    // 1. Score (priorité absolue, occupe sa place à droite). On dessine d'abord
+    //    le « % » en plus petit (gain de place), puis le chiffre en grand. Cohérent
+    //    avec le rendu drawCandRow.
+    ctx.textAlign = 'right';
     ctx.fillStyle = '#FFFFFF';
+    let cursorScoreX = x + w - padR;
+    ctx.font = '700 11px "Space Grotesk", system-ui, sans-serif';
+    const percentTxt = '%';
+    const percentW = ctx.measureText(percentTxt).width;
+    ctx.fillText(percentTxt, cursorScoreX, cy);
+    cursorScoreX -= percentW + 3;
+    ctx.font = '900 17px "Space Grotesk", system-ui, sans-serif';
+    const numTxt = pct.toFixed(1);
+    const numW = ctx.measureText(numTxt).width;
+    ctx.fillText(numTxt, cursorScoreX, cy);
+    const scoreW = numW + 3 + percentW;
+
+    // Zone restante pour nom + parti
+    const leftZoneW = w - padL - padR - scoreW - gap;
+
+    // 2. Mesurer le nom complet à sa font
+    ctx.textAlign = 'left';
+    ctx.font = '700 13px "Space Grotesk", system-ui, sans-serif';
+    const nomFullW = ctx.measureText(nom).width;
+
+    // 3. Si le nom rentre et qu'il reste assez de place → on tente d'afficher
+    //    aussi le parti (font plus petite, opacité réduite). Sinon on ne montre
+    //    que le nom (tronqué si besoin).
+    let showParti = false;
+    let partiTxt = '';
+    let partiW = 0;
+    if (parti && nomFullW <= leftZoneW) {
+      // Tester la place pour " · parti"
+      ctx.font = '500 11px "Space Grotesk", system-ui, sans-serif';
+      partiTxt = ' · ' + parti;
+      partiW = ctx.measureText(partiTxt).width;
+      if (nomFullW + partiW <= leftZoneW) showParti = true;
+    }
+
+    // 4. Dessiner nom (tronqué si nécessaire dans tous les cas)
     ctx.font = '700 13px "Space Grotesk", system-ui, sans-serif';
     let displayName = nom;
-    const maxNameW = w * 0.55;
-    while (ctx.measureText(displayName).width > maxNameW && displayName.length > 3) {
-      displayName = displayName.slice(0, -1);
+    const maxNomW = showParti ? (leftZoneW - partiW) : leftZoneW;
+    if (ctx.measureText(displayName).width > maxNomW) {
+      while (ctx.measureText(displayName + '…').width > maxNomW && displayName.length > 1) {
+        displayName = displayName.slice(0, -1);
+      }
+      displayName = displayName.replace(/\s*$/, '') + '…';
     }
-    if (displayName !== nom) displayName = displayName.replace(/\s*$/, '') + '…';
-    ctx.fillText(displayName, x + 10, cy);
+    ctx.fillText(displayName, x + padL, cy);
 
-    // Score % (droite)
-    ctx.textAlign = 'right';
-    ctx.font = '900 17px "Space Grotesk", system-ui, sans-serif';
-    ctx.fillText(pct.toFixed(1) + ' %', x + w - 10, cy);
+    // 5. Parti à la suite si activé
+    if (showParti) {
+      const nomDrawnW = ctx.measureText(displayName).width;
+      ctx.font = '500 11px "Space Grotesk", system-ui, sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.78)';
+      ctx.fillText(partiTxt, x + padL + nomDrawnW, cy);
+    }
   }
 
   // Layout spécial duel (2 candidats) ou trio (3 candidats) — grandes cards côte à côte
@@ -8805,8 +8877,9 @@ function updateAnalyseLink() {
   async function composeFiche(fctx) {
     if (!window._exportMode && document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch(_) {} }
     const canvas = document.createElement('canvas');
-    canvas.width = W; canvas.height = H;
+    canvas.width = W * SCALE; canvas.height = H * SCALE;
     const ctx = canvas.getContext('2d');
+    ctx.scale(SCALE, SCALE);
 
     // Header plus haut pour accueillir 3 lignes (titre, sous-titre, quartier)
     const FICHE_HEADER_H = fctx.quartier ? 120 : HEADER_H;

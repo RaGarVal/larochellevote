@@ -228,6 +228,26 @@ function isReferendum(elecLabel) {
 }
 
 // ───────────────────────────────────────────────────────────────
+//  isDraftElection — true si l'élection est marquée `draft: true`
+//  dans donnees.js. Une élection draft est :
+//    • cachée du dropdown LRVcarte, du sélecteur LRVanalyse
+//    • non générée en page scrutin statique (tools/build-scrutins.js)
+//    • exclue du tirage daily-capture
+//    • ignorée par la navigation prev/next (LRVcarte + triptyque)
+//    • absente des fiches candidats (LRVcandidat)
+//  Permet d'ajouter une élection complète (data, candidatures,
+//  corrections) sans la rendre visible publiquement tant que le
+//  flag n'est pas retiré.
+// ───────────────────────────────────────────────────────────────
+function isDraftElection(elecLabel) {
+  if (!elecLabel) return false;
+  if (typeof ELECTIONS === 'undefined') return false;
+  const e = ELECTIONS[elecLabel];
+  return !!(e && e.draft === true);
+}
+if (typeof window !== 'undefined') window.isDraftElection = isDraftElection;
+
+// ───────────────────────────────────────────────────────────────
 //  derivePaForBinome — dérivation systématique du pa d'un binôme
 //  depuis ses partis individuels. Décision : on ne stocke plus pa
 //  côté binôme dans donnees.js, on le dérive au chargement via un
