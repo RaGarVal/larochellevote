@@ -341,5 +341,16 @@
     "quartier": null,
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-06-08",
+    "signature": "carte|Municipales 2026|T1|cand:veronique-bonnet@municipales-2026",
+    "niveau": "carte",
+    "election": "Municipales 2026",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "veronique-bonnet@municipales-2026"
   }
 ]

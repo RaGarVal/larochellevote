@@ -1,14 +1,14 @@
 {
-  "date": "2026-06-07",
-  "niveau": "bureau",
-  "election": "Municipales 1989",
-  "tour": "TU",
-  "bureau": "0009",
+  "date": "2026-06-08",
+  "niveau": "global",
+  "election": "Municipales 2026",
+  "tour": "T1",
+  "bureau": null,
   "quartier": null,
   "canton": null,
-  "subtype": null,
-  "candidat": null,
-  "signature": "bureau|Municipales 1989|TU|0009",
-  "chars": 265,
-  "generated_at": "2026-06-07T06:01:06.367Z"
+  "subtype": "candidat",
+  "candidat": "veronique-bonnet@municipales-2026",
+  "signature": "carte|Municipales 2026|T1|cand:veronique-bonnet@municipales-2026",
+  "chars": 236,
+  "generated_at": "2026-06-08T06:01:31.295Z"
 }
