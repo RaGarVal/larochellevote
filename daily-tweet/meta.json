@@ -1,14 +1,14 @@
 {
-  "date": "2026-06-08",
-  "niveau": "global",
-  "election": "Municipales 2026",
-  "tour": "T1",
+  "date": "2026-06-09",
+  "niveau": "carte",
+  "election": "Européennes 2024",
+  "tour": "TU",
   "bureau": null,
   "quartier": null,
   "canton": null,
   "subtype": "candidat",
-  "candidat": "veronique-bonnet@municipales-2026",
-  "signature": "carte|Municipales 2026|T1|cand:veronique-bonnet@municipales-2026",
-  "chars": 236,
-  "generated_at": "2026-06-08T06:01:31.295Z"
+  "candidat": "marie-toussaint@europeennes-2024",
+  "signature": "carte|Européennes 2024|TU|cand:marie-toussaint@europeennes-2024",
+  "chars": 279,
+  "generated_at": "2026-06-09T06:01:24.391Z"
 }

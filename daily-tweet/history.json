@@ -352,5 +352,16 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "veronique-bonnet@municipales-2026"
+  },
+  {
+    "date": "2026-06-09",
+    "signature": "carte|Européennes 2024|TU|cand:marie-toussaint@europeennes-2024",
+    "niveau": "carte",
+    "election": "Européennes 2024",
+    "tour": "TU",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "marie-toussaint@europeennes-2024"
   }
 ]
