@@ -363,5 +363,16 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "marie-toussaint@europeennes-2024"
+  },
+  {
+    "date": "2026-06-10",
+    "signature": "bureau|Législatives 1986|TU|0008",
+    "niveau": "bureau",
+    "election": "Législatives 1986",
+    "tour": "TU",
+    "bureau": "0008",
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
   }
 ]

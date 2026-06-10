@@ -1,14 +1,14 @@
 {
-  "date": "2026-06-09",
-  "niveau": "carte",
-  "election": "Européennes 2024",
+  "date": "2026-06-10",
+  "niveau": "bureau",
+  "election": "Législatives 1986",
   "tour": "TU",
-  "bureau": null,
+  "bureau": "0008",
   "quartier": null,
   "canton": null,
-  "subtype": "candidat",
-  "candidat": "marie-toussaint@europeennes-2024",
-  "signature": "carte|Européennes 2024|TU|cand:marie-toussaint@europeennes-2024",
-  "chars": 279,
-  "generated_at": "2026-06-09T06:01:24.391Z"
+  "subtype": null,
+  "candidat": null,
+  "signature": "bureau|Législatives 1986|TU|0008",
+  "chars": 257,
+  "generated_at": "2026-06-10T06:01:29.721Z"
 }
