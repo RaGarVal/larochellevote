@@ -1,14 +1,14 @@
 {
-  "date": "2026-06-10",
-  "niveau": "bureau",
-  "election": "Législatives 1986",
-  "tour": "TU",
-  "bureau": "0008",
+  "date": "2026-06-11",
+  "niveau": "global",
+  "election": "Législatives 1988",
+  "tour": "T1",
+  "bureau": "0003",
   "quartier": null,
   "canton": null,
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Législatives 1986|TU|0008",
-  "chars": 257,
-  "generated_at": "2026-06-10T06:01:29.721Z"
+  "signature": "bureau|Législatives 1988|T1|0003",
+  "chars": 235,
+  "generated_at": "2026-06-11T06:01:25.467Z"
 }

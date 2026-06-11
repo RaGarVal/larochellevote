@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🏛️ Le 16 mars 1986, pour les législatives, Crépeau (MRG) arrive en tête avec 37,2 % dans le bureau n°8 · Fromentin–Europe à Saint-Maurice.
+🏛️ Le 5 juin 1988, pour les législatives (1er tour), Michel Crépeau (MRG) arrive en tête avec 46,0 % à La Rochelle.
 
-Les résultats de ce bureau, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=L%C3%A9gislatives+1986&bureau=0008
+Les résultats de ce scrutin, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=L%C3%A9gislatives+1988&tour=T1&tab=global

@@ -374,5 +374,16 @@
     "quartier": null,
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-06-11",
+    "signature": "bureau|Législatives 1988|T1|0003",
+    "niveau": "bureau",
+    "election": "Législatives 1988",
+    "tour": "T1",
+    "bureau": "0003",
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
   }
 ]
