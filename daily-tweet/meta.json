@@ -1,14 +1,14 @@
 {
-  "date": "2026-06-11",
+  "date": "2026-06-12",
   "niveau": "global",
-  "election": "Législatives 1988",
+  "election": "Législatives 2022",
   "tour": "T1",
-  "bureau": "0003",
+  "bureau": null,
   "quartier": null,
   "canton": null,
-  "subtype": null,
-  "candidat": null,
-  "signature": "bureau|Législatives 1988|T1|0003",
-  "chars": 235,
-  "generated_at": "2026-06-11T06:01:25.467Z"
+  "subtype": "candidat",
+  "candidat": "marie-nedellec@legislatives-2022",
+  "signature": "carte|Législatives 2022|T1|cand:marie-nedellec@legislatives-2022",
+  "chars": 242,
+  "generated_at": "2026-06-12T06:01:13.253Z"
 }

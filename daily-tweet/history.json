@@ -385,5 +385,16 @@
     "quartier": null,
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-06-12",
+    "signature": "carte|Législatives 2022|T1|cand:marie-nedellec@legislatives-2022",
+    "niveau": "carte",
+    "election": "Législatives 2022",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "marie-nedellec@legislatives-2022"
   }
 ]
