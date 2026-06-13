@@ -396,5 +396,16 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "marie-nedellec@legislatives-2022"
+  },
+  {
+    "date": "2026-06-13",
+    "signature": "bureau|Régionales 2010|T1|0001",
+    "niveau": "bureau",
+    "election": "Régionales 2010",
+    "tour": "T1",
+    "bureau": "0001",
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
   }
 ]

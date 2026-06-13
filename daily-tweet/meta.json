@@ -1,14 +1,14 @@
 {
-  "date": "2026-06-12",
+  "date": "2026-06-13",
   "niveau": "global",
-  "election": "Législatives 2022",
+  "election": "Régionales 2010",
   "tour": "T1",
-  "bureau": null,
+  "bureau": "0001",
   "quartier": null,
   "canton": null,
-  "subtype": "candidat",
-  "candidat": "marie-nedellec@legislatives-2022",
-  "signature": "carte|Législatives 2022|T1|cand:marie-nedellec@legislatives-2022",
-  "chars": 242,
-  "generated_at": "2026-06-12T06:01:13.253Z"
+  "subtype": null,
+  "candidat": null,
+  "signature": "bureau|Régionales 2010|T1|0001",
+  "chars": 233,
+  "generated_at": "2026-06-13T06:00:59.301Z"
 }
