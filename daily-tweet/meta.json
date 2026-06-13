@@ -1,14 +1,14 @@
 {
-  "date": "2026-06-07",
-  "niveau": "bureau",
-  "election": "Municipales 1989",
-  "tour": "TU",
-  "bureau": "0009",
+  "date": "2026-06-13",
+  "niveau": "global",
+  "election": "Régionales 2010",
+  "tour": "T1",
+  "bureau": "0001",
   "quartier": null,
   "canton": null,
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Municipales 1989|TU|0009",
-  "chars": 265,
-  "generated_at": "2026-06-07T06:01:06.367Z"
+  "signature": "bureau|Régionales 2010|T1|0001",
+  "chars": 233,
+  "generated_at": "2026-06-13T06:00:59.301Z"
 }

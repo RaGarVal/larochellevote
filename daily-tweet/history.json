@@ -341,5 +341,71 @@
     "quartier": null,
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-06-08",
+    "signature": "carte|Municipales 2026|T1|cand:veronique-bonnet@municipales-2026",
+    "niveau": "carte",
+    "election": "Municipales 2026",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "veronique-bonnet@municipales-2026"
+  },
+  {
+    "date": "2026-06-09",
+    "signature": "carte|Européennes 2024|TU|cand:marie-toussaint@europeennes-2024",
+    "niveau": "carte",
+    "election": "Européennes 2024",
+    "tour": "TU",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "marie-toussaint@europeennes-2024"
+  },
+  {
+    "date": "2026-06-10",
+    "signature": "bureau|Législatives 1986|TU|0008",
+    "niveau": "bureau",
+    "election": "Législatives 1986",
+    "tour": "TU",
+    "bureau": "0008",
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
+  },
+  {
+    "date": "2026-06-11",
+    "signature": "bureau|Législatives 1988|T1|0003",
+    "niveau": "bureau",
+    "election": "Législatives 1988",
+    "tour": "T1",
+    "bureau": "0003",
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
+  },
+  {
+    "date": "2026-06-12",
+    "signature": "carte|Législatives 2022|T1|cand:marie-nedellec@legislatives-2022",
+    "niveau": "carte",
+    "election": "Législatives 2022",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "marie-nedellec@legislatives-2022"
+  },
+  {
+    "date": "2026-06-13",
+    "signature": "bureau|Régionales 2010|T1|0001",
+    "niveau": "bureau",
+    "election": "Régionales 2010",
+    "tour": "T1",
+    "bureau": "0001",
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
   }
 ]
