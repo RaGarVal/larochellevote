@@ -450,6 +450,7 @@ const DATES = {
   'Législatives 1986':   { TU: '16 mars 1986' },
   'Régionales 1986':     { TU: '16 mars 1986' },
   'Cantonales 1988':     { T1: '25 septembre 1988', T2: '2 octobre 1988' },
+  'Cantonales 1992':     { T1: '22 mars 1992', T2: '29 mars 1992' },
   'Cantonales 1994':     { T1: '20 mars 1994', T2: '27 mars 1994' },
   'Cantonales 1998':     { T1: '15 mars 1998', T2: '22 mars 1998' },
   'Cantonales 2001':     { T1: '11 mars 2001', T2: '18 mars 2001' },

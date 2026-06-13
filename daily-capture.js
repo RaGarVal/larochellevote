@@ -37,9 +37,9 @@ const CHAPEAU  = '📊 La Rochelle Vote — La donnée du jour';
 // probabilités utilisées à chaque tirage sont ajustées dynamiquement par
 // rebalanceProba() pour corriger les déséquilibres récents.
 const PROBA = {
-  carte:    0.25,
-  bureau:   0.50,
-  quartier: 0.15,
+  carte:    0.40,
+  bureau:   0.40,
+  quartier: 0.10,
   canton:   0.05,
   global:   0.05,
 };
@@ -48,8 +48,8 @@ const PROBA = {
 //   gagnants → carte mosaïque classique, sujet = gagnant ville
 //   candidat → carte heatmap d'un seul candidat (tiré pondéré par son score ville)
 const SUB_CARTE = {
-  gagnants: 0.40,
-  candidat: 0.60,
+  gagnants: 0.25,
+  candidat: 0.75,
 };
 
 // ── Cibles MANUELLES par scrutin ──────────────────────────────────────────────
@@ -249,6 +249,7 @@ const DATES = {
   'Législatives 1986':     { TU: '16 mars 1986'        },
   'Régionales 1986':       { TU: '16 mars 1986'        },
   'Cantonales 1988':       { T1: '25 septembre 1988', T2: '2 octobre 1988' },
+  'Cantonales 1992':       { T1: '22 mars 1992', T2: '29 mars 1992' },
   'Cantonales 1994':       { T1: '20 mars 1994', T2: '27 mars 1994' },
   'Cantonales 1998':       { T1: '15 mars 1998', T2: '22 mars 1998' },
   'Cantonale partielle 1999': { T1: '20 juin 1999', T2: '27 juin 1999' },
