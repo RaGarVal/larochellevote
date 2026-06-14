@@ -407,5 +407,16 @@
     "quartier": null,
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-06-14",
+    "signature": "carte|Européennes 2004|TU",
+    "niveau": "carte",
+    "election": "Européennes 2004",
+    "tour": "TU",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "gagnants",
+    "candidat": null
   }
 ]
