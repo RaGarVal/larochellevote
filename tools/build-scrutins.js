@@ -368,6 +368,7 @@ function adjacentElections(label, ELECTIONS, ctx, currentCanton) {
 function getElectionWikipediaURL(label) {
   if (!label) return null;
   const OVERRIDES = {
+    'Référendum 1992': 'https://fr.wikipedia.org/wiki/R%C3%A9f%C3%A9rendum_fran%C3%A7ais_sur_le_trait%C3%A9_de_Maastricht',
     'Référendum 2000': 'https://fr.wikipedia.org/wiki/R%C3%A9f%C3%A9rendum_fran%C3%A7ais_de_2000_sur_le_quinquennat',
     'Référendum 2005': 'https://fr.wikipedia.org/wiki/R%C3%A9f%C3%A9rendum_fran%C3%A7ais_sur_le_trait%C3%A9_%C3%A9tablissant_une_constitution_pour_l%27Europe',
     'Municipales 1995': 'https://fr.wikipedia.org/wiki/%C3%89lections_municipales_fran%C3%A7aises_de_1995',
@@ -445,6 +446,7 @@ const DATES = {
   'Européennes 2014':    { TU: '25 mai 2014' },
   'Européennes 2019':    { TU: '26 mai 2019' },
   'Européennes 2024':    { TU: '9 juin 2024' },
+  'Référendum 1992':     { TU: '20 septembre 1992' },
   'Référendum 2000':     { TU: '24 septembre 2000' },
   'Référendum 2005':     { TU: '29 mai 2005' },
   'Législatives 1986':   { TU: '16 mars 1986' },
@@ -1650,7 +1652,46 @@ footer.s-foot a:hover { color: var(--text-chrome); }
       <p class="s-blocs-legend">
         ${['G','C','D','EXD','?'].filter(b => (td.blocs[b]||0) > 0).map(b => `<span class="bl-item"><span class="bl-dot" style="background:${BLOC_COLORS[b]}"></span>${BLOC_LABELS[b]} ${fmtPct(td.blocs[b])} %</span>`).join('')}
       </p>`;
-      })() : ''}
+      })() : (() => {
+        // Cas spécial des 2 référendums européens (1992 Maastricht / 2005 TCE) :
+        // duo Oui/Non du courant + pendant, dans le style triptyque habituel.
+        // Réf. 2000 (quinquennat) n'a pas de pendant → on n'affiche rien.
+        const pendantLabel = label === 'Référendum 1992' ? 'Référendum 2005'
+                           : label === 'Référendum 2005' ? 'Référendum 1992' : null;
+        if (!pendantLabel) return '';
+        const pendEl = opts.ctx && opts.ctx.ELECTIONS[pendantLabel];
+        if (!pendEl || !pendEl.sheets || !pendEl.sheets.TU) return '';
+        const pendAgg = aggregateSheet(pendEl.sheets.TU);
+        const pendSlug = slugifyElection(pendantLabel);
+        const pendYr = parseInt(pendantLabel.match(/\d{4}/)[0]);
+        const curYr = parseInt(label.match(/\d{4}/)[0]);
+        const pendIsAfter = pendYr > curYr;
+        // Pcts pour la légende (côté courant uniquement, comme la version blocs)
+        let ouiVoixCur = 0, nonVoixCur = 0;
+        Object.entries(td.voix_par_cand || {}).forEach(([k, v]) => {
+          const kl = k.toLowerCase();
+          if (kl === 'oui' || kl.startsWith('oui@')) ouiVoixCur += v;
+          else if (kl === 'non' || kl.startsWith('non@')) nonVoixCur += v;
+        });
+        const ouiPctCur = +(ouiVoixCur / (td.exprimes || 1) * 100).toFixed(1);
+        const nonPctCur = +(nonVoixCur / (td.exprimes || 1) * 100).toFixed(1);
+        const pendSide = `
+        <a class="trip-side" href="/scrutins/${pendSlug}.html" title="${esc(pendantLabel)}">
+          <div class="trip-bar trip-bar-side">${renderRefSegs(pendAgg.voix_par_cand, pendAgg.exprimes)}</div>
+          <span class="trip-side-label">${esc(pendantLabel)} <span class="trip-side-meta">(${pendIsAfter ? 'suivant' : 'précédent'})</span></span>
+        </a>`;
+        return `
+      <h3>Blocs politiques</h3>
+      <div class="trip-wrap">
+        ${pendIsAfter ? pendSide : ''}
+        <div class="trip-bar trip-bar-current">${renderRefSegs(td.voix_par_cand, td.exprimes)}<div class="trip-mid-line"></div></div>
+        ${!pendIsAfter ? pendSide : ''}
+      </div>
+      <p class="s-blocs-legend">
+        <span class="bl-item"><span class="bl-dot" style="background:#0F8A8A"></span>Oui ${fmtPct(ouiPctCur)} %</span>
+        <span class="bl-item"><span class="bl-dot" style="background:#8E2C5C"></span>Non ${fmtPct(nonPctCur)} %</span>
+      </p>`;
+      })()}
 
       <h3>Par bureau de vote</h3>
       <p class="s-bureau-cta">📍 Pour les résultats détaillés bureau par bureau, <a href="${esc(urlCarte)}">rendez-vous sur la carte interactive →</a></p>

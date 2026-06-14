@@ -56,7 +56,7 @@
   "mainEntity": {
     "@type": "Dataset",
     "name": "Archives électorales de La Rochelle, 1986-2026",
-    "description": "Résultats par bureau de vote pour 51 élections et 2 référendums organisés à La Rochelle entre 1986 et 2026.",
+    "description": "Résultats par bureau de vote pour 51 élections et 3 référendums organisés à La Rochelle entre 1986 et 2026.",
     "url": "https://larochellevote.fr/",
     "creator": {
       "@type": "Person",
@@ -1792,7 +1792,12 @@ function toggleBase100() {
   if (btn.classList.contains('disabled')) return;
   showBase100 = !showBase100;
   btn.classList.toggle('on', showBase100);
-  if (chartType === 'empiles') drawStackedChart(window._chartData);
+  // En base 100, les cantonales n'ont pas de référence ville → on coupe
+  // automatiquement leur toggle (et le réactive à la sortie selon le niveau).
+  // Refresh complet pour recharger les données filtrées par typeFilter.
+  if (typeof _applyDepToggleState === 'function') _applyDepToggleState();
+  if (typeof refresh === 'function') refresh();
+  else if (chartType === 'empiles') drawStackedChart(window._chartData);
   else drawChart(window._chartData);
   if (typeof writeURLState === 'function') writeURLState();
 }
@@ -1806,6 +1811,10 @@ function updateBase100Visibility() {
   if (!visible && showBase100) {
     showBase100 = false;
     btn.classList.remove('on');
+    // Re-propage : si la base 100 s'éteint automatiquement (parce qu'on a
+    // passé hors de la zone 1-2 catégories), le toggle Cantonales/Départementales
+    // doit redevenir cliquable selon les règles du niveau courant.
+    if (typeof _applyDepToggleState === 'function') _applyDepToggleState();
   }
 }
 function getQuartiersForBureau(bid) {
@@ -2180,6 +2189,11 @@ function applyHashSelection() {
     const t = document.getElementById('toggle-abst');
     if (t) t.classList.remove('off');
   }
+
+  // Re-propage l'état final du toggle Cantonales/Départementales après lecture
+  // de tous les paramètres : couvre les cas URL niveau=bureau (sans setNiveau()
+  // appelé) ET base100=1 (priorité absolue dans _applyDepToggleState).
+  if (typeof _applyDepToggleState === 'function') _applyDepToggleState();
 }
 
 // ─── Niveau ───────────────────────────────────────────────────────────────
@@ -2187,6 +2201,49 @@ function applyHashSelection() {
 // toggle Cantonales/Départementales (cf. toggleType). setNiveau ne réécrase plus
 // l'état dans ce cas. Au reload de la page, le flag est null (état initial reset).
 let _depToggleUserOverride = false;
+// Met à jour l'état visuel/cliquable du toggle Cantonales/Départementales.
+// Règles cumulatives (du plus prioritaire au moins prioritaire) :
+//   1. base 100 ON       → OFF + disabled (pas de référence ville pour les cantonales)
+//   2. niveau ville      → OFF + disabled (élection infracommunale)
+//   3. niveau quartier   → OFF + disabled (quartiers à cheval sur cantons)
+//   4. niveau canton     → ON  (pertinence forte, ignore l'override)
+//   5. niveau bureau     → respecte _depToggleUserOverride, sinon OFF par défaut
+function _applyDepToggleState() {
+  const depToggle = document.querySelector('.type-toggle[data-type*="Départementales"], .type-toggle[data-type*="Cantonales"]');
+  if (!depToggle) return;
+  // Base 100 : priorité absolue, on coupe avant tout
+  if (showBase100) {
+    depToggle.classList.remove('on');
+    depToggle.classList.add('disabled', 'has-tooltip');
+    depToggle.setAttribute('data-tooltip', 'Pas de référence ville en base 100');
+    depToggle.setAttribute('aria-disabled', 'true');
+    depToggle.setAttribute('aria-pressed', 'false');
+    return;
+  }
+  // Sinon : règle par niveau
+  if (niveau === 'canton') {
+    depToggle.classList.add('on');
+  } else if (niveau === 'ville' || niveau === 'quartier') {
+    depToggle.classList.remove('on');
+  } else if (!_depToggleUserOverride) {
+    depToggle.classList.remove('on');
+  }
+  depToggle.setAttribute('aria-pressed', depToggle.classList.contains('on') ? 'true' : 'false');
+  if (niveau === 'ville') {
+    depToggle.classList.add('disabled', 'has-tooltip');
+    depToggle.setAttribute('data-tooltip', 'Élection infracommunale');
+    depToggle.setAttribute('aria-disabled', 'true');
+  } else if (niveau === 'quartier') {
+    depToggle.classList.add('disabled', 'has-tooltip');
+    depToggle.setAttribute('data-tooltip', 'Quartiers divisés');
+    depToggle.setAttribute('aria-disabled', 'true');
+  } else {
+    depToggle.classList.remove('disabled', 'has-tooltip');
+    depToggle.removeAttribute('data-tooltip');
+    depToggle.removeAttribute('aria-disabled');
+  }
+}
+
 function setNiveau(n) {
   const wasVille = niveau === 'ville';
   niveau = n;
@@ -2199,44 +2256,10 @@ function setNiveau(n) {
     const sec = document.getElementById('sec-'+x);
     if (sec) sec.style.display = (x===n && n!=='ville') ? '' : 'none';
   });
-  // Toggle "Départementales" : allumé automatiquement seulement en niveau Canton.
-  // Désactivé (non cliquable) en niveau Ville (élection infracommunale, pas de
-  // résultat ville pertinent) et Quartier (les quartiers chevauchent souvent
-  // plusieurs cantons → résultat ambigü). En Bureau : cliquable, OFF par défaut.
-  // Selector robuste à l'ordre / au changement de format data-type (matche tout
-  // toggle qui inclut "Départementales" ou "Cantonales" dans son data-type).
-  const depToggle = document.querySelector('.type-toggle[data-type*="Départementales"], .type-toggle[data-type*="Cantonales"]');
-  if (depToggle) {
-    // Règle :
-    //  • canton          → ON  (toujours, peu importe l'override : pertinence forte)
-    //  • ville/quartier  → OFF (toujours, sinon visuel "ON mais disabled" trompeur)
-    //  • bureau          → respecte l'override utilisateur si défini, sinon OFF
-    if (n === 'canton') {
-      depToggle.classList.add('on');
-    } else if (n === 'ville' || n === 'quartier') {
-      depToggle.classList.remove('on');
-    } else if (!_depToggleUserOverride) {
-      // n === 'bureau' (par défaut OFF, mais pas écrasé si user a explicitement
-      // activé pendant la session courante)
-      depToggle.classList.remove('on');
-    }
-    // Sync aria-pressed avec l'état visuel (a11y)
-    depToggle.setAttribute('aria-pressed', depToggle.classList.contains('on') ? 'true' : 'false');
-    // Tooltip custom du projet (classe .has-tooltip + data-tooltip).
-    if (n === 'ville') {
-      depToggle.classList.add('disabled', 'has-tooltip');
-      depToggle.setAttribute('data-tooltip', 'Élection infracommunale');
-      depToggle.setAttribute('aria-disabled', 'true');
-    } else if (n === 'quartier') {
-      depToggle.classList.add('disabled', 'has-tooltip');
-      depToggle.setAttribute('data-tooltip', 'Quartiers divisés');
-      depToggle.setAttribute('aria-disabled', 'true');
-    } else {
-      depToggle.classList.remove('disabled', 'has-tooltip');
-      depToggle.removeAttribute('data-tooltip');
-      depToggle.removeAttribute('aria-disabled');
-    }
-  }
+  // Toggle "Départementales/Cantonales" : règles centralisées dans
+  // _applyDepToggleState (prend en compte niveau ET base 100). Appelé aussi
+  // depuis toggleBase100() pour repropager l'état quand la base 100 change.
+  _applyDepToggleState();
   // Initialiser currentCantonKey si on entre dans le niveau Canton sans sélection
   if (n === 'canton') {
     const selC = document.getElementById('sel-canton');

@@ -65,7 +65,7 @@
     "mainEntity": {
       "@type": "Dataset",
       "name": "Archives électorales de La Rochelle, 1986-2026",
-      "description": "Résultats par bureau de vote pour 51 élections et 2 référendums organisés à La Rochelle entre 1986 et 2026.",
+      "description": "Résultats par bureau de vote pour 51 élections et 3 référendums organisés à La Rochelle entre 1986 et 2026.",
       "url": "https://larochellevote.fr/",
       "creator": {
         "@type": "Person",
@@ -1875,6 +1875,7 @@ input:focus-visible,
       <optgroup label="Référendums">
         <option value="Référendum 2005">Référendum 2005 — TCE</option>
         <option value="Référendum 2000">Référendum 2000 — quinquennat</option>
+        <option value="Référendum 1992">Référendum 1992 — Maastricht</option>
       </optgroup>
     </select>
     <div class="btn-grp" id="tour-btns" style="flex-shrink:0">
@@ -2496,6 +2497,7 @@ function winnerColor(data) { if (!data || !data.w) return '#ccc'; return colorOf
 function getElectionWikipediaURL(label) {
   if (!label) return null;
   const OVERRIDES = {
+    'Référendum 1992': 'https://fr.wikipedia.org/wiki/R%C3%A9f%C3%A9rendum_fran%C3%A7ais_sur_le_trait%C3%A9_de_Maastricht',
     'Référendum 2000': 'https://fr.wikipedia.org/wiki/R%C3%A9f%C3%A9rendum_fran%C3%A7ais_de_2000_sur_le_quinquennat',
     'Référendum 2005': 'https://fr.wikipedia.org/wiki/R%C3%A9f%C3%A9rendum_fran%C3%A7ais_sur_le_trait%C3%A9_%C3%A9tablissant_une_constitution_pour_l%27Europe',
     // 1995, 2001 et 2008 : pas de page Wikipédia dédiée à La Rochelle ni à la
@@ -4647,7 +4649,89 @@ function _resolveBureauForEra(ref, sheet, fallbackId) {
   return null;
 }
 
+// ─── Référendums européens 1992/2005 — comparaison croisée ────────────────
+// Pour ces 2 référendums uniquement (Maastricht et TCE), on remplace le panel
+// "Blocs politiques" par 2 bandeaux Oui/Non : courant (gros) + pendant (petit).
+// Réf. 2000 (quinquennat) n'a pas de pendant comparable et reste sans panel.
+function _refPendant(label) {
+  if (label === 'Référendum 1992') return 'Référendum 2005';
+  if (label === 'Référendum 2005') return 'Référendum 1992';
+  return null;
+}
+// Récupère les pcts Oui/Non pour un bureau dans une élection-référendum,
+// avec résolution cross-ère via BUREAU_CORRESPONDANCES.
+function _refDataForBureau(elecLabel, bureauKey) {
+  const el = ELECTIONS[elecLabel];
+  if (!el) return null;
+  const sh = el.sheets.TU || el.sheets.T1;
+  if (!sh) return null;
+  const myAdj = String(el.my);
+  const corr = (typeof BUREAU_CORRESPONDANCES !== 'undefined' && BUREAU_CORRESPONDANCES[bureauKey]) || {};
+  const ref = corr[myAdj] !== undefined ? corr[myAdj] : bureauKey;
+  return _resolveBureauForEra(ref, sh, bureauKey);
+}
+// Agrège un référendum sur un ensemble de bureaux 2026 (quartier/canton/global).
+// Retourne { Oui: pct, Non: pct } à partir des voix entières (cf. CLAUDE.md).
+function _refAggregateForBureaux(elecLabel, bureauKeys) {
+  let sOui = 0, sNon = 0, sE = 0;
+  bureauKeys.forEach(bk => {
+    const d = _refDataForBureau(elecLabel, bk);
+    if (!d) return;
+    const v = d._voix || {};
+    sOui += v.Oui || 0;
+    sNon += v.Non || 0;
+    sE += d.e || 0;
+  });
+  if (sE <= 0) return null;
+  return { Oui: sOui / sE * 100, Non: sNon / sE * 100 };
+}
+// Construit une bandeau Oui/Non. `isComparison` → opacité 0.38, cliquable,
+// label "Réf. 1992" (ou 2005) en surimpression à gauche.
+function _refOuiNonBar(cData, height, refLabel, isComparison) {
+  const ouiPct = (cData && cData.Oui) || 0;
+  const nonPct = (cData && cData.Non) || 0;
+  const tot = (ouiPct + nonPct) || 1;
+  const ouiCol = '#0F8A8A', nonCol = '#8E2C5C';
+  const LINE = '<div style="position:absolute;top:0;bottom:0;left:50%;width:0;border-left:1.5px dashed rgba(255,255,255,0.65);pointer-events:none;z-index:2"></div>';
+  let segs = '';
+  if (ouiPct > 0) segs += '<div class="btip" data-color="'+ouiCol+'" data-label="Oui" data-pct="'+ouiPct.toFixed(1)+' %" data-elec="'+refLabel+'" style="width:'+(ouiPct/tot*100).toFixed(2)+'%;background:'+ouiCol+';cursor:default"></div>';
+  if (nonPct > 0) segs += '<div class="btip" data-color="'+nonCol+'" data-label="Non" data-pct="'+nonPct.toFixed(1)+' %" data-elec="'+refLabel+'" style="width:'+(nonPct/tot*100).toFixed(2)+'%;background:'+nonCol+';cursor:default"></div>';
+  const inner = '<div style="position:relative"><div style="display:flex;height:'+height+'px;width:100%">'+segs+'</div>'+LINE+'</div>';
+  if (!isComparison) return inner;
+  const yr = (refLabel.match(/\d{4}/) || ['?'])[0];
+  return '<div style="position:relative;opacity:0.38;cursor:pointer" class="sidebar-elec" onclick="setElection(\''+refLabel+'\')">'+inner
+    + '<span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:0.58rem;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5);letter-spacing:0.03em;pointer-events:none">Réf. '+yr+'</span></div>';
+}
+// Construit le panel "Référendums européens" (courant + pendant) à partir de
+// 2 objets { Oui, Non }. Ordre chronologique : antérieur en haut, postérieur
+// en bas (cohérent avec triptych "scrutin suivant" / "scrutin précédent").
+function _renderRefPairPanel(curData, pendData, curLabel, pendLabel) {
+  if (!curData) return '';
+  const curYr = parseInt(curLabel.match(/\d{4}/)[0]);
+  const pendYr = parseInt(pendLabel.match(/\d{4}/)[0]);
+  const pendIsAfter = pendYr > curYr;
+  const mainBar = _refOuiNonBar(curData, 72, curLabel, false);
+  const sideBar = pendData
+    ? _refOuiNonBar(pendData, 20, pendLabel, true)
+    : '<div style="position:relative;opacity:0.38"><div style="height:20px;background:#f0f0f0;border-radius:4px;border:1.5px dashed #ddd"></div><span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:0.58rem;font-weight:700;color:#999;pointer-events:none">Réf. '+(pendLabel.match(/\d{4}/) || ['?'])[0]+' — pas de données</span></div>';
+  let h = '<div style="border-radius:6px;overflow:hidden">';
+  h += pendIsAfter ? (sideBar + mainBar) : (mainBar + sideBar);
+  return h + '</div>';
+}
+
 function renderBlocTriptych(data, histoKey) {
+  // Cas spécial : référendums européens 1992/2005 — duo Oui/Non courant + pendant.
+  // Sinon (réf. 2000 quinquennat → pas de pendant) : on n'affiche rien plutôt
+  // qu'un triptych de blocs politiques incohérent avec Oui/Non.
+  if (typeof isReferendum === 'function' && isReferendum(currentElection)) {
+    const pendant = _refPendant(currentElection);
+    if (!pendant) return '';
+    const curOuiPct = (data && data.c && data.c.Oui) || 0;
+    const curNonPct = (data && data.c && data.c.Non) || 0;
+    const pendBureauData = _refDataForBureau(pendant, histoKey);
+    const pendData = pendBureauData ? { Oui: pendBureauData.c.Oui || 0, Non: pendBureauData.c.Non || 0 } : null;
+    return _renderRefPairPanel({ Oui: curOuiPct, Non: curNonPct }, pendData, currentElection, pendant);
+  }
   function getBlocsForAdj(elecLabel, bureauKey){
     const el = ELECTIONS[elecLabel];
     if (el) {
@@ -4715,6 +4799,16 @@ function renderBlocTriptych(data, histoKey) {
 }
 
 function renderBlocTriptychQuartier(qData,bureauNums,currentCantonId){
+  // Cas spécial : référendums européens 1992/2005 — duo Oui/Non courant + pendant.
+  // Agrégat à partir des voix entières sur les bureaux 2026 du quartier/canton.
+  if (typeof isReferendum === 'function' && isReferendum(currentElection)) {
+    const pendantQ = _refPendant(currentElection);
+    if (!pendantQ) return '';
+    const curAgg = _refAggregateForBureaux(currentElection, bureauNums);
+    const pendAgg = _refAggregateForBureaux(pendantQ, bureauNums);
+    if (!curAgg) return '';
+    return _renderRefPairPanel(curAgg, pendAgg, currentElection, pendantQ);
+  }
   function aggregateBlocs(elecLabel){
     const adjEl=ELECTIONS[elecLabel];
     const adjSh=adjEl?(currentSheet==='T2'?(adjEl.sheets['T2']||adjEl.sheets['TU']||adjEl.sheets['T1']):(adjEl.sheets['TU']||adjEl.sheets['T1'])):null;
@@ -4935,8 +5029,20 @@ function renderGlobalFiche() {
     return '<div style="position:relative;opacity:0.38'+(clickable?';cursor:pointer':'')+'" class="'+(clickable?'sidebar-elec':'')+'" '+(clickable?'onclick="setElection(\''+elec+'\')"':'')+'>'+inner
       +'<span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:0.58rem;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5);pointer-events:none">'+label+'</span></div>';
   }
-  // Section "Blocs politiques" skippée pour les référendums (incohérente avec Oui/Non).
-  if (!(typeof isReferendum === 'function' && isReferendum(currentElection))) {
+  // Section "Blocs politiques" : skippée pour la plupart des référendums,
+  // mais réactivée pour les 2 référendums européens (1992 Maastricht / 2005 TCE)
+  // en duo Oui/Non courant + pendant.
+  if (typeof isReferendum === 'function' && isReferendum(currentElection)) {
+    var pendantG = _refPendant(currentElection);
+    if (pendantG) {
+      var curCityData = { Oui: (gData.c && gData.c.Oui) || 0, Non: (gData.c && gData.c.Non) || 0 };
+      // Bureau keys 2026 pour agréger le pendant sur le même périmètre ville
+      var bk2026 = Object.keys(BUREAU_INFO[CURRENT_ERA] || {});
+      var pendCityData = _refAggregateForBureaux(pendantG, bk2026);
+      h += '<div class="fiche-section-blocs" style="margin-bottom:18px"><div class="sec-ttl">Blocs politiques</div>'
+        + _renderRefPairPanel(curCityData, pendCityData, currentElection, pendantG) + '</div>';
+    }
+  } else {
     var _adj = _adjacentElections(currentElection);
     var prev = _adj.prev, next = _adj.next;
     var curBlocs=computeBlocs(gData);
@@ -5806,6 +5912,12 @@ function renderFiche(feature) {
     h += '<div class="fiche-section-participation" style="margin-bottom:14px">' + particiHTML(data.i, data.a, abst_nb_r, blancsPct_r, data.bn || 0, data.e) + '</div>';
     // Split : mini-carte à gauche + (question + duel) à droite
     h += '<div class="split"><div id="mm-wrap"></div>' + sig_r + '</div>';
+    // Panel "Blocs politiques" : duo Oui/Non courant + pendant pour les 2
+    // référendums européens (1992 Maastricht / 2005 TCE). Vide sinon.
+    const _btRef = renderBlocTriptych(data, histoKey);
+    if (_btRef) {
+      h += '<div class="fiche-section-blocs" style="margin-bottom:18px"><div class="sec-ttl">Blocs politiques</div>' + _btRef + '</div>';
+    }
     // Lien LRVanalyse : utiliser histoKey (ID 2026 canonique de la lignée) pour
     // que la page analyse suive le MÊME bureau à travers les redécoupages.
     // Label avec préposition + numéro affiché + dénomination (UX du contexte courant).
@@ -5832,9 +5944,11 @@ function renderFiche(feature) {
 
   h += '<div class="split"><div id="mm-wrap"></div>' + sig + '</div>';
 
-    // Blocs
-  h += '<div class="fiche-section-blocs" style="margin-bottom:18px"><div class="sec-ttl">Blocs politiques</div>'
-    + renderBlocTriptych(data, histoKey) + '</div>';
+    // Blocs (renderBlocTriptych renvoie '' pour les référendums sans pendant)
+  const _bt = renderBlocTriptych(data, histoKey);
+  if (_bt) {
+    h += '<div class="fiche-section-blocs" style="margin-bottom:18px"><div class="sec-ttl">Blocs politiques</div>' + _bt + '</div>';
+  }
 
   // Lien LRVanalyse : histoKey (ID 2026 canonique) pour suivre la lignée du
   // bureau à travers les redécoupages successifs. Label avec préposition,
@@ -5944,9 +6058,11 @@ function renderQuartier(){
     const blancsPct=(totI-abst_nb_tot)>0?+(totBn*100/(totI-abst_nb_tot)).toFixed(1):0;
     h+='<div class="fiche-section-participation" style="margin-bottom:14px">'+particiHTML(totI,abst_pct,abst_nb_tot,blancsPct,totBn,totE)+'</div>';
     h+='<div class="split"><div id="mm-wrap"></div>'+sig+'</div>';
-    // Section "Blocs politiques" skippée pour les référendums (incohérente avec Oui/Non).
-    if (!(typeof isReferendum === 'function' && isReferendum(currentElection))) {
-      h+='<div class="fiche-section-blocs" style="margin-bottom:18px"><div class="sec-ttl">Blocs politiques</div>'+renderBlocTriptychQuartier(qData,bureauNums)+'</div>';
+    // Section "Blocs politiques" : renderBlocTriptychQuartier gère elle-même
+    // les référendums (panel duo pour 1992/2005, vide pour 2000 sans pendant).
+    const _btq = renderBlocTriptychQuartier(qData, bureauNums);
+    if (_btq) {
+      h+='<div class="fiche-section-blocs" style="margin-bottom:18px"><div class="sec-ttl">Blocs politiques</div>'+_btq+'</div>';
     }
   } else {
     h+='<div style="padding:12px;color:var(--text-meta);font-style:italic">Donn\u00e9es non disponibles pour ce scrutin.</div>';
@@ -6094,8 +6210,11 @@ function renderCanton(){
     const blancsPct = (totI-abst_nb_tot) > 0 ? +(totBn*100/(totI-abst_nb_tot)).toFixed(1) : 0;
     h += '<div class="fiche-section-participation" style="margin-bottom:14px">'+particiHTML(totI, abst_pct, abst_nb_tot, blancsPct, totBn, totE)+'</div>';
     h += '<div class="split"><div id="mm-wrap"></div>'+sig+'</div>';
-    if (!(typeof isReferendum === 'function' && isReferendum(currentElection))) {
-      h += '<div class="fiche-section-blocs" style="margin-bottom:18px"><div class="sec-ttl">Blocs politiques</div>'+renderBlocTriptychQuartier(cData, bureauNums, cid)+'</div>';
+    {
+      // renderBlocTriptychQuartier gère elle-même les référendums
+      // (duo Oui/Non pour 1992/2005, vide pour 2000).
+      const _btc = renderBlocTriptychQuartier(cData, bureauNums, cid);
+      if (_btc) h += '<div class="fiche-section-blocs" style="margin-bottom:18px"><div class="sec-ttl">Blocs politiques</div>'+_btc+'</div>';
     }
   } else {
     h += '<div style="padding:12px;color:var(--text-meta);font-style:italic">Données non disponibles pour ce scrutin dans ce canton.</div>';
