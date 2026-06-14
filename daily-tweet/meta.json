@@ -1,14 +1,14 @@
 {
-  "date": "2026-06-13",
+  "date": "2026-06-14",
   "niveau": "global",
-  "election": "Régionales 2010",
-  "tour": "T1",
-  "bureau": "0001",
+  "election": "Européennes 2004",
+  "tour": "TU",
+  "bureau": null,
   "quartier": null,
   "canton": null,
-  "subtype": null,
+  "subtype": "gagnants",
   "candidat": null,
-  "signature": "bureau|Régionales 2010|T1|0001",
-  "chars": 233,
-  "generated_at": "2026-06-13T06:00:59.301Z"
+  "signature": "carte|Européennes 2004|TU",
+  "chars": 226,
+  "generated_at": "2026-06-14T06:00:56.711Z"
 }
