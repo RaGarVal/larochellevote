@@ -1,14 +1,14 @@
 {
-  "date": "2026-06-14",
+  "date": "2026-06-15",
   "niveau": "global",
-  "election": "Européennes 2004",
+  "election": "Européennes 1989",
   "tour": "TU",
   "bureau": null,
   "quartier": null,
-  "canton": null,
-  "subtype": "gagnants",
+  "canton": "2",
+  "subtype": null,
   "candidat": null,
-  "signature": "carte|Européennes 2004|TU",
-  "chars": 226,
-  "generated_at": "2026-06-14T06:00:56.711Z"
+  "signature": "canton|Européennes 1989|TU|2",
+  "chars": 224,
+  "generated_at": "2026-06-15T06:01:20.842Z"
 }
