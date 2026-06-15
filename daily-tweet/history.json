@@ -418,5 +418,16 @@
     "quartier": null,
     "subtype": "gagnants",
     "candidat": null
+  },
+  {
+    "date": "2026-06-15",
+    "signature": "canton|Européennes 1989|TU|2",
+    "niveau": "canton",
+    "election": "Européennes 1989",
+    "tour": "TU",
+    "bureau": null,
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
   }
 ]
