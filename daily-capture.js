@@ -5,14 +5,25 @@
  *   1. Vérifie si aujourd'hui est un rendez-vous fixé dans schedule.json
  *   2. Sinon, choisit aléatoirement un type de contenu et une élection
  *   3. Ouvre le site, extrait les données réelles
- *   4. Génère le texte du tweet (12 canevas + cascade si > 280 chars)
+ *   4. Génère le texte du tweet (12 canevas + cascade si > 280 chars).
+ *      Si rdv : on bascule sur la variante anniversaire (« 🎂 Il y a N ans
+ *      aujourd'hui, pour la {election}, X obtenait/arrivait en tête… »).
  *   5. Capture l'image et sauvegarde le tout dans daily-tweet/
  *
- * Cascade de repli automatique si le texte dépasse 280 caractères :
- *   carte    → texte global (même image)
- *   bureau   → quartier → global (même image)
- *   quartier → global   (même image)
- *   global   → toujours dans les limites
+ * Cascade de repli automatique si le texte dépasse 280 caractères, à 2 étages :
+ *
+ *   Étage 1 — Troncatures progressives à chaque niveau :
+ *     Étape 1 → texte complet
+ *     Étape 2 → CTA raccourcie ("Détails sur {url}")
+ *     Étape 3 → suffixe " à {quartier}" retiré (bureau + carte uniquement)
+ *     Étape 4 → prénom → initiale (Marielle → M., Marie-Hélène → MH.)
+ *
+ *   Étage 2 — Si l'étape 4 dépasse encore 280, repli vers le niveau plus large :
+ *     carte    → global (même image)
+ *     bureau   → quartier → global (même image)
+ *     quartier → global   (même image)
+ *     canton   → global   (même image)
+ *     global   → toujours dans les limites
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
@@ -402,6 +413,60 @@ function tourLabel(tour) {
   if (tour === 'T1') return '(1er tour)';
   if (tour === 'T2') return '(2e tour)';
   return `(${tour})`;
+}
+
+// Cascade de troncature interne (étapes 1→4) appliquée AVANT de cascader vers
+// un niveau plus large (FALLBACK). Initialise le prénom à l'étape 4.
+//   Marielle      → M.
+//   Marie-Hélène  → MH.
+//   Jean-Luc      → JL.
+//   ''            → '' (no-op pour binômes ou identités vides)
+function initializePrenom(p) {
+  if (!p) return '';
+  if (p.includes('-')) return p.split('-').map(s => s.charAt(0)).join('') + '.';
+  return p.charAt(0) + '.';
+}
+
+// ── Anniversaires (rdv schedule.json) ───────────────────────────────────────
+// Quand le jour correspond à un rdv dans schedule.json, on transforme le
+// template "Le {date_election}, pour la {election}" en "Il y a N ans
+// aujourd'hui, pour la {election_anniv}" (avec verbes à l'imparfait).
+// Style validé par le user : sobre, descriptif, factuel.
+
+// "Présidentielle 2022" → "présidentielle 2022" (vs formatElectionLabel qui
+// retire l'année — pour les anniv on la garde car la date n'est plus dans le texte).
+function formatElectionLabelFull(label) {
+  return label.replace(/^./, c => c.toLowerCase());
+}
+
+// Nombre d'années entre aujourd'hui et l'élection. Calcul simple année - année
+// (les rdv tombent par construction le bon mois/jour, donc pas de subtilité).
+function anniversaryYears(electionLabel, todayStr) {
+  const m = electionLabel.match(/\b(\d{4})\b/);
+  if (!m) return null;
+  return parseInt(todayStr.slice(0, 4)) - parseInt(m[1]);
+}
+
+// "il y a un an" (N=1) ou "il y a 4 ans" (N≥2). N=0 et N<0 sont impossibles
+// par construction des rdv (on ne commémore pas le futur ni l'année courante).
+function anniversaryPhrase(n) {
+  return n === 1 ? 'un an' : `${n} ans`;
+}
+
+// Transforme un template "normal" en variante anniversaire :
+//   - En-tête : "{emoji} Le {date_election}, pour la/le/les {election}" devient
+//     "🎂 Il y a {anniv_phrase} aujourd'hui, pour la/le/les {election_anniv}"
+//     (le tour optionnel après {election} est préservé : "(1er tour)" reste).
+//   - Verbes : présent / passé composé → imparfait (cohérent avec la posture
+//     commémorative "il y a N ans, X obtenait/arrivait en tête").
+function applyAnniversaryTemplate(tpl) {
+  return tpl
+    .replace(/\{emoji\} Le \{date_election\}, pour (la|le|les) \{election\}( \{tour\})?/,
+             "🎂 Il y a {anniv_phrase} aujourd'hui, pour $1 {election_anniv}$2")
+    // Ordre : "est arrivé" avant "arrive" pour ne pas casser les référendums bureau.
+    .replace(/est arrivé en tête/g, 'arrivait en tête')
+    .replace(/arrive en tête/g, 'arrivait en tête')
+    .replace(/a obtenu/g, 'obtenait');
 }
 
 function getDate(electionLabel, tour) {
@@ -979,9 +1044,19 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
   }
 
   // ── 7. Générer le texte avec cascade de repli ─────────────────────────────
-  async function buildText(niv) {
+  //
+  // Cascade à DEUX étages :
+  //   1. À chaque niveau (carte/bureau/…), on tente 4 étapes de troncature
+  //      progressive avant de passer au niveau plus large :
+  //        Étape 1 : texte complet
+  //        Étape 2 : CTA raccourcie en "Détails sur {site_url}"
+  //        Étape 3 : suffixe géo "à {quartier}" retiré (bureau + carte uniquement)
+  //        Étape 4 : prénom remplacé par son initiale (M., MH., JL.)
+  //   2. Si même l'étape 4 dépasse 280 chars, on cascade vers le niveau suivant
+  //      de FALLBACK[niveau] (filet de sécurité, rarement déclenché en pratique).
+  async function buildText(niv, step = 1) {
     const key = `${niv}_${suffix}`;
-    const tpl = C[key];
+    let tpl = C[key];
     if (!tpl) return null;
 
     let winner, extra = {};
@@ -1013,14 +1088,45 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
     // la cascade de repli (FALLBACK[niveau] → niveau plus large jusqu'à 'global').
     if (!winner) return null;
 
+    // ── Variante anniversaire (rdv schedule.json) ────────────────────────────
+    // Si on est sur un rendez-vous (commémoration), on remplace l'en-tête
+    // "{emoji} Le {date}, pour la {election}" par "🎂 Il y a N ans aujourd'hui,
+    // pour la {election_anniv}" + verbes à l'imparfait. Vars `anniv_phrase` et
+    // `election_anniv` injectées plus bas.
+    const isAnniv = !!rdv;
+    if (isAnniv) tpl = applyAnniversaryTemplate(tpl);
+
+    // ── Troncatures niveau-template (étapes 2 et 3) ──────────────────────────
+    // Étape 2 : remplace toutes les CTA longues "Les résultats de … sur {site_url}"
+    // par la version courte "Détails sur {site_url}". Match unique en fin de
+    // template (les 12 canevas suivent strictement ce pattern).
+    if (step >= 2) {
+      tpl = tpl.replace(/\n\nLes résultats de [^\n]+sur \{site_url\}$/, '\n\nDétails sur {site_url}');
+    }
+    // Étape 3 : retire le suffixe " à {quartier}" (uniquement bureau et carte,
+    // qui ont la structure "n°X · DENOM à QUARTIER"). N/A pour quartier/canton/
+    // global où l'unité géo EST le sujet du tweet.
+    if (step >= 3 && (niv === 'bureau' || niv === 'carte')) {
+      tpl = tpl.replace(' · {denomination} à {quartier}', ' · {denomination}');
+    }
+
     const ci = await candInfo(winner?.cand);
+    // Étape 4 : prénom → initiale (Marielle → M., Marie-Hélène → MH., Jean-Luc → JL.).
+    // Sans effet pour les binômes (prenom vide) et "Oui"/"Non" (référendums).
+    const prenomDisplay = step >= 4 ? initializePrenom(ci.prenom) : ci.prenom;
+
     const vars = {
       ...baseVars, ...extra,
-      prenom_nom: `${ci.prenom} ${ci.nom}`.trim(),
+      prenom_nom: `${prenomDisplay} ${ci.nom}`.trim(),
       parti:      ci.parti || '',
       score:      formatPct(winner?.pct),
       reponse:    isRef ? winner?.cand : '',
       site_url:   buildDeepLink(niv),
+      // Variantes anniversaire (utilisées uniquement si le template a été
+      // transformé par applyAnniversaryTemplate ; sinon ces placeholders
+      // n'apparaissent pas dans le template et fillCaneva les ignore).
+      anniv_phrase:   isAnniv ? anniversaryPhrase(anniversaryYears(election, today)) : '',
+      election_anniv: isAnniv ? formatElectionLabelFull(election) : '',
     };
 
     return fillCaneva(tpl, vars).replace(/\s*\(\s*\)/g, '').replace(/\s+,/g, ',').trim();
@@ -1028,23 +1134,32 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
 
   let tweetText = null;
   let niveauFinal = niveau;
+  let truncationStep = 1;
+  outer:
   for (const niv of FALLBACK[niveau]) {
-    const text = await buildText(niv);
-    if (text && twitterLen(text) <= 280) {
-      tweetText    = text;
-      niveauFinal  = niv;
-      break;
+    for (let step = 1; step <= 4; step++) {
+      // Étape 3 inutile pour quartier/canton/global (pas de "à {quartier}" à retirer) :
+      // on saute directement à l'étape 4 pour ne pas refaire un essai identique au 2.
+      if (step === 3 && niv !== 'bureau' && niv !== 'carte') continue;
+      const text = await buildText(niv, step);
+      if (text && twitterLen(text) <= 280) {
+        tweetText    = text;
+        niveauFinal  = niv;
+        truncationStep = step;
+        break outer;
+      }
+      if (text) console.warn(`⚠️  ${niv} étape ${step} : ${twitterLen(text)} chars — troncature suivante`);
     }
-    console.warn(`⚠️  Niveau "${niv}" : ${twitterLen(text || '')} chars — repli`);
   }
 
   if (!tweetText) {
-    // Dernier recours : texte global tronqué
-    tweetText = await buildText('global') || `${CHAPEAU}\n{site_url}`;
+    // Dernier recours : texte global tronqué (étape 4 = toutes troncatures actives)
+    tweetText = await buildText('global', 4) || `${CHAPEAU}\n{site_url}`;
     niveauFinal = 'global (forcé)';
+    truncationStep = 4;
   }
 
-  console.log(`\n📝 Canevas : ${niveauFinal}_${suffix} | ${twitterLen(tweetText)} chars`);
+  console.log(`\n📝 Canevas : ${niveauFinal}_${suffix} | étape ${truncationStep} | ${twitterLen(tweetText)} chars`);
   console.log('─'.repeat(60));
   console.log(tweetText);
   console.log('─'.repeat(60));
@@ -1202,10 +1317,18 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
   // si le tweet niveau bureau dépassait 280 chars). Cohérence avec la signature.
   // subtype + candidat permettent au rééquilibrage auto-correctif de compter
   // précisément les sous-types carte sans avoir à parser la signature.
+  //
+  // niveau_publie = niveauFinal (après cascade), normalisé en retirant le
+  // suffixe " (forcé)". Ajouté pour mesurer la VRAIE distribution publiée
+  // (vs `niveau` qui n'est que le tirage initial — souvent surreprésente
+  // bureau/carte là où le repli envoie en réalité vers global).
+  const niveauPublie = String(niveauFinal || niveau).replace(' (forcé)', '');
   updatedHistory.push({
     date: today,
     signature,
     niveau,
+    niveau_publie: niveauPublie,
+    truncation_step: truncationStep,
     election,
     tour,
     bureau:   bureau   || null,
