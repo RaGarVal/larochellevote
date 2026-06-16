@@ -2,12 +2,16 @@
  * daily-capture.js — LaRochelleVote
  * ─────────────────────────────────────────────────────────────────────────────
  * Chaque matin GitHub Actions exécute ce script qui :
- *   1. Vérifie si aujourd'hui est un rendez-vous fixé dans schedule.json
+ *   1. Vérifie si aujourd'hui est un rendez-vous fixé dans schedule.json.
+ *      Sinon, auto-détecte un anniversaire en croisant la date du jour avec
+ *      la table DATES (52 dates calendaires distinctes ; en cas de collision,
+ *      tirage aléatoire uniforme parmi les scrutins du même jour).
  *   2. Sinon, choisit aléatoirement un type de contenu et une élection
  *   3. Ouvre le site, extrait les données réelles
  *   4. Génère le texte du tweet (12 canevas + cascade si > 280 chars).
- *      Si rdv : on bascule sur la variante anniversaire (« 🎂 Il y a N ans
- *      aujourd'hui, pour la {election}, X obtenait/arrivait en tête… »).
+ *      Si rdv (explicite OU auto-détecté) : on bascule sur la variante
+ *      anniversaire (« 🎂 Il y a N ans aujourd'hui, pour la {election}, X
+ *      obtenait/arrivait en tête… »).
  *   5. Capture l'image et sauvegarde le tout dans daily-tweet/
  *
  * Cascade de repli automatique si le texte dépasse 280 caractères, à 2 étages :
@@ -525,8 +529,44 @@ const schedule     = fs.existsSync(schedulePath)
   ? JSON.parse(fs.readFileSync(schedulePath, 'utf8')).filter(e => e.date)
   : [];
 
-const rdv = schedule.find(e => e.date === today) || null;
-console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Sélection aléatoire');
+// 1. RDV explicite dans schedule.json → priorité absolue (curation manuelle)
+// 2. Sinon : auto-détection d'anniversaire en croisant today (JJ mois) avec
+//    la table DATES. Si plusieurs scrutins même jour calendaire, tirage uniforme.
+//    Les anniversaires de l'ANNÉE COURANTE sont exclus (pas de "il y a 0 an").
+const MOIS_FR = ['janvier','février','mars','avril','mai','juin','juillet',
+                 'août','septembre','octobre','novembre','décembre'];
+function findAnniversaryFromDates(todayStr) {
+  const [yearStr, monthStr, dayStr] = todayStr.split('-');
+  const todayMD = `${parseInt(dayStr)} ${MOIS_FR[parseInt(monthStr) - 1]}`;
+  const todayYear = parseInt(yearStr);
+  const matches = [];
+  for (const [label, tours] of Object.entries(DATES)) {
+    for (const [tour, dateStr] of Object.entries(tours)) {
+      const m = dateStr.match(/^(\d+ \S+) (\d{4})$/);
+      if (!m) continue;
+      if (m[1] === todayMD && parseInt(m[2]) < todayYear) {
+        matches.push({ election: label, tour });
+      }
+    }
+  }
+  if (!matches.length) return null;
+  return matches[Math.floor(Math.random() * matches.length)];
+}
+
+let rdv = schedule.find(e => e.date === today) || null;
+if (!rdv) {
+  const autoAnniv = findAnniversaryFromDates(today);
+  if (autoAnniv) {
+    // RDV synthétique : pas de `type` ni `bureau/quartier/canton` → niveau et
+    // unité géo restent tirés aléatoirement. Seuls `election` et `tour` sont forcés.
+    rdv = { ...autoAnniv, auto: true };
+  }
+}
+console.log(rdv
+  ? (rdv.auto
+       ? `🎂 Anniversaire auto-détecté : ${rdv.election} ${rdv.tour}`
+       : `📌 Rendez-vous : ${rdv.note || rdv.election}`)
+  : '🎲 Sélection aléatoire');
 
 // ══ LANCEMENT ════════════════════════════════════════════════════════════════
 

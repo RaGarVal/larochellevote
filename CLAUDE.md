@@ -290,15 +290,19 @@ La variable `niveauFinal` capture le niveau réel après repli. **Toujours utili
 - L'URL de capture (`urlNiveau = niveauFinal.replace(' (forcé)', '')`)
 - Le selector de fallback screenshot
 
-### `daily-capture.js` — variante anniversaire (rdv schedule.json)
-Quand `today` correspond à une date dans `schedule.json`, le tweet bascule en variante anniversaire :
+### `daily-capture.js` — variante anniversaire (rdv schedule.json + auto-détection)
+Le tweet bascule en variante anniversaire dans 2 cas :
+1. **RDV explicite** : `today` matche une entrée de `schedule.json` (curation manuelle, prioritaire).
+2. **Auto-détection** : sinon, on cherche dans la table `DATES` une élection dont la date `JJ mois` matche aujourd'hui (52 dates calendaires distinctes couvrent ~1 jour sur 7). En cas de collision (plusieurs scrutins même jour, ex. 22 mars = 5 scrutins), tirage uniforme. Les anniversaires de l'année courante (N=0) sont exclus.
+
+Dans les 2 cas, seuls `election` et `tour` sont forcés ; le niveau (bureau/carte/quartier/canton/global) reste tiré aléatoirement. Transformations appliquées :
 - **En-tête remplacé** : « 🎂 Il y a N ans aujourd'hui, pour la {election_anniv} (tour) » (vs. « 🏛️ Le {date_election}, pour la {election} {tour} » en mode normal).
 - **Verbes à l'imparfait** : `arrive en tête` → `arrivait en tête` ; `a obtenu` → `obtenait` ; `est arrivé en tête` → `arrivait en tête`.
 - **`{election_anniv}` garde l'année** (« présidentielle 2022 » au lieu de « présidentielle »), puisque la date n'est plus dans le texte mais portée par le label.
 - **N=1 → « un an »**, N≥2 → « N ans » (cf. `anniversaryPhrase`).
 - La cascade de troncature (étapes 1→4) s'applique normalement par-dessus la transformation anniversaire.
 
-Le rdv force aussi `election`, `tour` et éventuellement `niveau` (cf. champs `type/election/tour` du schedule). En cas de cascade niveau (FALLBACK), la variante anniversaire est conservée dans le nouveau template.
+Pour les **rdv explicites** (schedule.json), le champ `type` peut aussi forcer le niveau (carte/fiche/etc.) ; les **rdv auto-détectés** ne forcent que `election` + `tour`. En cas de cascade niveau (FALLBACK) ou de troncature interne, la variante anniversaire est conservée dans le nouveau template.
 
 ### `cityWinner` vs `carteSubject` (daily-capture)
 - `cityWinner` = TOUJOURS le vrai gagnant ville (`cityData.ranked[0]`), utilisé par les canvas `global_*`.
