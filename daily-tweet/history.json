@@ -429,5 +429,18 @@
     "quartier": null,
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-06-16",
+    "signature": "carte|Législatives 2012|T1|cand:segolene-royal@legislatives-2012",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Législatives 2012",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "segolene-royal@legislatives-2012"
   }
 ]

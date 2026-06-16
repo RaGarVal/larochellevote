@@ -1,14 +1,14 @@
 {
-  "date": "2026-06-15",
-  "niveau": "global",
-  "election": "Européennes 1989",
-  "tour": "TU",
+  "date": "2026-06-16",
+  "niveau": "carte",
+  "election": "Législatives 2012",
+  "tour": "T1",
   "bureau": null,
   "quartier": null,
-  "canton": "2",
-  "subtype": null,
-  "candidat": null,
-  "signature": "canton|Européennes 1989|TU|2",
-  "chars": 224,
-  "generated_at": "2026-06-15T06:01:20.842Z"
+  "canton": null,
+  "subtype": "candidat",
+  "candidat": "segolene-royal@legislatives-2012",
+  "signature": "carte|Législatives 2012|T1|cand:segolene-royal@legislatives-2012",
+  "chars": 247,
+  "generated_at": "2026-06-16T06:01:30.613Z"
 }
