@@ -1,14 +1,14 @@
 {
   "date": "2026-06-16",
-  "niveau": "carte",
-  "election": "Législatives 2012",
-  "tour": "T1",
-  "bureau": null,
+  "niveau": "bureau",
+  "election": "Législatives 2002",
+  "tour": "T2",
+  "bureau": "0019",
   "quartier": null,
   "canton": null,
-  "subtype": "candidat",
-  "candidat": "segolene-royal@legislatives-2012",
-  "signature": "carte|Législatives 2012|T1|cand:segolene-royal@legislatives-2012",
-  "chars": 247,
-  "generated_at": "2026-06-16T06:01:30.613Z"
+  "subtype": null,
+  "candidat": null,
+  "signature": "bureau|Législatives 2002|T2|0019",
+  "chars": 245,
+  "generated_at": "2026-06-16T08:27:08.674Z"
 }
