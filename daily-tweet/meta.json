@@ -1,14 +1,14 @@
 {
-  "date": "2026-06-16",
-  "niveau": "bureau",
-  "election": "Législatives 2002",
+  "date": "2026-06-17",
+  "niveau": "carte",
+  "election": "Législatives 2012",
   "tour": "T2",
-  "bureau": "0019",
+  "bureau": null,
   "quartier": null,
   "canton": null,
-  "subtype": null,
-  "candidat": null,
-  "signature": "bureau|Législatives 2002|T2|0019",
-  "chars": 245,
-  "generated_at": "2026-06-16T08:27:08.674Z"
+  "subtype": "candidat",
+  "candidat": "olivier-falorni@legislatives-2012",
+  "signature": "carte|Législatives 2012|T2|cand:olivier-falorni@legislatives-2012",
+  "chars": 260,
+  "generated_at": "2026-06-17T06:01:44.939Z"
 }

@@ -442,5 +442,18 @@
     "quartier": null,
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-06-17",
+    "signature": "carte|Législatives 2012|T2|cand:olivier-falorni@legislatives-2012",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Législatives 2012",
+    "tour": "T2",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "olivier-falorni@legislatives-2012"
   }
 ]
