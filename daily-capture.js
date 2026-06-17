@@ -2,17 +2,32 @@
  * daily-capture.js — LaRochelleVote
  * ─────────────────────────────────────────────────────────────────────────────
  * Chaque matin GitHub Actions exécute ce script qui :
- *   1. Vérifie si aujourd'hui est un rendez-vous fixé dans schedule.json
+ *   1. Vérifie si aujourd'hui est un rendez-vous fixé dans schedule.json.
+ *      Sinon, auto-détecte un anniversaire en croisant la date du jour avec
+ *      la table DATES (52 dates calendaires distinctes ; en cas de collision,
+ *      tirage aléatoire uniforme parmi les scrutins du même jour).
  *   2. Sinon, choisit aléatoirement un type de contenu et une élection
  *   3. Ouvre le site, extrait les données réelles
- *   4. Génère le texte du tweet (12 canevas + cascade si > 280 chars)
+ *   4. Génère le texte du tweet (12 canevas + cascade si > 280 chars).
+ *      Si rdv (explicite OU auto-détecté) : on bascule sur la variante
+ *      anniversaire (« 🎂 Il y a N ans aujourd'hui, pour la {election}, X
+ *      obtenait/arrivait en tête… »).
  *   5. Capture l'image et sauvegarde le tout dans daily-tweet/
  *
- * Cascade de repli automatique si le texte dépasse 280 caractères :
- *   carte    → texte global (même image)
- *   bureau   → quartier → global (même image)
- *   quartier → global   (même image)
- *   global   → toujours dans les limites
+ * Cascade de repli automatique si le texte dépasse 280 caractères, à 2 étages :
+ *
+ *   Étage 1 — Troncatures progressives à chaque niveau :
+ *     Étape 1 → texte complet
+ *     Étape 2 → CTA raccourcie ("Détails sur {url}")
+ *     Étape 3 → suffixe " à {quartier}" retiré (bureau + carte uniquement)
+ *     Étape 4 → prénom → initiale (Marielle → M., Marie-Hélène → MH.)
+ *
+ *   Étage 2 — Si l'étape 4 dépasse encore 280, repli vers le niveau plus large :
+ *     carte    → global (même image)
+ *     bureau   → quartier → global (même image)
+ *     quartier → global   (même image)
+ *     canton   → global   (même image)
+ *     global   → toujours dans les limites
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
@@ -37,9 +52,9 @@ const CHAPEAU  = '📊 La Rochelle Vote — La donnée du jour';
 // probabilités utilisées à chaque tirage sont ajustées dynamiquement par
 // rebalanceProba() pour corriger les déséquilibres récents.
 const PROBA = {
-  carte:    0.25,
-  bureau:   0.50,
-  quartier: 0.15,
+  carte:    0.40,
+  bureau:   0.40,
+  quartier: 0.10,
   canton:   0.05,
   global:   0.05,
 };
@@ -48,8 +63,26 @@ const PROBA = {
 //   gagnants → carte mosaïque classique, sujet = gagnant ville
 //   candidat → carte heatmap d'un seul candidat (tiré pondéré par son score ville)
 const SUB_CARTE = {
-  gagnants: 0.40,
-  candidat: 0.60,
+  gagnants: 0.25,
+  candidat: 0.75,
+};
+
+// ── Cibles MANUELLES par scrutin ──────────────────────────────────────────────
+// Override de la pondération dynamique (qui suivrait sinon le nombre de tours x élections).
+// Rationnel : on sous-représente volontairement les cantonales/départementales (5 %) car
+// elles sont infra-communales et moins lisibles, et on rééquilibre les autres scrutins
+// pour donner aux européennes et municipales une place plus juste qu'au prorata des tours.
+//
+// ⚠ À AJUSTER quand un nouveau type de scrutin est ajouté, ou quand des élections
+// supplémentaires sont saisies — la somme doit rester à 100 %.
+const SCRUTIN_TARGETS = {
+  legislatives:    0.25,
+  presidentielle:  0.18,
+  europeennes:     0.17,
+  municipales:     0.16,
+  regionales:      0.15,
+  departementales: 0.05,  // inclut Cantonales (electionScrutin() les groupe)
+  referendum:      0.04,
 };
 
 // Cooldown anti-doublons (en jours) : une combinaison niveau/élection/tour/bureau/quartier
@@ -211,12 +244,14 @@ const DATES = {
   'Législatives 2017':   { T1: '11 juin 2017',       T2: '18 juin 2017'     },
   'Législatives 2022':   { T1: '12 juin 2022',       T2: '19 juin 2022'     },
   'Législatives 2024':   { T1: '30 juin 2024',       T2: '7 juillet 2024'   },
+  'Municipales 1989':    { TU: '12 mars 1989'                                },
   'Municipales 1995':    { T1: '11 juin 1995',       T2: '18 juin 1995'     },
   'Municipales 2001':    { T1: '11 mars 2001',       T2: '18 mars 2001'     },
   'Municipales 2008':    { T1: '9 mars 2008',        T2: '16 mars 2008'     },
   'Municipales 2014':    { T1: '23 mars 2014',       T2: '30 mars 2014'     },
   'Municipales 2020':    { T1: '15 mars 2020',       T2: '28 juin 2020'     },
   'Municipales 2026':    { T1: '15 mars 2026',       T2: '22 mars 2026'     },
+  'Européennes 1989':    { TU: '18 juin 1989'        },
   'Européennes 1994':    { TU: '12 juin 1994'        },
   'Européennes 1999':    { TU: '13 juin 1999'        },
   'Européennes 2004':    { TU: '13 juin 2004'        },
@@ -224,8 +259,16 @@ const DATES = {
   'Européennes 2014':    { TU: '25 mai 2014'         },
   'Européennes 2019':    { TU: '26 mai 2019'         },
   'Européennes 2024':    { TU: '9 juin 2024'         },
+  'Référendum 1992':     { TU: '20 septembre 1992'   },
   'Référendum 2000':     { TU: '24 septembre 2000'   },
   'Référendum 2005':     { TU: '29 mai 2005'         },
+  'Législatives 1986':     { TU: '16 mars 1986'        },
+  'Régionales 1986':       { TU: '16 mars 1986'        },
+  'Cantonales 1988':       { T1: '25 septembre 1988', T2: '2 octobre 1988' },
+  'Cantonales 1992':       { T1: '22 mars 1992', T2: '29 mars 1992' },
+  'Cantonales 1994':       { T1: '20 mars 1994', T2: '27 mars 1994' },
+  'Cantonales 1998':       { T1: '15 mars 1998', T2: '22 mars 1998' },
+  'Cantonale partielle 1999': { T1: '20 juin 1999', T2: '27 juin 1999' },
   'Cantonales 2001':       { T1: '11 mars 2001', T2: '18 mars 2001' },
   'Cantonale partielle 2002': { T1: '22 septembre 2002', T2: '29 septembre 2002' },
   'Cantonales 2004':       { T1: '21 mars 2004', T2: '28 mars 2004' },
@@ -376,6 +419,60 @@ function tourLabel(tour) {
   return `(${tour})`;
 }
 
+// Cascade de troncature interne (étapes 1→4) appliquée AVANT de cascader vers
+// un niveau plus large (FALLBACK). Initialise le prénom à l'étape 4.
+//   Marielle      → M.
+//   Marie-Hélène  → MH.
+//   Jean-Luc      → JL.
+//   ''            → '' (no-op pour binômes ou identités vides)
+function initializePrenom(p) {
+  if (!p) return '';
+  if (p.includes('-')) return p.split('-').map(s => s.charAt(0)).join('') + '.';
+  return p.charAt(0) + '.';
+}
+
+// ── Anniversaires (rdv schedule.json) ───────────────────────────────────────
+// Quand le jour correspond à un rdv dans schedule.json, on transforme le
+// template "Le {date_election}, pour la {election}" en "Il y a N ans
+// aujourd'hui, pour la {election_anniv}" (avec verbes à l'imparfait).
+// Style validé par le user : sobre, descriptif, factuel.
+
+// "Présidentielle 2022" → "présidentielle 2022" (vs formatElectionLabel qui
+// retire l'année — pour les anniv on la garde car la date n'est plus dans le texte).
+function formatElectionLabelFull(label) {
+  return label.replace(/^./, c => c.toLowerCase());
+}
+
+// Nombre d'années entre aujourd'hui et l'élection. Calcul simple année - année
+// (les rdv tombent par construction le bon mois/jour, donc pas de subtilité).
+function anniversaryYears(electionLabel, todayStr) {
+  const m = electionLabel.match(/\b(\d{4})\b/);
+  if (!m) return null;
+  return parseInt(todayStr.slice(0, 4)) - parseInt(m[1]);
+}
+
+// "il y a un an" (N=1) ou "il y a 4 ans" (N≥2). N=0 et N<0 sont impossibles
+// par construction des rdv (on ne commémore pas le futur ni l'année courante).
+function anniversaryPhrase(n) {
+  return n === 1 ? 'un an' : `${n} ans`;
+}
+
+// Transforme un template "normal" en variante anniversaire :
+//   - En-tête : "{emoji} Le {date_election}, pour la/le/les {election}" devient
+//     "🎂 Il y a {anniv_phrase} aujourd'hui, pour la/le/les {election_anniv}"
+//     (le tour optionnel après {election} est préservé : "(1er tour)" reste).
+//   - Verbes : présent / passé composé → imparfait (cohérent avec la posture
+//     commémorative "il y a N ans, X obtenait/arrivait en tête").
+function applyAnniversaryTemplate(tpl) {
+  return tpl
+    .replace(/\{emoji\} Le \{date_election\}, pour (la|le|les) \{election\}( \{tour\})?/,
+             "🎂 Il y a {anniv_phrase} aujourd'hui, pour $1 {election_anniv}$2")
+    // Ordre : "est arrivé" avant "arrive" pour ne pas casser les référendums bureau.
+    .replace(/est arrivé en tête/g, 'arrivait en tête')
+    .replace(/arrive en tête/g, 'arrivait en tête')
+    .replace(/a obtenu/g, 'obtenait');
+}
+
 function getDate(electionLabel, tour) {
   const entry = DATES[electionLabel];
   if (!entry) return null;
@@ -432,8 +529,44 @@ const schedule     = fs.existsSync(schedulePath)
   ? JSON.parse(fs.readFileSync(schedulePath, 'utf8')).filter(e => e.date)
   : [];
 
-const rdv = schedule.find(e => e.date === today) || null;
-console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Sélection aléatoire');
+// 1. RDV explicite dans schedule.json → priorité absolue (curation manuelle)
+// 2. Sinon : auto-détection d'anniversaire en croisant today (JJ mois) avec
+//    la table DATES. Si plusieurs scrutins même jour calendaire, tirage uniforme.
+//    Les anniversaires de l'ANNÉE COURANTE sont exclus (pas de "il y a 0 an").
+const MOIS_FR = ['janvier','février','mars','avril','mai','juin','juillet',
+                 'août','septembre','octobre','novembre','décembre'];
+function findAnniversaryFromDates(todayStr) {
+  const [yearStr, monthStr, dayStr] = todayStr.split('-');
+  const todayMD = `${parseInt(dayStr)} ${MOIS_FR[parseInt(monthStr) - 1]}`;
+  const todayYear = parseInt(yearStr);
+  const matches = [];
+  for (const [label, tours] of Object.entries(DATES)) {
+    for (const [tour, dateStr] of Object.entries(tours)) {
+      const m = dateStr.match(/^(\d+ \S+) (\d{4})$/);
+      if (!m) continue;
+      if (m[1] === todayMD && parseInt(m[2]) < todayYear) {
+        matches.push({ election: label, tour });
+      }
+    }
+  }
+  if (!matches.length) return null;
+  return matches[Math.floor(Math.random() * matches.length)];
+}
+
+let rdv = schedule.find(e => e.date === today) || null;
+if (!rdv) {
+  const autoAnniv = findAnniversaryFromDates(today);
+  if (autoAnniv) {
+    // RDV synthétique : pas de `type` ni `bureau/quartier/canton` → niveau et
+    // unité géo restent tirés aléatoirement. Seuls `election` et `tour` sont forcés.
+    rdv = { ...autoAnniv, auto: true };
+  }
+}
+console.log(rdv
+  ? (rdv.auto
+       ? `🎂 Anniversaire auto-détecté : ${rdv.election} ${rdv.tour}`
+       : `📌 Rendez-vous : ${rdv.note || rdv.election}`)
+  : '🎲 Sélection aléatoire');
 
 // ══ LANCEMENT ════════════════════════════════════════════════════════════════
 
@@ -479,7 +612,10 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
   // dénomination/quartier d'un bureau corresponde bien à l'année de l'élection
   // tirée (ex. Municipales 1995 → nom du bureau en 1995, pas en 2026).
   const siteData = await page.evaluate(() => {
-    const elections = Object.keys(ELECTIONS || {});
+    // On exclut les scrutins marqués `draft: true` du tirage : ils restent
+    // accessibles via deeplink mais ne peuvent pas être sélectionnés par le
+    // robot tant que le flag n'est pas retiré.
+    const elections = Object.keys(ELECTIONS || {}).filter(l => !(ELECTIONS[l] && ELECTIONS[l].draft === true));
 
     // map : election → era (year of the découpage utilisé pour cette élection)
     const electionEra = {};
@@ -540,24 +676,28 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
 
   const { elections, electionEra, electionTours, bureauxParElection, bureauxByEra, quartiersByEra, cantonsModernes } = siteData;
 
-  // ── 2bis. Cibles dynamiques par type de scrutin (option B) ────────────────
-  // Pour chaque scrutin, on compte les instances (élection × tour) disponibles ;
-  // la cible est la part normalisée. Si plus tard tu ajoutes des scrutins en base,
-  // les pondérations s'ajustent automatiquement.
+  // ── 2bis. Cibles MANUELLES par type de scrutin (cf. const SCRUTIN_TARGETS) ─
+  // Pondération choisie volontairement (cf. commentaire en tête de fichier).
+  // On filtre les scrutins absents du stock (defensive — si une cible est définie
+  // pour un scrutin sans données, elle est ignorée et la somme renormalisée).
   const scrutinTargets = (() => {
-    const counts = {};
+    const availableScrutins = new Set();
     elections.forEach(el => {
-      if (!(bureauxParElection[el] || []).length) return; // élection sans données → ignorée
-      const s = electionScrutin(el);
-      const n = (electionTours[el] || []).length || 1;
-      counts[s] = (counts[s] || 0) + n;
+      if (!(bureauxParElection[el] || []).length) return;
+      availableScrutins.add(electionScrutin(el));
     });
-    const total = Object.values(counts).reduce((a, b) => a + b, 0) || 1;
     const out = {};
-    Object.keys(counts).forEach(k => out[k] = counts[k] / total);
+    let totalKept = 0;
+    Object.entries(SCRUTIN_TARGETS).forEach(([s, w]) => {
+      if (availableScrutins.has(s)) { out[s] = w; totalKept += w; }
+    });
+    // Renormalise pour que la somme = 1 (au cas où des scrutins manquent).
+    if (totalKept > 0 && Math.abs(totalKept - 1) > 0.001) {
+      Object.keys(out).forEach(k => out[k] /= totalKept);
+    }
     return out;
   })();
-  console.log(`🎯 Cibles scrutin (dynamiques) :`, Object.fromEntries(
+  console.log(`🎯 Cibles scrutin (manuelles) :`, Object.fromEntries(
     Object.entries(scrutinTargets).map(([k, v]) => [k, (v * 100).toFixed(1) + '%'])
   ));
   // Pour les besoins du tirage aléatoire d'un quartier (qui doit exister pour l'élection
@@ -615,10 +755,17 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
     if (forcedElection) {
       election = forcedElection;
     } else {
-      // Filtrer les scrutins qui ont au moins une élection disponible (defensive)
-      const availableScrutins = Object.keys(scrutinProba).filter(s =>
-        elections.some(el => electionScrutin(el) === s && (bureauxParElection[el] || []).length > 0)
-      );
+      // Filtrer les scrutins qui ont au moins une élection disponible (defensive).
+      // Cas particulier : aux niveaux 'global' (totalisation ville) et 'quartier'
+      // (un quartier peut chevaucher plusieurs cantons), les Cantonales/Départementales
+      // n'ont pas de résultat cohérent — un seul canton vote à la fois. On les exclut.
+      // electionScrutin() retourne 'departementales' aussi bien pour les Cantonales que
+      // pour les Départementales (regroupement historique).
+      const skipDepartementales = (niveau === 'global' || niveau === 'quartier');
+      const availableScrutins = Object.keys(scrutinProba).filter(s => {
+        if (skipDepartementales && s === 'departementales') return false;
+        return elections.some(el => electionScrutin(el) === s && (bureauxParElection[el] || []).length > 0);
+      });
       const proba = {};
       availableScrutins.forEach(s => proba[s] = scrutinProba[s] || 0);
       const chosenScrutin = pickWeighted(proba);
@@ -937,9 +1084,19 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
   }
 
   // ── 7. Générer le texte avec cascade de repli ─────────────────────────────
-  async function buildText(niv) {
+  //
+  // Cascade à DEUX étages :
+  //   1. À chaque niveau (carte/bureau/…), on tente 4 étapes de troncature
+  //      progressive avant de passer au niveau plus large :
+  //        Étape 1 : texte complet
+  //        Étape 2 : CTA raccourcie en "Détails sur {site_url}"
+  //        Étape 3 : suffixe géo "à {quartier}" retiré (bureau + carte uniquement)
+  //        Étape 4 : prénom remplacé par son initiale (M., MH., JL.)
+  //   2. Si même l'étape 4 dépasse 280 chars, on cascade vers le niveau suivant
+  //      de FALLBACK[niveau] (filet de sécurité, rarement déclenché en pratique).
+  async function buildText(niv, step = 1) {
     const key = `${niv}_${suffix}`;
-    const tpl = C[key];
+    let tpl = C[key];
     if (!tpl) return null;
 
     let winner, extra = {};
@@ -971,14 +1128,45 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
     // la cascade de repli (FALLBACK[niveau] → niveau plus large jusqu'à 'global').
     if (!winner) return null;
 
+    // ── Variante anniversaire (rdv schedule.json) ────────────────────────────
+    // Si on est sur un rendez-vous (commémoration), on remplace l'en-tête
+    // "{emoji} Le {date}, pour la {election}" par "🎂 Il y a N ans aujourd'hui,
+    // pour la {election_anniv}" + verbes à l'imparfait. Vars `anniv_phrase` et
+    // `election_anniv` injectées plus bas.
+    const isAnniv = !!rdv;
+    if (isAnniv) tpl = applyAnniversaryTemplate(tpl);
+
+    // ── Troncatures niveau-template (étapes 2 et 3) ──────────────────────────
+    // Étape 2 : remplace toutes les CTA longues "Les résultats de … sur {site_url}"
+    // par la version courte "Détails sur {site_url}". Match unique en fin de
+    // template (les 12 canevas suivent strictement ce pattern).
+    if (step >= 2) {
+      tpl = tpl.replace(/\n\nLes résultats de [^\n]+sur \{site_url\}$/, '\n\nDétails sur {site_url}');
+    }
+    // Étape 3 : retire le suffixe " à {quartier}" (uniquement bureau et carte,
+    // qui ont la structure "n°X · DENOM à QUARTIER"). N/A pour quartier/canton/
+    // global où l'unité géo EST le sujet du tweet.
+    if (step >= 3 && (niv === 'bureau' || niv === 'carte')) {
+      tpl = tpl.replace(' · {denomination} à {quartier}', ' · {denomination}');
+    }
+
     const ci = await candInfo(winner?.cand);
+    // Étape 4 : prénom → initiale (Marielle → M., Marie-Hélène → MH., Jean-Luc → JL.).
+    // Sans effet pour les binômes (prenom vide) et "Oui"/"Non" (référendums).
+    const prenomDisplay = step >= 4 ? initializePrenom(ci.prenom) : ci.prenom;
+
     const vars = {
       ...baseVars, ...extra,
-      prenom_nom: `${ci.prenom} ${ci.nom}`.trim(),
+      prenom_nom: `${prenomDisplay} ${ci.nom}`.trim(),
       parti:      ci.parti || '',
       score:      formatPct(winner?.pct),
       reponse:    isRef ? winner?.cand : '',
       site_url:   buildDeepLink(niv),
+      // Variantes anniversaire (utilisées uniquement si le template a été
+      // transformé par applyAnniversaryTemplate ; sinon ces placeholders
+      // n'apparaissent pas dans le template et fillCaneva les ignore).
+      anniv_phrase:   isAnniv ? anniversaryPhrase(anniversaryYears(election, today)) : '',
+      election_anniv: isAnniv ? formatElectionLabelFull(election) : '',
     };
 
     return fillCaneva(tpl, vars).replace(/\s*\(\s*\)/g, '').replace(/\s+,/g, ',').trim();
@@ -986,23 +1174,32 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
 
   let tweetText = null;
   let niveauFinal = niveau;
+  let truncationStep = 1;
+  outer:
   for (const niv of FALLBACK[niveau]) {
-    const text = await buildText(niv);
-    if (text && twitterLen(text) <= 280) {
-      tweetText    = text;
-      niveauFinal  = niv;
-      break;
+    for (let step = 1; step <= 4; step++) {
+      // Étape 3 inutile pour quartier/canton/global (pas de "à {quartier}" à retirer) :
+      // on saute directement à l'étape 4 pour ne pas refaire un essai identique au 2.
+      if (step === 3 && niv !== 'bureau' && niv !== 'carte') continue;
+      const text = await buildText(niv, step);
+      if (text && twitterLen(text) <= 280) {
+        tweetText    = text;
+        niveauFinal  = niv;
+        truncationStep = step;
+        break outer;
+      }
+      if (text) console.warn(`⚠️  ${niv} étape ${step} : ${twitterLen(text)} chars — troncature suivante`);
     }
-    console.warn(`⚠️  Niveau "${niv}" : ${twitterLen(text || '')} chars — repli`);
   }
 
   if (!tweetText) {
-    // Dernier recours : texte global tronqué
-    tweetText = await buildText('global') || `${CHAPEAU}\n{site_url}`;
+    // Dernier recours : texte global tronqué (étape 4 = toutes troncatures actives)
+    tweetText = await buildText('global', 4) || `${CHAPEAU}\n{site_url}`;
     niveauFinal = 'global (forcé)';
+    truncationStep = 4;
   }
 
-  console.log(`\n📝 Canevas : ${niveauFinal}_${suffix} | ${twitterLen(tweetText)} chars`);
+  console.log(`\n📝 Canevas : ${niveauFinal}_${suffix} | étape ${truncationStep} | ${twitterLen(tweetText)} chars`);
   console.log('─'.repeat(60));
   console.log(tweetText);
   console.log('─'.repeat(60));
@@ -1160,10 +1357,18 @@ console.log(rdv ? `📌 Rendez-vous : ${rdv.note || rdv.election}` : '🎲 Séle
   // si le tweet niveau bureau dépassait 280 chars). Cohérence avec la signature.
   // subtype + candidat permettent au rééquilibrage auto-correctif de compter
   // précisément les sous-types carte sans avoir à parser la signature.
+  //
+  // niveau_publie = niveauFinal (après cascade), normalisé en retirant le
+  // suffixe " (forcé)". Ajouté pour mesurer la VRAIE distribution publiée
+  // (vs `niveau` qui n'est que le tirage initial — souvent surreprésente
+  // bureau/carte là où le repli envoie en réalité vers global).
+  const niveauPublie = String(niveauFinal || niveau).replace(' (forcé)', '');
   updatedHistory.push({
     date: today,
     signature,
     niveau,
+    niveau_publie: niveauPublie,
+    truncation_step: truncationStep,
     election,
     tour,
     bureau:   bureau   || null,

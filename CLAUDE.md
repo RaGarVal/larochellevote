@@ -216,6 +216,7 @@ Script Python qui applique :
 - **`LRVcarte.html`** : ajouter `<option value="<Nom>">...</option>` dans le bon `<optgroup>` du dropdown élections (autour de la ligne 1515).
 - **`LRVcarte.html`** : ajouter le nom dans `const HAS_TU = new Set([...])` si l'élection est à tour unique (autour de la ligne 1672).
 - **`daily-capture.js`** : vérifier que `DATES["<Nom>"]` existe (autour de la ligne 171).
+- **`daily-capture.js`** : **revoir `SCRUTIN_TARGETS`** (haut du fichier) si on ajoute un nouveau **type** de scrutin ou si l'ajout déséquilibre les cibles voulues (la somme doit rester à 100 %). Cibles actuelles : législatives 25 / présidentielle 18 / européennes 17 / municipales 16 / régionales 15 / departementales 5 / referendum 4 — pondération manuelle, plus dynamique au prorata des tours.
 - **`index.html`, `LRVcarte.html`, `LRVanalyse.html`** : mettre à jour le nombre d'élections dans la description JSON-LD (`"N élections et 2 référendums organisés..."`).
 - **`methodologie.html`** : retirer de la phrase "Depuis 1988, il manque..." si applicable.
 
@@ -272,9 +273,36 @@ Avant : la propagation sautait les candidats sans couleur (`r.c !== oldColor` é
 Pendant la migration M3, certaines candidatures avaient été dédoublées (`segolene-royal@presidentielle-2007-t1` + `-t2`) au lieu d'utiliser `tour_specific`. Cleanup effectué en mai 2026 (3 candidatures fusionnées : Ferreira Lég. 2017, Royal Présidentielle 2007, Royal Régionales 2010). Si une nouvelle dette apparaît, vérifier `grep "-t[12]" donnees.js` et fusionner via le pattern documenté dans le commit `2353be9`.
 
 ### `daily-capture.js` cascade > 280 chars
-Le script choisit un niveau (carte/bureau/quartier/global), et si le texte dépasse 280 chars, il cascade vers un niveau plus large. La variable `niveauFinal` capture ce niveau réel. **Toujours utiliser `niveauFinal`** (pas `niveau`) pour :
+Le script choisit un niveau (carte/bureau/quartier/canton/global). Si le texte dépasse 280 chars, **2 étages de cascade** sont tentés avant abandon :
+
+**Étage 1 — troncatures progressives au sein du niveau choisi** :
+- Étape 1 : texte complet
+- Étape 2 : CTA raccourcie (« Détails sur {url} »)
+- Étape 3 : suffixe « à {quartier} » retiré (bureau + carte uniquement, les autres niveaux n'ont pas cette structure)
+- Étape 4 : prénom → initiale (Marielle → M., Marie-Hélène → MH., Jean-Luc → JL.)
+
+**Étage 2 — repli vers le niveau plus large** (FALLBACK[niveau]) seulement si l'étape 4 dépasse encore 280 chars. Dans `history.json` :
+- `niveau` = tirage initial (pour la signature anti-doublons)
+- `niveau_publie` = niveau réellement publié après cascade éventuelle (suffixe `(forcé)` retiré)
+- `truncation_step` = 1-4, étape de troncature finale appliquée
+
+La variable `niveauFinal` capture le niveau réel après repli. **Toujours utiliser `niveauFinal`** (pas `niveau`) pour :
 - L'URL de capture (`urlNiveau = niveauFinal.replace(' (forcé)', '')`)
 - Le selector de fallback screenshot
+
+### `daily-capture.js` — variante anniversaire (rdv schedule.json + auto-détection)
+Le tweet bascule en variante anniversaire dans 2 cas :
+1. **RDV explicite** : `today` matche une entrée de `schedule.json` (curation manuelle, prioritaire).
+2. **Auto-détection** : sinon, on cherche dans la table `DATES` une élection dont la date `JJ mois` matche aujourd'hui (52 dates calendaires distinctes couvrent ~1 jour sur 7). En cas de collision (plusieurs scrutins même jour, ex. 22 mars = 5 scrutins), tirage uniforme. Les anniversaires de l'année courante (N=0) sont exclus.
+
+Dans les 2 cas, seuls `election` et `tour` sont forcés ; le niveau (bureau/carte/quartier/canton/global) reste tiré aléatoirement. Transformations appliquées :
+- **En-tête remplacé** : « 🎂 Il y a N ans aujourd'hui, pour la {election_anniv} (tour) » (vs. « 🏛️ Le {date_election}, pour la {election} {tour} » en mode normal).
+- **Verbes à l'imparfait** : `arrive en tête` → `arrivait en tête` ; `a obtenu` → `obtenait` ; `est arrivé en tête` → `arrivait en tête`.
+- **`{election_anniv}` garde l'année** (« présidentielle 2022 » au lieu de « présidentielle »), puisque la date n'est plus dans le texte mais portée par le label.
+- **N=1 → « un an »**, N≥2 → « N ans » (cf. `anniversaryPhrase`).
+- La cascade de troncature (étapes 1→4) s'applique normalement par-dessus la transformation anniversaire.
+
+Pour les **rdv explicites** (schedule.json), le champ `type` peut aussi forcer le niveau (carte/fiche/etc.) ; les **rdv auto-détectés** ne forcent que `election` + `tour`. En cas de cascade niveau (FALLBACK) ou de troncature interne, la variante anniversaire est conservée dans le nouveau template.
 
 ### `cityWinner` vs `carteSubject` (daily-capture)
 - `cityWinner` = TOUJOURS le vrai gagnant ville (`cityData.ranked[0]`), utilisé par les canvas `global_*`.

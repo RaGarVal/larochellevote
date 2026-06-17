@@ -303,8 +303,11 @@ function computeBlocsFromVoix(voixParCand, totalExprimes, candData, blocLegacy) 
  *  - Pour les cantonales/départementales : on regroupe TOUTES les élections
  *    cantonales (cantonale, cantonales, départementale, départementales) et on
  *    filtre par `serie` si elle est définie (A vs B → on saute les scrutins
- *    de l'autre série dont les cantons sont disjoints). */
-function adjacentElections(label, ELECTIONS, ctx) {
+ *    de l'autre série dont les cantons sont disjoints).
+ *  - `currentCanton` (optionnel) : pour une page canton, on saute les voisins
+ *    qui ne couvrent pas ce canton (typiquement les partielles n'incluant qu'un
+ *    autre canton) pour pointer vers le vrai voisin pertinent. */
+function adjacentElections(label, ELECTIONS, ctx, currentCanton) {
   const curEl = ELECTIONS[label] || {};
   const curYear = parseInt((label.match(/(\d{4})/) || [])[1] || 0);
   if (!curYear) return { prev: null, next: null };
@@ -337,16 +340,35 @@ function adjacentElections(label, ELECTIONS, ctx) {
     .map(k => ({ label: k, year: parseInt(k.match(/(\d{4})/)[1]) }))
     .sort((a, b) => a.year - b.year);
   const idx = sorted.findIndex(e => e.label === label);
-  return {
-    prev: idx > 0 ? sorted[idx - 1].label : null,
-    next: idx >= 0 && idx < sorted.length - 1 ? sorted[idx + 1].label : null,
-  };
+
+  // Pour une page canton : on cherche le voisin le plus proche dont le par_canton
+  // contient `currentCanton`. Pour les ères modernes (Départementales 2015+),
+  // les cantons sont 1/2/3 (incompatibles avec les anciennes cantonales 1/3/4/5/6/7/8/9)
+  // — dans ce cas on s'arrête au passage de frontière par sécurité (pas de lien
+  // trompeur entre les deux générations).
+  function hasCanton(neighborLabel) {
+    if (!currentCanton) return true;
+    const e = ELECTIONS[neighborLabel];
+    if (!e || !e.par_canton) return true;
+    return !!e.par_canton[currentCanton];
+  }
+
+  let prev = null;
+  for (let i = idx - 1; i >= 0; i--) {
+    if (hasCanton(sorted[i].label)) { prev = sorted[i].label; break; }
+  }
+  let next = null;
+  for (let i = idx + 1; i < sorted.length; i++) {
+    if (hasCanton(sorted[i].label)) { next = sorted[i].label; break; }
+  }
+  return { prev, next };
 }
 
 /** URL Wikipédia (reprise de LRVcarte.getElectionWikipediaURL) */
 function getElectionWikipediaURL(label) {
   if (!label) return null;
   const OVERRIDES = {
+    'Référendum 1992': 'https://fr.wikipedia.org/wiki/R%C3%A9f%C3%A9rendum_fran%C3%A7ais_sur_le_trait%C3%A9_de_Maastricht',
     'Référendum 2000': 'https://fr.wikipedia.org/wiki/R%C3%A9f%C3%A9rendum_fran%C3%A7ais_de_2000_sur_le_quinquennat',
     'Référendum 2005': 'https://fr.wikipedia.org/wiki/R%C3%A9f%C3%A9rendum_fran%C3%A7ais_sur_le_trait%C3%A9_%C3%A9tablissant_une_constitution_pour_l%27Europe',
     'Municipales 1995': 'https://fr.wikipedia.org/wiki/%C3%89lections_municipales_fran%C3%A7aises_de_1995',
@@ -416,6 +438,7 @@ const DATES = {
   'Municipales 2014':    { T1: '23 mars 2014',  T2: '30 mars 2014' },
   'Municipales 2020':    { T1: '15 mars 2020',  T2: '28 juin 2020' },
   'Municipales 2026':    { T1: '15 mars 2026',  T2: '22 mars 2026' },
+  'Européennes 1989':    { TU: '18 juin 1989' },
   'Européennes 1994':    { TU: '12 juin 1994' },
   'Européennes 1999':    { TU: '13 juin 1999' },
   'Européennes 2004':    { TU: '13 juin 2004' },
@@ -423,8 +446,15 @@ const DATES = {
   'Européennes 2014':    { TU: '25 mai 2014' },
   'Européennes 2019':    { TU: '26 mai 2019' },
   'Européennes 2024':    { TU: '9 juin 2024' },
+  'Référendum 1992':     { TU: '20 septembre 1992' },
   'Référendum 2000':     { TU: '24 septembre 2000' },
   'Référendum 2005':     { TU: '29 mai 2005' },
+  'Législatives 1986':   { TU: '16 mars 1986' },
+  'Régionales 1986':     { TU: '16 mars 1986' },
+  'Cantonales 1988':     { T1: '25 septembre 1988', T2: '2 octobre 1988' },
+  'Cantonales 1992':     { T1: '22 mars 1992', T2: '29 mars 1992' },
+  'Cantonales 1994':     { T1: '20 mars 1994', T2: '27 mars 1994' },
+  'Cantonales 1998':     { T1: '15 mars 1998', T2: '22 mars 1998' },
   'Cantonales 2001':     { T1: '11 mars 2001', T2: '18 mars 2001' },
   'Cantonale partielle 2002': { T1: '22 septembre 2002', T2: '29 septembre 2002' },
   'Cantonales 2004':     { T1: '21 mars 2004', T2: '28 mars 2004' },
@@ -828,7 +858,10 @@ function buildPageData(pageSpec, ctx) {
   });
 
   // Scrutins voisins (même type) — utiles pour le triptych
-  const adj = adjacentElections(label, ctx.ELECTIONS, ctx);
+  // Sur une page canton, on saute les voisins qui ne couvrent pas ce canton
+  // (typiquement les cantonales partielles n'incluant qu'un autre canton),
+  // pour pointer vers le vrai voisin pertinent — sinon le triptyque restait vide.
+  const adj = adjacentElections(label, ctx.ELECTIONS, ctx, canton);
 
   // Pour chaque tour, agréger ville
   const byTour = {};
@@ -865,10 +898,14 @@ function buildPageData(pageSpec, ctx) {
           paLabel = femaleIdx === 1 ? p2 + '+' + p1 : p1 + '+' + p2;
         }
       }
-      // Nom complet du parti (depuis PARTI_NAMES)
+      // Nom complet du parti (depuis PARTI_NAMES) — lookup sur le code BRUT.
       const paFull = paLabel.indexOf('+') >= 0
         ? paLabel.split('+').map(c => (ctx.PARTI_NAMES && ctx.PARTI_NAMES[c]) || c).join(' + ')
         : ((ctx.PARTI_NAMES && ctx.PARTI_NAMES[paLabel]) || paLabel);
+      // Étiquette compacte : rabote les suffixes des codes pa fins
+      // ("UDF dissident libéral" / "UDF dissident souverainiste" → "UDF dissident")
+      // pour rester lisible dans les chips/tags des pages SEO.
+      paLabel = paLabel.replace(/\s+(libéral|souverainiste)$/, '');
       return {
         cid,
         nom: displayName,
@@ -1615,7 +1652,46 @@ footer.s-foot a:hover { color: var(--text-chrome); }
       <p class="s-blocs-legend">
         ${['G','C','D','EXD','?'].filter(b => (td.blocs[b]||0) > 0).map(b => `<span class="bl-item"><span class="bl-dot" style="background:${BLOC_COLORS[b]}"></span>${BLOC_LABELS[b]} ${fmtPct(td.blocs[b])} %</span>`).join('')}
       </p>`;
-      })() : ''}
+      })() : (() => {
+        // Cas spécial des 2 référendums européens (1992 Maastricht / 2005 TCE) :
+        // duo Oui/Non du courant + pendant, dans le style triptyque habituel.
+        // Réf. 2000 (quinquennat) n'a pas de pendant → on n'affiche rien.
+        const pendantLabel = label === 'Référendum 1992' ? 'Référendum 2005'
+                           : label === 'Référendum 2005' ? 'Référendum 1992' : null;
+        if (!pendantLabel) return '';
+        const pendEl = opts.ctx && opts.ctx.ELECTIONS[pendantLabel];
+        if (!pendEl || !pendEl.sheets || !pendEl.sheets.TU) return '';
+        const pendAgg = aggregateSheet(pendEl.sheets.TU);
+        const pendSlug = slugifyElection(pendantLabel);
+        const pendYr = parseInt(pendantLabel.match(/\d{4}/)[0]);
+        const curYr = parseInt(label.match(/\d{4}/)[0]);
+        const pendIsAfter = pendYr > curYr;
+        // Pcts pour la légende (côté courant uniquement, comme la version blocs)
+        let ouiVoixCur = 0, nonVoixCur = 0;
+        Object.entries(td.voix_par_cand || {}).forEach(([k, v]) => {
+          const kl = k.toLowerCase();
+          if (kl === 'oui' || kl.startsWith('oui@')) ouiVoixCur += v;
+          else if (kl === 'non' || kl.startsWith('non@')) nonVoixCur += v;
+        });
+        const ouiPctCur = +(ouiVoixCur / (td.exprimes || 1) * 100).toFixed(1);
+        const nonPctCur = +(nonVoixCur / (td.exprimes || 1) * 100).toFixed(1);
+        const pendSide = `
+        <a class="trip-side" href="/scrutins/${pendSlug}.html" title="${esc(pendantLabel)}">
+          <div class="trip-bar trip-bar-side">${renderRefSegs(pendAgg.voix_par_cand, pendAgg.exprimes)}</div>
+          <span class="trip-side-label">${esc(pendantLabel)} <span class="trip-side-meta">(${pendIsAfter ? 'suivant' : 'précédent'})</span></span>
+        </a>`;
+        return `
+      <h3>Blocs politiques</h3>
+      <div class="trip-wrap">
+        ${pendIsAfter ? pendSide : ''}
+        <div class="trip-bar trip-bar-current">${renderRefSegs(td.voix_par_cand, td.exprimes)}<div class="trip-mid-line"></div></div>
+        ${!pendIsAfter ? pendSide : ''}
+      </div>
+      <p class="s-blocs-legend">
+        <span class="bl-item"><span class="bl-dot" style="background:#0F8A8A"></span>Oui ${fmtPct(ouiPctCur)} %</span>
+        <span class="bl-item"><span class="bl-dot" style="background:#8E2C5C"></span>Non ${fmtPct(nonPctCur)} %</span>
+      </p>`;
+      })()}
 
       <h3>Par bureau de vote</h3>
       <p class="s-bureau-cta">📍 Pour les résultats détaillés bureau par bureau, <a href="${esc(urlCarte)}">rendez-vous sur la carte interactive →</a></p>
@@ -1788,9 +1864,12 @@ function main() {
   const ctx = loadData();
   console.log(`✅ ${Object.keys(ctx.ELECTIONS).length} élections chargées`);
 
-  // Construire la liste des pages à générer
+  // Construire la liste des pages à générer (on saute les scrutins draft
+  // pour qu'ils n'aient pas de page SEO publique tant que le flag n'est
+  // pas retiré).
   const pages = [];
   Object.entries(ctx.ELECTIONS).forEach(([label, el]) => {
+    if (el && el.draft === true) return;
     pagesForElection(label, el, ctx).forEach(p => pages.push(p));
   });
   console.log(`📄 ${pages.length} pages à générer`);

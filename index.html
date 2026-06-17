@@ -13,22 +13,22 @@
     } catch (_) {}
   })();
 </script>
-<title>La Rochelle Vote — Élections à La Rochelle depuis 1988, bureau par bureau</title>
+<title>La Rochelle Vote — Élections à La Rochelle depuis 1986, bureau par bureau</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
-<meta name="description" content="Les archives électorales de La Rochelle, bureau par bureau, depuis 1988 : élections présidentielles, législatives, municipales, cantonales, régionales et européennes.">
+<meta name="description" content="Les archives électorales de La Rochelle, bureau par bureau, depuis 1986 : élections présidentielles, législatives, municipales, cantonales, régionales et européennes.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="La Rochelle Vote">
 <meta property="og:locale" content="fr_FR">
-<meta property="og:title" content="La Rochelle Vote — Élections à La Rochelle depuis 1988, bureau par bureau">
-<meta property="og:description" content="Les archives électorales de La Rochelle, bureau par bureau, depuis 1988 : élections présidentielles, législatives, municipales, cantonales, régionales et européennes.">
+<meta property="og:title" content="La Rochelle Vote — Élections à La Rochelle depuis 1986, bureau par bureau">
+<meta property="og:description" content="Les archives électorales de La Rochelle, bureau par bureau, depuis 1986 : élections présidentielles, législatives, municipales, cantonales, régionales et européennes.">
 <meta property="og:image" content="https://larochellevote.fr/share.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:url" content="https://larochellevote.fr/">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@LaRochelleVote">
-<meta name="twitter:title" content="La Rochelle Vote — Élections à La Rochelle depuis 1988, bureau par bureau">
-<meta name="twitter:description" content="Les archives électorales de La Rochelle, bureau par bureau, depuis 1988 : élections présidentielles, législatives, municipales, cantonales, régionales et européennes.">
+<meta name="twitter:title" content="La Rochelle Vote — Élections à La Rochelle depuis 1986, bureau par bureau">
+<meta name="twitter:description" content="Les archives électorales de La Rochelle, bureau par bureau, depuis 1986 : élections présidentielles, législatives, municipales, cantonales, régionales et européennes.">
 <meta name="twitter:image" content="https://larochellevote.fr/share.png">
 <script type="application/ld+json">
 {
@@ -37,7 +37,7 @@
   "name": "La Rochelle Vote",
   "alternateName": "LR Vote",
   "url": "https://larochellevote.fr/",
-  "description": "Les archives électorales de La Rochelle, bureau par bureau, depuis 1988 : élections présidentielles, législatives, municipales, cantonales, régionales et européennes.",
+  "description": "Les archives électorales de La Rochelle, bureau par bureau, depuis 1986 : élections présidentielles, législatives, municipales, cantonales, régionales et européennes.",
   "inLanguage": "fr-FR",
   "author": {
     "@type": "Person",
@@ -55,8 +55,8 @@
 {
   "@context": "https://schema.org",
   "@type": "Dataset",
-  "name": "Archives électorales de La Rochelle, 1988-2026",
-  "description": "Résultats par bureau de vote pour 42 élections et 2 référendums organisés à La Rochelle entre 1988 et 2026.",
+  "name": "Archives électorales de La Rochelle, 1986-2026",
+  "description": "Résultats par bureau de vote pour 51 élections et 3 référendums organisés à La Rochelle entre 1986 et 2026.",
   "url": "https://larochellevote.fr/",
   "keywords": ["élections", "La Rochelle", "bureau de vote", "résultats électoraux", "archives politiques", "Charente-Maritime"],
   "creator": {
@@ -69,7 +69,7 @@
     "name": "La Rochelle, France",
     "geo": { "@type": "GeoCoordinates", "latitude": 46.16, "longitude": -1.15 }
   },
-  "temporalCoverage": "1988-01-01/2026-12-31",
+  "temporalCoverage": "1986-01-01/2026-12-31",
   "inLanguage": "fr-FR"
 }
 </script>
@@ -773,7 +773,7 @@
         d'<strong>Olivier Falorni</strong> et conseillère générale PS de La Rochelle-4 de
         2011 à 2015, puis conseillère départementale divers gauche de La Rochelle-2 de
         2015 à 2021). Plus de 390 candidats et candidates qui se sont présentés à
-        La Rochelle depuis 1988 sont répertoriés.
+        La Rochelle depuis 1986 sont répertoriés.
       </p>
     </div>
     <label for="figures-toggle" class="figures-expand" title="Déployer la suite"
@@ -788,7 +788,7 @@
       <span class="colo-sep">·</span>
       <a href="apropos.html" class="colo-link">À propos</a>
     </span>
-    <span>1988 — 2026</span>
+    <span>1986 — 2026</span>
   </footer>
 
 </main>
@@ -865,7 +865,7 @@
   //  contenant un histogramme empilé vertical
   // ───────────────────────────────────────────────
   const allBureaux = new Set();
-  Object.values(ELECTIONS).forEach(e => {
+  Object.values(ELECTIONS).filter(e => !(e && e.draft === true)).forEach(e => {
     Object.values(e.sheets).forEach(sheet => {
       Object.keys(sheet).forEach(num => allBureaux.add(num));
     });
@@ -962,7 +962,7 @@
   }
 
   // Élections shufflées : on les parcourt toutes une fois avant qu'aucune ne se répète.
-  const electionList = Object.keys(ELECTIONS);
+  const electionList = Object.keys(ELECTIONS).filter(l => !(ELECTIONS[l] && ELECTIONS[l].draft === true));
   let electionsShuffled = shuffle(electionList);
   let elecIdx = 0;
 
@@ -1194,7 +1194,7 @@
     const E      = (typeof ELECTIONS    !== 'undefined') ? ELECTIONS    : {};
     const BI_ALL = (typeof BUREAU_INFO  !== 'undefined') ? BUREAU_INFO  : {};
     const C      = (typeof CAND_DATA    !== 'undefined') ? CAND_DATA    : {};
-    const allKeys  = Object.keys(E);
+    const allKeys  = Object.keys(E).filter(l => !(E[l] && E[l].draft === true));
     // Séparer élections et référendums (helper isReferendum dispo via shared.js)
     const isRef    = (l) => (typeof isReferendum === 'function') ? isReferendum(l) : (l && l.indexOf('Référendum') === 0);
     const elecKeys     = allKeys.filter(l => !isRef(l));
@@ -1214,7 +1214,10 @@
     const eraKeys = Object.keys(BI_ALL).filter(k => /^\d{4}$/.test(k)).sort();
     const latestEra = eraKeys.length ? eraKeys[eraKeys.length - 1] : null;
     const BI_LATEST = (latestEra && BI_ALL[latestEra]) || {};
-    const nBureaux = Object.values(BI_LATEST).filter(b => b.q !== 'Nul').length;
+    // On compte tous les bureaux de l'ère actuelle, y compris le non-géographique 0057
+    // (Français de l'étranger / détenus) — il fait partie du dispositif électoral même
+    // s'il est exclu des cartes choroplèthes.
+    const nBureaux = Object.keys(BI_LATEST).length;
 
     // Quartiers : valeurs `q` distinctes sur la carte la plus récente (cohérent
     // avec la sidebar de la page analyse, qui n'éclate pas les composites comme
@@ -1239,7 +1242,7 @@
 
     const yearMin = elecKeys.length
       ? Math.min(...elecKeys.map(k => parseInt(k.match(/\d{4}/)[0])))
-      : 1988;
+      : 1986;
 
     return [
       { num: elecKeys.length, label: 'élections' },
@@ -1332,7 +1335,7 @@
     const items = [];
     const b2026 = (typeof BUREAU_INFO !== 'undefined' && BUREAU_INFO['2026']) || {};
     const corr = (typeof BUREAU_CORRESPONDANCES !== 'undefined' && BUREAU_CORRESPONDANCES) || {};
-    const ERAS = ['1988','1992','1996','2004','2007','2010','2012','2015','2022','2026'];
+    const ERAS = ['1985','1988','1989','1992','1996','2004','2007','2010','2012','2015','2022','2026'];
     Object.entries(b2026).forEach(([id, b]) => {
       if (!b || b.q === 'Nul') return;
       const num = parseInt(id);
@@ -1368,12 +1371,12 @@
     [...quartiers].sort().forEach(q => {
       items.push({ type: 'quartier', icon: '🏘', label: q, sub: 'Quartier', key: q, search: norm(q) });
     });
-    Object.keys(ELECTIONS || {}).forEach(el => {
+    Object.keys(ELECTIONS || {}).filter(el => !(ELECTIONS[el] && ELECTIONS[el].draft === true)).forEach(el => {
       items.push({ type: 'election', icon: '🗳', label: el, sub: 'Élection', key: el, search: norm(el) });
     });
     // Candidat·es : une entrée par (candidat × élection)
     const candEntries = [];
-    Object.entries(ELECTIONS || {}).forEach(([elLabel, elData]) => {
+    Object.entries(ELECTIONS || {}).filter(([elLabel, elData]) => !(elData && elData.draft === true)).forEach(([elLabel, elData]) => {
       const candsInElec = new Set();
       Object.values(elData.sheets || {}).forEach(sheet => {
         Object.values(sheet || {}).forEach(bd => {

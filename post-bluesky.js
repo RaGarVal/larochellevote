@@ -22,6 +22,31 @@ const HANDLE   = process.env.BSKY_HANDLE;
 const PASSWORD = process.env.BSKY_APP_PASSWORD;
 const PDS      = 'https://bsky.social';
 
+// GitHub Actions ↔ bsky.social peut occasionnellement timeout au connect (~10 s
+// par défaut sous undici). On wrappe fetch dans un retry exponentiel + un timeout
+// explicite plus généreux pour absorber ces hoquets réseau sans casser le tweet.
+async function fetchWithRetry(url, options = {}, { retries = 4, timeoutMs = 30000 } = {}) {
+  let lastErr;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, { ...options, signal: ac.signal });
+      clearTimeout(timer);
+      return res;
+    } catch (err) {
+      clearTimeout(timer);
+      lastErr = err;
+      const isLast = attempt === retries;
+      const wait = Math.min(2000 * Math.pow(2, attempt), 16000);  // 2s → 4s → 8s → 16s → 16s
+      console.warn(`⚠️  fetch ${url} — tentative ${attempt + 1}/${retries + 1} échouée (${err.code || err.name || 'erreur'}).` + (isLast ? '' : ` Retry dans ${wait / 1000}s…`));
+      if (isLast) throw lastErr;
+      await new Promise(r => setTimeout(r, wait));
+    }
+  }
+  throw lastErr;
+}
+
 if (!HANDLE || !PASSWORD) {
   console.error('❌ BSKY_HANDLE ou BSKY_APP_PASSWORD manquant dans les env vars');
   process.exit(1);
@@ -53,7 +78,7 @@ console.log(`🖼️  Image : ${(imageBytes.length / 1024).toFixed(0)} KB`);
 (async () => {
   // ── 1. Login ───────────────────────────────────────────────────────────────
   console.log('🔑 Authentification Bluesky…');
-  const sessionRes = await fetch(`${PDS}/xrpc/com.atproto.server.createSession`, {
+  const sessionRes = await fetchWithRetry(`${PDS}/xrpc/com.atproto.server.createSession`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ identifier: HANDLE, password: PASSWORD }),
@@ -69,7 +94,7 @@ console.log(`🖼️  Image : ${(imageBytes.length / 1024).toFixed(0)} KB`);
 
   // ── 2. Upload de l'image ───────────────────────────────────────────────────
   console.log('📤 Upload de l\'image…');
-  const uploadRes = await fetch(`${PDS}/xrpc/com.atproto.repo.uploadBlob`, {
+  const uploadRes = await fetchWithRetry(`${PDS}/xrpc/com.atproto.repo.uploadBlob`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${accessJwt}`,
@@ -118,7 +143,7 @@ console.log(`🖼️  Image : ${(imageBytes.length / 1024).toFixed(0)} KB`);
   };
   if (facets.length) record.facets = facets;
 
-  const createRes = await fetch(`${PDS}/xrpc/com.atproto.repo.createRecord`, {
+  const createRes = await fetchWithRetry(`${PDS}/xrpc/com.atproto.repo.createRecord`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${accessJwt}`,
