@@ -432,7 +432,7 @@ const DATES = {
   'Législatives 2017':   { T1: '11 juin 2017',  T2: '18 juin 2017' },
   'Législatives 2022':   { T1: '12 juin 2022',  T2: '19 juin 2022' },
   'Législatives 2024':   { T1: '30 juin 2024',  T2: '7 juillet 2024' },
-  'Municipales 1995':    { T1: '11 juin 1995',  T2: '18 juin 1995' },
+  'Municipales 1995':    { TU: '11 juin 1995'                     },
   'Municipales 2001':    { T1: '11 mars 2001',  T2: '18 mars 2001' },
   'Municipales 2008':    { T1: '9 mars 2008',   T2: '16 mars 2008' },
   'Municipales 2014':    { T1: '23 mars 2014',  T2: '30 mars 2014' },

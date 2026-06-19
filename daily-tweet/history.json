@@ -455,5 +455,31 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "olivier-falorni@legislatives-2012"
+  },
+  {
+    "date": "2026-06-18",
+    "signature": "bureau|Municipales 1995|T2|0003",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 2,
+    "election": "Municipales 1995",
+    "tour": "T2",
+    "bureau": "0003",
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
+  },
+  {
+    "date": "2026-06-19",
+    "signature": "bureau|Législatives 2022|T2|0015",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 2,
+    "election": "Législatives 2022",
+    "tour": "T2",
+    "bureau": "0015",
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
   }
 ]
