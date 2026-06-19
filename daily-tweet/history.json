@@ -468,5 +468,18 @@
     "quartier": null,
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-06-19",
+    "signature": "bureau|Législatives 2022|T2|0015",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 2,
+    "election": "Législatives 2022",
+    "tour": "T2",
+    "bureau": "0015",
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
   }
 ]

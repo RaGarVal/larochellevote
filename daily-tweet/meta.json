@@ -1,14 +1,14 @@
 {
-  "date": "2026-06-18",
+  "date": "2026-06-19",
   "niveau": "bureau",
-  "election": "Municipales 1995",
+  "election": "Législatives 2022",
   "tour": "T2",
-  "bureau": "0003",
+  "bureau": "0015",
   "quartier": null,
   "canton": null,
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Municipales 1995|T2|0003",
-  "chars": 259,
-  "generated_at": "2026-06-18T06:01:52.798Z"
+  "signature": "bureau|Législatives 2022|T2|0015",
+  "chars": 254,
+  "generated_at": "2026-06-19T06:01:41.391Z"
 }
