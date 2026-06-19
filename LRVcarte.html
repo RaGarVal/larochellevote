@@ -327,6 +327,9 @@ body.is-compare #cmp-view {
 .cmp-banner-txt { min-width: 0; overflow: hidden; padding-top: 2px; }
 .cmp-banner-txt strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 1.05rem; line-height: 1.2; }
 .cmp-banner-sub { display: block; font-size: 0.72rem; font-weight: 500; color: var(--text-chrome-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Par défaut (desktop) : variant full du nom dans le bandeau, short masqué. */
+.cb-name-short { display: none; }
+.cb-name-full { display: inline; }
 /* Colonne "chiffres" : score en haut, delta en dessous (uniquement côté B). */
 .cmp-banner-numbers { display: flex; flex-direction: column; align-items: stretch; gap: 3px; flex-shrink: 0; }
 .cmp-banner-title-a .cmp-banner-numbers { align-items: flex-end; }
@@ -390,25 +393,253 @@ body.is-compare #cmp-view {
 .cmp-split { flex: 1; display: flex; min-height: 0; position: relative; }
 .cmp-map-wrap { flex: 1; min-width: 0; position: relative; border-right: 1px solid var(--border-chrome); }
 #cmp-wrap-b { border-right: none; }
-/* Mode diff : on cache map B, map A prend toute la largeur de cmp-split. */
-body.is-cmp-diff #cmp-wrap-b { display: none; }
-body.is-cmp-diff #cmp-wrap-a { flex: 1 1 100%; width: 100%; border-right: none; }
-/* Sidebar Diff — masquée sauf en mode diff. Position FIXED par-dessus la carte
-   (z-index 500 > Leaflet 400) avec style identique à #sidebar. */
-#cmp-diff-sidebar { display: none; }
-body.is-cmp-diff #cmp-diff-sidebar {
-  display: flex; flex-direction: column;
-  /* position:absolute relative à cmp-split (qui est position:relative).
-     top:12 = 12px sous la bannière, peu importe sa hauteur réelle. */
-  position: absolute; top: 12px; left: 12px; bottom: 12px;
-  width: var(--sidebar-w);
-  background: var(--bg-card);
-  border-radius: 10px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.18);
-  overflow-y: auto; padding: 14px 14px 20px;
-  font-size: 0.82rem;
-  z-index: 500;
+
+/* ── Mini-bandeau central (Abs+Rel uniquement, hover-driven) ───────────────
+   Mirroir réduit de la banner du haut. Posé juste sous celle-ci, centré sur
+   la tranche entre les 2 cartes. Layout 3 colonnes × 2 rangées :
+     Rangée 1 : Bureau A      |  badge =/≠ (span 2 rangées)  |  Bureau B
+     Rangée 2 : Score A       |                              |  Score B + delta
+   Le grid `1fr auto 1fr` garantit que le badge central est à l'AXE
+   géométrique du bandeau, donc toujours sur la tranche, quel que soit le nom.
+   Mode Diff : reste visible (le drawer bas est complémentaire, pas redondant). */
+#cmp-mid-bar {
+  position: absolute; top: 8px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 600;
+  pointer-events: none;
+  opacity: 0; transition: opacity .15s;
+  background: var(--bg-modal);
+  border: 1px solid var(--border-modal);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.15);
+  padding: 8px 14px;
+  display: grid; grid-template-columns: 1fr auto 1fr; grid-template-rows: auto auto;
+  gap: 5px 18px;
+  font-family: inherit;
+  max-width: 92%;
 }
+#cmp-mid-bar.visible { opacity: 1; }
+.cmp-mid-bar-bureau {
+  display: flex; flex-direction: column; gap: 1px; min-width: 0;
+}
+.cmp-mid-bar-bureau-a { grid-column: 1; grid-row: 1; align-items: flex-end; text-align: right; }
+.cmp-mid-bar-bureau-b { grid-column: 3; grid-row: 1; align-items: flex-start; text-align: left; }
+/* Bureau n°XX — même style que .fiche-num (uppercase, letter-spacing, muted). */
+.cmp-mid-bar-bureau-num {
+  font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.8px; color: var(--text-meta); margin-bottom: 3px;
+}
+/* Dénomination — un poil plus grosse que par défaut, comme un mini fiche-name. */
+.cmp-mid-bar-bureau-denom {
+  font-size: 0.92rem; font-weight: 700; color: var(--text-modal);
+  line-height: 1.15; letter-spacing: -0.2px;
+  max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* État "bureau inexistant" : pas de correspondance dans BUREAU_CORRESPONDANCES.
+   Le bureau survolé n'existe pas dans l'ère de l'autre côté (création/suppression). */
+.cmp-mid-bar-bureau.inexistant .cmp-mid-bar-bureau-denom {
+  font-style: italic; font-weight: 600; color: var(--text-modal-muted);
+}
+.cmp-mid-bar-numbers { display: flex; flex-direction: column; gap: 3px; }
+.cmp-mid-bar-numbers-a { grid-column: 1; grid-row: 2; align-items: flex-end; }
+.cmp-mid-bar-numbers-b { grid-column: 3; grid-row: 2; align-items: flex-start; }
+/* Score = même traitement que .cmp-banner-score (tag coloré, fond = couleur de
+   la sélection, texte adaptatif). Le background + color sont posés inline en JS
+   via baseColorOfSel + pickTextColorForBg. */
+.cmp-mid-bar-score {
+  font-size: 0.95rem; font-weight: 700;
+  padding: 3px 9px; border-radius: 5px;
+  font-variant-numeric: tabular-nums; line-height: 1.2; white-space: nowrap;
+}
+.cmp-mid-bar-score.missing {
+  background: var(--bg-modal-hover) !important; color: var(--text-modal-muted) !important;
+  font-weight: 600;
+}
+.cmp-mid-bar-delta {
+  font-size: 0.74rem; font-weight: 800;
+  padding: 2px 7px; border-radius: 4px;
+  border: 1.5px solid transparent;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2; white-space: nowrap;
+}
+.cmp-mid-bar-delta.pos     { background: #D4EFD4; color: #0F5F0F; border-color: #6FB66F; }
+.cmp-mid-bar-delta.neg     { background: #F7D4D4; color: #8B1414; border-color: #D17070; }
+.cmp-mid-bar-delta.neutral { background: var(--bg-modal-hover); color: var(--text-chrome-muted); border-color: var(--border-modal); }
+[data-theme="dark"] .cmp-mid-bar-delta.pos { background: rgba(80,170,80,0.22); color: #B0E8B0; border-color: rgba(80,170,80,0.55); }
+[data-theme="dark"] .cmp-mid-bar-delta.neg { background: rgba(220,90,90,0.22); color: #FAB5B5; border-color: rgba(220,90,90,0.55); }
+/* Le signe est aligné AU NIVEAU DU TITRE (rangée 1, où sont les noms), pas
+   du score — la comparaison de frontières porte sur l'identité du bureau,
+   pas sur le score. align-self:end pour rester collé au bord bas de la rangée 1
+   (= ligne dénomination), justify-self:center pour rester pile sur la tranche. */
+.cmp-mid-bar-frontiers {
+  grid-column: 2; grid-row: 1;
+  align-self: end; justify-self: center;
+}
+.cmp-mid-bar-frontiers-badge {
+  font-size: 1.05rem; font-weight: 800;
+  padding: 3px 11px; border-radius: 5px;
+  border: 1.5px solid transparent;
+  line-height: 1; white-space: nowrap;
+  display: inline-block;
+}
+/* Filet vertical INTERNE au bandeau : occupe la cellule (col 2, row 2) sous
+   le badge =/≠. Visuellement, prolonge la « tranche entre les cartes » au
+   sein du bandeau lui-même, créant un axe central qui sépare A de B. */
+.cmp-mid-bar-rail {
+  grid-column: 2; grid-row: 2;
+  width: 2px;
+  background: var(--border-modal);
+  justify-self: center;
+  align-self: stretch; /* prend toute la hauteur de la rangée 2 */
+}
+.cmp-mid-bar-frontiers-badge.same {
+  background: var(--bg-modal-hover); color: var(--text-chrome-muted);
+  border-color: var(--border-modal);
+}
+.cmp-mid-bar-frontiers-badge.unequal {
+  background: #FFE5B4; color: #7A4A00; border-color: #E0B080;
+}
+[data-theme="dark"] .cmp-mid-bar-frontiers-badge.unequal {
+  background: rgba(255,180,80,0.18); color: #FFD9A0; border-color: rgba(255,180,80,0.55);
+}
+/* Mode Diff : le mid-bar reste visible — il sert de "tooltip riche" permanent
+   (scores A/B + delta + redécoupage), pendant que le tooltip Leaflet est
+   simplifié au strict nécessaire (delta + badge bureau modifié uniquement). */
+/* Mode diff : on n'affiche qu'UNE map (la plus récente des 2 ères), pleine
+   largeur. La classe `is-cmp-diff-show-a` ou `is-cmp-diff-show-b` est posée
+   sur body par toggleCmpScale selon que A ou B est la plus récente. */
+body.is-cmp-diff-show-a #cmp-wrap-b { display: none; }
+body.is-cmp-diff-show-a #cmp-wrap-a { flex: 1 1 100%; width: 100%; border-right: none; }
+body.is-cmp-diff-show-b #cmp-wrap-a { display: none; }
+body.is-cmp-diff-show-b #cmp-wrap-b { flex: 1 1 100%; width: 100%; border-right: none; }
+/* Mode Nuage : on masque les 2 cartes et le mid-bar, le scatter prend toute la place.
+   Le container #cmp-nuage est positionné en absolute par-dessus .cmp-split. */
+body.is-cmp-nuage #cmp-wrap-a,
+body.is-cmp-nuage #cmp-wrap-b,
+body.is-cmp-nuage #cmp-mid-bar { display: none !important; }
+#cmp-nuage { display: none; }
+body.is-cmp-nuage #cmp-nuage {
+  display: block;
+  position: absolute; inset: 0;
+  background: #ffffff;
+}
+#cmp-nuage-svg {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+}
+/* Tooltip flottant au survol d'un point — positionné dynamiquement en JS. */
+#cmp-nuage-tooltip {
+  position: absolute; pointer-events: none;
+  background: var(--bg-tooltip); color: var(--text-tooltip);
+  padding: 6px 10px; border-radius: 6px;
+  font-size: 0.78rem; line-height: 1.35;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+  z-index: 700;
+  opacity: 0; transition: opacity .12s;
+  white-space: nowrap;
+}
+#cmp-nuage-tooltip.on { opacity: 1; }
+#cmp-nuage-tooltip .tt-num { font-weight: 800; font-size: 0.72rem; color: var(--text-tooltip-muted, #bbb); }
+#cmp-nuage-tooltip .tt-denom { font-weight: 700; font-size: 0.82rem; }
+#cmp-nuage-tooltip .tt-quartier { margin-top: 3px; font-size: 0.74rem; opacity: 0.85; display: flex; align-items: center; gap: 4px; }
+#cmp-nuage-tooltip .tt-quartier-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.4); }
+#cmp-nuage-tooltip .tt-scores { margin-top: 4px; font-variant-numeric: tabular-nums; }
+#cmp-nuage-tooltip .tt-delta { margin-top: 2px; font-weight: 700; font-variant-numeric: tabular-nums; }
+/* Mini-carte de référence — coin haut-droit, ~200×150 px. Affiche tous les
+   bureaux de l'ère B, illuminés au hover d'un point du nuage. */
+#cmp-nuage-mini {
+  position: absolute; top: 14px; right: 14px;
+  width: 200px; height: 150px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-modal);
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.10);
+  overflow: hidden;
+  z-index: 450;
+}
+#cmp-nuage-mini-map { width: 100%; height: 100%; background: var(--bg-page); }
+/* Footer "N bureaux affichés sur M" — discret, en bas du nuage. */
+#cmp-nuage-footer {
+  position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%);
+  font-size: 0.72rem; color: var(--text-modal-muted);
+  background: var(--bg-modal); border: 1px solid var(--border-modal);
+  border-radius: 999px; padding: 3px 12px;
+  pointer-events: none;
+  z-index: 450;
+  display: none;
+}
+#cmp-nuage-footer.on { display: block; }
+/* Fenêtre flottante Diff — masquée hors mode diff. En diff, centrée sur
+   l'espace carte, par-dessus les 2 cartes. Bouton X la collapse → chip de
+   réouverture en bas-droite (cf. #cmp-diff-reopen plus bas). */
+#cmp-diff-drawer { display: none; }
+body.is-cmp-diff #cmp-diff-drawer {
+  display: flex; flex-direction: column;
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(700px, calc(100% - 24px));
+  height: min(440px, calc(100% - 24px));
+  background: var(--bg-card);
+  border: 1px solid var(--border-modal);
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  z-index: 500;
+  font-size: 0.82rem;
+}
+body.is-cmp-diff-collapsed #cmp-diff-drawer { display: none; }
+/* Pendant un drag : on désactive les transitions et la sélection texte. */
+body.is-cmp-diff-dragging { user-select: none; }
+body.is-cmp-diff-dragging #cmp-diff-drawer { transition: none; }
+/* Header : tabs (gauche) + sub-toggle (droite) + bouton X.
+   Cursor `grab` sur les zones non-interactives → indique qu'on peut draguer. */
+.cmp-diff-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px;
+  padding: 4px 4px 0 16px;
+  border-bottom: 1px solid var(--border-modal);
+  flex-shrink: 0;
+  cursor: grab;
+}
+body.is-cmp-diff-dragging .cmp-diff-header { cursor: grabbing; }
+/* Les éléments interactifs du header ne propagent pas le grab. */
+.cmp-diff-header button,
+.cmp-diff-header .cmp-diff-tabs,
+.cmp-diff-header .cmp-diff-subtoggle { cursor: default; }
+.cmp-diff-header button { cursor: pointer; }
+.cmp-diff-header-actions { display: inline-flex; align-items: center; gap: 8px; }
+.cmp-diff-close {
+  background: none; border: none; cursor: pointer;
+  font-family: inherit; font-size: 1rem; line-height: 1;
+  color: var(--text-modal-muted);
+  padding: 6px 10px;
+  border-radius: 5px;
+  transition: background .12s, color .12s;
+}
+.cmp-diff-close:hover { background: var(--bg-modal-hover); color: var(--text-modal); }
+/* Body : contenu scrollable (tornado / dumbbell). */
+.cmp-diff-body {
+  flex: 1; min-height: 0;
+  overflow-y: auto; overflow-x: hidden;
+  padding: 12px 14px 16px;
+}
+/* Chip "📊 Graph" pour rouvrir la fenêtre quand collapsée. Posé JUSTE AU-DESSUS
+   de la légende, centré horizontalement comme elle — signale visuellement
+   qu'il fait partie des contrôles diff. Visible UNIQUEMENT en diff + collapsed. */
+#cmp-diff-reopen { display: none; }
+body.is-cmp-diff.is-cmp-diff-collapsed #cmp-diff-reopen {
+  display: inline-flex; align-items: center; gap: 6px;
+  position: absolute; bottom: 52px; left: 50%; transform: translateX(-50%);
+  background: var(--bg-modal); color: var(--text-modal);
+  border: 1px solid var(--border-modal); border-radius: 999px;
+  padding: 6px 14px;
+  font-family: inherit; font-size: 0.78rem; font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0,0,0,.14);
+  z-index: 600;
+  transition: background .12s, border-color .12s;
+}
+#cmp-diff-reopen:hover { background: var(--bg-modal-hover); border-color: var(--accent-warm); }
 .cmp-diff-sec { margin-bottom: 16px; }
 .cmp-diff-sec h4 {
   font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;
@@ -440,12 +671,712 @@ body.is-cmp-diff #cmp-diff-sidebar {
 .cmp-diff-item-delta.neutral { background: var(--bg-modal-hover); color: var(--text-modal-muted); }
 [data-theme="dark"] .cmp-diff-item-delta.pos { background: rgba(80,170,80,0.22); color: #B0E8B0; }
 [data-theme="dark"] .cmp-diff-item-delta.neg { background: rgba(220,90,90,0.22); color: #FAB5B5; }
+
+/* ── Onglets Quartier / Bureau dans le drawer Diff ─────────────────────────
+   2 onglets à gauche du header. Chacun affiche un tornado/dumbbell (selon le
+   sub-toggle). Le contenu inactif est masqué via .cmp-diff-tab-pane:not(.on). */
+.cmp-diff-tabs {
+  display: inline-flex; gap: 0;
+}
+.cmp-diff-tabs button {
+  background: none; border: none; cursor: pointer;
+  font-family: inherit; font-size: 0.82rem; font-weight: 700;
+  color: var(--text-modal-muted);
+  padding: 8px 18px;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;  /* aligne le trait actif avec la border-bottom du header */
+  transition: color .12s, border-color .12s;
+}
+.cmp-diff-tabs button:hover { color: var(--text-modal); }
+.cmp-diff-tabs button.on {
+  color: var(--text-modal);
+  border-bottom-color: var(--accent-warm);
+}
+.cmp-diff-tab-pane { display: none; }
+.cmp-diff-tab-pane.on { display: block; }
+.cmp-diff-empty {
+  font-size: 0.78rem; color: var(--text-modal-muted);
+  text-align: center; padding: 24px 8px; font-style: italic;
+}
+
+/* Sub-toggle Écart / Absolu (à droite du header drawer). */
+.cmp-diff-subtoggle {
+  display: inline-flex; gap: 2px;
+  border: 1px solid var(--border-modal);
+  border-radius: 5px;
+  padding: 2px;
+  background: var(--bg-modal-hover);
+}
+.cmp-diff-subtoggle button {
+  background: none; border: none; cursor: pointer;
+  font-family: inherit; font-size: 0.72rem; font-weight: 700;
+  color: var(--text-modal-muted);
+  padding: 4px 14px; border-radius: 3px;
+  transition: background .12s, color .12s;
+}
+.cmp-diff-subtoggle button:hover:not(.on) { color: var(--text-modal); }
+.cmp-diff-subtoggle button.on {
+  background: var(--accent-warm); color: #fff;
+}
+.cmp-diff-view { display: none; }
+.cmp-diff-view.on { display: block; }
+
+/* ── Dumbbell chart pour l'option "Absolu" ──────────────────────────────
+   Pour chaque item : axe horizontal (range dynamique min/max ± marge),
+   point de départ (score A, cercle gris), ligne colorée vers le point
+   d'arrivée (score B, flèche). Vert = progression, rouge = recul. */
+.cmp-diff-dumbbell { position: relative; }
+.cmp-diff-dumbbell-rows { display: flex; flex-direction: column; gap: 3px; }
+.cmp-diff-dumbbell.left .cmp-diff-dumbbell-name { text-align: left; }
+/* Lignes verticales pointillées de repère (50 %, 25 %, 75 % si dans la plage).
+   Posées au niveau du conteneur → s'étendent en pleine hauteur sur toutes les
+   rows. L'offset 150px = colonne nom (140px) + gap (10px) en CSS grid des
+   rows ; le pct stocké dans --pct mappe la valeur cible sur le track.
+   Les rows ont position:relative mais pas de z-index → la ligne paint au-dessus
+   des fonds (zébré) mais sous les dots (z-index 1/2) et les labels. */
+.cmp-diff-dumbbell-guide {
+  position: absolute; top: 0; bottom: 0;
+  width: 0;
+  border-left: 1px dashed var(--border-modal);
+  pointer-events: none;
+  left: calc(150px + (100% - 150px) * var(--pct));
+}
+.cmp-diff-dumbbell-guide-label {
+  position: absolute; top: -1px; left: 3px;
+  font-size: 0.58rem; font-weight: 600; color: var(--text-modal-muted);
+  font-variant-numeric: tabular-nums;
+  line-height: 1; white-space: nowrap;
+  pointer-events: none;
+}
+.cmp-diff-dumbbell-row {
+  /* Rythme inter-ligne harmonieux. Les labels sont toujours côté → la ligne
+     n'a plus besoin de réserver de l'espace en haut pour un éventuel `above`. */
+  display: grid; grid-template-columns: 140px 1fr; gap: 10px; align-items: center;
+  min-height: 24px;
+  padding: 3px 2px; border-radius: 3px;
+  position: relative;
+  transition: background .12s;
+}
+/* Zébré subtil — une ligne sur deux teintée pour aider l'œil à suivre l'item.
+   Exclut la ligne globale (qui a son propre fond accent). Placé AVANT les
+   règles de hover pour que celles-ci gagnent par source order à spécificité
+   équivalente. */
+.cmp-diff-dumbbell-row:nth-child(even):not(.cmp-diff-dumbbell-row-global) {
+  background: rgba(0,0,0,0.03);
+}
+[data-theme="dark"] .cmp-diff-dumbbell-row:nth-child(even):not(.cmp-diff-dumbbell-row-global) {
+  background: rgba(255,255,255,0.03);
+}
+.cmp-diff-dumbbell-row.clickable { cursor: pointer; }
+.cmp-diff-dumbbell-row.clickable:hover { background: var(--bg-modal-hover); }
+.cmp-diff-dumbbell-name {
+  font-size: 0.72rem; font-weight: 600;
+  color: var(--text-modal);
+  text-align: right;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cmp-diff-dumbbell-track {
+  position: relative; height: 18px;
+}
+.cmp-diff-dumbbell-conn {
+  position: absolute; top: 50%; height: 3px;
+  transform: translateY(-50%);
+  border-radius: 1.5px;
+}
+.cmp-diff-dumbbell-conn.pos { background: #6FB66F; }
+.cmp-diff-dumbbell-conn.neg { background: #D17070; }
+.cmp-diff-dumbbell-conn.neutral { background: var(--text-modal-muted); opacity: 0.5; }
+.cmp-diff-dumbbell-start {
+  position: absolute; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--text-modal-muted);
+  border: 1.5px solid var(--bg-card);
+  z-index: 1;
+}
+.cmp-diff-dumbbell-end {
+  position: absolute; top: 50%;
+  z-index: 2;
+}
+.cmp-diff-dumbbell-end.pos {
+  width: 0; height: 0;
+  border-left: 9px solid #6FB66F;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  transform: translate(-25%, -50%);
+}
+.cmp-diff-dumbbell-end.neg {
+  width: 0; height: 0;
+  border-right: 9px solid #D17070;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  transform: translate(-75%, -50%);
+}
+.cmp-diff-dumbbell-end.neutral {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--text-modal-muted);
+  border: 1.5px solid var(--bg-card);
+  transform: translate(-50%, -50%);
+}
+/* Étiquettes A et B : toujours À CÔTÉ du dot (extérieur de la connexion),
+   centrées verticalement. Le PAD réservé côté JS garantit qu'elles ne clippent
+   jamais — pas de fallback `above`. Le sens (pos/neg) place chaque label de
+   son côté de la connexion. */
+.cmp-diff-dumbbell-label {
+  position: absolute; top: 50%;
+  font-size: 0.62rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+  line-height: 1;
+}
+.cmp-diff-dumbbell-label-a { color: var(--text-modal-muted); font-weight: 600; font-style: italic; }
+.cmp-diff-dumbbell-label-b { color: var(--text-modal); font-weight: 700; }
+.cmp-diff-dumbbell-label.pos.cmp-diff-dumbbell-label-a {
+  transform: translate(-100%, -50%); padding-right: 6px;
+}
+.cmp-diff-dumbbell-label.pos.cmp-diff-dumbbell-label-b {
+  transform: translateY(-50%); padding-left: 8px;
+}
+.cmp-diff-dumbbell-label.neg.cmp-diff-dumbbell-label-a {
+  transform: translateY(-50%); padding-left: 6px;
+}
+.cmp-diff-dumbbell-label.neg.cmp-diff-dumbbell-label-b {
+  transform: translate(-100%, -50%); padding-right: 8px;
+}
+/* Cas neutre (B ≈ A) : on masque le label B (redondant avec A) et on pose
+   label A à droite du dot (pas centré dessus, sinon le texte le recouvre). */
+.cmp-diff-dumbbell-label.neutral {
+  transform: translateY(-50%); padding-left: 8px;
+}
+.cmp-diff-dumbbell-label.cmp-diff-dumbbell-label-b.neutral { display: none; }
+.cmp-diff-dumbbell-row[data-full-name]:hover::after,
+.cmp-diff-dumbbell-row[data-full-name]:hover::before {
+  /* Réutilise le tooltip custom du tornado (sélecteur ::after/::before identique
+     mais lié à la classe cmp-diff-dumbbell-row maintenant). On copie les règles. */
+}
+/* Tooltip custom du dumbbell — identique au tornado. */
+.cmp-diff-dumbbell-row[data-full-name]:hover::after {
+  content: attr(data-full-name);
+  position: absolute;
+  left: 0; bottom: calc(100% + 2px);
+  background: var(--bg-tooltip);
+  color: var(--text-tooltip);
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 0.74rem; font-weight: 700;
+  white-space: nowrap;
+  z-index: 1000;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.35);
+  pointer-events: none;
+}
+.cmp-diff-dumbbell-row[data-full-name]:hover::before {
+  content: '';
+  position: absolute;
+  left: 12px; bottom: calc(100% - 4px);
+  width: 0; height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid var(--bg-tooltip);
+  z-index: 1000;
+  pointer-events: none;
+}
+/* Ligne globale dans le dumbbell : même traitement que le tornado. */
+.cmp-diff-dumbbell-row-global {
+  background: var(--bg-modal-accent);
+  border-radius: 5px;
+  padding: 3px 4px;
+  margin: 2px 0;
+}
+.cmp-diff-dumbbell-row-global .cmp-diff-dumbbell-name {
+  font-size: 0.74rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.6px;
+  color: var(--text-modal);
+}
+.cmp-diff-dumbbell-row-global .cmp-diff-dumbbell-track { height: 20px; }
+
+/* ── Tornado chart (utilisé dans les 2 onglets) ─────────────────────────
+   Chaque ligne = un quartier ou un bureau. Barre horizontale qui part d'un
+   axe central : à droite (vert) si B a progressé, à gauche (rouge) si B a
+   reculé. Largeur ∝ |delta| / maxAbs des éléments du panneau.
+   Nom à gauche dans une colonne fixe pour faciliter la lecture. */
+.cmp-diff-tornado { display: flex; flex-direction: column; gap: 3px; }
+.cmp-diff-tornado-row {
+  display: grid; grid-template-columns: 140px 1fr; gap: 10px; align-items: center;
+  min-height: 22px;
+  padding: 1px 2px; border-radius: 3px;
+  transition: background .12s;
+}
+/* Zébré subtil — voir .cmp-diff-dumbbell-row pour la logique (avant hover). */
+.cmp-diff-tornado-row:nth-child(even):not(.cmp-diff-tornado-row-global) {
+  background: rgba(0,0,0,0.03);
+}
+[data-theme="dark"] .cmp-diff-tornado-row:nth-child(even):not(.cmp-diff-tornado-row-global) {
+  background: rgba(255,255,255,0.03);
+}
+.cmp-diff-tornado-row.clickable { cursor: pointer; }
+.cmp-diff-tornado-row.clickable:hover { background: var(--bg-modal-hover); }
+/* Ligne globale (Ville) : INSÉRÉE dans le tri (pas en tête) mais ressort —
+   fond teinté, label plus marqué, barre légèrement plus haute. */
+.cmp-diff-tornado-row-global {
+  background: var(--bg-modal-accent);
+  border-radius: 5px;
+  padding: 3px 4px;
+  margin: 2px 0;
+}
+.cmp-diff-tornado-row-global .cmp-diff-tornado-name {
+  font-size: 0.74rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.6px;
+  color: var(--text-modal);
+}
+.cmp-diff-tornado-row-global .cmp-diff-tornado-bar { height: 18px; top: 0; }
+.cmp-diff-tornado-row-global .cmp-diff-tornado-value { font-size: 0.72rem; }
+.cmp-diff-tornado-name {
+  font-size: 0.72rem; font-weight: 600;
+  color: var(--text-modal);
+  text-align: right;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* Tab bureau : noms ferrés à gauche (le numéro forme une colonne visuelle). */
+.cmp-diff-tornado.left .cmp-diff-tornado-name { text-align: left; }
+
+/* Tooltip custom au survol d'une ligne : popup foncée affichant le nom complet
+   en majuscules, ancrée juste au-dessus de la ligne. Apparait instantanément
+   (pas le délai natif), zero clip vu que la sidebar a overflow-x:hidden mais
+   la pile suffit verticalement. */
+.cmp-diff-tornado-row { position: relative; }
+.cmp-diff-tornado-row[data-full-name]:hover::after {
+  content: attr(data-full-name);
+  position: absolute;
+  left: 0; bottom: calc(100% + 2px);
+  background: var(--bg-tooltip);
+  color: var(--text-tooltip);
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 0.74rem; font-weight: 700;
+  white-space: nowrap;
+  z-index: 1000;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.35);
+  pointer-events: none;
+}
+.cmp-diff-tornado-row[data-full-name]:hover::before {
+  content: '';
+  position: absolute;
+  left: 12px; bottom: calc(100% - 4px);
+  width: 0; height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid var(--bg-tooltip);
+  z-index: 1000;
+  pointer-events: none;
+}
+.cmp-diff-tornado-bars {
+  position: relative; height: 18px;
+}
+.cmp-diff-tornado-axis {
+  position: absolute; top: -2px; bottom: -2px; left: 50%;
+  width: 1px; background: var(--border-modal);
+}
+.cmp-diff-tornado-bar {
+  position: absolute; top: 1px; height: 16px;
+  min-width: 2px;
+  display: flex; align-items: center;
+}
+.cmp-diff-tornado-bar.pos {
+  left: 50%;
+  background: #6FB66F;
+  border-radius: 0 3px 3px 0;
+}
+.cmp-diff-tornado-bar.neg {
+  right: 50%;
+  background: #D17070;
+  border-radius: 3px 0 0 3px;
+}
+[data-theme="dark"] .cmp-diff-tornado-bar.pos { background: #4FA050; }
+[data-theme="dark"] .cmp-diff-tornado-bar.neg { background: #C95050; }
+.cmp-diff-tornado-value {
+  position: absolute;
+  font-size: 0.68rem; font-weight: 800; font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  line-height: 1; top: 50%; transform: translateY(-50%);
+}
+/* INSIDE : valeur dans la barre (texte blanc + ombre légère pour contraste).
+   Ancrée au bord OUTÉRIEUR (loin de l'axe) pour pointer "jusqu'où va le swing". */
+.cmp-diff-tornado-bar.inside.pos .cmp-diff-tornado-value {
+  right: 5px; color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,0.45);
+}
+.cmp-diff-tornado-bar.inside.neg .cmp-diff-tornado-value {
+  left: 5px; color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,0.45);
+}
+/* OUTSIDE : valeur en bout de barre (à l'extérieur), texte sombre.
+   Utilisé quand la barre est trop fine pour contenir lisiblement la valeur. */
+.cmp-diff-tornado-bar.outside.pos .cmp-diff-tornado-value {
+  left: 100%; padding-left: 5px; color: var(--text-modal);
+}
+.cmp-diff-tornado-bar.outside.neg .cmp-diff-tornado-value {
+  right: 100%; padding-right: 5px; color: var(--text-modal);
+}
 @media (max-width: 720px) {
-  body.is-cmp-diff #cmp-diff-sidebar {
-    /* Mobile : flux normal (en haut, pleine largeur, hauteur limitée) plutôt qu'absolu. */
-    position: relative; top: auto; left: auto; bottom: auto;
-    width: auto; max-height: 35vh; margin: 8px 8px 0;
+  body.is-cmp-diff #cmp-diff-drawer {
+    /* Mobile : fenêtre quasi pleine largeur, hauteur 60vh. */
+    width: calc(100% - 16px);
+    height: 60vh; max-height: 460px;
   }
+  .cmp-diff-header { padding: 4px 4px 0 12px; gap: 8px; }
+  .cmp-diff-body   { padding: 10px 12px 14px; }
+  .cmp-diff-tabs button { padding: 6px 10px; font-size: 0.76rem; }
+  .cmp-diff-subtoggle button { padding: 3px 10px; font-size: 0.7rem; }
+}
+/* ═══════════════════════════════════════════════════════════════════════
+   COMPARATEUR — MODE SMARTPHONE (≤ 480 px)
+   - Cartes empilées verticalement (A en haut, B en bas)
+   - Mid-bar reposition au milieu vertical
+   - Diff drawer en full-screen overlay (plus de drag)
+   - Nuage : mini-carte cachée, scatter plein écran
+   - Banner compact, légende compacte
+   ═══════════════════════════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+  /* ── Topbar — on cache "Le Comparateur" + la X et on signale l'état
+     "enclenché" sur le bouton ⇄ existant (#tb-compare-btn). Tap dessus = quitter. ── */
+  body.is-compare #tb-comparateur,
+  body.is-compare #tb-cmp-exit { display: none !important; }
+  body.is-compare #tb-compare-btn {
+    background: var(--accent-warm); color: #fff; border-color: var(--accent-warm);
+  }
+  body.is-compare #tb-compare-btn:hover { background: var(--accent-warm); color: #fff; }
+
+  /* ── Banner — 2 bandes empilées : pastille | nom + sub | score (+Δ pour B)
+     puis le bouton swap ⇄ à l'extrême droite, spanning les 2 rangées. ── */
+  .cmp-banner {
+    display: grid !important;
+    grid-template-columns: auto 1fr auto !important;
+    grid-template-rows: auto auto !important;
+    column-gap: 8px !important;
+    row-gap: 2px !important;
+    padding: 3px 10px !important;
+    align-items: center !important;
+  }
+  .cmp-side-letter-a { grid-column: 1; grid-row: 1; width: 22px !important; height: 22px !important; font-size: 0.74rem !important; }
+  .cmp-banner-title-a { grid-column: 2; grid-row: 1; }
+  .cmp-side-letter-b { grid-column: 1; grid-row: 2; width: 22px !important; height: 22px !important; font-size: 0.74rem !important; }
+  .cmp-banner-title-b { grid-column: 2; grid-row: 2; }
+  /* Swap ⇄ tout à droite, spanning les 2 rangées, centré verticalement. */
+  .cmp-banner-actions {
+    display: flex !important;
+    grid-column: 3 !important;
+    grid-row: 1 / 3 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+  }
+  /* Layout uniforme des 2 bandes : nom à gauche, score (+ delta sur B) à droite.
+     L'ordre DOM est [numbers, txt] → on utilise row-reverse pour que txt soit
+     visuellement à gauche et numbers à droite (cohérent avec la dispo desktop A). */
+  .cmp-banner-title {
+    flex-direction: row-reverse !important;
+    text-align: left !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-width: 0;
+  }
+  .cmp-banner-txt { flex: 1 1 0; min-width: 0; padding-top: 0 !important; }
+  .cmp-banner-txt strong { font-size: 0.85rem !important; line-height: 1.1 !important; }
+  .cmp-banner-sub { display: block !important; font-size: 0.66rem !important; margin-top: 0 !important; line-height: 1.1 !important; }
+  /* Score + delta empilés verticalement à droite. */
+  .cmp-banner-numbers { flex-direction: column !important; gap: 2px !important; align-items: flex-end !important; flex-shrink: 0; }
+  .cmp-banner-score { font-size: 0.78rem !important; padding: 1px 6px !important; }
+  .cmp-banner-delta { display: inline-block !important; font-size: 0.62rem !important; padding: 0px 4px !important; }
+  /* Abréviation du nom : variant short en mobile, full caché. */
+  .cb-name-full { display: none !important; }
+  .cb-name-short { display: inline !important; }
+
+  /* ── Cartes empilées verticalement. La carte B est plus haute (55/45) parce
+     que la légende flotte par-dessus son bas → on compense pour avoir des
+     surfaces VISIBLES à peu près équivalentes. ── */
+  .cmp-split { flex-direction: column; }
+  .cmp-map-wrap {
+    min-height: 0 !important; min-width: 0;
+    border-right: none;
+    border-bottom: 1px solid var(--border-chrome);
+  }
+  #cmp-wrap-a { flex: 0 1 45% !important; }
+  #cmp-wrap-b { flex: 0 1 55% !important; border-bottom: none; }
+  /* En mode Diff (1 seule carte) : la carte affichée prend TOUTE la hauteur.
+     !important pour battre le flex 45/55 ci-dessus (qui a aussi !important). */
+  body.is-cmp-diff-show-a #cmp-wrap-a { flex: 1 1 100% !important; border-bottom: none !important; }
+  body.is-cmp-diff-show-b #cmp-wrap-b { flex: 1 1 100% !important; }
+
+  /* ── Mid-bar : logique HAUT/BAS (A en haut, badge au milieu, B en bas).
+     Tooltip Leaflet masqué — le mid-bar fait le job seul sur mobile.
+     Position verticale alignée sur la séparation 45/55 des cartes. ── */
+  .cmp-tooltip { display: none !important; }
+  #cmp-mid-bar {
+    /* La row 3 (avec delta) est ~20 px plus haute que la row 1 (sans). Pour
+       que le BADGE = (au centre vertical de la row 2) reste pile sur la tranche
+       45/55 des cartes malgré cette dissymétrie, on shift le mid-bar vers le
+       bas de la moitié de cette différence (~10px). */
+    top: calc(45% + 10px) !important; left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    padding: 6px 10px !important;
+    grid-template-columns: 1fr auto !important;
+    grid-template-rows: auto auto auto !important;
+    gap: 2px 10px !important;
+    align-items: center !important;
+    font-size: 0.72rem;
+    width: calc(100vw - 80px) !important;
+    max-width: 320px !important;
+  }
+  /* Filet horizontal de part et d'autre du badge =/≠ au milieu.
+     IMPORTANT :
+     - display: flex requis pour que les ::before/::after rendent
+     - justify-self: stretch surcharge le `center` desktop sinon l'élément ne
+       prendrait que la largeur du badge → les filets n'ont nulle part où aller. */
+  .cmp-mid-bar-frontiers {
+    display: flex !important;
+    justify-self: stretch !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+  .cmp-mid-bar-frontiers::before,
+  .cmp-mid-bar-frontiers::after {
+    content: '';
+    flex: 1 1 0;
+    height: 1px;
+    background: var(--border-modal);
+  }
+  /* Numéro inliné juste avant le nom (gain de hauteur) : on cache le .num qui
+     prenait sa propre ligne et on injecte "23 · " via ::before sur le bureau,
+     lu depuis l'attribut data-num posé par le JS. */
+  .cmp-mid-bar-bureau-num { display: none !important; }
+  .cmp-mid-bar-bureau {
+    display: flex !important; flex-direction: row !important;
+    align-items: baseline !important; gap: 4px !important;
+    min-width: 0;
+    max-width: 60% !important;   /* cap pour que la marquee se déclenche plus souvent */
+  }
+  .cmp-mid-bar-bureau[data-num]::before {
+    content: attr(data-num) " · ";
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-chrome-muted);
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  /* Marquee sur les dénominations longues — révélé via .has-marquee posé par JS
+     quand le contenu déborde. L'animation revient à 0 et repart. */
+  .cmp-mid-bar-bureau-denom { overflow: hidden; flex: 1 1 0; min-width: 0; }
+  .cmp-mid-bar-bureau-denom-inner { display: inline-block; will-change: transform; }
+  .cmp-mid-bar-bureau-denom.has-marquee .cmp-mid-bar-bureau-denom-inner {
+    animation: cmpMidBarMarquee 8s ease-in-out infinite;
+  }
+  @keyframes cmpMidBarMarquee {
+    0%, 12%  { transform: translateX(0); }
+    50%, 62% { transform: translateX(var(--marquee-d, 0)); }
+    100%     { transform: translateX(0); }
+  }
+  /* Ligne A : sans delta donc row 1 est naturellement plus courte que row 3.
+     Tout centré verticalement dans la cellule. */
+  .cmp-mid-bar-bureau-a {
+    grid-column: 1 !important; grid-row: 1 !important;
+    align-self: center !important;
+    align-items: flex-start !important; text-align: left !important;
+  }
+  .cmp-mid-bar-numbers-a {
+    grid-column: 2 !important; grid-row: 1 !important;
+    align-self: center !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+  }
+  /* Badge =/≠ au centre, span sur les 2 cols */
+  .cmp-mid-bar-frontiers {
+    grid-column: 1 / 3 !important; grid-row: 2 !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 2px 0;
+  }
+  /* Ligne B : bureau-b et score-b alignés au TOP de la row (le score est le
+     1er enfant de numbers-b, le delta vient dessous). */
+  .cmp-mid-bar-bureau-b {
+    grid-column: 1 !important; grid-row: 3 !important;
+    align-self: start !important;
+    align-items: flex-start !important; text-align: left !important;
+  }
+  .cmp-mid-bar-numbers-b {
+    grid-column: 2 !important; grid-row: 3 !important;
+    align-self: start !important;
+    align-items: flex-end !important;
+    justify-content: flex-start !important;
+  }
+  .cmp-mid-bar-bureau-num { font-size: 0.62rem; }
+  .cmp-mid-bar-bureau-denom { font-size: 0.72rem; }
+  .cmp-mid-bar-score { font-size: 0.82rem; }
+  .cmp-mid-bar-delta { font-size: 0.66rem; }
+  .cmp-mid-bar-rail { display: none; }
+  .cmp-mid-bar-frontiers-badge { font-size: 0.78rem; }
+
+  /* ── Mode Diff mobile : drawer latéral GAUCHE qui slide (pattern #nav-sheet),
+     onglet vertical sur la tranche gauche pour l'ouvrir, carte full-screen,
+     mid-bar remontée sous la cmp-banner. ── */
+  body.is-cmp-diff #cmp-diff-drawer {
+    display: flex !important;
+    top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+    width: 100vw !important; height: 100% !important;
+    max-width: none !important; max-height: none !important;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1) !important;
+  }
+  body.is-cmp-diff:not(.is-cmp-diff-collapsed) #cmp-diff-drawer {
+    transform: translateX(0) !important;
+  }
+  /* Drag désactivé en mobile */
+  .cmp-diff-header { cursor: default; }
+  body.is-cmp-diff-dragging .cmp-diff-header { cursor: default; }
+  /* Onglet "📊 Graph" sur la tranche gauche — clone exact de #global-tab :
+     flex-column, icône en haut + label horizontal en bas, posée à mi-hauteur,
+     bg-card, border-left supprimée, border-radius arrondi à droite seulement. */
+  body.is-cmp-diff.is-cmp-diff-collapsed #cmp-diff-reopen {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 3px !important;
+    position: absolute !important;
+    left: 0 !important; right: auto !important;
+    top: 50% !important; bottom: auto !important;
+    transform: translateY(-50%) !important;
+    background: var(--bg-card) !important;
+    color: var(--text-modal) !important;
+    border: 1px solid var(--border-modal) !important;
+    border-left: none !important;
+    border-radius: 0 8px 8px 0 !important;
+    padding: 8px 5px !important;
+    font-family: inherit !important;
+    font-size: 0.55rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.03em !important;
+    text-transform: uppercase !important;
+    box-shadow: 2px 3px 10px rgba(0,0,0,0.18) !important;
+    z-index: 500;
+  }
+  body.is-cmp-diff.is-cmp-diff-collapsed #cmp-diff-reopen .gtab-icon { font-size: 0.9rem; }
+  body.is-cmp-diff.is-cmp-diff-collapsed #cmp-diff-reopen .gtab-label { writing-mode: horizontal-tb; }
+  body.is-cmp-diff.is-cmp-diff-collapsed #cmp-diff-reopen:hover { background: var(--bg-modal-hover) !important; }
+  body.is-cmp-diff.is-cmp-diff-collapsed #cmp-diff-reopen:active { transform: translateY(-50%) scale(0.96) !important; }
+  /* En mode Diff mobile, la mid-bar remonte au-dessus de la carte (sous la cmp-banner) */
+  body.is-cmp-diff #cmp-mid-bar {
+    top: 6px !important;
+    transform: translate(-50%, 0) !important;
+  }
+
+  /* ── Mode Nuage — mini-carte cachée, scatter plein espace ── */
+  #cmp-nuage-mini { display: none; }
+  /* Le container du nuage s'arrête AU-DESSUS de la barre des boutons modes
+     pour que la légende du bas du graphe (axe X + label "A · ...") ne soit pas
+     cachée par la barre. ~64px = hauteur barre boutons + petit gap. */
+  body.is-cmp-nuage #cmp-nuage { bottom: 24px !important; }
+  /* Footer plus haut pour ne pas être collé à la légende */
+  #cmp-nuage-footer { bottom: 56px; font-size: 0.66rem; padding: 2px 10px; }
+
+  /* ── Légende : structure et CSS IDENTIQUES à #map-legend mobile.
+     ⚠️ Tous les overrides en !important car la règle par défaut `.cmp-legend`
+     (border-radius:999px pill, padding, etc.) vient PLUS BAS dans le fichier
+     que ce @media → l'ordre source la ferait gagner sans !important. ── */
+  .cmp-legend {
+    left: 8px !important; right: 8px !important;
+    bottom: 8px !important; top: auto !important;
+    transform: none !important;
+    max-width: none !important;
+    min-width: 0;
+    background: var(--bg-card) !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.18) !important;
+    border: 1px solid var(--border-modal) !important;
+    color: var(--text-modal) !important;
+    padding: 6px 8px !important;
+    border-radius: 8px !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: stretch !important;
+    gap: 0 !important;
+  }
+  /* Body wrappé : équivalent de #map-legend-body */
+  .cmp-legend-body {
+    order: 1; flex-basis: 100%;
+    display: none;
+    align-items: center; gap: 8px;
+    padding: 0 2px;
+    margin-bottom: 0;
+  }
+  .cmp-legend.expanded .cmp-legend-body {
+    display: flex; flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+  /* Mode buttons : reproduit #map-mode-btns + .mmbtn mobile exactement */
+  .cmp-mode-btns {
+    order: 2; flex: 1;
+    display: flex; gap: 2px; align-items: stretch;
+    margin-bottom: 0;
+    padding-right: 0;
+  }
+  .cmp-mode-btns .mmbtn {
+    flex: 1 1 0;
+    font-size: 0.75rem;
+    padding: 10px 4px;
+    min-width: 0;
+    min-height: 40px;
+  }
+  /* Chevron : équivalent de #legend-toggle mobile (28px width, height auto) */
+  .cmp-legend-toggle {
+    order: 3;
+    display: flex;
+    position: static;
+    width: 28px; height: auto;
+    margin-left: 4px;
+    flex-shrink: 0;
+    align-self: stretch;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-modal);
+    background: var(--bg-modal);
+    color: var(--text-modal);
+    font-size: 0.9rem; line-height: 1; font-family: inherit;
+    padding: 0;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 700;
+  }
+  .cmp-legend-toggle:hover {
+    color: var(--text-modal);
+    background: var(--bg-modal-hover);
+  }
+  /* Body bar/label/bound : héritent de leur taille naturelle, juste s'assurer
+     que le gradient prend la largeur dispo. */
+  .cmp-legend.expanded .cmp-legend-bar { width: auto; flex: 1 1 100px; height: 14px; }
+  .cmp-legend.expanded .cmp-legend-bound { font-size: 0.7rem; }
+  .cmp-legend.expanded .cmp-legend-label { font-size: 0.74rem; max-width: 140px; }
+  /* Mode relatif : 2 sous-bulles A/B normalement inline-flex côte à côte → on
+     les force en bloc plein-largeur pour qu'elles se stackent verticalement,
+     et la barre gradient à l'intérieur prend l'espace dispo. */
+  .cmp-legend.expanded .cmp-legend-side {
+    display: flex !important;
+    width: 100% !important;
+    flex-basis: 100% !important;
+    align-items: center;
+    gap: 8px;
+  }
+  .cmp-legend.expanded .cmp-legend-side .cmp-legend-bar {
+    flex: 1 1 0 !important;
+    width: auto !important;
+    height: 14px;
+  }
+}
+/* Desktop : le chevron n'a aucun rôle (la légende n'est jamais escamotée), on le cache.
+   Et la .cmp-legend-body en flow inline (n'est pas un container indépendant). */
+@media (min-width: 481px) {
+  .cmp-legend-toggle { display: none; }
+  .cmp-legend-body { display: contents; }  /* le wrapper devient transparent au layout */
 }
 .cmp-map { width: 100%; height: 100%; background: var(--bg-page); }
 /* Légende = bulle flottante compacte, centrée en bas, par-dessus les 2 cartes.
@@ -464,6 +1395,11 @@ body.is-cmp-diff #cmp-diff-sidebar {
 .cmp-legend-bar { width: 180px; height: 12px; border-radius: 3px; flex-shrink: 0; border: 1px solid var(--border-modal); cursor: crosshair; position: relative; }
 .cmp-legend-bound { font-variant-numeric: tabular-nums; color: var(--text-modal-muted); flex-shrink: 0; white-space: nowrap; }
 /* Toggle Abs/Rel — un mini button group dans la bulle légende */
+/* Mini-légende quartiers — affichée dans la bulle légende en mode Nuage. */
+.cmp-legend-quartiers { display: inline-flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; max-width: 480px; }
+.cmp-legend-quartier { display: inline-flex; align-items: center; gap: 4px; }
+.cmp-legend-quartier-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.18); }
+.cmp-legend-quartier-name { font-size: 0.7rem; color: var(--text-modal); white-space: nowrap; }
 .cmp-legend-mode { display: inline-flex; flex-shrink: 0; gap: 0; border: 1px solid var(--border-modal); border-radius: 5px; overflow: hidden; }
 .cmp-legend-mode button { background: var(--bg-modal); color: var(--text-modal-muted); border: none; padding: 3px 8px; font-family: inherit; font-size: 0.66rem; font-weight: 700; cursor: pointer; transition: background .12s, color .12s; }
 .cmp-legend-mode button + button { border-left: 1px solid var(--border-modal); }
@@ -1105,7 +2041,8 @@ select#el-select {
 #legend-toggle{display:flex;align-items:center;justify-content:center;border:1px solid var(--border-modal);background:var(--bg-modal);cursor:pointer;color:var(--text-modal);font-size:0.9rem;line-height:1;padding:0;border-radius:4px;font-weight:700;}
 #legend-toggle:hover{color:var(--text-modal);background:var(--bg-modal-hover);}
 .legend-toggle-chev{display:inline-block;transition:transform .18s ease;}
-#map-legend.expanded #legend-toggle .legend-toggle-chev{transform:rotate(180deg);}
+#map-legend.expanded #legend-toggle .legend-toggle-chev,
+.cmp-legend.expanded .cmp-legend-toggle .legend-toggle-chev{transform:rotate(180deg);}
 /* Quand la légende n'est PAS expanded, on cache le body et on enlève le margin-bottom
    des boutons modes (sinon vide visuel sous la barre des modes). */
 #map-legend:not(.expanded) #map-legend-body{display:none;}
@@ -2077,7 +3014,7 @@ input:focus-visible,
       <circle cx="10.5" cy="10.5" r="1" fill="currentColor" stroke="none"/>
     </svg>
   </button>
-  <button class="tb-compare-btn" id="tb-compare-btn" onclick="openCompareModal()" title="Comparer deux sélections" aria-label="Comparer deux sélections">
+  <button class="tb-compare-btn" id="tb-compare-btn" onclick="document.body.classList.contains('is-compare') ? exitComparison() : openCompareModal()" title="Comparer deux sélections" aria-label="Comparer deux sélections">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
       <path d="M2.5 5h9l-2-2"/>
       <path d="M2.5 5l2 2"/>
@@ -2155,13 +3092,50 @@ input:focus-visible,
     <span class="cmp-side-letter cmp-side-letter-b" aria-hidden="true">B</span>
   </div>
   <div class="cmp-split">
-    <!-- Sidebar dédiée au mode Diff (stats + top swings + quartiers).
-         Position absolue → flotte par-dessus la carte (style identique à #sidebar). -->
-    <aside id="cmp-diff-sidebar" aria-label="Statistiques de la comparaison"></aside>
+    <!-- Fenêtre flottante dédiée au mode Diff (tornado/dumbbell quartier/bureau).
+         Position absolute → centrée sur l'espace carte. Masquée hors mode diff.
+         Bouton X la replie → chip de réouverture en bas-droite. -->
+    <aside id="cmp-diff-drawer" aria-label="Statistiques de la comparaison"></aside>
+    <button id="cmp-diff-reopen" type="button" aria-label="Afficher le graph"
+            onclick="_cmpToggleDiffPanel(false)"><span class="gtab-icon" aria-hidden="true">📊</span><span class="gtab-label">Graph</span></button>
     <div class="cmp-map-wrap" id="cmp-wrap-a"><div id="cmp-map-a" class="cmp-map"></div></div>
     <div class="cmp-map-wrap" id="cmp-wrap-b"><div id="cmp-map-b" class="cmp-map"></div></div>
+    <!-- Mini-bandeau central (Abs+Rel) : bureau A | score A | =/Inégal | score B+delta | bureau B. -->
+    <div id="cmp-mid-bar" aria-hidden="true">
+      <div class="cmp-mid-bar-bureau cmp-mid-bar-bureau-a">
+        <div class="cmp-mid-bar-bureau-num"></div>
+        <div class="cmp-mid-bar-bureau-denom"></div>
+      </div>
+      <div class="cmp-mid-bar-numbers cmp-mid-bar-numbers-a">
+        <span class="cmp-mid-bar-score" data-side="A"></span>
+      </div>
+      <div class="cmp-mid-bar-frontiers">
+        <span class="cmp-mid-bar-frontiers-badge"></span>
+      </div>
+      <div class="cmp-mid-bar-numbers cmp-mid-bar-numbers-b">
+        <span class="cmp-mid-bar-score" data-side="B"></span>
+        <span class="cmp-mid-bar-delta"></span>
+      </div>
+      <div class="cmp-mid-bar-bureau cmp-mid-bar-bureau-b">
+        <div class="cmp-mid-bar-bureau-num"></div>
+        <div class="cmp-mid-bar-bureau-denom"></div>
+      </div>
+      <!-- Filet vertical sous le badge =/≠ : prolonge la tranche entre les 2 cartes
+           jusqu'au signe. Positionné en absolute → ignoré par le grid. -->
+      <div class="cmp-mid-bar-rail"></div>
+    </div>
     <!-- Légende = bulle flottante au centre, par-dessus les 2 cartes (échelle commune). -->
     <div class="cmp-legend" id="cmp-legend"></div>
+    <!-- Mode Nuage : scatter A×B + mini-carte de réf. Masqué hors mode nuage.
+         Remplit l'espace des cartes (qui sont masquées via body.is-cmp-nuage). -->
+    <div id="cmp-nuage" aria-label="Nuage de corrélation A et B">
+      <svg id="cmp-nuage-svg" aria-hidden="true"></svg>
+      <div id="cmp-nuage-tooltip" aria-hidden="true"></div>
+      <div id="cmp-nuage-mini">
+        <div id="cmp-nuage-mini-map"></div>
+      </div>
+      <div id="cmp-nuage-footer"></div>
+    </div>
   </div>
 </div>
 
@@ -7529,6 +8503,23 @@ function updateFooter() {
     if (!_cmpState) return null;
     return { A: _cmpState.A, B: _cmpState.B, scaleMode: _cmpState.scaleMode || 'absolute' };
   };
+  // Expositions pour l'export image (composeCompare dans l'IIFE des exports).
+  // Donne accès aux helpers internes + à la state complète (style fns, ranges).
+  window._cmpExport = {
+    getState: () => _cmpState,
+    shortLabelOfSel: shortLabelOfSel,
+    baseColorOfSel: baseColorOfSel,
+    getSheetForSel: getSheetForSel,
+    computeDiffBureauList: computeDiffBureauList,
+    computeDiffByQuartier: computeDiffByQuartier,
+    computeCityScore: computeCityScore,
+    displaySide: () => _cmpDisplaySide(),
+    // Pour l'export image : construit le markup SVG du nuage à des dimensions
+    // données → permet au scatter de REMPLIR la box d'export sans letterboxing.
+    buildNuageSvgInner: (W, H, opts) => _buildNuageSvgInner(W, H, opts),
+  };
+  // Alias top-level pour les call sites qui en ont besoin (drawCompareMap, etc.).
+  window._cmpDisplaySide = () => _cmpDisplaySide();
   // Helper pour déclencher l'écriture du hash depuis l'IIFE (sécurise les accès).
   function syncCmpUrl() { if (typeof writeURLState === 'function') writeURLState(); }
 
@@ -7550,10 +8541,17 @@ function updateFooter() {
     if (_cmpState.mapB) { _cmpState.mapB.remove(); _cmpState.mapB = null; }
     _cmpState.layersA = null; _cmpState.layersB = null;
     _cmpState.geoA = null;    _cmpState.geoB = null;
+    // Reset du mini-bandeau central (sera réactivé sur hover après ré-init).
+    if (typeof hideCmpMidBar === 'function') hideCmpMidBar();
   }
   window.exitComparison = function() {
     if (!_cmpState) return;
-    document.body.classList.remove('is-compare');
+    document.body.classList.remove('is-compare', 'is-cmp-diff', 'is-cmp-diff-show-a', 'is-cmp-diff-show-b', 'is-cmp-diff-collapsed', 'is-cmp-nuage');
+    // Reset de la position draguée → la fenêtre Diff revient centrée au prochain passage.
+    const drawerForReset = document.getElementById('cmp-diff-drawer');
+    if (drawerForReset) { drawerForReset.style.left = ''; drawerForReset.style.top = ''; drawerForReset.style.transform = ''; }
+    // Nettoyage du nuage (svg + mini-carte Leaflet)
+    if (typeof cleanupNuage === 'function') cleanupNuage();
     cleanCmpResources();
     _cmpState = null;
     // Nettoie les params compare du hash (writeURLState lit getCmpState() → null).
@@ -7599,14 +8597,208 @@ function updateFooter() {
   // le tooltip sur la couche correspondante de l'autre carte (même n° de bureau).
   // Effet "cartes jumelles" : permet de comparer directement le même bureau sur
   // les 2 scrutins sans bouger la souris.
-  function bindCmpHoverSync(layersFrom, layersTo) {
+  // Helper : ID d'un bureau dans une ère donnée, à partir de son b2026 canonique.
+  // Retourne null si aucune correspondance n'existe (bureau créé après l'ère, ou
+  // disparu avant). Si la valeur est un array (lignée multi-bureaux fusionnés),
+  // on prend le 1er élément.
+  function _bureauIdInEra(b2026, era) {
+    if (typeof BUREAU_CORRESPONDANCES === 'undefined' || !b2026) return null;
+    const corr = BUREAU_CORRESPONDANCES[b2026];
+    if (!corr || typeof corr !== 'object') return null;
+    const v = corr[era];
+    if (Array.isArray(v)) {
+      const f = v[0];
+      return f ? (typeof f === 'string' ? f : (f && f.id) || null) : null;
+    }
+    return v || null;
+  }
+  // Helper : à partir d'un ns dans une ère donnée, retourne le ns du même bureau
+  // physique (b2026 canonique) dans une autre ère, ou null si le bureau n'existe
+  // pas dans l'autre ère.
+  //
+  // ⚠️ On RÉSOUT TOUJOURS depuis BUREAU_CORRESPONDANCES via _resolveB2026FromHist
+  // (qui a son cache interne) plutôt que de truster `feature.properties.b2026`,
+  // car ce dernier est documenté comme potentiellement faux pour les anciennes
+  // ères (geodata.js généré sans tenir compte des renumérotations). Cf. CLAUDE.md.
+  function _crossEraNs(ns, eraFrom, eraOther) {
+    if (eraFrom === eraOther) return ns;
+    const b2026 = _resolveB2026FromHist(ns, eraFrom);
+    return _bureauIdInEra(b2026, eraOther);
+  }
+  // Mode Diff : quelle map afficher ? La plus récente des 2 ères. Permet de voir
+  // tous les bureaux qui existent en B (créations récentes invisibles sur les
+  // découpages anciens) et de présenter une géographie familière au lecteur.
+  // Le calcul du delta reste B − A (orientation choisie par l'utilisateur via
+  // ses sélections A/B) — seule la map de fond change.
+  function _cmpDisplaySide() {
+    if (!_cmpState) return 'A';
+    const eraA = parseInt(((ELECTIONS[_cmpState.A.elec] || {}).my || '0')) || 0;
+    const eraB = parseInt(((ELECTIONS[_cmpState.B.elec] || {}).my || '0')) || 0;
+    return eraB > eraA ? 'B' : 'A';
+  }
+
+  function bindCmpHoverSync(layersFrom, layersTo, sideFrom) {
     Object.keys(layersFrom).forEach(function(ns) {
       const lFrom = layersFrom[ns];
-      const lTo = layersTo[ns];
-      if (!lFrom || !lTo) return;
-      lFrom.on('mouseover', function() { lTo.openTooltip(); });
-      lFrom.on('mouseout',  function() { lTo.closeTooltip(); });
+      if (!lFrom) return;
+      // Résout l'ID dans l'ère de l'AUTRE côté via BUREAU_CORRESPONDANCES, pour
+      // que la sync hover marche aussi quand A et B sont sur des ères différentes
+      // (et que le même bureau a été renuméroté). Si le bureau n'existe pas dans
+      // l'autre ère, lTo sera null → on bind quand même le mouseover (mid-bar
+      // affichera "inexistant" côté manquant) mais on n'ouvre pas de tooltip.
+      const eraFrom = String((ELECTIONS[_cmpState[sideFrom].elec] || {}).my || '');
+      const otherSide = sideFrom === 'A' ? 'B' : 'A';
+      const eraOther = String((ELECTIONS[_cmpState[otherSide].elec] || {}).my || '');
+      let nsOther = ns;
+      if (eraFrom !== eraOther) {
+        const b2026 = _resolveB2026FromHist(ns, eraFrom);
+        nsOther = _bureauIdInEra(b2026, eraOther);
+      }
+      const lTo = nsOther ? layersTo[nsOther] : null;
+      lFrom.on('mouseover', function() {
+        if (lTo) lTo.openTooltip();
+        updateCmpMidBar(ns, lFrom.feature, sideFrom);
+      });
+      lFrom.on('mouseout', function() {
+        if (lTo) lTo.closeTooltip();
+        hideCmpMidBar();
+      });
     });
+  }
+
+  // ── Mini-bandeau central (Abs+Rel) — mirroir réduit de la banner du haut ───
+  // Layout : 3 cols × 2 rangées.
+  //   Rangée 1 : Bureau A | badge =/≠ (span 2 rangées) | Bureau B
+  //   Rangée 2 : Score A  |                            | Score B + delta
+  // Le bureau A est lu dans l'ère de A (BUREAU_INFO[eraA]), idem côté B.
+  // Badge "=" : frontières inchangées entre les 2 ères ; "≠" : redécoupage
+  // détecté via REDECOUPAGES sur l'intervalle d'ères.
+  // Masqué en mode Diff (la sidebar dédiée couvre ce besoin) et hors hover.
+  function updateCmpMidBar(ns, feature, sideFrom) {
+    if (!_cmpState) return;
+    const bar = document.getElementById('cmp-mid-bar');
+    if (!bar) return;
+    const eraA = String((ELECTIONS[_cmpState.A.elec] || {}).my || '');
+    const eraB = String((ELECTIONS[_cmpState.B.elec] || {}).my || '');
+    // Résout les IDs des 2 côtés via BUREAU_CORRESPONDANCES.
+    // - Côté hovered : on garde ns tel quel (déjà dans la bonne ère).
+    // - Autre côté : on remonte au b2026 canonique puis on redescend dans son ère.
+    // Si null → le bureau n'existe pas dans cette ère (création/disparition).
+    // On résout TOUJOURS depuis BUREAU_CORRESPONDANCES via _resolveB2026FromHist
+    // (cache interne), pas depuis feature.properties.b2026 qui peut être faux.
+    const fromSide = sideFrom || 'A';
+    const eraFrom = fromSide === 'A' ? eraA : eraB;
+    const b2026 = _resolveB2026FromHist(ns, eraFrom);
+    const nsA = (fromSide === 'A') ? ns : _crossEraNs(ns, eraFrom, eraA);
+    const nsB = (fromSide === 'B') ? ns : _crossEraNs(ns, eraFrom, eraB);
+    const sheetA = getSheetForSel(_cmpState.A);
+    const sheetB = getSheetForSel(_cmpState.B);
+    const dA = nsA ? sheetA[nsA] : null;
+    const dB = nsB ? sheetB[nsB] : null;
+    const sA = dA ? scoreOfSelInBureau(dA, _cmpState.A) : { pct: 0, present: false };
+    const sB = dB ? scoreOfSelInBureau(dB, _cmpState.B) : { pct: 0, present: false };
+    const infoA = nsA ? ((BUREAU_INFO[eraA] || {})[nsA] || {}) : {};
+    const infoB = nsB ? ((BUREAU_INFO[eraB] || {})[nsB] || {}) : {};
+    // Helper : pose le texte de denom dans un span inner (pour le marquee mobile).
+    // Détecte le débordement après rendu et applique .has-marquee + variable
+    // CSS --marquee-d pour le translateX de l'animation.
+    function setDenom(denomEl, text) {
+      denomEl.innerHTML = '<span class="cmp-mid-bar-bureau-denom-inner"></span>';
+      const inner = denomEl.firstChild;
+      inner.textContent = text;
+      // Mesure différée pour laisser le layout se faire.
+      requestAnimationFrame(() => {
+        if (!inner.isConnected) return;
+        const overflow = inner.scrollWidth - denomEl.clientWidth;
+        if (overflow > 2) {
+          denomEl.classList.add('has-marquee');
+          denomEl.style.setProperty('--marquee-d', '-' + overflow + 'px');
+        } else {
+          denomEl.classList.remove('has-marquee');
+          denomEl.style.removeProperty('--marquee-d');
+        }
+      });
+    }
+    // Bureau A : si nsA est null → "Bureau inexistant" (état muted/italic).
+    // data-num : utilisé par la CSS mobile pour inliner "23 · " avant le denom (gain de hauteur).
+    const elBA = bar.querySelector('.cmp-mid-bar-bureau-a');
+    if (nsA) {
+      elBA.querySelector('.cmp-mid-bar-bureau-num').textContent  = 'Bureau n°' + parseInt(nsA);
+      elBA.setAttribute('data-num', parseInt(nsA));
+      setDenom(elBA.querySelector('.cmp-mid-bar-bureau-denom'), infoA.den || infoA.nom || '');
+      elBA.classList.remove('inexistant');
+    } else {
+      elBA.querySelector('.cmp-mid-bar-bureau-num').textContent  = '';
+      elBA.removeAttribute('data-num');
+      setDenom(elBA.querySelector('.cmp-mid-bar-bureau-denom'), 'Bureau inexistant');
+      elBA.classList.add('inexistant');
+    }
+    // Bureau B : idem côté droit.
+    const elBB = bar.querySelector('.cmp-mid-bar-bureau-b');
+    if (nsB) {
+      elBB.querySelector('.cmp-mid-bar-bureau-num').textContent  = 'Bureau n°' + parseInt(nsB);
+      elBB.setAttribute('data-num', parseInt(nsB));
+      setDenom(elBB.querySelector('.cmp-mid-bar-bureau-denom'), infoB.den || infoB.nom || '');
+      elBB.classList.remove('inexistant');
+    } else {
+      elBB.querySelector('.cmp-mid-bar-bureau-num').textContent  = '';
+      elBB.removeAttribute('data-num');
+      setDenom(elBB.querySelector('.cmp-mid-bar-bureau-denom'), 'Bureau inexistant');
+      elBB.classList.add('inexistant');
+    }
+    // Badge "=" ou "≠" : forcé "≠" si un côté manque (frontières objectivement
+    // différentes), sinon détection REDECOUPAGES habituelle.
+    const oneMissing = !nsA || !nsB;
+    const mods = (typeof bureauModifBetween === 'function' && b2026)
+      ? bureauModifBetween(b2026, eraA, eraB)
+      : [];
+    const frontEl = bar.querySelector('.cmp-mid-bar-frontiers-badge');
+    if (!oneMissing && mods.length === 0) {
+      frontEl.textContent = '=';
+      frontEl.className = 'cmp-mid-bar-frontiers-badge same';
+    } else {
+      frontEl.textContent = '≠';
+      frontEl.className = 'cmp-mid-bar-frontiers-badge unequal';
+    }
+    // Scores — tag coloré, même traitement que .cmp-banner-score (fond = couleur
+    // de la sélection, texte adaptatif). Réutilise baseColorOfSel + pickTextColorForBg.
+    const fmtP = p => p.toFixed(1).replace('.', ',');
+    const pickTxt = (typeof pickTextColorForBg === 'function') ? pickTextColorForBg : () => '#fff';
+    const bgA = baseColorOfSel(_cmpState.A);
+    const bgB = baseColorOfSel(_cmpState.B);
+    bar.querySelectorAll('.cmp-mid-bar-score').forEach(el => {
+      const isA = el.dataset.side === 'A';
+      const s = isA ? sA : sB;
+      if (s.present) {
+        el.textContent = fmtP(s.pct) + ' %';
+        const bg = isA ? bgA : bgB;
+        el.style.background = bg;
+        el.style.color = pickTxt(bg);
+        el.classList.remove('missing');
+      } else {
+        el.textContent = '—';
+        el.style.background = '';
+        el.style.color = '';
+        el.classList.add('missing');
+      }
+    });
+    // Delta uniquement sous le score B (cohérent avec la banner du haut).
+    const deltaEl = bar.querySelector('.cmp-mid-bar-delta');
+    if (!sA.present || !sB.present) {
+      deltaEl.textContent = '–';
+      deltaEl.className = 'cmp-mid-bar-delta neutral';
+    } else {
+      const diff = sB.pct - sA.pct;
+      const sign = diff >= 0.05 ? '+' : (diff <= -0.05 ? '−' : '');
+      const cls  = diff >= 0.05 ? 'pos' : (diff <= -0.05 ? 'neg' : 'neutral');
+      deltaEl.textContent = sign + Math.abs(diff).toFixed(1).replace('.', ',') + ' pts';
+      deltaEl.className = 'cmp-mid-bar-delta ' + cls;
+    }
+    bar.classList.add('visible');
+  }
+  function hideCmpMidBar() {
+    const bar = document.getElementById('cmp-mid-bar');
+    if (bar) bar.classList.remove('visible');
   }
 
   function activateCompareMode(A, B) {
@@ -7614,6 +8806,16 @@ function updateFooter() {
     const prevMode = (_cmpState && _cmpState.scaleMode) || 'absolute';
     _cmpState = { A, B, mapA: null, mapB: null, syncing: false, scaleMode: prevMode };
     document.body.classList.add('is-compare');
+    // Si on restaure le mode diff (depuis URL ou swap), repose les classes
+    // is-cmp-diff-show-a/b selon la plus récente des 2 ères (cf. _cmpDisplaySide).
+    if (prevMode === 'diff') {
+      const ds = _cmpDisplaySide();
+      document.body.classList.add('is-cmp-diff');
+      document.body.classList.toggle('is-cmp-diff-show-a', ds === 'A');
+      document.body.classList.toggle('is-cmp-diff-show-b', ds === 'B');
+    } else {
+      document.body.classList.remove('is-cmp-diff', 'is-cmp-diff-show-a', 'is-cmp-diff-show-b');
+    }
     // Sheets + scores ville + ranges (par côté + partagé).
     const sheetA = getSheetForSel(A);
     const sheetB = getSheetForSel(B);
@@ -7656,12 +8858,14 @@ function updateFooter() {
       _cmpState.mapA.on('move zoom moveend zoomend', syncFromTo(_cmpState.mapA, _cmpState.mapB));
       _cmpState.mapB.on('move zoom moveend zoomend', syncFromTo(_cmpState.mapB, _cmpState.mapA));
       // Synchro hover : tooltips jumeaux (hover bureau X sur A → tooltip aussi sur B).
-      bindCmpHoverSync(a.layers, b.layers);
-      bindCmpHoverSync(b.layers, a.layers);
+      bindCmpHoverSync(a.layers, b.layers, 'A');
+      bindCmpHoverSync(b.layers, a.layers, 'B');
       // Highlight bureaux au survol du gradient de légende (sur les 2 cartes).
       bindLegendHover();
       // Si on est resté en mode diff (swap, edit), rendre la sidebar dédiée.
       if (_cmpState.scaleMode === 'diff') renderDiffSidebar();
+      // Idem mode nuage : re-générer le scatter + mini-carte avec les nouvelles A/B.
+      if (_cmpState.scaleMode === 'nuage') renderNuage();
       // URL partageable : encode A/B dans le hash (lecture via getCmpState).
       syncCmpUrl();
     }, 50);
@@ -7679,19 +8883,42 @@ function updateFooter() {
   function buildBannerTitle(sel, score, delta) {
     const elec = sel.elec;
     const tour = sel.tour;
-    const tourLabel = tour === 'T1' ? '1ᵉʳ tour' : tour === 'T2' ? '2ᵉ tour' : 'tour unique';
+    // Tour : masqué pour TU + référendums (pas pertinent).
+    const isRef = (typeof isReferendum === 'function') && isReferendum(elec);
+    let tourLabel = '';
+    if (!isRef) {
+      if (tour === 'T1') tourLabel = '1ᵉʳ tour';
+      else if (tour === 'T2') tourLabel = '2ᵉ tour';
+      // TU : pas de tour affiché (un seul tour, pas pertinent)
+    }
+    // quoiLabel : version FULL (desktop) + version SHORT (mobile) dans 2 spans,
+    // CSS bascule l'un ou l'autre selon le viewport.
     let quoiLabel = sel.quoi;
     if (sel.type === 'candidat') {
       const cd = CAND_DATA[sel.quoi] || {};
       if (Array.isArray(cd.binome) && cd.binome.length === 2 && typeof binomeMembers === 'function') {
         const ms = binomeMembers(sel.quoi);
-        if (ms) quoiLabel = ms.map(m => ((m.p ? m.p + ' ' : '') + (m.n || '')).trim()).join(' / ');
+        if (ms) {
+          const full = ms.map(m => ((m.p ? m.p + ' ' : '') + (m.n || '')).trim()).join(' / ');
+          const short = ms.map(m => {
+            const inits = (m.p || '').split('-').map(p => (p[0] || '').toUpperCase()).filter(Boolean).join('');
+            return ((inits ? inits + '. ' : '') + (m.n || '')).trim();
+          }).join(' / ');
+          const pa = cd.pa || '';
+          quoiLabel = '<span class="cb-name-full">' + full + (pa ? ' (' + pa + ')' : '') + '</span>'
+                    + '<span class="cb-name-short">' + short + (pa ? ' · ' + pa : '') + '</span>';
+        }
       } else {
         const person = cd.person ? (PERSONS[cd.person] || {}) : {};
-        quoiLabel = ((person.p || cd.p || '') + ' ' + (person.n || cd.n || sel.quoi)).trim();
+        const prenom = (person.p || cd.p || '').trim();
+        const nom = (person.n || cd.n || sel.quoi).trim();
+        const inits = prenom.split('-').map(p => (p[0] || '').toUpperCase()).filter(Boolean).join('');
+        const full = ((prenom ? prenom + ' ' : '') + nom).trim();
+        const short = ((inits ? inits + '. ' : '') + nom).trim();
+        const pa = cd.pa || '';
+        quoiLabel = '<span class="cb-name-full">' + full + (pa ? ' (' + pa + ')' : '') + '</span>'
+                  + '<span class="cb-name-short">' + short + (pa ? ' · ' + pa : '') + '</span>';
       }
-      const pa = cd.pa ? ' (' + cd.pa + ')' : '';
-      quoiLabel += pa;
     } else if (sel.type === 'bloc') {
       quoiLabel = (BLOC_CONFIG[sel.quoi] || {}).label || sel.quoi;
       quoiLabel = 'Bloc ' + quoiLabel.toLowerCase();
@@ -7721,7 +8948,8 @@ function updateFooter() {
     // texte (label + sub). L'ordre DOM est constant ; le sens visuel diffère via
     // flex-direction sur .cmp-banner-title-{a,b} (B = row, A = row-reverse).
     const numbers = '<div class="cmp-banner-numbers">' + scoreTag + deltaTag + '</div>';
-    const txt = '<div class="cmp-banner-txt"><strong>' + quoiLabel + '</strong><span class="cmp-banner-sub">' + elec + ' · ' + tourLabel + '</span></div>';
+    const subText = elec + (tourLabel ? ' · ' + tourLabel : '');
+    const txt = '<div class="cmp-banner-txt"><strong>' + quoiLabel + '</strong><span class="cmp-banner-sub">' + subText + '</span></div>';
     return numbers + txt;
   }
 
@@ -7818,12 +9046,15 @@ function updateFooter() {
       return 'linear-gradient(to right, ' + lowEnd + ' 0%, ' + c + ' 100%)';
     }
     function fmt(p) { return p.toFixed(1).replace('.', ',') + ' %'; }
-    // Toggle Abs/Rel/Diff — onClick global défini dans window.toggleCmpScale.
+    // Toggle Abs/Rel/Diff/Nuage — structure miroir de #map-mode-btns (avec
+     // class .mmbtn → réutilise le styling existant du mode carte normal).
+    const onCls = m => mode === m ? ' mmbtn on' : ' mmbtn';
     const toggle = ''
-      + '<div class="cmp-legend-mode" role="group" aria-label="Échelle">'
-      + '  <button type="button" data-mode="absolute"' + (mode === 'absolute' ? ' class="on"' : '') + ' data-tooltip="Échelle absolue (partagée A/B)" onclick="toggleCmpScale(\'absolute\')">Abs</button>'
-      + '  <button type="button" data-mode="relative"' + (mode === 'relative' ? ' class="on"' : '') + ' data-tooltip="Échelle relative (par côté)" onclick="toggleCmpScale(\'relative\')">Rel</button>'
-      + '  <button type="button" data-mode="diff"'     + (mode === 'diff'     ? ' class="on"' : '') + ' data-tooltip="Différence B − A par bureau" onclick="toggleCmpScale(\'diff\')">Diff</button>'
+      + '<div class="cmp-mode-btns" role="group" aria-label="Échelle">'
+      + '  <button type="button" class="' + onCls('absolute').trim() + '" data-mode="absolute" data-tooltip="Échelle absolue (partagée A/B)" onclick="toggleCmpScale(\'absolute\')">Abs</button>'
+      + '  <button type="button" class="' + onCls('relative').trim() + '" data-mode="relative" data-tooltip="Échelle relative (par côté)" onclick="toggleCmpScale(\'relative\')">Rel</button>'
+      + '  <button type="button" class="' + onCls('diff').trim()     + '" data-mode="diff"     data-tooltip="Différence B − A par bureau" onclick="toggleCmpScale(\'diff\')">Diff</button>'
+      + '  <button type="button" class="' + onCls('nuage').trim()    + '" data-mode="nuage"    data-tooltip="Nuage de corrélation A × B (1 point = 1 bureau)" onclick="toggleCmpScale(\'nuage\')">Nuage</button>'
       + '</div>';
     let body = '';
     if (mode === 'diff') {
@@ -7861,6 +9092,10 @@ function updateFooter() {
         + '<span class="cmp-legend-bound">' + minStr + '</span>'
         + '<div class="cmp-legend-bar" id="cmp-legend-bar-shared" style="' + barStyle + '"><div class="cmp-legend-cursor" id="cmp-legend-cursor"></div></div>'
         + '<span class="cmp-legend-bound">' + maxStr + '</span>';
+    } else if (mode === 'nuage') {
+      // Pas de body : la bulle se réduit au toggle. Les quartiers sont identifiés
+      // dans le tooltip de chaque point (cf. _nuageHover).
+      body = '';
     } else {
       // Mode relatif : 2 sous-bulles A et B, chacune avec son range local.
       const rA = _cmpState.rangeA, rB = _cmpState.rangeB;
@@ -7873,38 +9108,65 @@ function updateFooter() {
       }
       body = side('A', labA, colA, rA) + side('B', labB, colB, rB);
     }
-    root.innerHTML = toggle + body;
+    // Body wrappé dans un container dédié → on peut le hide/show en bloc sur mobile.
+    // Chevron : structure IDENTIQUE à #legend-toggle (mêmes classes pour réutiliser
+     // la rotation .legend-toggle-chev existante).
+    const bodyWrap = '<div class="cmp-legend-body">' + body + '</div>';
+    const chev = '<button class="cmp-legend-toggle" type="button" aria-label="Afficher/masquer la légende" onclick="_cmpToggleLegend()"><span class="legend-toggle-chev">▾</span></button>';
+    root.innerHTML = bodyWrap + toggle + chev;
   }
+  // Toggle escamotable de la légende sur mobile.
+  window._cmpToggleLegend = function() {
+    const root = document.getElementById('cmp-legend');
+    if (root) root.classList.toggle('expanded');
+  };
   // Bascule du mode d'échelle (absolu / relatif / diff). Recolorie les cartes,
   // re-rend la légende, et adapte le layout (1 map en mode diff, 2 sinon).
   window.toggleCmpScale = function(mode) {
     if (!_cmpState || _cmpState.scaleMode === mode) return;
     _cmpState.scaleMode = mode;
-    // Layout : mode diff = 1 seule map (A), pleine largeur ; sinon 2 cartes côte à côte.
+    // Layout : mode diff = 1 seule map (celle de l'ère la plus RÉCENTE), pleine
+    // largeur. Les classes is-cmp-diff-show-a/b pilotent quel cmp-wrap-* est
+    // affiché. is-cmp-diff reste posée pour les règles génériques (drawer diff).
+    const displaySide = _cmpDisplaySide();
     document.body.classList.toggle('is-cmp-diff', mode === 'diff');
+    document.body.classList.toggle('is-cmp-diff-show-a', mode === 'diff' && displaySide === 'A');
+    document.body.classList.toggle('is-cmp-diff-show-b', mode === 'diff' && displaySide === 'B');
+    document.body.classList.toggle('is-cmp-nuage', mode === 'nuage');
+    // Fenêtre flottante FERMÉE par défaut à l'entrée en Diff — on veut que la
+    // carte soit ce qu'on voit d'abord. Le chip "Graph" en bas-droite la rouvre.
+    // Hors Diff (abs/rel) : on retire la classe pour nettoyer.
+    document.body.classList.toggle('is-cmp-diff-collapsed', mode === 'diff');
     // invalidateSize après le re-layout pour que Leaflet recompute les dimensions.
     setTimeout(() => {
       if (_cmpState && _cmpState.mapA && _cmpState.mapA.invalidateSize) _cmpState.mapA.invalidateSize(false);
       if (_cmpState && _cmpState.mapB && _cmpState.mapB.invalidateSize) _cmpState.mapB.invalidateSize(false);
     }, 50);
+    // Reset du mini-bandeau central au switch de mode — évite qu'il ressurgisse
+    // avec un contenu obsolète (le mid-bar reste visible en Diff aussi).
+    hideCmpMidBar();
     // Recolorie : geo.setStyle(geo.options.style) re-évalue styleOf, qui branche
     // diff/abs/rel via _cmpState.scaleMode.
     if (_cmpState.geoA) _cmpState.geoA.setStyle(_cmpState.geoA.options.style);
     if (_cmpState.geoB) _cmpState.geoB.setStyle(_cmpState.geoB.options.style);
-    // Mode diff : reconstruire les tooltips (le contenu change avec le mode).
-    if (_cmpState.geoA) {
-      _cmpState.geoA.eachLayer(layer => {
-        if (layer.feature && _cmpState.mapA && _cmpState.mapA._cmpRebuildTooltipFor) {
-          _cmpState.mapA._cmpRebuildTooltipFor(layer);
-        }
-      });
-    }
+    // Reconstruire les tooltips DU CÔTÉ AFFICHÉ en diff (le contenu change avec
+    // le mode). En Abs/Rel, on rebuild les 2 (par sécurité, peu coûteux).
+    const sidesToRebuild = (mode === 'diff') ? [displaySide] : ['A', 'B'];
+    sidesToRebuild.forEach(s => {
+      const geo = _cmpState['geo' + s], map = _cmpState['map' + s];
+      if (!geo || !map || !map._cmpRebuildTooltipFor) return;
+      geo.eachLayer(layer => { if (layer.feature) map._cmpRebuildTooltipFor(layer); });
+    });
     renderCmpLegend('cmp-legend', _cmpState.A, _cmpState.B);
     bindLegendHover();
     // Sidebar dédiée au mode diff — rendue à chaque entrée (les stats peuvent
     // avoir changé via swap ou edit). En sortie du mode diff, on vide le HTML.
     if (mode === 'diff') renderDiffSidebar();
-    else { const sb = document.getElementById('cmp-diff-sidebar'); if (sb) sb.innerHTML = ''; }
+    else { const sb = document.getElementById('cmp-diff-drawer'); if (sb) sb.innerHTML = ''; }
+    // Mode Nuage : rendre le scatter + mini-carte. À chaque entrée car les
+    // données peuvent avoir changé (swap, edit). À la sortie, on nettoie.
+    if (mode === 'nuage') renderNuage();
+    else { cleanupNuage(); }
     if (typeof writeURLState === 'function') writeURLState();
   };
 
@@ -7968,15 +9230,26 @@ function updateFooter() {
     function highlightDiffAt(targetDiff) {
       const maxAbs = Math.max(0.01, _cmpState.diffMaxAbs || 1);
       const tol = Math.max(0.5, Math.min(2.5, (2 * maxAbs) * 0.04));
-      const layers = _cmpState.layersA, geo = _cmpState.geoA;
-      const sheetA = getSheetForSel(_cmpState.A), sheetB = getSheetForSel(_cmpState.B);
+      // Itère sur la map AFFICHÉE (la plus récente) — l'autre est cachée.
+      const displaySide = _cmpDisplaySide();
+      const otherSide = displaySide === 'A' ? 'B' : 'A';
+      const layers = _cmpState['layers' + displaySide], geo = _cmpState['geo' + displaySide];
+      const sheetSelf = getSheetForSel(_cmpState[displaySide]);
+      const sheetOther = getSheetForSel(_cmpState[otherSide]);
       if (!layers || !geo) return;
+      const eraSelf = String((ELECTIONS[_cmpState[displaySide].elec] || {}).my || '');
+      const eraOther = String((ELECTIONS[_cmpState[otherSide].elec] || {}).my || '');
       Object.entries(layers).forEach(([ns, layer]) => {
-        const dA = sheetA[ns], dB = sheetB[ns];
-        if (!dA || !dB) return;
-        const sA = scoreOfSelInBureau(dA, _cmpState.A);
-        const sB = scoreOfSelInBureau(dB, _cmpState.B);
-        if (!sA.present || !sB.present) return;
+        const dSelf = sheetSelf[ns];
+        if (!dSelf) return;
+        const nsOther = _crossEraNs(ns, eraSelf, eraOther);
+        const dOther = nsOther ? sheetOther[nsOther] : null;
+        if (!dOther) return;
+        const sSelf = scoreOfSelInBureau(dSelf, _cmpState[displaySide]);
+        const sOther = scoreOfSelInBureau(dOther, _cmpState[otherSide]);
+        if (!sSelf.present || !sOther.present) return;
+        const sA = displaySide === 'A' ? sSelf : sOther;
+        const sB = displaySide === 'B' ? sSelf : sOther;
         const d = sB.pct - sA.pct;
         if (Math.abs(d - targetDiff) <= tol) {
           layer.setStyle({ weight: 2.6, color: '#000' });
@@ -8098,16 +9371,28 @@ function updateFooter() {
   // 0 toujours au milieu (blanc/gris). Permet une lecture honnête du sens du swing.
   function computeDiffMaxAbs(sheetA, selA, sheetB, selB) {
     let mx = 0;
-    const bureaux = new Set([...Object.keys(sheetA || {}), ...Object.keys(sheetB || {})]);
-    bureaux.forEach(ns => {
+    // Itère depuis la map AFFICHÉE (la plus récente des 2 ères). Pour chaque
+    // bureau du côté affiché, cross-ère vers l'autre via BUREAU_CORRESPONDANCES.
+    const eraA = String((ELECTIONS[selA.elec] || {}).my || '');
+    const eraB = String((ELECTIONS[selB.elec] || {}).my || '');
+    const displaySide = (parseInt(eraB || '0') > parseInt(eraA || '0')) ? 'B' : 'A';
+    const sheetSelf = displaySide === 'A' ? sheetA : sheetB;
+    const sheetOther = displaySide === 'A' ? sheetB : sheetA;
+    const selSelf = displaySide === 'A' ? selA : selB;
+    const selOther = displaySide === 'A' ? selB : selA;
+    const eraSelf = displaySide === 'A' ? eraA : eraB;
+    const eraOther = displaySide === 'A' ? eraB : eraA;
+    Object.keys(sheetSelf || {}).forEach(ns => {
       if (ns === '0057') return;
-      const dA = sheetA && sheetA[ns];
-      const dB = sheetB && sheetB[ns];
-      if (!dA || !dB) return;
-      const sA = scoreOfSelInBureau(dA, selA);
-      const sB = scoreOfSelInBureau(dB, selB);
-      if (!sA.present || !sB.present) return;
-      const d = Math.abs(sB.pct - sA.pct);
+      const dSelf = sheetSelf[ns];
+      if (!dSelf) return;
+      const nsOther = _crossEraNs(ns, eraSelf, eraOther);
+      const dOther = nsOther ? sheetOther[nsOther] : null;
+      if (!dOther) return;
+      const sSelf = scoreOfSelInBureau(dSelf, selSelf);
+      const sOther = scoreOfSelInBureau(dOther, selOther);
+      if (!sSelf.present || !sOther.present) return;
+      const d = Math.abs(sSelf.pct - sOther.pct);
       if (d > mx) mx = d;
     });
     return mx;
@@ -8139,15 +9424,31 @@ function updateFooter() {
   // On ne garde que ceux où A ET B sont présents (sinon delta non défini).
   function computeDiffBureauList(sheetA, selA, sheetB, selB) {
     const out = [];
-    const ns_set = new Set([...Object.keys(sheetA || {}), ...Object.keys(sheetB || {})]);
-    ns_set.forEach(ns => {
+    // Itère depuis la map AFFICHÉE (la plus récente). Le `ns` renvoyé sert à
+    // zoomCmpToBureau qui cible les layers du côté affiché.
+    const eraA = String((ELECTIONS[selA.elec] || {}).my || '');
+    const eraB = String((ELECTIONS[selB.elec] || {}).my || '');
+    const displaySide = (parseInt(eraB || '0') > parseInt(eraA || '0')) ? 'B' : 'A';
+    const sheetSelf = displaySide === 'A' ? sheetA : sheetB;
+    const sheetOther = displaySide === 'A' ? sheetB : sheetA;
+    const selSelf = displaySide === 'A' ? selA : selB;
+    const selOther = displaySide === 'A' ? selB : selA;
+    const eraSelf = displaySide === 'A' ? eraA : eraB;
+    const eraOther = displaySide === 'A' ? eraB : eraA;
+    Object.keys(sheetSelf || {}).forEach(ns => {
       if (ns === '0057') return;
-      const dA = sheetA[ns], dB = sheetB[ns];
-      if (!dA || !dB) return;
-      const sA = scoreOfSelInBureau(dA, selA);
-      const sB = scoreOfSelInBureau(dB, selB);
-      if (!sA.present || !sB.present) return;
-      out.push({ ns, pctA: sA.pct, pctB: sB.pct, diff: sB.pct - sA.pct });
+      const dSelf = sheetSelf[ns];
+      if (!dSelf) return;
+      const nsOther = _crossEraNs(ns, eraSelf, eraOther);
+      const dOther = nsOther ? sheetOther[nsOther] : null;
+      if (!dOther) return;
+      const sSelf = scoreOfSelInBureau(dSelf, selSelf);
+      const sOther = scoreOfSelInBureau(dOther, selOther);
+      if (!sSelf.present || !sOther.present) return;
+      // pctA et pctB selon convention user (sB − sA reste la formule du delta).
+      const pctA = displaySide === 'A' ? sSelf.pct : sOther.pct;
+      const pctB = displaySide === 'B' ? sSelf.pct : sOther.pct;
+      out.push({ ns, pctA, pctB, diff: pctB - pctA });
     });
     return out;
   }
@@ -8184,18 +9485,35 @@ function updateFooter() {
   // Quartier "Nul" (bureau 0057) exclu, idem quartiers vides.
   function computeDiffByQuartier(sheetA, selA, sheetB, selB) {
     const eraA = String((ELECTIONS[selA.elec] || {}).my || '');
-    const yi = BUREAU_INFO[eraA] || {};
+    const eraB = String((ELECTIONS[selB.elec] || {}).my || '');
+    // Itère depuis la map AFFICHÉE (la plus récente) → quartiers lus dans
+    // BUREAU_INFO de cette ère. Cross-era pour récupérer le bureau correspondant
+    // de l'autre côté.
+    const displaySide = (parseInt(eraB || '0') > parseInt(eraA || '0')) ? 'B' : 'A';
+    const eraSelf = displaySide === 'A' ? eraA : eraB;
+    const eraOther = displaySide === 'A' ? eraB : eraA;
+    const sheetSelf = displaySide === 'A' ? sheetA : sheetB;
+    const sheetOther = displaySide === 'A' ? sheetB : sheetA;
+    const selSelf = displaySide === 'A' ? selA : selB;
+    const selOther = displaySide === 'A' ? selB : selA;
+    const yi = BUREAU_INFO[eraSelf] || {};
     const agg = {}; // quartier → { voixA, eA, voixB, eB }
     Object.keys(yi).forEach(ns => {
       if (ns === '0057') return;
-      const dA = sheetA[ns], dB = sheetB[ns];
-      if (!dA || !dB) return;
-      const sA = scoreOfSelInBureau(dA, selA);
-      const sB = scoreOfSelInBureau(dB, selB);
-      if (!sA.present || !sB.present) return;
+      const dSelf = sheetSelf[ns];
+      if (!dSelf) return;
+      const nsOther = _crossEraNs(ns, eraSelf, eraOther);
+      const dOther = nsOther ? sheetOther[nsOther] : null;
+      if (!dOther) return;
+      const sSelf = scoreOfSelInBureau(dSelf, selSelf);
+      const sOther = scoreOfSelInBureau(dOther, selOther);
+      if (!sSelf.present || !sOther.present) return;
       const q = (yi[ns].q || '').trim();
       if (!q || q === 'Nul') return;
       if (!agg[q]) agg[q] = { voixA: 0, eA: 0, voixB: 0, eB: 0 };
+      // Selon side affiché, dSelf/dOther correspondent à A ou B.
+      const dA = displaySide === 'A' ? dSelf : dOther;
+      const dB = displaySide === 'B' ? dSelf : dOther;
       agg[q].voixA += sumVoixOfSelInBureau(dA, selA);
       agg[q].eA    += dA.e || 0;
       agg[q].voixB += sumVoixOfSelInBureau(dB, selB);
@@ -8207,9 +9525,9 @@ function updateFooter() {
       return { quartier: q, pctA, pctB, diff: pctB - pctA };
     });
   }
-  // Rend le contenu de la sidebar Diff. Appelée à l'entrée en mode diff et au swap.
+  // Rend le contenu de la drawer Diff. Appelée à l'entrée en mode diff et au swap.
   function renderDiffSidebar() {
-    const root = document.getElementById('cmp-diff-sidebar');
+    const root = document.getElementById('cmp-diff-drawer');
     if (!root || !_cmpState || _cmpState.scaleMode !== 'diff') return;
     const A = _cmpState.A, B = _cmpState.B;
     const sheetA = getSheetForSel(A), sheetB = getSheetForSel(B);
@@ -8223,60 +9541,811 @@ function updateFooter() {
     // Helpers d'affichage
     const fmtSigned = d => (d >= 0.05 ? '+' : d <= -0.05 ? '−' : '') + Math.abs(d).toFixed(1).replace('.', ',') + '\xa0pts';
     const clsOf = d => d >= 0.05 ? 'pos' : d <= -0.05 ? 'neg' : 'neutral';
+    // nameOfBureau lit l'ère du côté AFFICHÉ (le plus récent) car le `ns`
+    // renvoyé par computeDiffBureauList est exprimé dans cette ère.
+    const displaySideN = _cmpDisplaySide();
+    const eraDisplay = String((ELECTIONS[_cmpState[displaySideN].elec] || {}).my || '');
     const nameOfBureau = ns => {
-      const eraA = String((ELECTIONS[A.elec] || {}).my || '');
-      return ((BUREAU_INFO[eraA] || {})[ns] || {}).den || ('Bureau ' + parseInt(ns));
+      return ((BUREAU_INFO[eraDisplay] || {})[ns] || {}).den || ('Bureau ' + parseInt(ns));
     };
-    // Construction du HTML — pas de "Score ville" ici (déjà visible dans la bannière).
-    let html = '';
-    // 2. Top swing positif (B progresse le +)
-    if (topPos.length) {
-      html += '<div class="cmp-diff-sec"><h4>Où B progresse le plus</h4>';
-      topPos.forEach(r => {
-        html += '<div class="cmp-diff-item" onclick="zoomCmpToBureau(\'' + r.ns + '\')">'
-          + '<span class="cmp-diff-item-num">N°' + parseInt(r.ns) + '</span>'
-          + '<span class="cmp-diff-item-name">' + nameOfBureau(r.ns) + '</span>'
-          + '<span class="cmp-diff-item-delta ' + clsOf(r.diff) + '">' + fmtSigned(r.diff) + '</span>'
-          + '</div>';
-      });
-      html += '</div>';
+    // Helper de rendu d'une ligne tornado. Factorisée pour le globalItem
+    // (ligne "VILLE" qui ressort) et les items normaux (quartiers ou bureaux).
+    function renderTornadoRow(diff, name, options) {
+      options = options || {};
+      const isNeg = diff < 0;
+      // 38 (et non 50) : on garde ~12 % de marge par côté pour que le texte
+      // de valeur en bout de barre rentre sans déborder dans le cas "outside".
+      const widthPct = Math.abs(diff) / options.maxAbs * 38;
+      // Seuil "inside" : si la barre est ≥ 22 % de la zone bars (≈ 33-44 px
+      // selon la largeur sidebar), la valeur tient à l'intérieur en blanc.
+      const inOut = widthPct >= 22 ? 'inside' : 'outside';
+      const onClick = options.onClick || '';
+      const onEnter = options.onEnter || '';
+      const onLeave = options.onLeave || '';
+      const cls = 'cmp-diff-tornado-row'
+        + (options.global ? ' cmp-diff-tornado-row-global' : '')
+        + (onClick ? ' clickable' : '');
+      // data-full-name : lu par la CSS ::after pour afficher un tooltip custom
+      // au-dessus de la ligne au hover (pas le tooltip natif lent et moche).
+      const tooltipAttr = options.tooltip ? ' data-full-name="' + String(options.tooltip).replace(/"/g, '&quot;') + '"' : '';
+      const handlers = (onClick ? ' onclick="' + onClick + '"' : '')
+        + (onEnter ? ' onmouseenter="' + onEnter + '"' : '')
+        + (onLeave ? ' onmouseleave="' + onLeave + '"' : '');
+      return '<div class="' + cls + '"' + tooltipAttr + handlers + '>'
+        + '<span class="cmp-diff-tornado-name">' + name + '</span>'
+        + '<div class="cmp-diff-tornado-bars">'
+        + '<div class="cmp-diff-tornado-axis"></div>'
+        + '<div class="cmp-diff-tornado-bar ' + (isNeg ? 'neg' : 'pos') + ' ' + inOut + '" style="width:' + widthPct.toFixed(2) + '%">'
+        + '<span class="cmp-diff-tornado-value">' + fmtSigned(diff) + '</span>'
+        + '</div></div></div>';
     }
-    // 3. Top swing négatif (B recule le +)
-    if (topNeg.length) {
-      html += '<div class="cmp-diff-sec"><h4>Où B recule le plus</h4>';
-      topNeg.forEach(r => {
-        html += '<div class="cmp-diff-item" onclick="zoomCmpToBureau(\'' + r.ns + '\')">'
-          + '<span class="cmp-diff-item-num">N°' + parseInt(r.ns) + '</span>'
-          + '<span class="cmp-diff-item-name">' + nameOfBureau(r.ns) + '</span>'
-          + '<span class="cmp-diff-item-delta ' + clsOf(r.diff) + '">' + fmtSigned(r.diff) + '</span>'
-          + '</div>';
+    // Rend un tornado chart avec optionnellement une ligne "Ville" globale
+    // INSÉRÉE dans le tri par delta signé (pas en tête). Cette ligne ressort
+    // visuellement via la classe `cmp-diff-tornado-row-global` mais sa position
+    // se lit comme une référence : où la ville se situe parmi les quartiers/bureaux.
+    // hooks : { getOnEnter(q), getOnLeave(q) } pour le hover synchro carte/sidebar.
+    function renderTornado(items, getName, getOnClick, globalItem, hooks) {
+      hooks = hooks || {};
+      if (!items.length && !globalItem) return '<div class="cmp-diff-empty">Pas de comparaison disponible.</div>';
+      const merged = globalItem
+        ? [...items, { diff: globalItem.diff, _name: globalItem.name, _isGlobal: true }]
+        : [...items];
+      merged.sort((a, b) => b.diff - a.diff);
+      const maxAbs = Math.max(0.01, ...merged.map(q => Math.abs(q.diff)));
+      const containerClass = 'cmp-diff-tornado' + (hooks.containerClass ? ' ' + hooks.containerClass : '');
+      let h = '<div class="' + containerClass + '">';
+      merged.forEach(q => {
+        if (q._isGlobal) {
+          h += renderTornadoRow(q.diff, q._name, { maxAbs, global: true });
+        } else {
+          h += renderTornadoRow(q.diff, getName(q), {
+            maxAbs,
+            onClick: getOnClick ? getOnClick(q) : '',
+            onEnter: hooks.getOnEnter ? hooks.getOnEnter(q) : '',
+            onLeave: hooks.getOnLeave ? hooks.getOnLeave(q) : '',
+            tooltip: hooks.getTooltip ? hooks.getTooltip(q) : '',
+          });
+        }
       });
-      html += '</div>';
+      h += '</div>';
+      return h;
     }
-    // 4. Quartiers (tri par |delta| décroissant)
-    if (byQuartier.length) {
-      html += '<div class="cmp-diff-sec"><h4>Par quartier</h4>';
-      byQuartier.forEach(q => {
-        html += '<div class="cmp-diff-item">'
-          + '<span class="cmp-diff-item-num"></span>'
-          + '<span class="cmp-diff-item-name">' + q.quartier + '</span>'
-          + '<span class="cmp-diff-item-delta ' + clsOf(q.diff) + '">' + fmtSigned(q.diff) + '</span>'
-          + '</div>';
+    // ── Dumbbell chart ────────────────────────────────────────────────────
+    // Pour chaque item : axe horizontal (range dynamique min/max ± marge),
+    // point de départ (score A, cercle gris), ligne vers le point d'arrivée
+    // (score B, flèche), couleur selon le signe du delta.
+    function renderDumbbellRow(pctA, pctB, name, options) {
+      options = options || {};
+      const diff = pctB - pctA;
+      const isFlat = Math.abs(diff) < 0.05;
+      const dirCls = isFlat ? 'neutral' : (diff < 0 ? 'neg' : 'pos');
+      const range = options.axisMax - options.axisMin || 1;
+      // PAD : marge réservée à chaque côté du track pour les labels A/B. La
+      // donnée [axisMin, axisMax] est mappée dans [PAD, 100-PAD] % du track →
+      // même au bord du range, les labels SIDE rentrent toujours sans clipper.
+      const PAD = 14;
+      const dataSpan = 100 - 2 * PAD;
+      const leftA = Math.max(PAD, Math.min(100 - PAD, PAD + (pctA - options.axisMin) / range * dataSpan));
+      const leftB = Math.max(PAD, Math.min(100 - PAD, PAD + (pctB - options.axisMin) / range * dataSpan));
+      const connLeft = Math.min(leftA, leftB);
+      const connWidth = Math.abs(leftB - leftA);
+      const onClick = options.onClick || '';
+      const onEnter = options.onEnter || '';
+      const onLeave = options.onLeave || '';
+      const cls0 = 'cmp-diff-dumbbell-row'
+        + (options.global ? ' cmp-diff-dumbbell-row-global' : '')
+        + (onClick ? ' clickable' : '');
+      const tooltipAttr = options.tooltip ? ' data-full-name="' + String(options.tooltip).replace(/"/g, '&quot;') + '"' : '';
+      const handlers = (onClick ? ' onclick="' + onClick + '"' : '')
+        + (onEnter ? ' onmouseenter="' + onEnter + '"' : '')
+        + (onLeave ? ' onmouseleave="' + onLeave + '"' : '');
+      const fmtPct = v => v.toFixed(1).replace('.', ',') + '\xa0%';
+      // Labels toujours sur la même ligne, côté extérieur de la connexion :
+      //   pos → A à gauche du dot A, B à droite de la flèche B
+      //   neg → A à droite, B à gauche
+      // Le PAD ci-dessus garantit qu'ils ne clippent jamais — fini la logique `above`.
+      const aClasses = 'cmp-diff-dumbbell-label cmp-diff-dumbbell-label-a ' + dirCls;
+      const bClasses = 'cmp-diff-dumbbell-label cmp-diff-dumbbell-label-b ' + dirCls;
+      return '<div class="' + cls0 + '"' + tooltipAttr + handlers + '>'
+        + '<span class="cmp-diff-dumbbell-name">' + name + '</span>'
+        + '<div class="cmp-diff-dumbbell-track">'
+        + '<div class="cmp-diff-dumbbell-conn ' + dirCls + '" style="left:' + connLeft.toFixed(2) + '%;width:' + connWidth.toFixed(2) + '%"></div>'
+        + '<div class="cmp-diff-dumbbell-start" style="left:' + leftA.toFixed(2) + '%"></div>'
+        + '<div class="cmp-diff-dumbbell-end ' + dirCls + '" style="left:' + leftB.toFixed(2) + '%"></div>'
+        + '<span class="' + aClasses + '" style="left:' + leftA.toFixed(2) + '%">' + fmtPct(pctA) + '</span>'
+        + '<span class="' + bClasses + '" style="left:' + leftB.toFixed(2) + '%">' + fmtPct(pctB) + '</span>'
+        + '</div></div>';
+    }
+    function renderDumbbell(items, getName, getOnClick, globalItem, hooks) {
+      hooks = hooks || {};
+      if (!items.length && !globalItem) return '<div class="cmp-diff-empty">Pas de comparaison disponible.</div>';
+      const merged = globalItem
+        ? [...items, { pctA: globalItem.pctA, pctB: globalItem.pctB, diff: globalItem.diff, _name: globalItem.name, _isGlobal: true }]
+        : [...items];
+      // Tri par score de départ (A) descendant — vue "qui était leader au départ,
+      // où en est-on maintenant", complémentaire au tornado trié par |delta|.
+      merged.sort((a, b) => b.pctA - a.pctA);
+      // Range dynamique : min et max de tous les pcts (A et B), ± 2 % de marge.
+      const allPcts = [];
+      merged.forEach(q => { allPcts.push(q.pctA, q.pctB); });
+      const margin = 2;
+      const axisMin = Math.max(0, Math.min(...allPcts) - margin);
+      const axisMax = Math.min(100, Math.max(...allPcts) + margin);
+      // Guides verticaux pointillés.
+      //   1) Si la plage englobe 25/50/75 → on les utilise (priorité aux paliers
+      //      historiques de scrutins).
+      //   2) Sinon (cas typique : comparaison sur un petit score, 4-6 %), on
+      //      tombe en fallback "nice ticks" — un step rond (1, 2, 5, 10, ...)
+      //      calculé depuis la largeur de la plage pour qu'au moins UN repère
+      //      sur un chiffre rond apparaisse.
+      const range = (axisMax - axisMin) || 1;
+      const PAD_GUIDE = 14;
+      const dataSpan = 100 - 2 * PAD_GUIDE;
+      let guides = [50, 25, 75].filter(v => v >= axisMin && v <= axisMax);
+      if (!guides.length) {
+        const rawStep = range / 2;
+        const expG = Math.pow(10, Math.floor(Math.log10(rawStep)));
+        const f = rawStep / expG;
+        const niceStep = f < 1.5 ? expG : f < 3 ? 2 * expG : f < 7 ? 5 * expG : 10 * expG;
+        const startTick = Math.ceil(axisMin / niceStep) * niceStep;
+        for (let t = startTick; t <= axisMax + 1e-9; t += niceStep) {
+          guides.push(Math.round(t * 100) / 100);
+        }
+      }
+      const fmtGuide = v => (Number.isInteger(v) ? String(v) : v.toFixed(1).replace('.', ',')) + '\xa0%';
+      const guidesHtml = guides.map(v => {
+        const trackPct = (PAD_GUIDE + (v - axisMin) / range * dataSpan) / 100;
+        return '<div class="cmp-diff-dumbbell-guide" style="--pct:' + trackPct.toFixed(4) + '">'
+          +    '<span class="cmp-diff-dumbbell-guide-label">' + fmtGuide(v) + '</span>'
+          +  '</div>';
+      }).join('');
+      const containerClass = 'cmp-diff-dumbbell' + (hooks.containerClass ? ' ' + hooks.containerClass : '');
+      // Wrapper .cmp-diff-dumbbell-rows isole les rows pour que :nth-child(even)
+      // du zébré ne soit pas décalé par les guides (qui sont siblings du wrapper).
+      let h = '<div class="' + containerClass + '">' + guidesHtml + '<div class="cmp-diff-dumbbell-rows">';
+      merged.forEach(q => {
+        if (q._isGlobal) {
+          h += renderDumbbellRow(q.pctA, q.pctB, q._name, { axisMin, axisMax, global: true });
+        } else {
+          h += renderDumbbellRow(q.pctA, q.pctB, getName(q), {
+            axisMin, axisMax,
+            onClick: getOnClick ? getOnClick(q) : '',
+            onEnter: hooks.getOnEnter ? hooks.getOnEnter(q) : '',
+            onLeave: hooks.getOnLeave ? hooks.getOnLeave(q) : '',
+            tooltip: hooks.getTooltip ? hooks.getTooltip(q) : '',
+          });
+        }
       });
-      html += '</div>';
+      h += '</div></div>';  // .cmp-diff-dumbbell-rows + .cmp-diff-dumbbell
+      return h;
     }
+    // ── Données ville pour le globalItem (pctA, pctB et delta). ───────────
+    const scoreA = computeCityScore(sheetA, A);
+    const scoreB = computeCityScore(sheetB, B);
+    const globalItem = (typeof scoreA === 'number' && typeof scoreB === 'number')
+      ? { pctA: scoreA, pctB: scoreB, diff: scoreB - scoreA, name: 'La Rochelle' }
+      : null;
+    // Tous les bureaux comparables triés par delta signé descendant (cohérent
+    // avec le tri quartier : progressions en haut → reculs en bas).
+    const allSorted = [...all].sort((a, b) => b.diff - a.diff);
+    // Tornado (écart) — vues actuelles.
+    const tornadoQuartier = renderTornado(byQuartier, q => q.quartier, null, globalItem);
+    const tornadoBureau   = renderTornado(allSorted,
+      r => parseInt(r.ns) + '\xa0·\xa0' + nameOfBureau(r.ns),
+      r => "zoomCmpToBureau('" + r.ns + "')",
+      globalItem,
+      {
+        containerClass: 'left',
+        getOnEnter: r => "_cmpRowHover('" + r.ns + "')",
+        getOnLeave: r => "_cmpRowUnhover('" + r.ns + "')",
+        getTooltip: r => parseInt(r.ns) + ' · ' + nameOfBureau(r.ns),
+      });
+    // Dumbbell (absolu) — nouvelles vues.
+    const dumbbellQuartier = renderDumbbell(byQuartier, q => q.quartier, null, globalItem);
+    const dumbbellBureau   = renderDumbbell(allSorted,
+      r => parseInt(r.ns) + '\xa0·\xa0' + nameOfBureau(r.ns),
+      r => "zoomCmpToBureau('" + r.ns + "')",
+      globalItem,
+      {
+        containerClass: 'left',
+        getOnEnter: r => "_cmpRowHover('" + r.ns + "')",
+        getOnLeave: r => "_cmpRowUnhover('" + r.ns + "')",
+        getTooltip: r => parseInt(r.ns) + ' · ' + nameOfBureau(r.ns),
+      });
+    // Composition des panes : chaque tab contient les 2 vues (écart + absolu),
+    // un seul est .on à la fois selon le sub-toggle.
+    const paneQuartier = '<div class="cmp-diff-view on" data-mode="ecart">' + tornadoQuartier + '</div>'
+      + '<div class="cmp-diff-view" data-mode="absolu">' + dumbbellQuartier + '</div>';
+    const paneBureau = '<div class="cmp-diff-view on" data-mode="ecart">' + tornadoBureau + '</div>'
+      + '<div class="cmp-diff-view" data-mode="absolu">' + dumbbellBureau + '</div>';
+    // Header : tabs (Quartier/Bureau) à gauche + sub-toggle (Écart/Absolu) + X à droite.
+    // - Quartier actif par défaut (vue d'ensemble plus lisible)
+    // - Écart actif par défaut (le tornado, vue habituelle "qui swing le +")
+    let html = '<div class="cmp-diff-header">'
+      +   '<div class="cmp-diff-tabs">'
+      +     '<button data-tab="quartier" class="on" onclick="_cmpSwitchDiffTab(this)">Quartier</button>'
+      +     '<button data-tab="bureau" onclick="_cmpSwitchDiffTab(this)">Bureau</button>'
+      +   '</div>'
+      +   '<div class="cmp-diff-header-actions">'
+      +     '<div class="cmp-diff-subtoggle">'
+      +       '<button data-mode="ecart" class="on" onclick="_cmpSwitchDiffMode(this)">Écart</button>'
+      +       '<button data-mode="absolu" onclick="_cmpSwitchDiffMode(this)">Absolu</button>'
+      +     '</div>'
+      +     '<button class="cmp-diff-close" type="button" aria-label="Masquer les statistiques"'
+      +     ' data-tooltip="Masquer" onclick="_cmpToggleDiffPanel(true)">✕</button>'
+      +   '</div>'
+      + '</div>'
+      + '<div class="cmp-diff-body">'
+      +   '<div class="cmp-diff-tab-pane on" data-pane="quartier">' + paneQuartier + '</div>'
+      +   '<div class="cmp-diff-tab-pane" data-pane="bureau">' + paneBureau + '</div>'
+      + '</div>';
     root.innerHTML = html;
   }
+  // Bascule d'onglet dans la drawer Diff (déclaré global window car appelé via
+  // onclick inline généré par innerHTML).
+  window._cmpSwitchDiffTab = function(btn) {
+    const tab = btn.getAttribute('data-tab');
+    const root = document.getElementById('cmp-diff-drawer');
+    if (!root) return;
+    root.querySelectorAll('.cmp-diff-tabs button').forEach(b => b.classList.toggle('on', b === btn));
+    root.querySelectorAll('.cmp-diff-tab-pane').forEach(p => p.classList.toggle('on', p.getAttribute('data-pane') === tab));
+  };
+  // Bascule de mode (écart/absolu) — swap toutes les vues .cmp-diff-view pour
+  // que dans CHAQUE tab pane, le bon panneau soit affiché.
+  window._cmpSwitchDiffMode = function(btn) {
+    const mode = btn.getAttribute('data-mode');
+    const root = document.getElementById('cmp-diff-drawer');
+    if (!root) return;
+    root.querySelectorAll('.cmp-diff-subtoggle button').forEach(b => b.classList.toggle('on', b === btn));
+    root.querySelectorAll('.cmp-diff-view').forEach(v => v.classList.toggle('on', v.getAttribute('data-mode') === mode));
+  };
+  // Replie/rouvre la fenêtre flottante du mode Diff. Pilote la classe body
+  // `is-cmp-diff-collapsed` que la CSS branche sur l'affichage du panneau et
+  // du chip de réouverture.
+  window._cmpToggleDiffPanel = function(collapse) {
+    document.body.classList.toggle('is-cmp-diff-collapsed', !!collapse);
+  };
+  // Drag de la fenêtre flottante par la barre titre. Délégation d'événement
+  // au niveau document → survit aux re-renders d'innerHTML qui détruisent les
+  // listeners attachés sur .cmp-diff-header.
+  //   - On déclenche seulement si le mousedown est dans .cmp-diff-header ET
+  //     pas sur un élément interactif (bouton, tabs, sub-toggle).
+  //   - Position passe de `transform: translate(-50%, -50%)` (CSS centre) à
+  //     `top/left` explicites en px. La position est ensuite préservée tant
+  //     qu'on reste en comparaison ; exitComparison() pourrait nettoyer mais
+  //     ce n'est pas critique (l'élément est masqué).
+  //   - Contrainte : on garde au moins 60 px du panneau visible dans chaque
+  //     direction pour éviter qu'il sorte complètement de l'écran.
+  (function attachCmpDiffDrag() {
+    let dragging = false, startX = 0, startY = 0, startLeft = 0, startTop = 0;
+    let drawerEl = null, parentRect = null;
+    function onMove(e) {
+      if (!dragging || !drawerEl) return;
+      const dx = e.clientX - startX, dy = e.clientY - startY;
+      const w = drawerEl.offsetWidth, h = drawerEl.offsetHeight;
+      const minLeft = 60 - w;
+      const maxLeft = parentRect.width - 60;
+      const minTop = 0;
+      const maxTop = parentRect.height - 40;
+      const newLeft = Math.max(minLeft, Math.min(maxLeft, startLeft + dx));
+      const newTop  = Math.max(minTop,  Math.min(maxTop,  startTop + dy));
+      drawerEl.style.left = newLeft + 'px';
+      drawerEl.style.top  = newTop + 'px';
+    }
+    function onUp() {
+      if (!dragging) return;
+      dragging = false; drawerEl = null;
+      document.body.classList.remove('is-cmp-diff-dragging');
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    }
+    document.addEventListener('mousedown', function(e) {
+      const drawer = document.getElementById('cmp-diff-drawer');
+      if (!drawer || !drawer.contains(e.target)) return;
+      const header = e.target.closest('.cmp-diff-header');
+      if (!header || !drawer.contains(header)) return;
+      // Filtre les éléments interactifs internes pour ne pas voler leurs clics.
+      if (e.target.closest('button, .cmp-diff-tabs, .cmp-diff-subtoggle')) return;
+      // En mobile (≤480 px) la fenêtre est full-screen → drag inutile.
+      if (window.matchMedia && window.matchMedia('(max-width: 480px)').matches) return;
+      e.preventDefault();
+      const parent = drawer.parentElement;
+      parentRect = parent.getBoundingClientRect();
+      const rect = drawer.getBoundingClientRect();
+      startLeft = rect.left - parentRect.left;
+      startTop  = rect.top  - parentRect.top;
+      startX = e.clientX; startY = e.clientY;
+      drawerEl = drawer;
+      dragging = true;
+      // Bascule du centrage CSS aux px explicites.
+      drawer.style.transform = 'none';
+      drawer.style.left = startLeft + 'px';
+      drawer.style.top  = startTop + 'px';
+      document.body.classList.add('is-cmp-diff-dragging');
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  })();
+  // ════════════════════════════════════════════════════════════════════════
+  // ── MODE NUAGE — scatter A×B + mini-carte de référence ─────────────────
+  // ════════════════════════════════════════════════════════════════════════
+  // Palette de couleurs pour les quartiers (assignée par ordre alpha, stable
+  // tant que la liste des quartiers ne change pas). 12 entrées — la Rochelle
+  // a ~10 quartiers, marge de sécurité.
+  const _QUARTIER_PALETTE = [
+    '#1F77B4', '#FF7F0E', '#2CA02C', '#D62728', '#9467BD', '#8C564B',
+    '#E377C2', '#7F7F7F', '#BCBD22', '#17BECF', '#AEC7E8', '#FFBB78',
+  ];
+  // État interne : assignation quartier → couleur (mémoïsée), liste cachée.
+  const _NuageCache = { qColors: {}, qList: null, qListEra: null, miniMap: null, miniLayers: null };
+  function _quartierColor(qName) {
+    if (_NuageCache.qColors[qName]) return _NuageCache.qColors[qName];
+    // Distribution alpha-stable : on tient la liste triée et on indexe dedans.
+    const list = _NuageCache.qList || [];
+    let idx = list.indexOf(qName);
+    if (idx < 0) idx = (Object.keys(_NuageCache.qColors).length) % _QUARTIER_PALETTE.length;
+    const col = _QUARTIER_PALETTE[idx % _QUARTIER_PALETTE.length];
+    _NuageCache.qColors[qName] = col;
+    return col;
+  }
+  // Décompose un nom de quartier en parts canoniques pour une ère donnée.
+  // Mêmes règles que getQuartierParts (qui dépend de currentElection) : on split
+  // sur "/" SEULEMENT si chaque part existe comme `b.q` complet dans l'ère.
+  // Ex. "Laleu/La Pallice" → ["Laleu/La Pallice"] (1 seul quartier, le slash fait partie du nom).
+  function _quartierPartsForEra(q, era) {
+    if (!q) return [];
+    const parts = q.split('/').map(s => s.trim()).filter(Boolean);
+    if (parts.length <= 1) return parts;
+    const yearInfo = BUREAU_INFO[era] || {};
+    const allQ = Object.create(null);
+    Object.values(yearInfo).forEach(b => { if (b && b.q) allQ[b.q] = 1; });
+    return parts.every(p => allQ[p]) ? parts : [q];
+  }
+  // Tous les quartiers d'un bureau : ceux du `b.q` direct + ceux ajoutés via
+  // QUARTIER_CORRESPONDANCES (bureaux affectés à plusieurs quartiers).
+  // Ex. ère 2026, bureau 0004 : b.q = "Port-Neuf" + QC["La Genette"][2026] inclut 0004
+  // → retourne ["Port-Neuf", "La Genette"] → point bicolore.
+  function _quartiersForBureauNs(ns, era) {
+    const info = (BUREAU_INFO[era] || {})[ns];
+    const result = [];
+    const seen = Object.create(null);
+    _quartierPartsForEra((info && info.q) || '', era).forEach(qp => {
+      if (!seen[qp]) { seen[qp] = 1; result.push(qp); }
+    });
+    if (typeof QUARTIER_CORRESPONDANCES !== 'undefined' && ns) {
+      Object.keys(QUARTIER_CORRESPONDANCES).forEach(qName => {
+        // Skip les noms composites legacy (slash dans le nom du quartier cible)
+        if (qName.indexOf('/') >= 0) return;
+        const arr = QUARTIER_CORRESPONDANCES[qName] && QUARTIER_CORRESPONDANCES[qName][era];
+        if (arr && arr.indexOf(ns) >= 0 && !seen[qName]) {
+          seen[qName] = 1;
+          result.push(qName);
+        }
+      });
+    }
+    return result;
+  }
+  // Liste des quartiers présents dans une ère donnée (validés via _quartierPartsForEra).
+  // Triée par ordre alpha → couleur stable d'une session à l'autre.
+  function _listQuartiersInEra(era) {
+    if (_NuageCache.qListEra === era && _NuageCache.qList) return _NuageCache.qList;
+    const set = new Set();
+    const info = BUREAU_INFO[era] || {};
+    Object.values(info).forEach(b => {
+      const q = (b && b.q) || '';
+      if (!q || q === 'Nul') return;
+      _quartierPartsForEra(q, era).forEach(qp => set.add(qp));
+    });
+    const list = [...set].sort((a, b) => a.localeCompare(b, 'fr'));
+    _NuageCache.qList = list;
+    _NuageCache.qListEra = era;
+    // Réassigne les couleurs en bloc (clear le cache pour éviter les collisions).
+    _NuageCache.qColors = {};
+    list.forEach((q, i) => { _NuageCache.qColors[q] = _QUARTIER_PALETTE[i % _QUARTIER_PALETTE.length]; });
+    return list;
+  }
+  // Construit le markup SVG interne du nuage (sans le wrapper <svg>) pour des
+  // dimensions cibles données. Utilisé à la fois par renderNuage (live view)
+  // et par l'export image (composeCompare) qui passe les dimensions du box
+  // d'export pour que le graphe REMPLISSE la zone disponible sans déformation
+  // ni letterboxing.
+  // opts.exportMode = true → utilise des couleurs concrètes (pas de var(--…))
+  // pour que le rasterizer SVG hors-DOM puisse lire les fills.
+  function _buildNuageSvgInner(W, H, opts) {
+    opts = opts || {};
+    if (!_cmpState) return { html: '', items: [], totalEra: 0 };
+    const A = _cmpState.A, B = _cmpState.B;
+    const sheetA = getSheetForSel(A), sheetB = getSheetForSel(B);
+    const eraB = String((ELECTIONS[B.elec] || {}).my || '');
+    _listQuartiersInEra(eraB);
+    const items = computeDiffBureauList(sheetA, A, sheetB, B);
+    const totalEra = Object.keys((sheetB || {})).filter(ns => ns !== '0057').length;
+    // Couleurs : en mode export, on remplace les var(--…) par des hex concrets.
+    const C = opts.exportMode ? {
+      border: '#D6CFC3',
+      muted:  '#5A5A5A',
+      text:   '#1A1A1A',
+    } : {
+      border: 'var(--border-modal)',
+      muted:  'var(--text-modal-muted)',
+      text:   'var(--text-modal)',
+    };
+    const FONT = '"Space Grotesk", system-ui, sans-serif';
+    // margin.bottom :
+    //  - live view : 100 → laisse la place AU-DESSUS de la bulle légende qui
+    //    flotte à bottom:12 (ticks à +18, label axe X à +42, bulle à ~47).
+    //  - export    : 50 → pas de bulle, on récupère 50 px de hauteur de plot.
+    const marginBottom = opts.exportMode ? 50 : 100;
+    const margin = { top: 24, right: 30, bottom: marginBottom, left: 56 };
+    // collectText : en mode export, on ne sérialise PAS les textes dans le SVG
+    // (le rasterizer hors-DOM n'a pas accès aux webfonts → fallback serif moche).
+    // On les pousse dans textElements et drawNuageOnCanvas les re-dessine en
+    // Canvas2D APRÈS la rasterisation des formes (Canvas2D respecte les fonts du document).
+    const textElements = [];
+    function emitText(content, x, y, anchor, fontSize, fontWeight, color, transform) {
+      if (opts.collectText) {
+        textElements.push({ text: content, x, y, anchor: anchor || 'start', fontSize, fontWeight: fontWeight || 400, color, transform: transform || null });
+      } else {
+        const fa = (anchor && anchor !== 'start') ? ' text-anchor="' + anchor + '"' : '';
+        const fw = fontWeight ? ' font-weight="' + fontWeight + '"' : '';
+        // transform peut être un string SVG direct OU un objet {rotate, originX, originY}
+        let tr = '';
+        if (transform) {
+          if (typeof transform === 'string') tr = ' transform="' + transform + '"';
+          else if (transform.rotate != null) tr = ' transform="translate(' + transform.originX + ',' + transform.originY + ') rotate(' + transform.rotate + ')"';
+        }
+        // Quand transform est posé, x/y sont relatifs à l'origine du transform → on émet (0, 0) sur le <text>.
+        const tx = transform ? 0 : x, ty = transform ? 0 : y;
+        parts.push('<text x="' + tx + '" y="' + ty + '"' + fa + ' font-size="' + fontSize + '"' + fw + ' fill="' + color + '" font-family="&quot;Space Grotesk&quot;, system-ui, sans-serif"' + tr + '>' + content + '</text>');
+      }
+    }
+    const plotW = Math.max(50, W - margin.left - margin.right);
+    const plotH = Math.max(50, H - margin.top  - margin.bottom);
+    // Axes dynamiques : [min, max ± 2pts], clampés [0, 100].
+    const allPcts = [];
+    items.forEach(it => { allPcts.push(it.pctA, it.pctB); });
+    const margG = 2;
+    const axisMin = allPcts.length ? Math.max(0, Math.min(...allPcts) - margG) : 0;
+    const axisMax = allPcts.length ? Math.min(100, Math.max(...allPcts) + margG) : 100;
+    const range = (axisMax - axisMin) || 1;
+    // Échelles : A en X, B en Y (Y inversé pour que B élevé soit en haut).
+    const xPlot = pct => margin.left + (pct - axisMin) / range * plotW;
+    const yPlot = pct => (H - margin.bottom) - (pct - axisMin) / range * plotH;
+    // Ticks "nice" (5 ticks max) sur chaque axe.
+    function niceTicks(min, max, target) {
+      const rawStep = (max - min) / target;
+      if (rawStep <= 0) return [min];
+      const exp = Math.pow(10, Math.floor(Math.log10(rawStep)));
+      const f = rawStep / exp;
+      const step = f < 1.5 ? exp : f < 3 ? 2 * exp : f < 7 ? 5 * exp : 10 * exp;
+      const start = Math.ceil(min / step) * step;
+      const ticks = [];
+      for (let t = start; t <= max + 1e-9; t += step) ticks.push(Math.round(t * 100) / 100);
+      return ticks;
+    }
+    const ticks = niceTicks(axisMin, axisMax, 4);
+    const fmtT = v => (Number.isInteger(v) ? String(v) : v.toFixed(1).replace('.', ',')) + ' %';
+    // Compute votantsB pour la taille du point (= inscrits × (1 - abst/100)).
+    function votantsB(ns) {
+      const d = sheetB[ns]; if (!d) return 0;
+      const i = d.i || 0, a = d.a || 0;
+      return Math.max(0, i * (1 - a / 100));
+    }
+    const maxV = items.reduce((m, it) => Math.max(m, votantsB(it.ns)), 1);
+    // r ∝ √votants → aire ∝ votants. Range 4-14 px.
+    const rOf = v => 4 + Math.sqrt(Math.max(0, v) / maxV) * 10;
+    // Quartiers d'un bureau : combine `b.q` (avec validation split) + les
+    // affectations indirectes via QUARTIER_CORRESPONDANCES. Un bureau partagé
+    // (ex. 0004 en 2026 → Port-Neuf + La Genette) retourne 2 entrées.
+    function bureauQuartiers(ns) {
+      return _quartiersForBureauNs(ns, eraB);
+    }
+    function bureauDenom(ns) {
+      const info = (BUREAU_INFO[eraB] || {})[ns];
+      return (info && info.den) || ('Bureau ' + parseInt(ns));
+    }
+    // Génération SVG (markup interne uniquement, sans wrapper <svg>).
+    let parts = [];
+    // ── Axes ──
+    parts.push('<g class="cmp-nuage-axis">');
+    // Axe X (bas)
+    parts.push('<line x1="' + margin.left + '" y1="' + (H - margin.bottom) + '" x2="' + (W - margin.right) + '" y2="' + (H - margin.bottom) + '" stroke="' + C.border + '" stroke-width="1"/>');
+    // Axe Y (gauche)
+    parts.push('<line x1="' + margin.left + '" y1="' + margin.top + '" x2="' + margin.left + '" y2="' + (H - margin.bottom) + '" stroke="' + C.border + '" stroke-width="1"/>');
+    // Ticks + labels X
+    ticks.forEach(t => {
+      const x = xPlot(t);
+      parts.push('<line x1="' + x + '" y1="' + (H - margin.bottom) + '" x2="' + x + '" y2="' + (H - margin.bottom + 4) + '" stroke="' + C.border + '" stroke-width="1"/>');
+      emitText(fmtT(t), x, H - margin.bottom + 18, 'middle', 11, 400, C.muted);
+    });
+    // Ticks + labels Y
+    ticks.forEach(t => {
+      const y = yPlot(t);
+      parts.push('<line x1="' + (margin.left - 4) + '" y1="' + y + '" x2="' + margin.left + '" y2="' + y + '" stroke="' + C.border + '" stroke-width="1"/>');
+      emitText(fmtT(t), margin.left - 8, y + 4, 'end', 11, 400, C.muted);
+    });
+    // Labels axes : A (X) et B (Y) avec leur libellé court.
+    // Le label X est posé juste sous les ticks (margin.bottom - 42) → reste
+    // au-dessus de la bulle légende (qui flotte à bottom:12, ~47px de haut).
+    const labA = (typeof shortLabelOfSel === 'function') ? shortLabelOfSel(A) : '';
+    const labB = (typeof shortLabelOfSel === 'function') ? shortLabelOfSel(B) : '';
+    emitText('A · ' + _escapeSvg(labA), margin.left + plotW / 2, H - margin.bottom + 42, 'middle', 12, 700, C.text);
+    // Label Y : rotation -90 autour de (14, centerY) — translate-then-rotate.
+    // En live SVG : encodé en attribut transform. En export Canvas : on stocke
+    // la rotation comme objet { angle, originX, originY } via le champ transform.
+    emitText('B · ' + _escapeSvg(labB), 14, margin.top + plotH / 2, 'middle', 12, 700, C.text,
+      { rotate: -90, originX: 14, originY: margin.top + plotH / 2 });
+    parts.push('</g>');
+    // ── Diagonale y=x ──
+    const dStart = { x: xPlot(axisMin), y: yPlot(axisMin) };
+    const dEnd   = { x: xPlot(axisMax), y: yPlot(axisMax) };
+    parts.push('<line class="cmp-nuage-diag" x1="' + dStart.x + '" y1="' + dStart.y + '" x2="' + dEnd.x + '" y2="' + dEnd.y + '" stroke="' + C.muted + '" stroke-width="1" stroke-dasharray="4 4" opacity="0.55"/>');
+    // ── Ligne de tendance (régression linéaire OLS) ──
+    // Calculée sur les points (pctA, pctB). Demande au moins 2 points et une
+    // variance non nulle sur X (sinon pente infinie).
+    if (items.length >= 2) {
+      const n = items.length;
+      let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0, sumYY = 0;
+      items.forEach(it => {
+        sumX += it.pctA; sumY += it.pctB;
+        sumXY += it.pctA * it.pctB;
+        sumXX += it.pctA * it.pctA;
+        sumYY += it.pctB * it.pctB;
+      });
+      const denom = n * sumXX - sumX * sumX;
+      if (Math.abs(denom) > 1e-9) {
+        const slope = (n * sumXY - sumX * sumY) / denom;
+        const intercept = (sumY - slope * sumX) / n;
+        // R² pour info (affiché en bout de ligne).
+        const num = n * sumXY - sumX * sumY;
+        const denR = Math.sqrt(denom * (n * sumYY - sumY * sumY));
+        const r2 = denR > 1e-9 ? Math.pow(num / denR, 2) : 0;
+        // Trace la droite sur la plage [axisMin, axisMax].
+        const yAtMin = slope * axisMin + intercept;
+        const yAtMax = slope * axisMax + intercept;
+        // Clamp pour rester dans la zone visible (plotY ∈ [axisMin, axisMax]).
+        // Mais le clamp horizontal seul suffit ; si la droite sort en haut/bas
+        // c'est OK, on la laisse partir (sortira du plotting area visuellement).
+        const tx1 = xPlot(axisMin), ty1 = yPlot(yAtMin);
+        const tx2 = xPlot(axisMax), ty2 = yPlot(yAtMax);
+        parts.push('<line class="cmp-nuage-trend" x1="' + tx1 + '" y1="' + ty1 + '" x2="' + tx2 + '" y2="' + ty2 + '" stroke="#2563EB" stroke-width="1.6" opacity="0.85"/>');
+        // Petit badge R² en haut à droite du plot (sous la mini-carte).
+        emitText('R² = ' + r2.toFixed(2).replace('.', ','), W - margin.right - 8, margin.top + 14, 'end', 11, 700, '#2563EB');
+      }
+    }
+    // ── Points ──
+    parts.push('<g class="cmp-nuage-points">');
+    items.forEach(it => {
+      const cx = xPlot(it.pctA), cy = yPlot(it.pctB);
+      const r = rOf(votantsB(it.ns));
+      const qs = bureauQuartiers(it.ns);
+      const c1 = _quartierColor(qs[0] || '');
+      const c2 = qs.length >= 2 ? _quartierColor(qs[1]) : null;
+      const dataAttr = ' data-ns="' + it.ns + '"';
+      const handlers = ' onmouseenter="_nuageHover(this)" onmouseleave="_nuageUnhover(this)"';
+      if (c2 && c2 !== c1) {
+        // Bureau réellement partagé entre 2 quartiers (validés via _quartierPartsForEra).
+        // 2 demi-cercles : gauche = c1, droite = c2 (ordre source). stroke="none"
+        // sur les paths pour qu'ils n'héritent pas du stroke du <g> au hover.
+        // Le cercle d'outline N'A PAS de stroke explicite → il hérite du <g>,
+        // ce qui permet au hover handler de le styler en propageant le stroke sur le <g>.
+        const left  = '<path d="M ' + cx + ' ' + (cy - r) + ' A ' + r + ' ' + r + ' 0 0 0 ' + cx + ' ' + (cy + r) + ' Z" fill="' + c1 + '" stroke="none"/>';
+        const right = '<path d="M ' + cx + ' ' + (cy - r) + ' A ' + r + ' ' + r + ' 0 0 1 ' + cx + ' ' + (cy + r) + ' Z" fill="' + c2 + '" stroke="none"/>';
+        parts.push('<g class="cmp-nuage-point" stroke="rgba(0,0,0,0.25)" stroke-width="0.8"' + dataAttr + handlers + '>' + left + right
+          + '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none"/></g>');
+      } else {
+        parts.push('<circle class="cmp-nuage-point" cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + c1 + '" stroke="rgba(0,0,0,0.25)" stroke-width="0.8"' + dataAttr + handlers + '/>');
+      }
+    });
+    parts.push('</g>');
+    return {
+      html: parts.join(''),
+      items, totalEra,
+      eraB, bureauDenom, bureauQuartiers,
+      sheetA, sheetB, A, B,
+      textElements,
+    };
+  }
+  // Rend le nuage live : appelle _buildNuageSvgInner avec les dimensions du
+  // container, applique le markup au svg, met à jour footer/cache/mini-carte.
+  function renderNuage() {
+    if (!_cmpState || _cmpState.scaleMode !== 'nuage') return;
+    const root = document.getElementById('cmp-nuage');
+    const svg = document.getElementById('cmp-nuage-svg');
+    if (!root || !svg) return;
+    const W = root.clientWidth || 800, H = root.clientHeight || 500;
+    const result = _buildNuageSvgInner(W, H);
+    if (!result) return;
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.setAttribute('preserveAspectRatio', 'none');
+    svg.innerHTML = result.html;
+    // ── Footer "N sur M" ──
+    const footer = document.getElementById('cmp-nuage-footer');
+    if (footer) {
+      if (result.items.length < result.totalEra) {
+        footer.textContent = result.items.length + ' bureaux affichés sur ' + result.totalEra;
+        footer.classList.add('on');
+      } else {
+        footer.classList.remove('on');
+      }
+    }
+    // Stocke les données pour le hover handler (tooltip + mini-carte).
+    _NuageCache.lastRender = {
+      items: result.items, eraB: result.eraB,
+      bureauDenom: result.bureauDenom, bureauQuartiers: result.bureauQuartiers,
+      sheetA: result.sheetA, sheetB: result.sheetB,
+      A: result.A, B: result.B,
+    };
+    // ── Mini-carte ──
+    setupNuageMiniMap(result.eraB, result.items);
+  }
+  // Échappement minimal pour insertion dans des attributs SVG / text.
+  function _escapeSvg(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  // Hover sur un point : affiche le tooltip + illumine le bureau dans la mini-carte.
+  window._nuageHover = function(el) {
+    const ns = el.getAttribute('data-ns');
+    const cached = _NuageCache.lastRender;
+    if (!ns || !cached) return;
+    const it = cached.items.find(x => x.ns === ns);
+    if (!it) return;
+    const tt = document.getElementById('cmp-nuage-tooltip');
+    if (tt) {
+      const A = cached.A, B = cached.B;
+      const labA = (typeof shortLabelOfSel === 'function') ? shortLabelOfSel(A) : 'A';
+      const labB = (typeof shortLabelOfSel === 'function') ? shortLabelOfSel(B) : 'B';
+      const fmt = v => v.toFixed(1).replace('.', ',') + '\xa0%';
+      const delta = it.pctB - it.pctA;
+      const deltaStr = (delta >= 0 ? '+' : '−') + Math.abs(delta).toFixed(1).replace('.', ',') + '\xa0pts';
+      const deltaCol = delta >= 0.05 ? '#5BB55B' : delta <= -0.05 ? '#E37B7B' : 'inherit';
+      // Quartier(s) du bureau, avec puce colorée par quartier (bicolore si partagé).
+      const qs = cached.bureauQuartiers(ns);
+      const qsHtml = qs.length
+        ? '<div class="tt-quartier">'
+          + qs.map(q => '<span class="tt-quartier-dot" style="background:' + _quartierColor(q) + '"></span>' + _escapeSvg(q)).join(' / ')
+          + '</div>'
+        : '';
+      tt.innerHTML = '<div class="tt-num">N° ' + parseInt(ns) + '</div>'
+        + '<div class="tt-denom">' + _escapeSvg(cached.bureauDenom(ns)) + '</div>'
+        + qsHtml
+        + '<div class="tt-scores">A · ' + fmt(it.pctA) + ' <span style="opacity:.5">·</span> ' + _escapeSvg(labA) + '</div>'
+        + '<div class="tt-scores">B · ' + fmt(it.pctB) + ' <span style="opacity:.5">·</span> ' + _escapeSvg(labB) + '</div>'
+        + '<div class="tt-delta" style="color:' + deltaCol + '">Δ ' + deltaStr + '</div>';
+      // Positionne le tooltip à côté du point dans le container.
+      const rect = el.getBoundingClientRect();
+      const containerRect = document.getElementById('cmp-nuage').getBoundingClientRect();
+      const xLocal = rect.left - containerRect.left + rect.width + 8;
+      const yLocal = rect.top - containerRect.top - 4;
+      tt.style.left = xLocal + 'px';
+      tt.style.top = yLocal + 'px';
+      tt.classList.add('on');
+    }
+    // Mini-carte : illumine le polygone correspondant.
+    if (_NuageCache.miniLayers && _NuageCache.miniLayers[ns]) {
+      _NuageCache.miniLayers[ns].setStyle({ weight: 2.5, color: '#000', fillOpacity: 0.9 });
+      if (_NuageCache.miniLayers[ns].bringToFront) _NuageCache.miniLayers[ns].bringToFront();
+    }
+    // Style hover du point lui-même.
+    el.setAttribute('stroke-width', '2');
+    el.setAttribute('stroke', '#000');
+  };
+  window._nuageUnhover = function(el) {
+    const tt = document.getElementById('cmp-nuage-tooltip');
+    if (tt) tt.classList.remove('on');
+    const ns = el.getAttribute('data-ns');
+    if (ns && _NuageCache.miniLayers && _NuageCache.miniLayers[ns]) {
+      // Reset au style "actif" du polygone.
+      _NuageCache.miniLayers[ns].setStyle(_NuageCache.miniLayers[ns]._cmpBaseStyle);
+    }
+    el.setAttribute('stroke-width', '0.8');
+    el.setAttribute('stroke', 'rgba(0,0,0,0.25)');
+  };
+  // Mini-carte Leaflet — créée à l'entrée en mode nuage, détruite à la sortie.
+  function setupNuageMiniMap(eraB, items) {
+    const container = document.getElementById('cmp-nuage-mini-map');
+    if (!container || typeof L === 'undefined') return;
+    // Nettoie l'ancienne si elle existe.
+    if (_NuageCache.miniMap) {
+      _NuageCache.miniMap.remove();
+      _NuageCache.miniMap = null;
+      _NuageCache.miniLayers = null;
+    }
+    const geo = (typeof MAPS_DATA !== 'undefined') ? MAPS_DATA[eraB] : null;
+    if (!geo) return;
+    const map = L.map(container, {
+      zoomControl: false, attributionControl: false,
+      dragging: false, scrollWheelZoom: false, doubleClickZoom: false,
+      touchZoom: false, boxZoom: false, keyboard: false,
+      tap: false,
+    });
+    _NuageCache.miniMap = map;
+    _NuageCache.miniLayers = {};
+    const presentNs = new Set(items.map(it => it.ns));
+    // Couleur d'un bureau dans la mini-carte : couleur du 1er quartier validé.
+    function miniColorFor(ns) {
+      if (!presentNs.has(ns)) return '#cccccc';
+      const info = (BUREAU_INFO[eraB] || {})[ns];
+      const parts = _quartierPartsForEra((info && info.q) || '', eraB);
+      return parts.length ? _quartierColor(parts[0]) : '#cccccc';
+    }
+    const layer = L.geoJSON(geo, {
+      style: feat => {
+        const ns = numStr(feat);
+        const present = presentNs.has(ns);
+        return {
+          color: '#666', weight: 0.5,
+          fillColor: miniColorFor(ns),
+          fillOpacity: present ? 0.45 : 0.15,
+        };
+      },
+      onEachFeature: (feat, lyr) => {
+        const ns = numStr(feat);
+        _NuageCache.miniLayers[ns] = lyr;
+        lyr._cmpBaseStyle = {
+          color: '#666', weight: 0.5,
+          fillColor: miniColorFor(ns),
+          fillOpacity: presentNs.has(ns) ? 0.45 : 0.15,
+        };
+      },
+    }).addTo(map);
+    map.fitBounds(layer.getBounds(), { padding: [4, 4] });
+  }
+  // Cleanup mode nuage (sortie ou exitComparison).
+  function cleanupNuage() {
+    const svg = document.getElementById('cmp-nuage-svg');
+    if (svg) svg.innerHTML = '';
+    const tt = document.getElementById('cmp-nuage-tooltip');
+    if (tt) { tt.classList.remove('on'); tt.innerHTML = ''; }
+    const footer = document.getElementById('cmp-nuage-footer');
+    if (footer) { footer.classList.remove('on'); footer.textContent = ''; }
+    if (_NuageCache.miniMap) {
+      try { _NuageCache.miniMap.remove(); } catch (_) {}
+      _NuageCache.miniMap = null;
+      _NuageCache.miniLayers = null;
+    }
+    _NuageCache.lastRender = null;
+  }
   // Zoom sur un bureau de la map diff (action déclenchée par clic dans la sidebar).
+  // Cible la map affichée (la plus récente), pas systématiquement A.
   window.zoomCmpToBureau = function(ns) {
-    if (!_cmpState || !_cmpState.layersA) return;
-    const layer = _cmpState.layersA[ns];
-    if (!layer || !_cmpState.mapA) return;
-    // Zoom + openTooltip pour donner un feedback immédiat.
-    if (layer.getBounds && _cmpState.mapA.fitBounds) {
-      _cmpState.mapA.fitBounds(layer.getBounds(), { padding: [30, 30], maxZoom: 16 });
+    if (!_cmpState) return;
+    const displaySide = _cmpDisplaySide();
+    const layers = _cmpState['layers' + displaySide];
+    const map = _cmpState['map' + displaySide];
+    if (!layers || !map) return;
+    const layer = layers[ns];
+    if (!layer) return;
+    if (layer.getBounds && map.fitBounds) {
+      map.fitBounds(layer.getBounds(), { padding: [30, 30], maxZoom: 16 });
     }
     if (layer.openTooltip) setTimeout(() => layer.openTooltip(), 250);
+  };
+
+  // Hover/leave d'une ligne bureau dans la drawer Diff : reproduit le hover
+  // sur la map du côté affiché (tooltip Leaflet + mid-bar mis à jour), pour
+  // que le user voit le bureau actif d'un coup d'œil sans bouger la souris.
+  window._cmpRowHover = function(ns) {
+    if (!_cmpState) return;
+    const displaySide = _cmpDisplaySide();
+    const layers = _cmpState['layers' + displaySide];
+    if (!layers) return;
+    const layer = layers[ns];
+    if (!layer) return;
+    if (layer.openTooltip) layer.openTooltip();
+    if (typeof updateCmpMidBar === 'function') {
+      updateCmpMidBar(ns, layer.feature, displaySide);
+    }
+  };
+  window._cmpRowUnhover = function(ns) {
+    if (!_cmpState) return;
+    const displaySide = _cmpDisplaySide();
+    const layers = _cmpState['layers' + displaySide];
+    if (!layers) return;
+    const layer = layers[ns];
+    if (!layer) return;
+    if (layer.closeTooltip) layer.closeTooltip();
+    if (typeof hideCmpMidBar === 'function') hideCmpMidBar();
   };
 
   // Couleurs des pôles diff (cohérent avec --bg-delta-pos/neg utilisés ailleurs).
@@ -8349,14 +10418,27 @@ function updateFooter() {
       // Mode "diff" : sur la carte A on affiche la DIFFÉRENCE B-A par bureau,
       // avec un gradient bicolore (rouge = B<A, vert = B>A, blanc = égalité).
       // Map B est masquée (cf. CSS body.is-cmp-diff). On exige A ET B présents.
-      if (_cmpState && _cmpState.scaleMode === 'diff' && side === 'A') {
+      // Mode diff : la map AFFICHÉE est celle de la plus récente des 2 ères.
+      // styleOf ne colorie en diff que sur cette map (l'autre est cachée par CSS).
+      // Le delta affiché reste B − A (orientation choisie via les sélections).
+      const displaySideS = (typeof _cmpDisplaySide === 'function') ? _cmpDisplaySide() : 'A';
+      if (_cmpState && _cmpState.scaleMode === 'diff' && side === displaySideS) {
         if (!present) return { fillColor: '#ddd', fillOpacity: 0.4, color: '#fff', weight: 1 };
-        const sheetB = getSheetForSel(_cmpState.B);
-        const dB = sheetB[ns];
-        if (!dB) return { fillColor: '#ddd', fillOpacity: 0.4, color: '#fff', weight: 1 };
-        const sB = scoreOfSelInBureau(dB, _cmpState.B);
-        if (!sB.present) return { fillColor: '#ddd', fillOpacity: 0.4, color: '#fff', weight: 1 };
-        const diff = sB.pct - pct;
+        const otherSide = side === 'A' ? 'B' : 'A';
+        const otherSel = _cmpState[otherSide];
+        const sheetOther = getSheetForSel(otherSel);
+        const eraOther = String((ELECTIONS[otherSel.elec] || {}).my || '');
+        const nsOther = _crossEraNs(ns, era, eraOther);
+        const dOther = nsOther ? sheetOther[nsOther] : null;
+        if (!dOther) return { fillColor: '#ddd', fillOpacity: 0.4, color: '#fff', weight: 1 };
+        const sOther = scoreOfSelInBureau(dOther, otherSel);
+        if (!sOther.present) return { fillColor: '#ddd', fillOpacity: 0.4, color: '#fff', weight: 1 };
+        // delta = scoreB − scoreA (formule invariante). On reconstitue les scores
+        // selon le côté affiché : `pct` est le score du côté affiché, `sOther.pct`
+        // est le score de l'autre, on les place dans A et B selon `side`.
+        const scoreA = side === 'A' ? pct : sOther.pct;
+        const scoreB = side === 'B' ? pct : sOther.pct;
+        const diff = scoreB - scoreA;
         const maxAbs = Math.max(0.01, _cmpState.diffMaxAbs || 1);
         const t = Math.max(-1, Math.min(1, diff / maxAbs));
         // Bicolore : t<0 → rouge avec intensité |t|, t>0 → vert, t≈0 → blanc.
@@ -8386,20 +10468,26 @@ function updateFooter() {
       const header = '<div style="min-width:150px">'
         + '<div style="font-size:0.7rem;font-weight:700;color:var(--text-meta);margin-bottom:2px">Bureau n°' + parseInt(ns) + '</div>'
         + '<div style="font-size:0.82rem;font-weight:700;color:var(--text-modal);margin-bottom:7px">' + denom + '</div>';
-      // Mode diff (sur map A) : tooltip avec A%, B%, delta coloré + badge bureau modifié.
-      if (_cmpState && _cmpState.scaleMode === 'diff' && side === 'A') {
-        const sheetB2 = getSheetForSel(_cmpState.B);
-        const dB = sheetB2[ns];
-        const sA = data ? scoreOfSelInBureau(data, sel) : { present: false };
-        const sB = dB ? scoreOfSelInBureau(dB, _cmpState.B) : { present: false };
-        // Détection redécoupage : compare l'ère de A et celle de B sur BUREAU_CORRESPONDANCES.
+      // Mode diff (sur la map affichée = la plus récente) : tooltip SIMPLIFIÉ —
+      // juste delta + badge "bureau modifié". Les scores A/B détaillés sont dans
+      // le mid-bar central (cf. cmp-mid-bar) pour éviter la duplication.
+      const displaySideT = (typeof _cmpDisplaySide === 'function') ? _cmpDisplaySide() : 'A';
+      if (_cmpState && _cmpState.scaleMode === 'diff' && side === displaySideT) {
+        const otherSideT = side === 'A' ? 'B' : 'A';
+        const sheetOther = getSheetForSel(_cmpState[otherSideT]);
         const eraA = String((ELECTIONS[_cmpState.A.elec] || {}).my || '');
         const eraB = String((ELECTIONS[_cmpState.B.elec] || {}).my || '');
-        const b2026 = (feature.properties && feature.properties.b2026) || ns;
+        const eraOther = side === 'A' ? eraB : eraA;
+        const nsOther = _crossEraNs(ns, era, eraOther);
+        const dOther = nsOther ? sheetOther[nsOther] : null;
+        const sSelf = data ? scoreOfSelInBureau(data, sel) : { present: false };
+        const sOther = dOther ? scoreOfSelInBureau(dOther, _cmpState[otherSideT]) : { present: false };
+        // Reconstitue sA et sB selon le côté affiché (la formule delta=B−A reste).
+        const sA = side === 'A' ? sSelf : sOther;
+        const sB = side === 'B' ? sSelf : sOther;
+        const b2026 = _resolveB2026FromHist(ns, era);
         const mods = bureauModifBetween(b2026, eraA, eraB);
-        // Bloc "Bureau modifié" — affiché aussi quand sA/sB pas dispo, car c'est
-        // potentiellement la raison du gris (renumérotation, fusion/scission).
-        // Juste le badge : on prend le type le plus "fort" rencontré entre A et B.
+        // Badge "Bureau modifié" — type le plus "fort" rencontré entre A et B.
         let modifBlock = '';
         if (mods.length) {
           const rank = { creation: 3, majeur: 2, mineur: 1 };
@@ -8420,14 +10508,10 @@ function updateFooter() {
         const cls = diff >= 0.05 ? 'pos' : (diff <= -0.05 ? 'neg' : 'neutral');
         const bg = cls === 'pos' ? '#D4EFD4' : cls === 'neg' ? '#F7D4D4' : '#eee';
         const fg = cls === 'pos' ? '#0F5F0F' : cls === 'neg' ? '#8B1414' : '#666';
-        const labelA = shortLabelOfSel(_cmpState.A), labelB = shortLabelOfSel(_cmpState.B);
-        const fmtP = p => p.toFixed(1).replace('.', ',');
         return header
-          + '<div style="display:flex;flex-direction:column;gap:4px;font-size:0.74rem;color:var(--text-modal)">'
-          + '<div><span style="color:var(--text-meta);font-weight:600">A · ' + labelA + ' :</span>\xa0<b>' + fmtP(sA.pct) + '\xa0%</b></div>'
-          + '<div><span style="color:var(--text-meta);font-weight:600">B · ' + labelB + ' :</span>\xa0<b>' + fmtP(sB.pct) + '\xa0%</b></div>'
-          + '<div style="margin-top:2px"><span style="background:' + bg + ';color:' + fg + ';font-weight:800;padding:2px 7px;border-radius:4px;font-size:0.72rem">' + sign + Math.abs(diff).toFixed(1).replace('.', ',') + '\xa0pts</span></div>'
-          + '</div>'
+          + '<span style="background:' + bg + ';color:' + fg + ';font-weight:800;padding:3px 9px;border-radius:5px;font-size:0.78rem;display:inline-block">'
+          + sign + Math.abs(diff).toFixed(1).replace('.', ',') + '\xa0pts'
+          + '</span>'
           + modifBlock
           + '</div>';
       }
@@ -8694,21 +10778,15 @@ function updateAnalyseLink() {
   if (params.get('compare') === '1') {
     const A = { elec: params.get('cA_e'), tour: params.get('cA_t'), type: params.get('cA_y'), quoi: params.get('cA_q') };
     const B = { elec: params.get('cB_e'), tour: params.get('cB_t'), type: params.get('cB_y'), quoi: params.get('cB_q') };
-    const cmode = params.get('cmode'); // 'relative' ou absent
+    // cmode : 'relative' | 'diff' | absent (= 'absolute' par défaut, non sérialisé).
+    const cmode = params.get('cmode');
     // Petit délai pour laisser la map principale s'initialiser (loadMap n'est pas
     // bloqué par notre return, donc on attend qu'il pose les globales currentX).
     setTimeout(() => {
-      // Si mode relatif demandé, on le pose AVANT activateCompareMode pour que le
-      // scaleMode soit pris en compte au build des layers (sinon il flicker en absolu).
-      if (cmode === 'relative' && typeof window.toggleCmpScale === 'function') {
-        // activateCompareMode crée _cmpState avec prevMode → on doit pré-poser le mode.
-        // Hack léger : on touche _cmpState.scaleMode après activate (l'effet visible
-        // est minimal puisque les ranges sont déjà calculés).
-      }
       if (typeof window.activateComparisonFromState === 'function') {
-        if (window.activateComparisonFromState(A, B) && cmode === 'relative') {
-          // Pas encore en relatif (init en absolute par défaut) → bascule.
-          window.toggleCmpScale('relative');
+        if (window.activateComparisonFromState(A, B) && (cmode === 'relative' || cmode === 'diff' || cmode === 'nuage')) {
+          // Init en absolute par défaut → bascule vers le mode demandé.
+          window.toggleCmpScale(cmode);
         }
       }
       _urlStateInit = true;
@@ -9641,11 +11719,16 @@ function updateAnalyseLink() {
     return pattern;
   }
 
-  // Dessine la carte choroplèthe sur le canvas
-  function drawCarteVisual(ctx, x, y, w, h) {
-    if (typeof getMapGeoJSON !== 'function') return null;
-    const gj = getMapGeoJSON();
-    if (!gj || !gj.features || !gj.features.length) return null;
+  // Dessine la carte choroplèthe sur le canvas.
+  // opts.geoJSON : geoJSON alternatif (par défaut : getMapGeoJSON() de la carte principale)
+  // opts.styleFn : fonction de styling alternative (par défaut : featureStyle global)
+  // Utile pour rendre une carte du comparateur (per-side styling) sans toucher
+  // aux globaux de la carte principale.
+  function drawCarteVisual(ctx, x, y, w, h, opts) {
+    opts = opts || {};
+    const gj = opts.geoJSON || (typeof getMapGeoJSON === 'function' ? getMapGeoJSON() : null);
+    const getStyle = opts.styleFn || (typeof featureStyle === 'function' ? featureStyle : null);
+    if (!gj || !gj.features || !gj.features.length || !getStyle) return null;
 
     // Calcul des bornes lat/lng (on exclut le bureau 0057 non géo)
     let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
@@ -9702,7 +11785,7 @@ function updateAnalyseLink() {
       const ns = numStr(f);
       if (ns === '0057') return;
       if (!f.geometry) return;
-      const style = featureStyle(f);
+      const style = getStyle(f);
       let fill = style.fillColor || '#ddd';
       // Ex-aequo : featureStyle renvoie 'url(#tie-XXX)' qui ne marche pas
       // en Canvas2D → on remplace par un CanvasPattern de hachures diagonales.
@@ -9922,6 +12005,621 @@ function updateAnalyseLink() {
     ctx.fillText('larochellevote.fr · @LaRochelleVote · exporté le ' + today, PAD, H - 22);
 
     return canvas;
+  }
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // ── Export comparateur (modes Abs / Rel / Diff / Nuage) ────────────────
+  // ═════════════════════════════════════════════════════════════════════════
+  async function composeCompare() {
+    if (!window._exportMode && document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch(_) {} }
+    const cmpAPI = window._cmpExport;
+    if (!cmpAPI) return null;
+    const state = cmpAPI.getState();
+    if (!state) return null;
+    const A = state.A, B = state.B;
+    const mode = state.scaleMode || 'absolute';
+
+    const canvas = document.createElement('canvas');
+    canvas.width = W * SCALE; canvas.height = H * SCALE;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(SCALE, SCALE);
+
+    // Header minimal : juste logo + titre. Le contexte A/B/scores passe dans
+    // les cartouches au-dessus de chaque carte (cf. drawCompareMap).
+    const HEADER_CMP = 70;
+    ctx.fillStyle = '#F0EAE0'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#F7F3EE'; ctx.fillRect(0, 0, W, HEADER_CMP);
+    ctx.fillStyle = '#E6DFD5'; ctx.fillRect(0, HEADER_CMP - 1, W, 1);
+
+    const logoBaseline = 44;
+    const logoW = drawLogo(ctx, PAD, logoBaseline);
+    const labA = cmpAPI.shortLabelOfSel(A);
+    const labB = cmpAPI.shortLabelOfSel(B);
+    const colA = cmpAPI.baseColorOfSel(A);
+    const colB = cmpAPI.baseColorOfSel(B);
+    const textX = PAD + logoW + 24;
+    ctx.fillStyle = '#1A1A1A';
+    ctx.textBaseline = 'alphabetic';
+    ctx.font = '700 22px "Space Grotesk", system-ui, sans-serif';
+    const modeLabel = mode === 'absolute' ? 'Échelle absolue'
+      : mode === 'relative' ? 'Échelle relative'
+      : mode === 'diff' ? 'Différence B − A'
+      : 'Nuage de corrélation';
+    ctx.fillText('Comparatif · ' + modeLabel, textX, 44);
+
+    // Zone visuelle. On réserve une bande basse pour la légende sauf en mode Nuage.
+    const showLegendBar = (mode !== 'nuage');
+    const LEGEND_BAR_H = showLegendBar ? 56 : 0;
+    const visTop = HEADER_CMP + 16;
+    const visBottom = H - FOOTER_H - 8 - LEGEND_BAR_H;
+    const visW = W - 2 * PAD;
+    const visH = visBottom - visTop;
+
+    // ── Selon le mode, on remplit la zone visuelle ──
+    if (mode === 'nuage') {
+      await drawNuageOnCanvas(ctx, PAD, visTop, visW, visH);
+    } else if (mode === 'diff') {
+      // 2 cartouches A et B (B avec delta) + 1 carte (côté affiché) à gauche,
+      // tornado par quartier à droite.
+      const half = Math.floor((visW - 20) / 2);
+      // Calcule le delta ville pour la cartouche B.
+      let deltaCity = null;
+      if (cmpAPI && cmpAPI.computeCityScore && cmpAPI.getSheetForSel) {
+        const sA = cmpAPI.computeCityScore(cmpAPI.getSheetForSel(A), A);
+        const sB = cmpAPI.computeCityScore(cmpAPI.getSheetForSel(B), B);
+        if (typeof sA === 'number' && typeof sB === 'number') deltaCity = sB - sA;
+      }
+      drawCartouche(ctx, PAD,              visTop, half, A, 'A');
+      drawCartouche(ctx, PAD + half + 20,  visTop, half, B, 'B',
+        (typeof deltaCity === 'number') ? { delta: deltaCity } : null);
+      // Sous les cartouches : carte (côté affiché) à gauche + tornado quartiers à droite.
+      const mapTop = visTop + CART_H + 12;
+      const mapH = visH - CART_H - 12;
+      const mapW = Math.round(visW * 0.62), tornadoW = visW - mapW - 20;
+      const displaySide = (typeof window._cmpDisplaySide === 'function') ? window._cmpDisplaySide() : 'A';
+      const selD = state[displaySide];
+      const elecD = selD && (typeof ELECTIONS !== 'undefined') ? ELECTIONS[selD.elec] : null;
+      const eraD = elecD ? String(elecD.my || '') : '';
+      const gjD = (typeof MAPS_DATA !== 'undefined') ? MAPS_DATA[eraD] : null;
+      const styleFnD = state['geo' + displaySide] && state['geo' + displaySide].options && state['geo' + displaySide].options.style;
+      if (gjD && styleFnD) drawCarteVisual(ctx, PAD, mapTop, mapW, mapH, { geoJSON: gjD, styleFn: styleFnD });
+      drawDiffTornado(ctx, PAD + mapW + 20, mapTop, tornadoW, mapH, state);
+      // Légende en bas (gradient bicolore + bornes ±maxAbs).
+      drawCompareLegend(ctx, PAD, visBottom + 12, visW, LEGEND_BAR_H - 12, state, mode, colA, colB);
+    } else {
+      // Abs / Rel : 2 cartes côte à côte.
+      const half = Math.floor((visW - 20) / 2);
+      drawCompareMap(ctx, PAD,              visTop, half, visH, state, 'A');
+      drawCompareMap(ctx, PAD + half + 20,  visTop, half, visH, state, 'B');
+      // Légende en bas (gradient + bornes).
+      drawCompareLegend(ctx, PAD, visBottom + 12, visW, LEGEND_BAR_H - 12, state, mode, colA, colB);
+    }
+
+    // Pied de page.
+    ctx.fillStyle = '#5A5A5A';
+    ctx.font = '500 13px "Space Grotesk", system-ui, sans-serif';
+    const today = new Date().toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' });
+    ctx.fillText('larochellevote.fr · @LaRochelleVote · exporté le ' + today, PAD, H - 22);
+
+    return canvas;
+  }
+
+  // Cartouche enrichie : pastille + 2 lignes texte + score à droite.
+  // Utilisée par drawCompareMap (Abs/Rel/Diff) et directement en mode Diff pour
+  // afficher les 2 cartouches au-dessus de l'unique carte affichée.
+  const CART_H = 56;
+  // opts.delta : number → si fourni, dessine "Δ ±X,X pts" sous le score, et
+  // réduit la taille du score pour laisser la place. Utilisé pour la cartouche B
+  // en mode Diff (le delta est B − A ; il n'a pas de sens sur la cartouche A).
+  function drawCartouche(ctx, x, y, w, sel, letter, opts) {
+    if (!sel) return;
+    opts = opts || {};
+    const cmpAPI = window._cmpExport;
+    const lab = cmpAPI ? cmpAPI.shortLabelOfSel(sel) : '';
+    const col = cmpAPI ? cmpAPI.baseColorOfSel(sel) : '#999';
+    const cartH = CART_H;
+    // Fond coloré arrondi (idem header de l'ancien design).
+    ctx.fillStyle = col;
+    const r = 8;
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y,     x + w, y + cartH, r);
+    ctx.arcTo(x + w, y + cartH, x, y + cartH, r);
+    ctx.arcTo(x,     y + cartH, x, y, r);
+    ctx.arcTo(x,     y, x + w, y, r);
+    ctx.closePath();
+    ctx.fill();
+    // Helpers (parti / tour / lignes) — reproduits localement parce que les
+    // closures de composeCompare ne sont pas accessibles ici.
+    function partyOfSel(s) {
+      if (s.type !== 'candidat') return '';
+      const cand = (typeof CANDIDATURES !== 'undefined') ? CANDIDATURES[s.quoi] : null;
+      return (cand && cand.pa) ? cand.pa : '';
+    }
+    function tourLabel(s) {
+      if (typeof isReferendum === 'function' && isReferendum(s.elec)) return '';
+      if (s.tour === 'T1') return '1ᵉʳ tour';
+      if (s.tour === 'T2') return '2ᵉ tour';
+      return '';
+    }
+    const pa = partyOfSel(sel);
+    const topLine = lab + (pa ? ' · ' + pa : '');
+    const t = tourLabel(sel);
+    const ctxLine = sel.elec + (t ? ' · ' + t : '');
+    // Pastille blanche avec lettre A/B en couleur du côté.
+    const padX = 12, circR = 12, gapCC = 10;
+    const cx = x + padX + circR, cy = y + cartH / 2;
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(cx, cy, circR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = col;
+    ctx.font = '700 13px "Space Grotesk", system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(letter, cx, cy + 1);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    // Score à droite : computeCityScore. Quand un delta est fourni, on dessine
+    // le score un peu plus petit et on ajoute "Δ ±X,X pts" en dessous.
+    let scoreText = '';
+    if (cmpAPI && cmpAPI.getSheetForSel && cmpAPI.computeCityScore) {
+      const sheet = cmpAPI.getSheetForSel(sel);
+      const score = cmpAPI.computeCityScore(sheet, sel);
+      if (typeof score === 'number') scoreText = score.toFixed(1).replace('.', ',') + ' %';
+    }
+    let scoreW = 0;
+    const hasDelta = (typeof opts.delta === 'number');
+    // Pastille du delta dessinée AVANT le score (mesurée d'abord pour calculer l'offset).
+    let pillW = 0, pillGap = 0;
+    let pillData = null;
+    if (hasDelta) {
+      const d = opts.delta;
+      const sign = d >= 0.05 ? '+' : d <= -0.05 ? '−' : '';
+      const dText = sign + Math.abs(d).toFixed(1).replace('.', ',') + ' pts';
+      let bg, fg, br;
+      if (d >= 0.05)       { bg = '#D4EFD4'; fg = '#0F5F0F'; br = '#6FB66F'; }
+      else if (d <= -0.05) { bg = '#F7D4D4'; fg = '#8B1414'; br = '#D17070'; }
+      else                 { bg = 'rgba(255,255,255,0.18)'; fg = '#ffffff'; br = 'rgba(255,255,255,0.30)'; }
+      ctx.font = '600 11px "Space Grotesk", system-ui, sans-serif';
+      const textW = ctx.measureText(dText).width;
+      const padPill = 6;
+      pillW = textW + padPill * 2;
+      pillGap = 10;
+      pillData = { dText, bg, fg, br, padPill };
+    }
+    if (scoreText) {
+      ctx.font = '700 24px "Space Grotesk", system-ui, sans-serif';
+      scoreW = ctx.measureText(scoreText).width;
+      ctx.fillStyle = '#fff';
+      ctx.fillText(scoreText, x + w - padX - scoreW, y + cartH / 2 + 8);
+    }
+    // Dessine la pastille à GAUCHE du score (verticalement centrée avec lui).
+    if (pillData) {
+      const pillH = 16, pillR = 4;
+      const pillX = x + w - padX - scoreW - pillGap - pillW;
+      const pillY = y + cartH / 2 - pillH / 2 + 1;
+      ctx.fillStyle = pillData.bg;
+      ctx.beginPath();
+      ctx.moveTo(pillX + pillR, pillY);
+      ctx.arcTo(pillX + pillW, pillY,         pillX + pillW, pillY + pillH, pillR);
+      ctx.arcTo(pillX + pillW, pillY + pillH, pillX,         pillY + pillH, pillR);
+      ctx.arcTo(pillX,         pillY + pillH, pillX,         pillY,         pillR);
+      ctx.arcTo(pillX,         pillY,         pillX + pillW, pillY,         pillR);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = pillData.br; ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = pillData.fg;
+      ctx.font = '600 11px "Space Grotesk", system-ui, sans-serif';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(pillData.dText, pillX + pillData.padPill, pillY + pillH / 2 + 0.5);
+      ctx.textBaseline = 'alphabetic';
+    }
+    // Largeur réservée à droite = score + (pastille + gap si présent), pour borner le texte central.
+    const rightReservedW = scoreW + (hasDelta ? (pillGap + pillW) : 0);
+    // Texte central (2 lignes) — borné à droite par le score (ou le delta s'il est plus large).
+    const tX = cx + circR + gapCC;
+    const tRight = x + w - padX - rightReservedW - 14;
+    function clipText(s, maxW) {
+      if (ctx.measureText(s).width <= maxW) return s;
+      let truncated = s;
+      while (truncated.length > 1 && ctx.measureText(truncated + '…').width > maxW) {
+        truncated = truncated.slice(0, -1);
+      }
+      return truncated + '…';
+    }
+    const availW = Math.max(40, tRight - tX);
+    ctx.fillStyle = '#fff';
+    ctx.font = '700 14px "Space Grotesk", system-ui, sans-serif';
+    ctx.fillText(clipText(topLine, availW), tX, y + 24);
+    ctx.fillStyle = 'rgba(255,255,255,0.88)';
+    ctx.font = '500 13px "Space Grotesk", system-ui, sans-serif';
+    ctx.fillText(clipText(ctxLine, availW), tX, y + 44);
+  }
+
+  // Dessine cartouche + carte choroplèthe du côté demandé.
+  // side = 'A' | 'B' | 'diff' (pour diff, on prend le côté affiché).
+  function drawCompareMap(ctx, x, y, w, h, state, side) {
+    let pickSide = side;
+    if (side === 'diff') {
+      pickSide = (typeof window._cmpDisplaySide === 'function') ? window._cmpDisplaySide() : 'A';
+    }
+    const sel = state[pickSide];
+    if (!sel) return;
+    const elec = (typeof ELECTIONS !== 'undefined') ? ELECTIONS[sel.elec] : null;
+    const era = elec ? String(elec.my || '') : '';
+    const gj = (typeof MAPS_DATA !== 'undefined') ? MAPS_DATA[era] : null;
+    const styleFn = state['geo' + pickSide] && state['geo' + pickSide].options && state['geo' + pickSide].options.style;
+    if (!gj || !styleFn) return;
+    drawCartouche(ctx, x, y, w, sel, pickSide);
+    drawCarteVisual(ctx, x, y + CART_H + 6, w, h - CART_H - 6, { geoJSON: gj, styleFn });
+  }
+
+  // Légende en bas (Abs / Rel) : barre(s) gradient avec bornes min/max.
+  //  - Abs : 1 barre commune ancrée sur [minG, maxG] (gradient bicolore si A ≠ B en couleur)
+  //  - Rel : 2 barres séparées, chacune avec son range local [rangeA / rangeB]
+  function drawCompareLegend(ctx, x, y, w, h, state, mode, colA, colB) {
+    const fmt = p => (typeof p === 'number' ? p.toFixed(1).replace('.', ',') + ' %' : '—');
+    const barH = 16;
+    const boundFont = '600 12px "Space Grotesk", system-ui, sans-serif';
+    ctx.textBaseline = 'middle';
+    if (mode === 'absolute') {
+      // Une seule barre centrée. Si colA === colB → gradient simple. Sinon split
+      // vertical (haut = A, bas = B), façon "live legend".
+      const minG = state.minG, maxG = state.maxG;
+      const barW = Math.min(560, w - 200);
+      const cy = y + h / 2;
+      const minLabel = fmt(minG), maxLabel = fmt(maxG);
+      ctx.font = boundFont;
+      const minLabelW = ctx.measureText(minLabel).width;
+      const maxLabelW = ctx.measureText(maxLabel).width;
+      const barX = x + (w - barW) / 2;
+      // Bornes
+      ctx.fillStyle = '#5A5A5A';
+      ctx.fillText(minLabel, barX - minLabelW - 8, cy);
+      ctx.fillText(maxLabel, barX + barW + 8, cy);
+      // Gradient (1 ou 2 selon colA==colB)
+      if (colA === colB) {
+        const grad = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+        grad.addColorStop(0, blendToWhite(colA, 0.08));
+        grad.addColorStop(1, colA);
+        ctx.fillStyle = grad;
+        ctx.fillRect(barX, cy - barH / 2, barW, barH);
+      } else {
+        const gradA = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+        gradA.addColorStop(0, blendToWhite(colA, 0.08));
+        gradA.addColorStop(1, colA);
+        ctx.fillStyle = gradA;
+        ctx.fillRect(barX, cy - barH / 2, barW, barH / 2);
+        const gradB = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+        gradB.addColorStop(0, blendToWhite(colB, 0.08));
+        gradB.addColorStop(1, colB);
+        ctx.fillStyle = gradB;
+        ctx.fillRect(barX, cy, barW, barH / 2);
+      }
+      // Bordure
+      ctx.strokeStyle = '#D6CFC3'; ctx.lineWidth = 1;
+      ctx.strokeRect(barX + 0.5, cy - barH / 2 + 0.5, barW - 1, barH - 1);
+    } else if (mode === 'diff') {
+      // Barre bicolore rouge → blanc → vert, centrée sur 0. Bornes ±maxAbs en POINTS.
+      const maxAbs = state.diffMaxAbs || 0;
+      const bound = (maxAbs).toFixed(1).replace('.', ',') + '\xa0pts';
+      const minLabel = '−' + bound, maxLabel = '+' + bound;
+      const cy = y + h / 2;
+      const barW = Math.min(560, w - 200);
+      const barX = x + (w - barW) / 2;
+      ctx.font = boundFont;
+      const minLabelW = ctx.measureText(minLabel).width;
+      const COLOR_NEG = '#A52525', COLOR_POS = '#1F7A1F';
+      // Bornes
+      ctx.fillStyle = '#5A5A5A';
+      ctx.fillText(minLabel, barX - minLabelW - 8, cy);
+      ctx.fillText(maxLabel, barX + barW + 8, cy);
+      // Gradient bicolore : rouge → blanc → vert
+      const grad = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+      grad.addColorStop(0,    COLOR_NEG);
+      grad.addColorStop(0.25, blendToWhite(COLOR_NEG, 0.4));
+      grad.addColorStop(0.5,  '#ffffff');
+      grad.addColorStop(0.75, blendToWhite(COLOR_POS, 0.4));
+      grad.addColorStop(1,    COLOR_POS);
+      ctx.fillStyle = grad;
+      ctx.fillRect(barX, cy - barH / 2, barW, barH);
+      ctx.strokeStyle = '#D6CFC3'; ctx.lineWidth = 1;
+      ctx.strokeRect(barX + 0.5, cy - barH / 2 + 0.5, barW - 1, barH - 1);
+      // Étiquette centrale "B − A"
+      ctx.font = '700 12px "Space Grotesk", system-ui, sans-serif';
+      ctx.fillStyle = '#5A5A5A';
+      ctx.textAlign = 'center';
+      ctx.fillText('B − A', barX + barW / 2, cy - barH / 2 - 6);
+      ctx.textAlign = 'left';
+    } else if (mode === 'relative') {
+      // 2 sous-barres côte à côte, chacune avec son range et son tag (A/B).
+      const half = Math.floor((w - 24) / 2);
+      const cy = y + h / 2;
+      function drawSub(boxX, sub, col, letter) {
+        const minLabel = fmt(sub.min), maxLabel = fmt(sub.max);
+        ctx.font = boundFont;
+        const minLabelW = ctx.measureText(minLabel).width;
+        const maxLabelW = ctx.measureText(maxLabel).width;
+        // Tag à gauche : petite pastille colorée avec letter
+        const tagR = 10, tagX = boxX + tagR + 4;
+        ctx.fillStyle = col;
+        ctx.beginPath();
+        ctx.arc(tagX, cy, tagR, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.font = '700 11px "Space Grotesk", system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(letter, tagX, cy + 1);
+        ctx.textAlign = 'left';
+        // Bornes + barre
+        ctx.font = boundFont;
+        const barStart = tagX + tagR + 8 + minLabelW + 6;
+        const barEnd = boxX + half - maxLabelW - 6;
+        const barW = Math.max(40, barEnd - barStart);
+        ctx.fillStyle = '#5A5A5A';
+        ctx.fillText(minLabel, tagX + tagR + 8, cy);
+        ctx.fillText(maxLabel, barEnd + 6, cy);
+        const grad = ctx.createLinearGradient(barStart, 0, barStart + barW, 0);
+        grad.addColorStop(0, blendToWhite(col, 0.08));
+        grad.addColorStop(1, col);
+        ctx.fillStyle = grad;
+        ctx.fillRect(barStart, cy - barH / 2, barW, barH);
+        ctx.strokeStyle = '#D6CFC3'; ctx.lineWidth = 1;
+        ctx.strokeRect(barStart + 0.5, cy - barH / 2 + 0.5, barW - 1, barH - 1);
+      }
+      const rA = state.rangeA || { min: 0, max: 100 };
+      const rB = state.rangeB || { min: 0, max: 100 };
+      drawSub(x,              rA, colA, 'A');
+      drawSub(x + half + 24,  rB, colB, 'B');
+    }
+    ctx.textBaseline = 'alphabetic';
+  }
+
+  // Résumé textuel à droite de la carte Diff : delta moyen + top 3 progressions / reculs.
+  function drawDiffSummary(ctx, x, y, w, h, state) {
+    const cmpAPI = window._cmpExport;
+    if (!cmpAPI) return;
+    const sheetA = cmpAPI.getSheetForSel(state.A);
+    const sheetB = cmpAPI.getSheetForSel(state.B);
+    const items = cmpAPI.computeDiffBureauList(sheetA, state.A, sheetB, state.B);
+    if (!items.length) return;
+    const sorted = [...items].sort((a, b) => b.diff - a.diff);
+    const topPos = sorted.slice(0, 3);
+    const topNeg = sorted.slice(-3).reverse();
+    const mean = items.reduce((s, it) => s + it.diff, 0) / items.length;
+    const cityA = cmpAPI.computeCityScore(sheetA, state.A);
+    const cityB = cmpAPI.computeCityScore(sheetB, state.B);
+    const cityDelta = (typeof cityA === 'number' && typeof cityB === 'number') ? (cityB - cityA) : null;
+    // Cadre subtil
+    ctx.fillStyle = '#F7F3EE';
+    ctx.fillRect(x, y, w, h);
+    ctx.strokeStyle = '#E6DFD5';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+    let cy = y + 30;
+    // Titre
+    ctx.fillStyle = '#1A1A1A';
+    ctx.font = '700 16px "Space Grotesk", system-ui, sans-serif';
+    ctx.fillText('B − A par bureau', x + 18, cy);
+    cy += 28;
+    // Bloc "Ville"
+    if (cityDelta !== null) {
+      ctx.fillStyle = '#5A5A5A';
+      ctx.font = '600 12px "Space Grotesk", system-ui, sans-serif';
+      ctx.fillText('LA ROCHELLE', x + 18, cy);
+      cy += 18;
+      ctx.fillStyle = cityDelta >= 0 ? '#1F7F3A' : '#9B2C2C';
+      ctx.font = '800 22px "Space Grotesk", system-ui, sans-serif';
+      ctx.fillText(fmtSigned(cityDelta) + ' pts', x + 18, cy);
+      cy += 30;
+    }
+    // Delta moyen bureau
+    ctx.fillStyle = '#5A5A5A';
+    ctx.font = '600 12px "Space Grotesk", system-ui, sans-serif';
+    ctx.fillText('DELTA MOYEN', x + 18, cy);
+    cy += 16;
+    ctx.fillStyle = mean >= 0 ? '#1F7F3A' : '#9B2C2C';
+    ctx.font = '700 16px "Space Grotesk", system-ui, sans-serif';
+    ctx.fillText(fmtSigned(mean) + ' pts (' + items.length + ' bureaux)', x + 18, cy);
+    cy += 28;
+    // Top 3 progressions
+    ctx.fillStyle = '#5A5A5A';
+    ctx.font = '600 12px "Space Grotesk", system-ui, sans-serif';
+    ctx.fillText('TOP PROGRESSIONS', x + 18, cy);
+    cy += 16;
+    ctx.font = '600 13px "Space Grotesk", system-ui, sans-serif';
+    topPos.forEach(it => {
+      const denom = bureauDenomFor(it.ns, state);
+      const lbl = parseInt(it.ns) + ' · ' + denom;
+      ctx.fillStyle = '#1A1A1A';
+      ctx.fillText(lbl, x + 18, cy);
+      ctx.fillStyle = '#1F7F3A';
+      ctx.font = '700 13px "Space Grotesk", system-ui, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(fmtSigned(it.diff) + ' pts', x + w - 18, cy);
+      ctx.textAlign = 'left';
+      ctx.font = '600 13px "Space Grotesk", system-ui, sans-serif';
+      cy += 18;
+    });
+    cy += 6;
+    // Top 3 reculs
+    ctx.fillStyle = '#5A5A5A';
+    ctx.font = '600 12px "Space Grotesk", system-ui, sans-serif';
+    ctx.fillText('TOP RECULS', x + 18, cy);
+    cy += 16;
+    ctx.font = '600 13px "Space Grotesk", system-ui, sans-serif';
+    topNeg.forEach(it => {
+      const denom = bureauDenomFor(it.ns, state);
+      const lbl = parseInt(it.ns) + ' · ' + denom;
+      ctx.fillStyle = '#1A1A1A';
+      ctx.fillText(lbl, x + 18, cy);
+      ctx.fillStyle = '#9B2C2C';
+      ctx.font = '700 13px "Space Grotesk", system-ui, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(fmtSigned(it.diff) + ' pts', x + w - 18, cy);
+      ctx.textAlign = 'left';
+      ctx.font = '600 13px "Space Grotesk", system-ui, sans-serif';
+      cy += 18;
+    });
+  }
+  function fmtSigned(d) { return (d >= 0 ? '+' : '−') + Math.abs(d).toFixed(1).replace('.', ','); }
+  // Graphique "papillon" (tornado chart) des écarts par quartier — rendu sur canvas.
+  // Trié par delta signé descendant : progressions en haut (vert), reculs en bas (rouge).
+  // Axe central vertical, barres horizontales partant à gauche ou à droite selon le signe,
+  // largeur ∝ |delta| / maxAbs.
+  function drawDiffTornado(ctx, x, y, w, h, state) {
+    const cmpAPI = window._cmpExport;
+    if (!cmpAPI || !cmpAPI.computeDiffByQuartier) return;
+    const sheetA = cmpAPI.getSheetForSel(state.A);
+    const sheetB = cmpAPI.getSheetForSel(state.B);
+    const items = cmpAPI.computeDiffByQuartier(sheetA, state.A, sheetB, state.B)
+      .filter(it => it.quartier && it.quartier !== 'Nul')
+      .sort((a, b) => b.diff - a.diff);
+    if (!items.length) return;
+    // Cadre subtil identique au summary.
+    ctx.fillStyle = '#F7F3EE'; ctx.fillRect(x, y, w, h);
+    ctx.strokeStyle = '#E6DFD5'; ctx.lineWidth = 1;
+    ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+    // Titre
+    const TITLE_H = 32;
+    ctx.fillStyle = '#1A1A1A';
+    ctx.font = '700 14px "Space Grotesk", system-ui, sans-serif';
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'left';
+    ctx.fillText('Écart B − A par quartier', x + 16, y + 22);
+    // Layout interne du tornado.
+    const PAD_L = 16, PAD_R = 16, PAD_T = TITLE_H + 6, PAD_B = 10;
+    const NAME_W = 110;      // colonne nom à gauche
+    const VALUE_W = 60;      // colonne valeur en bout de barre
+    const innerX = x + PAD_L;
+    const innerY = y + PAD_T;
+    const innerW = w - PAD_L - PAD_R;
+    const innerH = h - PAD_T - PAD_B;
+    const barAreaW = innerW - NAME_W - VALUE_W - 16; // 16 = paddings autour de bar area
+    const AXIS_X = innerX + NAME_W + 8 + barAreaW / 2;
+    const HALF_BAR = barAreaW / 2;
+    const maxAbs = Math.max(0.01, ...items.map(it => Math.abs(it.diff)));
+    const rowH = Math.max(16, Math.min(30, innerH / items.length));
+    // Axe vertical
+    ctx.strokeStyle = '#C7BFB1'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(AXIS_X + 0.5, innerY);
+    ctx.lineTo(AXIS_X + 0.5, innerY + items.length * rowH);
+    ctx.stroke();
+    // Couleurs (cohérent avec drawCompareLegend diff).
+    const COLOR_POS = '#1F7A1F', COLOR_NEG = '#A52525';
+    items.forEach((it, i) => {
+      const cy = innerY + rowH * (i + 0.5);
+      // Nom (aligné à droite près de l'axe nom)
+      ctx.fillStyle = '#1A1A1A';
+      ctx.font = '600 12px "Space Grotesk", system-ui, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      let name = it.quartier;
+      while (ctx.measureText(name).width > NAME_W - 4 && name.length > 1) name = name.slice(0, -1);
+      if (name !== it.quartier) name += '…';
+      ctx.fillText(name, innerX + NAME_W, cy);
+      // Barre
+      const isPos = it.diff >= 0;
+      const barW = Math.abs(it.diff) / maxAbs * HALF_BAR * 0.95;
+      const barH = Math.max(8, rowH * 0.55);
+      ctx.fillStyle = isPos ? COLOR_POS : COLOR_NEG;
+      if (isPos) {
+        ctx.fillRect(AXIS_X, cy - barH / 2, barW, barH);
+      } else {
+        ctx.fillRect(AXIS_X - barW, cy - barH / 2, barW, barH);
+      }
+      // Valeur signée en bout de barre
+      ctx.font = '700 11px "Space Grotesk", system-ui, sans-serif';
+      ctx.fillStyle = isPos ? COLOR_POS : COLOR_NEG;
+      const valStr = fmtSigned(it.diff) + ' pts';
+      if (isPos) {
+        ctx.textAlign = 'left';
+        ctx.fillText(valStr, AXIS_X + barW + 6, cy);
+      } else {
+        ctx.textAlign = 'right';
+        ctx.fillText(valStr, AXIS_X - barW - 6, cy);
+      }
+    });
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'left';
+  }
+  function bureauDenomFor(ns, state) {
+    const displaySide = (typeof window._cmpDisplaySide === 'function') ? window._cmpDisplaySide() : 'A';
+    const sel = state[displaySide];
+    const elec = (typeof ELECTIONS !== 'undefined') ? ELECTIONS[sel.elec] : null;
+    const era = elec ? String(elec.my || '') : '';
+    const info = (typeof BUREAU_INFO !== 'undefined') ? (BUREAU_INFO[era] || {})[ns] : null;
+    return (info && info.den) || ('Bureau ' + parseInt(ns));
+  }
+
+  // Mode Nuage : reconstruit le SVG aux dimensions exactes de la box d'export
+  // (W=w, H=h) puis le rasterise sur le canvas. Ainsi le graphe REMPLIT la
+  // box sans déformation ni letterboxing (ticks et points recalculés à la
+  // bonne échelle, pas un stretch d'image).
+  async function drawNuageOnCanvas(ctx, x, y, w, h) {
+    const cmpAPI = window._cmpExport;
+    if (!cmpAPI || typeof cmpAPI.buildNuageSvgInner !== 'function') return;
+    // Fond blanc (comme dans la live view)
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(x, y, w, h);
+    ctx.strokeStyle = '#E6DFD5'; ctx.lineWidth = 1;
+    ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+    // Construit le markup SHAPES + le tableau textElements à part. Le rasterizer
+    // SVG hors-DOM n'a pas accès aux webfonts (Space Grotesk via Google Fonts)
+    // → on dessine les textes APRÈS en Canvas2D, qui lui respecte les fonts.
+    const result = cmpAPI.buildNuageSvgInner(w, h, { exportMode: true, collectText: true });
+    if (!result || !result.html) {
+      ctx.fillStyle = '#888';
+      ctx.font = '500 14px "Space Grotesk", system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Rendu du nuage indisponible', x + w / 2, y + h / 2);
+      ctx.textAlign = 'left';
+      return;
+    }
+    const svgText = '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '">'
+      + result.html + '</svg>';
+    const blob = new Blob([svgText], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    try {
+      await new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          // Pas de fit : le SVG est déjà aux dimensions exactes → drawImage 1:1.
+          ctx.drawImage(img, x, y, w, h);
+          resolve();
+        };
+        img.onerror = reject;
+        img.src = url;
+      });
+    } catch (_) {
+      ctx.fillStyle = '#888';
+      ctx.font = '500 14px "Space Grotesk", system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Rendu du nuage indisponible', x + w / 2, y + h / 2);
+      ctx.textAlign = 'left';
+    }
+    URL.revokeObjectURL(url);
+    // ── Textes par-dessus le SVG rasterisé ──
+    // Position des éléments est relative au viewBox (0,0)→(w,h) → on translate
+    // par (x, y) qui est l'offset de la box dans le canvas final.
+    const anchorMap = { start: 'left', middle: 'center', end: 'right' };
+    (result.textElements || []).forEach(te => {
+      ctx.save();
+      ctx.fillStyle = te.color;
+      ctx.font = te.fontWeight + ' ' + te.fontSize + 'px "Space Grotesk", system-ui, sans-serif';
+      ctx.textAlign = anchorMap[te.anchor] || 'left';
+      ctx.textBaseline = 'alphabetic';
+      if (te.transform && te.transform.rotate != null) {
+        ctx.translate(x + te.transform.originX, y + te.transform.originY);
+        ctx.rotate(te.transform.rotate * Math.PI / 180);
+        ctx.fillText(te.text, 0, 0);
+      } else {
+        ctx.fillText(te.text, x + te.x, y + te.y);
+      }
+      ctx.restore();
+    });
   }
 
   function downloadCanvas(canvas, filename) {
@@ -10795,6 +13493,20 @@ function updateAnalyseLink() {
   }
 
   window.exportShareImage = async function() {
+    // Priorité : si on est en mode comparaison, on exporte la vue comparateur
+    // selon le mode actif (Abs/Rel : 2 cartes, Diff : 1 carte + résumé, Nuage : scatter SVG).
+    const cmp = (typeof window.getCmpState === 'function') ? window.getCmpState() : null;
+    if (cmp && cmp.A && cmp.B) {
+      const canvas = await composeCompare();
+      if (canvas) {
+        const cmpAPI = window._cmpExport;
+        const labA = cmpAPI ? cmpAPI.shortLabelOfSel(cmp.A) : 'a';
+        const labB = cmpAPI ? cmpAPI.shortLabelOfSel(cmp.B) : 'b';
+        const fname = 'lrvote-comparaison-' + slug(labA + ' vs ' + labB + ' ' + (cmp.scaleMode || 'absolute')) + '.png';
+        await downloadCanvas(canvas, fname);
+        return;
+      }
+    }
     const fctx = getFicheContext();
     const canvas = fctx ? await composeFiche(fctx) : await compose();
     const slugBase = fctx ? (fctx.title + ' ' + fctx.subtitle) : (getCarteTitle() + ' ' + getCarteSubtitle());
@@ -10805,6 +13517,7 @@ function updateAnalyseLink() {
   // Exposition pour les tests / l'export Puppeteer sans passer par downloadCanvas (qui déclencherait un vrai download).
   window.compose         = compose;
   window.composeFiche    = composeFiche;
+  window.composeCompare  = composeCompare;
   window.getFicheContext = getFicheContext;
 })();
 
