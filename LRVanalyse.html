@@ -1531,9 +1531,15 @@ function slugifyKey(s) {
 // Familles « valides » = présentes dans FAMILY_CONFIG et non masquées.
 function isFamilyValid(t) { return !!(FAMILY_CONFIG[t] && !FAMILY_CONFIG[t].hidden); }
 
+// Memo : CAND_DATA est statique post-load et FAMILY_CONFIG est const → l'output
+// de getPresentFamilies est invariant. Le calcul itérait tout CAND_DATA à chaque
+// hover du chart en mode familles (cf. audit #6) ; cache au 1er appel suffit.
+let _presentFamiliesCache = null;
 function getPresentFamilies() {
+  if (_presentFamiliesCache) return _presentFamiliesCache;
   const present = new Set();
   Object.values(CAND_DATA).forEach(c => (c.t || []).forEach(t => { if (isFamilyValid(t)) present.add(t); }));
+  _presentFamiliesCache = present;
   return present;
 }
 
@@ -2314,16 +2320,27 @@ function getVilleData(typeFilter) {
     let totalE = 0, totalI = 0;
     const sums = {};
     const csSums = {};
+    // Source de vérité = bd._voix (entiers exacts, posés par l'IIFE de donnees.js).
+    // Voir CLAUDE.md "principe fondamental" : sommer les voix entières, jamais
+    // pct×e (qui propage les erreurs d'arrondi de 1 voix sur les agrégats).
+    // Fallback bd.c × e/100 pour anciennes données sans _voix (legacy).
     for (const [, bd] of Object.entries(sheet)) {
       const e = bd.e || 0;
       totalE += e; totalI += bd.i || 0;
-      const bpLive = computeBP(bd.c, label);
-      Object.entries(bpLive).forEach(([k,v]) => { sums[k] = (sums[k]||0) + v*e; });
-      Object.entries(bd.c || {}).forEach(([cname,pct]) => { csSums[cname] = (csSums[cname]||0) + pct*e; });
+      if (bd._voix) {
+        const bpV = computeBP(bd._voix, label);  // computeBP somme par bk peu importe l'unité d'entrée
+        Object.entries(bpV).forEach(([k,v]) => { sums[k] = (sums[k]||0) + v; });
+        Object.entries(bd._voix).forEach(([cname,v]) => { csSums[cname] = (csSums[cname]||0) + v; });
+      } else {
+        const bpLive = computeBP(bd.c, label);
+        Object.entries(bpLive).forEach(([k,v]) => { sums[k] = (sums[k]||0) + v*e/100; });
+        Object.entries(bd.c || {}).forEach(([cname,pct]) => { csSums[cname] = (csSums[cname]||0) + pct*e/100; });
+      }
     }
     if (totalE > 0) {
-      const bp = {}; Object.entries(sums).forEach(([k,v]) => bp[k] = v/totalE);
-      const cs = {}; Object.entries(csSums).forEach(([k,v]) => cs[k] = v/totalE);
+      // sums/csSums sont en voix entières → reconvertir en pct via 100×voix/totalE.
+      const bp = {}; Object.entries(sums).forEach(([k,v]) => bp[k] = 100*v/totalE);
+      const cs = {}; Object.entries(csSums).forEach(([k,v]) => cs[k] = 100*v/totalE);
       let totalBN = 0;
       for (const [, bd] of Object.entries(sheet)) totalBN += bd.bn || 0;
       const totalVotants = totalE + totalBN;
@@ -2384,18 +2401,26 @@ function getQuartierData(quartier, typeFilter) {
     let totalE = 0, totalI = 0;
     const sums = {};
     const csSums = {};
+    // Voir LRVanalyse:getVilleData pour le principe : sommer bd._voix (entiers
+    // exacts) plutôt que pct×e qui propage les erreurs d'arrondi sur les agrégats.
     for (const bid of ids) {
       const bd = sheet[bid];
       if (!bd) continue;
       const e = bd.e || 0;
       totalE += e; totalI += bd.i || 0;
-      const bpLive = computeBP(bd.c, label);
-      Object.entries(bpLive).forEach(([k,v]) => { sums[k] = (sums[k]||0) + v*e; });
-      Object.entries(bd.c || {}).forEach(([cname,pct]) => { csSums[cname] = (csSums[cname]||0) + pct*e; });
+      if (bd._voix) {
+        const bpV = computeBP(bd._voix, label);
+        Object.entries(bpV).forEach(([k,v]) => { sums[k] = (sums[k]||0) + v; });
+        Object.entries(bd._voix).forEach(([cname,v]) => { csSums[cname] = (csSums[cname]||0) + v; });
+      } else {
+        const bpLive = computeBP(bd.c, label);
+        Object.entries(bpLive).forEach(([k,v]) => { sums[k] = (sums[k]||0) + v*e/100; });
+        Object.entries(bd.c || {}).forEach(([cname,pct]) => { csSums[cname] = (csSums[cname]||0) + pct*e/100; });
+      }
     }
     if (totalE > 0) {
-      const bp = {}; Object.entries(sums).forEach(([k,v]) => bp[k] = v/totalE);
-      const cs = {}; Object.entries(csSums).forEach(([k,v]) => cs[k] = v/totalE);
+      const bp = {}; Object.entries(sums).forEach(([k,v]) => bp[k] = 100*v/totalE);
+      const cs = {}; Object.entries(csSums).forEach(([k,v]) => cs[k] = 100*v/totalE);
       let totalBN = 0;
       for (const bid of ids) { const bd = sheet[bid]; if (bd) totalBN += bd.bn || 0; }
       const totalVotants = totalE + totalBN;
@@ -2483,18 +2508,26 @@ function getCantonData(cantonKey, typeFilter) {
     let totalE = 0, totalI = 0;
     const sums = {};
     const csSums = {};
+    // Voir LRVanalyse:getVilleData pour le principe : sommer bd._voix (entiers
+    // exacts) plutôt que pct×e qui propage les erreurs d'arrondi sur les agrégats.
     for (const bid of ids) {
       const bd = sheet[bid];
       if (!bd) continue;
       const e = bd.e || 0;
       totalE += e; totalI += bd.i || 0;
-      const bpLive = computeBP(bd.c, label);
-      Object.entries(bpLive).forEach(([k, v]) => { sums[k] = (sums[k] || 0) + v * e; });
-      Object.entries(bd.c || {}).forEach(([cname, pct]) => { csSums[cname] = (csSums[cname] || 0) + pct * e; });
+      if (bd._voix) {
+        const bpV = computeBP(bd._voix, label);
+        Object.entries(bpV).forEach(([k, v]) => { sums[k] = (sums[k] || 0) + v; });
+        Object.entries(bd._voix).forEach(([cname, v]) => { csSums[cname] = (csSums[cname] || 0) + v; });
+      } else {
+        const bpLive = computeBP(bd.c, label);
+        Object.entries(bpLive).forEach(([k, v]) => { sums[k] = (sums[k] || 0) + v * e / 100; });
+        Object.entries(bd.c || {}).forEach(([cname, pct]) => { csSums[cname] = (csSums[cname] || 0) + pct * e / 100; });
+      }
     }
     if (totalE > 0) {
-      const bp = {}; Object.entries(sums).forEach(([k, v]) => bp[k] = v / totalE);
-      const cs = {}; Object.entries(csSums).forEach(([k, v]) => cs[k] = v / totalE);
+      const bp = {}; Object.entries(sums).forEach(([k, v]) => bp[k] = 100 * v / totalE);
+      const cs = {}; Object.entries(csSums).forEach(([k, v]) => cs[k] = 100 * v / totalE);
       let totalBN = 0;
       for (const bid of ids) { const bd = sheet[bid]; if (bd) totalBN += bd.bn || 0; }
       const totalVotants = totalE + totalBN;
@@ -4538,10 +4571,14 @@ function setupChartZoom() {
     // Clamp : min CHART_MIN_VISIBLE, max N (= tout visible = zoom out complet)
     newCount = Math.max(CHART_MIN_VISIBLE, Math.min(s.N, newCount));
     // Nouvel unitX implicite (pour recalculer la position du centerIdx) :
-    // unitX_new = cw / (newCount - 1). On veut centerIdx à la même position pixel :
-    // padLeft + (centerIdx - newStart) * unitX_new = centerPx
-    // → newStart = centerIdx - (centerPx - padLeft) / unitX_new
-    const unitXNew = newCount > 1 ? cw / (newCount - 1) : cw;
+    // doit utiliser exactement la même formule que drawChart (ligne 3206) :
+    //   unitX = cW / visibleCount  (et NON visibleCount-1 — cf. commentaire
+    //   ligne 3203 sur la marge de unitX/2 de chaque côté).
+    // Sinon le centre du geste dérive sous le doigt pendant le pinch.
+    // On veut centerIdx à la même position pixel après zoom :
+    //   padLeft + (centerIdx - newStart) * unitX_new = centerPx
+    //   → newStart = centerIdx - (centerPx - padLeft) / unitX_new
+    const unitXNew = newCount > 0 ? cw / newCount : cw;
     let newStart = centerIdx - (centerPx - padLeft) / unitXNew;
     const maxStart = Math.max(0, s.N - newCount);
     if (newStart < 0) newStart = 0;

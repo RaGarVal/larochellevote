@@ -337,6 +337,34 @@ function getCandidaturesOfPerson(pid) {
   return result;
 }
 
+// Cache des totaux par (election, tour, canton) pour éviter de re-scanner toute
+// la sheet à CHAQUE candidature affichée (audit #13 : sur une fiche à 10+ candidatures
+// on faisait 10 × T × B × K = O(C×T×B×K) inutiles). Données statiques → cache
+// persiste pour la durée du module.
+const _allTotalsCache = new Map();
+function _allTotalsFor(sh, era, label, tour, canton) {
+  const key = label + '|' + tour + '|' + (canton || '');
+  if (_allTotalsCache.has(key)) return _allTotalsCache.get(key);
+  const out = {};
+  const isCantonalScope = canton != null;
+  Object.entries(sh).forEach(([bid, bd]) => {
+    if (!bd || !bd.c) return;
+    // Pour les cantonales/départementales : restreint au canton ciblé (audit #12 :
+    // la sheet est aplatie par par_canton donc sans filtre, le rang mélangerait les
+    // candidats des 3 cantons → rangs gonflés, statut "first-lr" parfois manqué).
+    if (isCantonalScope) {
+      const info = (BUREAU_INFO[era] || {})[bid];
+      if (!info || String(info.c || '') !== canton) return;
+    }
+    Object.keys(bd.c).forEach(k => {
+      const v = (bd._voix && bd._voix[k] != null) ? bd._voix[k] : 0;
+      out[k] = (out[k] || 0) + v;
+    });
+  });
+  _allTotalsCache.set(key, out);
+  return out;
+}
+
 // Calcule le score total d'un candidat à La Rochelle pour une élection.
 // Source de vérité = voix entières (cf. CLAUDE.md). On somme bd._voix[cid] sur tous
 // les bureaux où la candidature apparaît, et on divise par la somme des exprimés
@@ -344,6 +372,19 @@ function getCandidaturesOfPerson(pid) {
 function computeCandidatureScore(cid, c) {
   const el = ELECTIONS[c.election];
   if (!el || !el.sheets) return null;
+  const era = el.my || '';
+  // Détecte le canton du candidat pour les cantonales/départementales :
+  // 1er bureau où cid apparaît dans n'importe quel tour. Reste null sinon.
+  const isCantonalElec = typeof isCantonalElection === 'function' && isCantonalElection(c.election);
+  let cantonOfCand = null;
+  if (isCantonalElec) {
+    const firstSh = el.sheets.T1 || el.sheets.TU || el.sheets.T2 || {};
+    const firstBid = Object.keys(firstSh).find(bid => firstSh[bid] && firstSh[bid].c && Object.prototype.hasOwnProperty.call(firstSh[bid].c, cid));
+    if (firstBid) {
+      const info = (BUREAU_INFO[era] || {})[firstBid];
+      if (info && info.c != null) cantonOfCand = String(info.c);
+    }
+  }
   // Pour les T2 : si T2 existe, on retourne 2 scores (T1 et T2)
   const tours = {};
   for (const tour of ['T1', 'T2', 'TU']) {
@@ -351,24 +392,23 @@ function computeCandidatureScore(cid, c) {
     if (!sh) continue;
     let totV = 0, totE = 0, rank = null, nbCand = 0;
     let bureauWithCand = 0;
-    Object.values(sh).forEach(bd => {
+    Object.entries(sh).forEach(([bid, bd]) => {
       if (!bd || !bd.c) return;
       if (!Object.prototype.hasOwnProperty.call(bd.c, cid)) return;
+      // Défensif : si on a un canton ciblé, ne compte que les bureaux de ce canton.
+      if (cantonOfCand != null) {
+        const info = (BUREAU_INFO[era] || {})[bid];
+        if (!info || String(info.c || '') !== cantonOfCand) return;
+      }
       const v = (bd._voix && bd._voix[cid] != null) ? bd._voix[cid] : Math.round((bd.c[cid] || 0) * (bd.e || 0) / 100);
       totV += v;
       totE += bd.e || 0;
       bureauWithCand++;
     });
     if (totE === 0) continue;
-    // Rang : on calcule le total ville de chaque candidat pour ce tour, puis on classe.
-    const allTotals = {};
-    Object.values(sh).forEach(bd => {
-      if (!bd || !bd.c) return;
-      Object.keys(bd.c).forEach(k => {
-        const v = (bd._voix && bd._voix[k] != null) ? bd._voix[k] : 0;
-        allTotals[k] = (allTotals[k] || 0) + v;
-      });
-    });
+    // Rang : récupéré depuis le cache (un seul scan par (election, tour, canton)
+    // pour toutes les candidatures du candidat dans la même élection).
+    const allTotals = _allTotalsFor(sh, era, c.election, tour, cantonOfCand);
     const sorted = Object.entries(allTotals).sort((a,b)=>b[1]-a[1]);
     rank = sorted.findIndex(([k]) => k === cid) + 1;
     nbCand = sorted.length;

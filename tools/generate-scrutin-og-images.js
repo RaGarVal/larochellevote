@@ -93,8 +93,20 @@ async function captureScrutin(page, job) {
     { timeout: 30000 }
   );
 
-  // Petite attente pour que la fiche soit ouverte (selectCantonFromList async, etc.)
-  await new Promise(r => setTimeout(r, 3000));
+  // Attente du rendu effectif (en remplacement d'un sleep forfaitaire 3s × 62 = 186s) :
+  //  - cas canton : on attend que window.getFicheContext() retourne un contexte non-null
+  //    (= selectCantonFromList est résolu et a peuplé la fiche)
+  //  - cas tab=global : on attend qu'au moins un <path.leaflet-interactive> soit présent
+  //    (= la choroplèthe Leaflet a été bindée). Polling 100ms, fallback silencieux à 2.5s.
+  await page.waitForFunction(
+    () => {
+      try {
+        if (typeof window.getFicheContext === 'function' && window.getFicheContext()) return true;
+      } catch (_) {}
+      return document.querySelectorAll('path.leaflet-interactive').length > 0;
+    },
+    { timeout: 2500, polling: 100 }
+  ).catch(() => { /* fallback : on tente quand même le compose ci-dessous */ });
 
   // Appel direct du compositeur natif (skip fonts.ready via _exportMode)
   const dataUrl = await page.evaluate(async () => {

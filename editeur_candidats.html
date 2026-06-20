@@ -132,7 +132,7 @@
 <!-- ─────────────── SECTION CANDIDATS ─────────────── -->
 <section id="section-cand" class="section on">
   <div class="filters">
-    <input type="search" id="search-cand" placeholder="Rechercher un candidat, un parti, une élection…" oninput="filterCand()">
+    <input type="search" id="search-cand" placeholder="Rechercher un candidat, un parti, une élection…" oninput="filterCandDebounced()">
     <select id="filter-b" onchange="filterCand()">
       <option value="">Tous blocs</option>
       <option value="G">G</option>
@@ -626,6 +626,14 @@ function filterCand() {
   updateSortIndicators(document.getElementById('cand-head'), sortCand);
   refreshPartiCodesDatalist();
   if (currentSection === 'cand') updateCount(filtered.length, 'candidat');
+}
+// Debounce 150ms pour le oninput du champ recherche : sans ça, chaque keystroke
+// reconstruit toute la table (audit #14). Les onchange des selects restent
+// branchés sur filterCand() direct — un clic n'a pas besoin de latence.
+let _filterCandTimer = null;
+function filterCandDebounced() {
+  if (_filterCandTimer) clearTimeout(_filterCandTimer);
+  _filterCandTimer = setTimeout(() => { _filterCandTimer = null; filterCand(); }, 150);
 }
 
 function refreshPartiCodesDatalist() {
@@ -1678,6 +1686,18 @@ function validateNewElection() {
   if (!data.my || typeof data.my !== 'string') errs.push('Champ "my" (ère cartographique) manquant');
   if (data.my && !BUREAU_INFO[data.my]) errs.push('Ère cartographique "' + data.my + '" inconnue');
   if (!data.candidatures || typeof data.candidatures !== 'object') errs.push('Champ "candidatures" manquant');
+
+  // Early-return si erreurs structurelles bloquantes : sans `data.my` valide ou
+  // sans `data.candidatures`, la suite (checkSheet + boucle candidatures) plante
+  // sur `BUREAU_INFO[undefined][bid]` ou `data.candidatures[refId]` → throw silencieux
+  // dans le handler oninput → preview vide (audit #11).
+  if (!data.my || !BUREAU_INFO[data.my] || !data.candidatures || typeof data.candidatures !== 'object') {
+    preview.innerHTML = '<div style="color:#c00"><strong>❌ ' + errs.length + ' erreur(s) bloquante(s) :</strong><ul style="margin:4px 0 0 20px">'
+      + errs.slice(0, 10).map(e => '<li>' + escapeHtml(e) + '</li>').join('')
+      + (errs.length > 10 ? '<li>… +' + (errs.length - 10) + ' autres</li>' : '')
+      + '</ul></div>';
+    return;
+  }
 
   // Validation new_persons (optionnel)
   const newPersons = data.new_persons || {};

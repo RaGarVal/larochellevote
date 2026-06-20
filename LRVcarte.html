@@ -6039,7 +6039,26 @@ function _noDataMsg(ns) {
   return 'Données non disponibles pour ce bureau.';
 }
 
+// Cache du HTML preview au scope module. Le hover sur la carte appelle
+// buildBureauPreviewHTML 30-60×/sec lors d'un sweep (audit #2). Le résultat
+// dépend uniquement de (bureau, election, sheet, mode) qui sont invariants
+// pendant un sweep → cache hit garanti après le 1er calcul. Sur le mouseout
+// vers la vue "ville globale" (la + chère, ~50 entries de candidats à somer)
+// le gain est immédiat dès le 2e mouseout.
+// Pas d'invalidation explicite : le cache key change automatiquement avec
+// l'élection/le tour/le mode. Stale entries restent en mémoire (taille bornée
+// par #élections × #tours × #modes × #bureaux ≈ ~40k max, négligeable).
+const _bureauPreviewCache = new Map();
 function buildBureauPreviewHTML(feature) {
+  const _nsKey = feature ? (typeof numStr === 'function' ? numStr(feature) : '_feat') : '_global';
+  const _cacheKey = _nsKey + '|' + currentElection + '|' + currentSheet + '|' + currentMapMode;
+  const _hit = _bureauPreviewCache.get(_cacheKey);
+  if (_hit != null) return _hit;
+  const _html = _buildBureauPreviewHTMLImpl(feature);
+  _bureauPreviewCache.set(_cacheKey, _html);
+  return _html;
+}
+function _buildBureauPreviewHTMLImpl(feature) {
   // ── Mode "ville globale" (pas de bureau survolé/sélectionné) ──
   if (!feature) {
     // Élection cantonale/départementale : agrégation ville n'a pas de sens
@@ -9661,13 +9680,18 @@ function updateFooter() {
       const localRange = isDiff
         ? { min: -(_cmpState.diffMaxAbs || 0), max: (_cmpState.diffMaxAbs || 0) }
         : (side ? rangeOf(side) : { min: _cmpState.minG, max: _cmpState.maxG });
+      // Throttle rAF (audit #3) : le mousemove sur la barre légende déclenchait
+      // setStyle + bringToFront sur ~60 layers PAR PIXEL → 100-200×/sec selon
+      // la souris. Le curseur visuel reste synchrone (cheap), mais le highlight
+      // des layers (lourd) est différé au prochain rAF — au plus 60×/sec, et
+      // seule la dernière position du mouvement gagne.
       bar.addEventListener('mousemove', e => {
         const rect = bar.getBoundingClientRect();
         const t = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
         const targetPct = localRange.min + t * (localRange.max - localRange.min);
+        // Curseur visuel : synchrone (juste 2-3 ops DOM, pas de Leaflet derrière).
         if (cursor) {
           cursor.style.left = (t * 100) + '%';
-          // En mode diff, on affiche le delta avec son signe (+/− pts), pas un %.
           const label = isDiff
             ? ((targetPct >= 0 ? '+' : '−') + Math.abs(targetPct).toFixed(1).replace('.', ',') + '\xa0pts')
             : (targetPct.toFixed(1).replace('.', ',') + ' %');
@@ -9675,25 +9699,40 @@ function updateFooter() {
           cursor.classList.add('on');
           cursor.classList.remove('ghost');
         }
-        unhighlight();
-        if (isDiff) {
-          highlightDiffAt(targetPct);
-        } else if (side) {
-          // Mode relatif : highlight les 2 côtés via leurs ranges respectifs, à
-          // même position relative t. Curseur fantôme sur l'autre barre.
-          highlightSideAt(side, targetPct);
-          const otherSide = side === 'A' ? 'B' : 'A';
-          const rOther = rangeOf(otherSide);
-          const otherPct = rOther.min + t * (rOther.max - rOther.min);
-          highlightSideAt(otherSide, otherPct);
-          updateGhostCursor(side, t);
-        } else {
-          // Mode absolu : 1 barre, on highlight les 2 cartes au même pct.
-          highlightSideAt('A', targetPct);
-          highlightSideAt('B', targetPct);
-        }
+        // Highlight Leaflet : throttlé rAF, dernier targetPct gagne.
+        bar._pendingT = t;
+        bar._pendingTargetPct = targetPct;
+        if (bar._rafScheduled) return;
+        bar._rafScheduled = true;
+        bar._rafId = requestAnimationFrame(() => {
+          bar._rafScheduled = false;
+          const lt = bar._pendingT;
+          const lp = bar._pendingTargetPct;
+          unhighlight();
+          if (isDiff) {
+            highlightDiffAt(lp);
+          } else if (side) {
+            // Mode relatif : highlight les 2 côtés via leurs ranges respectifs, à
+            // même position relative t. Curseur fantôme sur l'autre barre.
+            highlightSideAt(side, lp);
+            const otherSide = side === 'A' ? 'B' : 'A';
+            const rOther = rangeOf(otherSide);
+            const otherPct = rOther.min + lt * (rOther.max - rOther.min);
+            highlightSideAt(otherSide, otherPct);
+            updateGhostCursor(side, lt);
+          } else {
+            // Mode absolu : 1 barre, on highlight les 2 cartes au même pct.
+            highlightSideAt('A', lp);
+            highlightSideAt('B', lp);
+          }
+        });
       });
       bar.addEventListener('mouseleave', () => {
+        // Annule un rAF en attente pour éviter qu'il highlight après le leave.
+        if (bar._rafScheduled && bar._rafId != null) {
+          cancelAnimationFrame(bar._rafId);
+          bar._rafScheduled = false;
+        }
         clearGhostCursors();
         unhighlight();
       });

@@ -589,6 +589,24 @@ console.log(rdv
 
   await page.setViewport({ width: 1280, height: 800, deviceScaleFactor: 2 });
 
+  // ── Interception des tuiles CARTO/OSM AVANT le 1er goto ────────────────────
+  // La 1re navigation (LRVcarte.html, networkidle0) attendait jusqu'à 40s en
+  // CI tant que les tuiles n'étaient pas chargées — on n'en a aucun besoin pour
+  // l'extraction des données JS. On répond immédiatement avec un PNG transparent
+  // 1×1 pour que networkidle0 résolve instantanément. L'interception reste
+  // active pour le rendu d'export plus tard (même page).
+  const BLANK_PNG = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ' +
+    'AAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+  await page.setRequestInterception(true);
+  page.on('request', req => {
+    if (/cartocdn\.com|openstreetmap\.org/i.test(req.url())) {
+      req.respond({ status: 200, contentType: 'image/png', body: BLANK_PNG });
+    } else {
+      req.continue();
+    }
+  });
+
   // ── 1. Charger le site pour accéder aux données JS ────────────────────────
   console.log('⏳ Chargement du site…');
   try {
@@ -604,7 +622,7 @@ console.log(rdv
     );
   } catch {
     console.error('❌ Les données ELECTIONS ne sont pas disponibles après 30s. Abandon.');
-    await browser.close(); process.exit(0);
+    await browser.close(); process.exit(1);
   }
 
   // ── 2. Extraire la liste des élections, bureaux et quartiers ──────────────
@@ -1023,7 +1041,7 @@ console.log(rdv
 
   if (!elecData) {
     console.error('❌ Données introuvables. Abandon.');
-    await browser.close(); process.exit(0);
+    await browser.close(); process.exit(1);
   }
 
   // ── 5. Infos candidat depuis CAND_DATA ────────────────────────────────────
@@ -1039,6 +1057,20 @@ console.log(rdv
               || CAND_DATA?.[n + '|' + el]
               || CAND_DATA?.[n]
               || {};
+      // Cas binôme paritaire (Départementales/Cantonales modernes) : l'entrée
+      // CAND_DATA n'a pas de p/n/s propres, on résout les 2 membres via PERSONS
+      // — même logique que binomeMembers/binomeFullLabel dans LRVcarte (femme
+      // devant si sexes connus, sinon ordre d'origine).
+      if (Array.isArray(cd.binome) && cd.binome.length === 2) {
+        const m1 = (typeof PERSONS !== 'undefined' && PERSONS[cd.binome[0]]) || {};
+        const m2 = (typeof PERSONS !== 'undefined' && PERSONS[cd.binome[1]]) || {};
+        const ordered = (m1.s !== 'F' && m2.s === 'F') ? [m2, m1] : [m1, m2];
+        const nom = ordered
+          .map(m => ((m.p ? m.p + ' ' : '') + (m.n || '')).trim())
+          .filter(Boolean)
+          .join(' / ');
+        return { prenom: '', nom: nom || n, parti: cd.pa || '' };
+      }
       return { prenom: cd.p || '', nom: cd.n || n, parti: cd.pa || '' };
     }, name, election, tour);
   }
@@ -1204,22 +1236,8 @@ console.log(rdv
   console.log(tweetText);
   console.log('─'.repeat(60));
 
-  // ── 8. Intercepter les tuiles CARTO avant la navigation export ────────────
-  // composeFiche() charge des tuiles depuis basemaps.cartocdn.com via _drawMapTiles().
-  // En CI (GitHub Actions), ces requêtes sont lentes ou ne se terminent jamais.
-  // On répond immédiatement avec un PNG transparent 1×1 pour que
-  // Promise.all(tilePromises) se résolve instantanément.
-  const BLANK_PNG = Buffer.from(
-    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ' +
-    'AAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
-  await page.setRequestInterception(true);
-  page.on('request', req => {
-    if (/cartocdn\.com|openstreetmap\.org/i.test(req.url())) {
-      req.respond({ status: 200, contentType: 'image/png', body: BLANK_PNG });
-    } else {
-      req.continue();
-    }
-  });
+  // ── 8. Tuiles CARTO/OSM : interception déjà posée AVANT le 1er goto (cf. début
+  // de la fonction). Ré-affirmer ici serait un double-bind erroné. ────────────
 
   // ── 9. Naviguer vers l'URL avec les params (sans mode=export — on contrôle nous-mêmes) ──
   // IMPORTANT : on utilise niveauFinal (le niveau REEL utilisé pour le texte après
