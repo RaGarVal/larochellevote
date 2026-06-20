@@ -15,12 +15,12 @@
 </script>
 <title>Présidentielle 2022 à La Rochelle — Résultats bureau par bureau — La Rochelle Vote</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<meta name="description" content="Résultats détaillés de Présidentielle 2022 à La Rochelle, bureau par bureau. Top 3 : Emmanuel Macron (72,9 %), Marine Le Pen (27,1 %). Abstention : 30,7 %.">
+<meta name="description" content="Résultats détaillés de Présidentielle 2022 à La Rochelle, bureau par bureau. Top 3 : Emmanuel Macron (72,9 %), Marine Le Pen (27,1 %). Abstention : 30,6 %.">
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="La Rochelle Vote">
 <meta property="og:locale" content="fr_FR">
 <meta property="og:title" content="Présidentielle 2022 à La Rochelle — Résultats bureau par bureau">
-<meta property="og:description" content="Résultats détaillés de Présidentielle 2022 à La Rochelle, bureau par bureau. Top 3 : Emmanuel Macron (72,9 %), Marine Le Pen (27,1 %). Abstention : 30,7 %.">
+<meta property="og:description" content="Résultats détaillés de Présidentielle 2022 à La Rochelle, bureau par bureau. Top 3 : Emmanuel Macron (72,9 %), Marine Le Pen (27,1 %). Abstention : 30,6 %.">
 <meta property="og:image" content="https://larochellevote.fr/scrutins/share/presidentielle-2022.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -29,7 +29,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@LaRochelleVote">
 <meta name="twitter:title" content="Présidentielle 2022 à La Rochelle — Résultats bureau par bureau">
-<meta name="twitter:description" content="Résultats détaillés de Présidentielle 2022 à La Rochelle, bureau par bureau. Top 3 : Emmanuel Macron (72,9 %), Marine Le Pen (27,1 %). Abstention : 30,7 %.">
+<meta name="twitter:description" content="Résultats détaillés de Présidentielle 2022 à La Rochelle, bureau par bureau. Top 3 : Emmanuel Macron (72,9 %), Marine Le Pen (27,1 %). Abstention : 30,6 %.">
 <meta name="twitter:image" content="https://larochellevote.fr/scrutins/share/presidentielle-2022.png">
 <link rel="canonical" href="https://larochellevote.fr/scrutins/presidentielle-2022.html">
 <script type="application/ld+json">
@@ -61,7 +61,7 @@
           "longitude": -1.15
         }
       },
-      "description": "Emmanuel Macron (LREM) arrive en tête avec 31,7 % à La Rochelle. Abstention : 27,0 %. 39 526 suffrages exprimés sur 55 101 inscrit·es.",
+      "description": "Emmanuel Macron (LREM) arrive en tête avec 31,7 % à La Rochelle. Abstention : 26,7 %. 39 525 suffrages exprimés sur 54 879 inscrit·es.",
       "url": "https://larochellevote.fr/scrutins/presidentielle-2022.html",
       "organizer": {
         "@type": "GovernmentOrganization",
@@ -94,7 +94,7 @@
           "longitude": -1.15
         }
       },
-      "description": "Emmanuel Macron (LREM) arrive en tête avec 72,9 % à La Rochelle. Abstention : 30,7 %. 34 681 suffrages exprimés sur 54 845 inscrit·es.",
+      "description": "Emmanuel Macron (LREM) arrive en tête avec 72,9 % à La Rochelle. Abstention : 30,6 %. 34 681 suffrages exprimés sur 54 800 inscrit·es.",
       "url": "https://larochellevote.fr/scrutins/presidentielle-2022.html",
       "organizer": {
         "@type": "GovernmentOrganization",
@@ -208,14 +208,8 @@ section.s-block p { font-size: 1rem; line-height: 1.6; color: var(--text-body); 
 .pbox { background: var(--bg-modal-hover); border-radius: 6px; padding: 8px 8px; min-width: 0; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 3px; }
 .pbox-lbl { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-chrome-muted); font-weight: 700; white-space: nowrap; }
 .pbox-val { font-size: 0.92rem; font-weight: 800; color: var(--text-chrome); line-height: 1.1; white-space: nowrap; }
-.s-table { width: 100%; border-collapse: collapse; background: var(--bg-card); border: 1px solid var(--border-chrome); border-radius: 8px; overflow: hidden; }
-.s-table thead { background: var(--bg-chrome-accent); }
-.s-table th { font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-chrome-muted); text-align: left; padding: 10px 14px; }
-.s-table th.num { text-align: right; }
-.s-table td { padding: 10px 14px; font-size: 0.94rem; border-top: 1px solid var(--border-chrome); }
-.s-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
-.s-table .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
-.s-table .winner { font-weight: 700; }
+/* .s-table : règle CSS retirée (audit low #18) — orpheline, aucun élément HTML
+   généré n'utilise class="s-table". */
 .s-warn { background: #FFF7E6; border: 1px solid #E6C77E; color: #8A6A2C; padding: 12px 16px; border-radius: 6px; font-size: 0.9rem; line-height: 1.5; font-style: italic; }
 /* Lignes candidat·e — reproduit le style cand-row de LRVcarte */
 .s-cands { background: var(--bg-modal-hover); border-radius: 8px; padding: 16px 18px; }
@@ -325,7 +319,6 @@ footer.s-foot a:hover { color: var(--text-chrome); }
   header.s-head h1 { font-size: 1.55rem; }
   header.s-head .lead { font-size: 0.94rem; }
   section.s-block h2 { font-size: 1.15rem; }
-  .s-table th, .s-table td { padding: 8px 10px; font-size: 0.86rem; }
   /* Participation : 2 colonnes sur mobile (5 stats → 2/2/1) */
   .partici-grid { grid-template-columns: repeat(2, 1fr); gap: 4px; }
   .pbox { padding: 6px; gap: 2px; }
@@ -402,10 +395,10 @@ footer.s-foot a:hover { color: var(--text-chrome); }
 
       
       <div class="partici-grid">
-        <div class="pbox"><div class="pbox-lbl">Inscrits</div><div class="pbox-val">55 101</div></div>
-        <div class="pbox"><div class="pbox-lbl">Votants</div><div class="pbox-val">40 235 · 73,0 %</div></div>
-        <div class="pbox"><div class="pbox-lbl">Abstention</div><div class="pbox-val">14 866 · 27,0 %</div></div>
-        <div class="pbox"><div class="pbox-lbl">Exprimés</div><div class="pbox-val">39 526</div></div>
+        <div class="pbox"><div class="pbox-lbl">Inscrits</div><div class="pbox-val">54 879</div></div>
+        <div class="pbox"><div class="pbox-lbl">Votants</div><div class="pbox-val">40 234 · 73,3 %</div></div>
+        <div class="pbox"><div class="pbox-lbl">Abstention</div><div class="pbox-val">14 645 · 26,7 %</div></div>
+        <div class="pbox"><div class="pbox-lbl">Exprimés</div><div class="pbox-val">39 525</div></div>
         <div class="pbox"><div class="pbox-lbl">Blancs / nuls</div><div class="pbox-val">709 · 1,8 %</div></div>
       </div>
 
@@ -432,7 +425,7 @@ footer.s-foot a:hover { color: var(--text-chrome); }
               <span class="cand-sub"><span class="cand-parti-full">La France insoumise</span><span class="cand-parti-short">LFI</span></span>
             </div>
             <div class="cand-row-pctvoix">
-              <span class="cand-voix">10 691 voix</span>
+              <span class="cand-voix">10 690 voix</span>
               <span class="cand-sep">·</span>
               <span class="cand-pct">27,0<span class="pct-sym">%</span></span>
             </div>
@@ -692,9 +685,9 @@ footer.s-foot a:hover { color: var(--text-chrome); }
 
       
       <div class="partici-grid">
-        <div class="pbox"><div class="pbox-lbl">Inscrits</div><div class="pbox-val">54 845</div></div>
-        <div class="pbox"><div class="pbox-lbl">Votants</div><div class="pbox-val">38 032 · 69,3 %</div></div>
-        <div class="pbox"><div class="pbox-lbl">Abstention</div><div class="pbox-val">16 813 · 30,7 %</div></div>
+        <div class="pbox"><div class="pbox-lbl">Inscrits</div><div class="pbox-val">54 800</div></div>
+        <div class="pbox"><div class="pbox-lbl">Votants</div><div class="pbox-val">38 032 · 69,4 %</div></div>
+        <div class="pbox"><div class="pbox-lbl">Abstention</div><div class="pbox-val">16 768 · 30,6 %</div></div>
         <div class="pbox"><div class="pbox-lbl">Exprimés</div><div class="pbox-val">34 681</div></div>
         <div class="pbox"><div class="pbox-lbl">Blancs / nuls</div><div class="pbox-val">3 351 · 8,8 %</div></div>
       </div>
@@ -839,7 +832,7 @@ footer.s-foot a:hover { color: var(--text-chrome); }
     </section>
 
     <footer class="s-foot">
-      <span>Page générée le 14 juin 2026 à partir des données de <a href="/">larochellevote.fr</a>.</span>
+      <span>Page générée le 20 juin 2026 à partir des données de <a href="/">larochellevote.fr</a>.</span>
       <span><a href="/methodologie.html">Méthodologie &amp; sources →</a></span>
     </footer>
 

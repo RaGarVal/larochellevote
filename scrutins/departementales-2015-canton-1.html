@@ -208,14 +208,8 @@ section.s-block p { font-size: 1rem; line-height: 1.6; color: var(--text-body); 
 .pbox { background: var(--bg-modal-hover); border-radius: 6px; padding: 8px 8px; min-width: 0; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 3px; }
 .pbox-lbl { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-chrome-muted); font-weight: 700; white-space: nowrap; }
 .pbox-val { font-size: 0.92rem; font-weight: 800; color: var(--text-chrome); line-height: 1.1; white-space: nowrap; }
-.s-table { width: 100%; border-collapse: collapse; background: var(--bg-card); border: 1px solid var(--border-chrome); border-radius: 8px; overflow: hidden; }
-.s-table thead { background: var(--bg-chrome-accent); }
-.s-table th { font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-chrome-muted); text-align: left; padding: 10px 14px; }
-.s-table th.num { text-align: right; }
-.s-table td { padding: 10px 14px; font-size: 0.94rem; border-top: 1px solid var(--border-chrome); }
-.s-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
-.s-table .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
-.s-table .winner { font-weight: 700; }
+/* .s-table : règle CSS retirée (audit low #18) — orpheline, aucun élément HTML
+   généré n'utilise class="s-table". */
 .s-warn { background: #FFF7E6; border: 1px solid #E6C77E; color: #8A6A2C; padding: 12px 16px; border-radius: 6px; font-size: 0.9rem; line-height: 1.5; font-style: italic; }
 /* Lignes candidat·e — reproduit le style cand-row de LRVcarte */
 .s-cands { background: var(--bg-modal-hover); border-radius: 8px; padding: 16px 18px; }
@@ -325,7 +319,6 @@ footer.s-foot a:hover { color: var(--text-chrome); }
   header.s-head h1 { font-size: 1.55rem; }
   header.s-head .lead { font-size: 0.94rem; }
   section.s-block h2 { font-size: 1.15rem; }
-  .s-table th, .s-table td { padding: 8px 10px; font-size: 0.86rem; }
   /* Participation : 2 colonnes sur mobile (5 stats → 2/2/1) */
   .partici-grid { grid-template-columns: repeat(2, 1fr); gap: 4px; }
   .pbox { padding: 6px; gap: 2px; }
@@ -501,7 +494,7 @@ footer.s-foot a:hover { color: var(--text-chrome); }
       <div class="trip-wrap">
         
         <a class="trip-side" href="/scrutins/departementales-2021-canton-1.html" title="Départementales 2021">
-          <div class="trip-bar trip-bar-side"><div class="bb-seg" title="Gauche : 78,5 %" style="width:78.50%;background:#CC0100"></div><div class="bb-seg" title="Centre : 8,1 %" style="width:8.10%;background:#F1C232"></div><div class="bb-seg" title="Extrême droite : 13,4 %" style="width:13.40%;background:#20124D"></div></div>
+          <div class="trip-bar trip-bar-side"><div class="bb-seg" title="Gauche : 78,8 %" style="width:78.80%;background:#CC0100"></div><div class="bb-seg" title="Centre : 8,0 %" style="width:8.00%;background:#F1C232"></div><div class="bb-seg" title="Extrême droite : 13,2 %" style="width:13.20%;background:#20124D"></div></div>
           <span class="trip-side-label">Départementales 2021 <span class="trip-side-meta">(suivant)</span></span>
         </a>
         <div class="trip-bar trip-bar-current"><div class="bb-seg" title="Gauche : 63,7 %" style="width:63.70%;background:#CC0100"></div><div class="bb-seg" title="Droite : 16,7 %" style="width:16.70%;background:#0F55CC"></div><div class="bb-seg" title="Extrême droite : 19,6 %" style="width:19.60%;background:#20124D"></div><div class="trip-mid-line"></div></div>
@@ -607,7 +600,7 @@ footer.s-foot a:hover { color: var(--text-chrome); }
     </section>
 
     <footer class="s-foot">
-      <span>Page générée le 14 juin 2026 à partir des données de <a href="/">larochellevote.fr</a>.</span>
+      <span>Page générée le 20 juin 2026 à partir des données de <a href="/">larochellevote.fr</a>.</span>
       <span><a href="/methodologie.html">Méthodologie &amp; sources →</a></span>
     </footer>
 
