@@ -574,6 +574,17 @@ body.is-cmp-nuage #cmp-nuage {
    l'espace carte, par-dessus les 2 cartes. Bouton X la collapse → chip de
    réouverture en bas-droite (cf. #cmp-diff-reopen plus bas). */
 #cmp-diff-drawer { display: none; }
+/* Hint orientation : masqué par défaut, activé seulement en mobile portrait + mode Diff. */
+#cmp-orientation-hint { display: none; }
+@keyframes cmpOhFadeIn {
+  from { opacity: 0; transform: translateX(8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes cmpOhRotate {
+  0%   { transform: rotate(0deg); }
+  50%  { transform: rotate(-25deg); }
+  100% { transform: rotate(0deg); }
+}
 body.is-cmp-diff #cmp-diff-drawer {
   display: flex; flex-direction: column;
   position: absolute; top: 50%; left: 50%;
@@ -739,7 +750,7 @@ body.is-cmp-diff.is-cmp-diff-collapsed #cmp-diff-reopen {
   width: 0;
   border-left: 1px dashed var(--border-modal);
   pointer-events: none;
-  left: calc(150px + (100% - 150px) * var(--pct));
+  left: calc(108px + (100% - 108px) * var(--pct));
 }
 .cmp-diff-dumbbell-guide-label {
   position: absolute; top: -1px; left: 3px;
@@ -751,7 +762,8 @@ body.is-cmp-diff.is-cmp-diff-collapsed #cmp-diff-reopen {
 .cmp-diff-dumbbell-row {
   /* Rythme inter-ligne harmonieux. Les labels sont toujours côté → la ligne
      n'a plus besoin de réserver de l'espace en haut pour un éventuel `above`. */
-  display: grid; grid-template-columns: 140px 1fr; gap: 10px; align-items: center;
+  display: grid; grid-template-columns: 100px 1fr; gap: 8px; align-items: center;
+  --col-w: 100px;
   min-height: 24px;
   padding: 3px 2px; border-radius: 3px;
   position: relative;
@@ -774,6 +786,13 @@ body.is-cmp-diff.is-cmp-diff-collapsed #cmp-diff-reopen {
   color: var(--text-modal);
   text-align: right;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* Marquee inner span (mêmes ressort que le tornado — cf. cmpDiffNameMarquee). */
+.cmp-diff-dumbbell-name-inner {
+  display: inline-block;
+  white-space: nowrap;
+  will-change: transform;
+  animation: cmpDiffNameMarquee 10s ease-in-out infinite;
 }
 .cmp-diff-dumbbell-track {
   position: relative; height: 18px;
@@ -902,10 +921,59 @@ body.is-cmp-diff.is-cmp-diff-collapsed #cmp-diff-reopen {
    Nom à gauche dans une colonne fixe pour faciliter la lecture. */
 .cmp-diff-tornado { display: flex; flex-direction: column; gap: 3px; }
 .cmp-diff-tornado-row {
-  display: grid; grid-template-columns: 140px 1fr; gap: 10px; align-items: center;
+  display: grid; grid-template-columns: 100px 1fr; gap: 8px; align-items: center;
   min-height: 22px;
   padding: 1px 2px; border-radius: 3px;
   transition: background .12s;
+  --col-w: 100px;
+}
+/* Marquee CSS-only sur le nom du bureau : l'inner span animé est shifté à gauche
+   uniquement s'il déborde du conteneur (via min(0px, calc(col-w - 100%))). Si le
+   texte tient, le transform reste à 0 → pas de mouvement visible. */
+.cmp-diff-tornado-name-inner {
+  display: inline-block;
+  white-space: nowrap;
+  will-change: transform;
+  animation: cmpDiffNameMarquee 10s ease-in-out infinite;
+}
+@keyframes cmpDiffNameMarquee {
+  0%, 15%  { transform: translateX(0); }
+  50%, 65% { transform: translateX(min(0px, calc(var(--col-w, 100px) - 100%))); }
+  100%     { transform: translateX(0); }
+}
+/* Variante avec préfixe figé (numéro de bureau) — le wrapper marquee devient un
+   "container" pour que le keyframe sache sa largeur réelle via `100cqi`, et seul
+   le `name-inner` (= label sans numéro) défile. Le préfixe reste immobile. */
+.cmp-diff-tornado-name.has-prefix,
+.cmp-diff-dumbbell-name.has-prefix {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  overflow: visible;
+  text-overflow: clip;
+  text-align: left;
+}
+.cmp-diff-tornado-name-prefix,
+.cmp-diff-dumbbell-name-prefix {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.cmp-diff-tornado-name-marquee,
+.cmp-diff-dumbbell-name-marquee {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  container-type: inline-size;
+}
+.cmp-diff-tornado-name-marquee .cmp-diff-tornado-name-inner,
+.cmp-diff-dumbbell-name-marquee .cmp-diff-dumbbell-name-inner {
+  animation-name: cmpDiffNameMarqueeCQ;
+}
+@keyframes cmpDiffNameMarqueeCQ {
+  0%, 15%  { transform: translateX(0); }
+  50%, 65% { transform: translateX(min(0px, calc(100cqi - 100%))); }
+  100%     { transform: translateX(0); }
 }
 /* Zébré subtil — voir .cmp-diff-dumbbell-row pour la logique (avant hover). */
 .cmp-diff-tornado-row:nth-child(even):not(.cmp-diff-tornado-row-global) {
@@ -1034,8 +1102,12 @@ body.is-cmp-diff.is-cmp-diff-collapsed #cmp-diff-reopen {
    - Diff drawer en full-screen overlay (plus de drag)
    - Nuage : mini-carte cachée, scatter plein écran
    - Banner compact, légende compacte
+   Étendue aussi au paysage mobile (max-height: 500px en landscape) parce qu'un
+   téléphone tourné a une width > 480px et matcherait sinon les règles desktop.
+   Les overrides spécifiques landscape (cartes côte à côte, etc.) sont dans une
+   MQ paysage dédiée juste après ce bloc.
    ═══════════════════════════════════════════════════════════════════════ */
-@media (max-width: 480px) {
+@media (max-width: 480px), (orientation: landscape) and (max-height: 500px) {
   /* ── Topbar — on cache "Le Comparateur" + la X et on signale l'état
      "enclenché" sur le bouton ⇄ existant (#tb-compare-btn). Tap dessus = quitter. ── */
   body.is-compare #tb-comparateur,
@@ -1153,7 +1225,6 @@ body.is-cmp-diff.is-cmp-diff-collapsed #cmp-diff-reopen {
     display: flex !important; flex-direction: row !important;
     align-items: baseline !important; gap: 4px !important;
     min-width: 0;
-    max-width: 60% !important;   /* cap pour que la marquee se déclenche plus souvent */
   }
   .cmp-mid-bar-bureau[data-num]::before {
     content: attr(data-num) " · ";
@@ -1372,11 +1443,313 @@ body.is-cmp-diff.is-cmp-diff-collapsed #cmp-diff-reopen {
     height: 14px;
   }
 }
+
+/* ════════════════════════════════════════════════════════════════════════
+   Mobile EN PAYSAGE — overrides spécifiques (en plus du bloc mobile ci-dessus)
+   ──────────────────────────────────────────────────────────────────────────
+   Hauteur réduite (~360-420px), largeur ~700-900px. On profite de cette largeur
+   pour repasser les cartes côte à côte (override du stack vertical mobile), la
+   mid-bar redevient verticale, et le drawer Diff passe ses graphs en 2 colonnes
+   naturelles. Banner A/B reste en 2 bandes empilées (lisibilité) mais compactée
+   au max pour ne pas manger toute la hauteur.
+   Cible large (max-height: 500px) pour couvrir iPhone SE → 14 Pro Max paysage,
+   sans toucher aux iPads (height > 700px en paysage). */
+@media (orientation: landscape) and (max-height: 500px) {
+  /* ── Topbar compactée en hauteur (gain ~16px pour les cartes) ──
+     IMPORTANT : aligner aussi #cmp-view top avec la nouvelle topbar height,
+     sinon il reste un vide entre topbar et banner A/B. */
+  #topbar { height: 40px !important; padding: 0 10px !important; }
+  .tb-logo { font-size: 1.3rem !important; }
+  #tb-election { font-size: 1rem !important; }
+  #tb-center { gap: 4px !important; }
+  body.is-compare #cmp-view { top: 42px !important; }
+
+  /* ── Cartes côte à côte (override du flex-direction:column mobile) ── */
+  .cmp-split { flex-direction: row !important; }
+  .cmp-map-wrap, #cmp-wrap-a, #cmp-wrap-b {
+    flex: 1 1 50% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    height: 100% !important;
+  }
+  /* En diff-show-a/b on garde le full-width sur le côté affiché (override
+     du 45/55 stack mobile qui n'a pas de sens en row). */
+  body.is-cmp-diff-show-a #cmp-wrap-a,
+  body.is-cmp-diff-show-b #cmp-wrap-b { flex: 1 1 100% !important; }
+  body.is-cmp-diff-show-a #cmp-wrap-b,
+  body.is-cmp-diff-show-b #cmp-wrap-a { display: none !important; }
+
+  /* ── Mid-bar : clone direct du desktop (mode normal) ──
+     Sur desktop, la mid-bar = panneau flottant au-dessus de la tranche entre
+     les 2 cartes, ancré en haut. Layout exact :
+       grid 3 colonnes × 2 rangées : [bureau-A nom]    [badge =/≠]      [bureau-B nom]
+                                     [score+delta A]   [rail vertical]  [score+delta B]
+     On reprend trait pour trait — et on neutralise tous les overrides du bloc
+     portrait mobile (stack vertical, numéro inliné, marquee, display:none, etc.). */
+  #cmp-mid-bar {
+    top: 8px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: auto !important;
+    max-width: 92% !important;
+    display: grid !important;
+    grid-template-columns: 1fr auto 1fr !important;
+    grid-template-rows: auto auto !important;
+    gap: 5px 18px !important;
+    padding: 8px 14px !important;
+    font-size: 0.85rem;
+  }
+  /* Bureau A : col 1, ligne unique "52 · Marché de La Pallice", aligné DROITE */
+  .cmp-mid-bar-bureau-a {
+    grid-column: 1 !important; grid-row: 1 !important;
+    display: flex !important; flex-direction: row !important;
+    align-items: baseline !important;
+    justify-content: flex-end !important;   /* contenu poussé vers la droite */
+    text-align: right !important;
+    align-self: start !important;
+    gap: 4px !important;
+    min-width: 0;
+  }
+  .cmp-mid-bar-numbers-a {
+    grid-column: 1 !important; grid-row: 2 !important;
+    align-items: flex-end !important;
+    align-self: start !important;
+    justify-content: flex-start !important;
+  }
+  /* Bureau B : col 3, même ligne unique, aligné GAUCHE */
+  .cmp-mid-bar-bureau-b {
+    grid-column: 3 !important; grid-row: 1 !important;
+    display: flex !important; flex-direction: row !important;
+    align-items: baseline !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+    align-self: start !important;
+    gap: 4px !important;
+    min-width: 0;
+  }
+  .cmp-mid-bar-numbers-b {
+    grid-column: 3 !important; grid-row: 2 !important;
+    align-items: flex-start !important;
+    align-self: start !important;
+    justify-content: flex-start !important;
+  }
+  /* Centre col 2 : badge =/≠ en row 1, rail vertical en row 2 */
+  .cmp-mid-bar-frontiers {
+    grid-column: 2 !important; grid-row: 1 !important;
+    display: block !important;
+    justify-self: center !important;
+    align-self: end !important;
+  }
+  .cmp-mid-bar-frontiers::before,
+  .cmp-mid-bar-frontiers::after { content: none !important; }
+  .cmp-mid-bar-rail {
+    display: block !important;
+    grid-column: 2 !important; grid-row: 2 !important;
+    justify-self: center !important;
+  }
+  /* Numéro inliné via ::before (lu depuis data-num posé par le JS), denom en
+     marquee si elle déborde. Pattern identique au portrait mobile. */
+  .cmp-mid-bar-bureau-num { display: none !important; }
+  .cmp-mid-bar-bureau[data-num]::before {
+    content: attr(data-num) " · " !important;
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    color: var(--text-chrome-muted) !important;
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+  }
+  .cmp-mid-bar-bureau-denom {
+    flex: 1 1 auto !important;          /* prend le reste de la ligne après le préfixe */
+    min-width: 0 !important;
+    max-width: none !important;
+    overflow: hidden !important;
+    font-size: 0.88rem !important;
+    font-weight: 700 !important;
+    color: var(--text-modal) !important;
+    white-space: nowrap !important;
+  }
+  /* Marquee : inactif par défaut, activé par le JS qui ajoute `.has-marquee`
+     sur le denomEl si scrollWidth > clientWidth + 8 px. IMPORTANT : ne pas
+     mettre `transform: ... !important` sur ces sélecteurs — un transform en
+     !important côté author écrase les transform du keyframe (cascade : author
+     !important > animation), donc l'anim tournerait mais sans déplacement. */
+  .cmp-mid-bar-bureau-denom-inner {
+    display: inline-block !important;
+    white-space: nowrap !important;
+    will-change: transform !important;
+    animation: none !important;
+  }
+  .cmp-mid-bar-bureau-denom.has-marquee .cmp-mid-bar-bureau-denom-inner {
+    animation: cmpMidBarMarquee 8s ease-in-out infinite !important;
+  }
+  /* En mode Diff aussi, mêmes règles (annule le `top: 6px` mobile diff) */
+  body.is-cmp-diff #cmp-mid-bar {
+    top: 8px !important;
+    transform: translateX(-50%) !important;
+  }
+
+  /* ── Banner A/B sur 1 SEULE ligne (largeur dispo en paysage) ──
+     Layout : [pastille A] [titre A]  [⇄]  [titre B] [pastille B]
+     5 colonnes, 1 rangée. Le swap reste au centre, A à gauche, B à droite,
+     comme en desktop. Titles "row-reverse" pour A (score près du centre),
+     "row" pour B (score près du centre aussi → score+delta côte à côte
+     du swap, noms côté extérieur). */
+  .cmp-banner {
+    grid-template-columns: auto 1fr auto 1fr auto !important;
+    grid-template-rows: auto !important;
+    row-gap: 0 !important;
+    padding: 1px 6px !important;
+    column-gap: 8px !important;
+    align-items: start !important;      /* override align-items:center du portrait, sinon title-a (plus courte) est décalée vers le bas */
+  }
+  .cmp-banner-title { padding: 0 !important; }
+  /* La pastille A/B reste verticalement centrée par rapport au score (= au haut du titre). */
+  .cmp-side-letter-a, .cmp-side-letter-b { align-self: start !important; margin-top: 1px; }
+  .cmp-side-letter { width: 20px !important; height: 20px !important; font-size: 0.66rem !important; }
+  .cmp-side-letter-a { grid-column: 1 !important; grid-row: 1 !important; }
+  .cmp-banner-title.cmp-banner-title-a {
+    grid-column: 2 !important; grid-row: 1 !important;
+    flex-direction: row-reverse !important;  /* nom à gauche, score à droite (vers le centre) */
+    text-align: right !important;
+    justify-content: flex-end !important;
+    align-items: start !important;           /* score aligné en haut avec celui de B (qui a le delta dessous) */
+  }
+  .cmp-banner-actions {
+    grid-column: 3 !important; grid-row: 1 !important;
+    flex-direction: row !important;
+  }
+  .cmp-banner-title.cmp-banner-title-b {
+    grid-column: 4 !important; grid-row: 1 !important;
+    flex-direction: row !important;          /* score à gauche (vers le centre), nom à droite */
+    text-align: left !important;
+    justify-content: flex-start !important;
+    align-items: start !important;
+  }
+  /* Numbers : top-alignés dans leur container pour que le score soit au-dessus
+     du delta côté B, et que le score côté A soit pile à la même hauteur. */
+  .cmp-banner-numbers, .cmp-banner-numbers-a, .cmp-banner-numbers-b {
+    justify-content: flex-start !important;
+    align-self: start !important;
+  }
+  .cmp-side-letter-b { grid-column: 5 !important; grid-row: 1 !important; }
+  /* Annule le filet horizontal au-dessus de la bande B (héritage du layout stacké
+     portrait via la MQ @media (max-width: 720px) → s'active aussi sur certains
+     téléphones en paysage si width ≤ 720). Sans sens sur 1 ligne. */
+  .cmp-banner-title.cmp-banner-title-b {
+    border-top: none !important;
+    padding-top: 0 !important;
+  }
+  /* Fontes : mêmes valeurs que le portrait stacké, sinon le banner gagne en
+     hauteur juste à cause des fontes plus grosses. */
+  .cmp-banner-txt strong { font-size: 0.82rem !important; line-height: 1.05 !important; }
+  .cmp-banner-sub { font-size: 0.62rem !important; line-height: 1.05 !important; }
+  .cmp-banner-score { font-size: 0.78rem !important; padding: 1px 6px !important; }
+  .cmp-banner-delta { font-size: 0.62rem !important; padding: 0 4px !important; }
+  .cmp-banner-exit, .cmp-banner-swap { padding: 3px 6px !important; font-size: 0.76rem !important; }
+
+  /* ── Drawer Diff : header compacté en paysage (les graphs restent en 1 colonne)
+     et colonne nom du bureau élargie (la largeur dispo en paysage le permet,
+     ça donne de l'air aux noms longs sans tronquer / marquee). ── */
+  body.is-cmp-diff .cmp-diff-header {
+    padding: 4px 8px !important;
+    gap: 6px !important;
+  }
+  body.is-cmp-diff .cmp-diff-tornado-row,
+  body.is-cmp-diff .cmp-diff-dumbbell-row {
+    grid-template-columns: 160px 1fr !important;
+    --col-w: 160px;
+  }
+  /* Guide pointillé dumbbell : le décalage de gauche = col-w + gap = 160 + 8 = 168 */
+  body.is-cmp-diff .cmp-diff-dumbbell-guide {
+    left: calc(168px + (100% - 168px) * var(--pct)) !important;
+  }
+
+  /* ── Légende + boutons modes COMPACTÉS en paysage ──
+     En portrait, les boutons mode font min-height 40px et padding 10px : trop
+     gras pour une hauteur viewport ~400px. On les rétrécit pour libérer la
+     hauteur des cartes. La légende elle-même réduit padding et font. */
+  .cmp-legend {
+    padding: 4px 6px !important;
+    gap: 4px !important;
+    bottom: 6px !important;
+    left: 6px !important; right: 6px !important;
+    align-items: center !important;          /* centre verticalement le contenu */
+  }
+  .cmp-mode-btns .mmbtn {
+    padding: 4px 6px !important;
+    min-height: 26px !important;
+    font-size: 0.7rem !important;
+  }
+  .cmp-legend-toggle {
+    width: 24px !important;
+    font-size: 0.8rem !important;
+  }
+  .cmp-legend.expanded .cmp-legend-bar { height: 10px !important; }
+  .cmp-legend.expanded .cmp-legend-bound { font-size: 0.64rem !important; }
+  .cmp-legend.expanded .cmp-legend-label { font-size: 0.68rem !important; }
+  .cmp-legend-body { gap: 6px !important; }
+
+  /* ── Nuage : mini-carte cachée aussi en paysage, scatter plein écran ──
+     Pas assez de hauteur pour caser un scatter + une mini-carte dans le même
+     viewport en paysage mobile. */
+  #cmp-nuage-mini { display: none !important; }
+  body.is-cmp-nuage #cmp-nuage { bottom: 8px !important; }
+  #cmp-nuage-footer { bottom: 8px; }
+}
 /* Desktop : le chevron n'a aucun rôle (la légende n'est jamais escamotée), on le cache.
    Et la .cmp-legend-body en flow inline (n'est pas un container indépendant). */
 @media (min-width: 481px) {
   .cmp-legend-toggle { display: none; }
   .cmp-legend-body { display: contents; }  /* le wrapper devient transparent au layout */
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   Hint orientation — mobile portrait UNIQUEMENT, dans le drawer Diff
+   ──────────────────────────────────────────────────────────────────────────
+   Invite à tourner le téléphone en paysage (les tornado/dumbbell sont plus
+   lisibles avec la largeur dispo). Dismiss persistant via localStorage. */
+@media (max-width: 480px) and (orientation: portrait) {
+  body.is-cmp-diff:not(.is-cmp-diff-collapsed) #cmp-orientation-hint:not(.dismissed) {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    position: absolute;
+    top: 8px; right: 8px;
+    z-index: 502;                      /* au-dessus du drawer (z-index ~500) */
+    background: var(--bg-modal);
+    color: var(--text-modal-muted);
+    border: 1px solid var(--border-modal);
+    border-radius: 999px;
+    padding: 4px 4px 4px 10px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    animation: cmpOhFadeIn 0.4s ease 0.4s backwards;
+    pointer-events: auto;
+  }
+  #cmp-orientation-hint .oh-icon {
+    font-size: 0.85rem;
+    display: inline-block;
+    animation: cmpOhRotate 2.4s ease-in-out infinite;
+    transform-origin: 50% 50%;
+  }
+  #cmp-orientation-hint .oh-text { letter-spacing: 0.01em; }
+  #cmp-orientation-hint .oh-close {
+    width: 18px; height: 18px;
+    border: none;
+    background: transparent;
+    border-radius: 50%;
+    color: var(--text-modal-muted);
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin-left: 2px;
+  }
+  #cmp-orientation-hint .oh-close:hover { background: var(--bg-modal-hover); color: var(--text-modal); }
 }
 .cmp-map { width: 100%; height: 100%; background: var(--bg-page); }
 /* Légende = bulle flottante compacte, centrée en bas, par-dessus les 2 cartes.
@@ -3096,6 +3469,14 @@ input:focus-visible,
          Position absolute → centrée sur l'espace carte. Masquée hors mode diff.
          Bouton X la replie → chip de réouverture en bas-droite. -->
     <aside id="cmp-diff-drawer" aria-label="Statistiques de la comparaison"></aside>
+    <!-- Hint mobile portrait dans le drawer Diff : invite à tourner le téléphone en paysage
+         (les graphs tornado/dumbbell sont bien plus lisibles avec la largeur dispo).
+         Dismiss via × (mémoire localStorage, clé partagée avec LRVanalyse). -->
+    <div id="cmp-orientation-hint" role="status" aria-live="polite">
+      <span class="oh-icon" aria-hidden="true">↻</span>
+      <span class="oh-text">Mieux en paysage</span>
+      <button class="oh-close" type="button" onclick="dismissCmpOrientationHint()" aria-label="Masquer le conseil">×</button>
+    </div>
     <button id="cmp-diff-reopen" type="button" aria-label="Afficher le graph"
             onclick="_cmpToggleDiffPanel(false)"><span class="gtab-icon" aria-hidden="true">📊</span><span class="gtab-label">Graph</span></button>
     <div class="cmp-map-wrap" id="cmp-wrap-a"><div id="cmp-map-a" class="cmp-map"></div></div>
@@ -8710,7 +9091,10 @@ function updateFooter() {
       requestAnimationFrame(() => {
         if (!inner.isConnected) return;
         const overflow = inner.scrollWidth - denomEl.clientWidth;
-        if (overflow > 2) {
+        // Seuil 8 px (au lieu de 2) pour ne pas déclencher sur des noms qui
+        // tiennent presque entièrement → on évite les marquees sur des bordures
+        // imperceptibles à l'œil.
+        if (overflow > 8) {
           denomEl.classList.add('has-marquee');
           denomEl.style.setProperty('--marquee-d', '-' + overflow + 'px');
         } else {
@@ -9124,6 +9508,7 @@ function updateFooter() {
   // re-rend la légende, et adapte le layout (1 map en mode diff, 2 sinon).
   window.toggleCmpScale = function(mode) {
     if (!_cmpState || _cmpState.scaleMode === mode) return;
+    const prevMode = _cmpState.scaleMode;
     _cmpState.scaleMode = mode;
     // Layout : mode diff = 1 seule map (celle de l'ère la plus RÉCENTE), pleine
     // largeur. Les classes is-cmp-diff-show-a/b pilotent quel cmp-wrap-* est
@@ -9138,9 +9523,19 @@ function updateFooter() {
     // Hors Diff (abs/rel) : on retire la classe pour nettoyer.
     document.body.classList.toggle('is-cmp-diff-collapsed', mode === 'diff');
     // invalidateSize après le re-layout pour que Leaflet recompute les dimensions.
+    // Si on QUITTE Nuage spécifiquement (les cartes étaient hidden → leur zoom level
+    // peut être corrompu), on re-fit aux bounds initiales (La Rochelle) après l'invalidate.
+    // Ne PAS refit pour les autres transitions de mode, sinon on écraserait le pan/zoom utilisateur.
+    const leavingNuage = (prevMode === 'nuage' && mode !== 'nuage');
     setTimeout(() => {
-      if (_cmpState && _cmpState.mapA && _cmpState.mapA.invalidateSize) _cmpState.mapA.invalidateSize(false);
-      if (_cmpState && _cmpState.mapB && _cmpState.mapB.invalidateSize) _cmpState.mapB.invalidateSize(false);
+      if (!_cmpState) return;
+      [_cmpState.mapA, _cmpState.mapB].forEach(m => {
+        if (!m) return;
+        if (m.invalidateSize) m.invalidateSize(false);
+        if (leavingNuage && m._cmpInitialBounds && m.fitBounds) {
+          m.fitBounds(m._cmpInitialBounds, { padding: [20, 20], animate: false });
+        }
+      });
     }, 50);
     // Reset du mini-bandeau central au switch de mode — évite qu'il ressurgisse
     // avec un contenu obsolète (le mid-bar reste visible en Diff aussi).
@@ -9550,6 +9945,26 @@ function updateFooter() {
     };
     // Helper de rendu d'une ligne tornado. Factorisée pour le globalItem
     // (ligne "VILLE" qui ressort) et les items normaux (quartiers ou bureaux).
+    // Split "23 · Nom" en prefix fixe + label marquee, pour que le numéro
+    // reste figé pendant l'animation et que seul le nom du bureau défile.
+    // Le `base` choisit le namespace de classes (tornado | dumbbell).
+    function _cmpDiffNameHtml(name, base) {
+      const SEP = '\xa0·\xa0';
+      const idx = name.indexOf(SEP);
+      if (idx < 0) {
+        return '<span class="' + base + '-name">'
+          + '<span class="' + base + '-name-inner">' + name + '</span>'
+          + '</span>';
+      }
+      const prefix = name.slice(0, idx + SEP.length);
+      const label  = name.slice(idx + SEP.length);
+      return '<span class="' + base + '-name has-prefix">'
+        + '<span class="' + base + '-name-prefix">' + prefix + '</span>'
+        + '<span class="' + base + '-name-marquee">'
+        +   '<span class="' + base + '-name-inner">' + label + '</span>'
+        + '</span>'
+        + '</span>';
+    }
     function renderTornadoRow(diff, name, options) {
       options = options || {};
       const isNeg = diff < 0;
@@ -9572,7 +9987,7 @@ function updateFooter() {
         + (onEnter ? ' onmouseenter="' + onEnter + '"' : '')
         + (onLeave ? ' onmouseleave="' + onLeave + '"' : '');
       return '<div class="' + cls + '"' + tooltipAttr + handlers + '>'
-        + '<span class="cmp-diff-tornado-name">' + name + '</span>'
+        + _cmpDiffNameHtml(name, 'cmp-diff-tornado')
         + '<div class="cmp-diff-tornado-bars">'
         + '<div class="cmp-diff-tornado-axis"></div>'
         + '<div class="cmp-diff-tornado-bar ' + (isNeg ? 'neg' : 'pos') + ' ' + inOut + '" style="width:' + widthPct.toFixed(2) + '%">'
@@ -9647,7 +10062,7 @@ function updateFooter() {
       const aClasses = 'cmp-diff-dumbbell-label cmp-diff-dumbbell-label-a ' + dirCls;
       const bClasses = 'cmp-diff-dumbbell-label cmp-diff-dumbbell-label-b ' + dirCls;
       return '<div class="' + cls0 + '"' + tooltipAttr + handlers + '>'
-        + '<span class="cmp-diff-dumbbell-name">' + name + '</span>'
+        + _cmpDiffNameHtml(name, 'cmp-diff-dumbbell')
         + '<div class="cmp-diff-dumbbell-track">'
         + '<div class="cmp-diff-dumbbell-conn ' + dirCls + '" style="left:' + connLeft.toFixed(2) + '%;width:' + connWidth.toFixed(2) + '%"></div>'
         + '<div class="cmp-diff-dumbbell-start" style="left:' + leftA.toFixed(2) + '%"></div>'
@@ -9805,6 +10220,24 @@ function updateFooter() {
   window._cmpToggleDiffPanel = function(collapse) {
     document.body.classList.toggle('is-cmp-diff-collapsed', !!collapse);
   };
+  // ─── Hint orientation (mobile portrait dans le drawer Diff) ──────────────
+  // Dismiss persistant via localStorage. Clé partagée avec LRVanalyse → si
+  // l'utilisateur a déjà fermé le hint dans Analyse, on ne le ressort pas ici.
+  window.dismissCmpOrientationHint = function() {
+    const el = document.getElementById('cmp-orientation-hint');
+    if (el) el.classList.add('dismissed');
+    try { localStorage.setItem('lrvote_orient_hint_dismissed', '1'); } catch(_) {}
+  };
+  // Au chargement, restaure l'état dismissed si l'utilisateur l'a déjà fermé.
+  window.addEventListener('DOMContentLoaded', () => {
+    try {
+      const persisted = localStorage.getItem('lrvote_orient_hint_dismissed') === '1';
+      if (persisted) {
+        const el = document.getElementById('cmp-orientation-hint');
+        if (el) el.classList.add('dismissed');
+      }
+    } catch(_) {}
+  });
   // Drag de la fenêtre flottante par la barre titre. Délégation d'événement
   // au niveau document → survit aux re-renders d'innerHTML qui détruisent les
   // listeners attachés sur .cmp-diff-header.
@@ -9972,10 +10405,14 @@ function updateFooter() {
     };
     const FONT = '"Space Grotesk", system-ui, sans-serif';
     // margin.bottom :
-    //  - live view : 100 → laisse la place AU-DESSUS de la bulle légende qui
+    //  - live view desktop : 100 → laisse la place AU-DESSUS de la bulle légende qui
     //    flotte à bottom:12 (ticks à +18, label axe X à +42, bulle à ~47).
+    //  - live view paysage mobile : 60 → la légende y est compacte (~30 px) et
+    //    sa bulle ne déborde pas dans la zone scatter, on récupère 40 px.
     //  - export    : 50 → pas de bulle, on récupère 50 px de hauteur de plot.
-    const marginBottom = opts.exportMode ? 50 : 100;
+    const isLandscapeMobile = !!(typeof window !== 'undefined' && window.matchMedia
+      && window.matchMedia('(orientation: landscape) and (max-height: 500px)').matches);
+    const marginBottom = opts.exportMode ? 50 : (isLandscapeMobile ? 60 : 100);
     const margin = { top: 24, right: 30, bottom: marginBottom, left: 56 };
     // collectText : en mode export, on ne sérialise PAS les textes dans le SVG
     // (le rasterizer hors-DOM n'a pas accès aux webfonts → fallback serif moche).
@@ -10065,11 +10502,15 @@ function updateFooter() {
       emitText(fmtT(t), margin.left - 8, y + 4, 'end', 11, 400, C.muted);
     });
     // Labels axes : A (X) et B (Y) avec leur libellé court.
-    // Le label X est posé juste sous les ticks (margin.bottom - 42) → reste
-    // au-dessus de la bulle légende (qui flotte à bottom:12, ~47px de haut).
+    // Position label X sous les ticks : +42 en desktop centré sous l'axe, mais
+    // en landscape mobile la légende est compactée et occupe le centre → on pose
+    // le label A au BOUT DROIT de l'axe X (anchor='end'), plus proche des ticks.
     const labA = (typeof shortLabelOfSel === 'function') ? shortLabelOfSel(A) : '';
     const labB = (typeof shortLabelOfSel === 'function') ? shortLabelOfSel(B) : '';
-    emitText('A · ' + _escapeSvg(labA), margin.left + plotW / 2, H - margin.bottom + 42, 'middle', 12, 700, C.text);
+    const labXOffset = isLandscapeMobile ? 18 : 42;
+    const labXX = isLandscapeMobile ? (W - margin.right) : (margin.left + plotW / 2);
+    const labXAnchor = isLandscapeMobile ? 'end' : 'middle';
+    emitText('A · ' + _escapeSvg(labA), labXX, H - margin.bottom + labXOffset, labXAnchor, 12, 700, C.text);
     // Label Y : rotation -90 autour de (14, centerY) — translate-then-rotate.
     // En live SVG : encodé en attribut transform. En export Canvas : on stocke
     // la rotation comme objet { angle, originX, originY } via le champ transform.
@@ -10212,14 +10653,34 @@ function updateFooter() {
         + '<div class="tt-scores">A · ' + fmt(it.pctA) + ' <span style="opacity:.5">·</span> ' + _escapeSvg(labA) + '</div>'
         + '<div class="tt-scores">B · ' + fmt(it.pctB) + ' <span style="opacity:.5">·</span> ' + _escapeSvg(labB) + '</div>'
         + '<div class="tt-delta" style="color:' + deltaCol + '">Δ ' + deltaStr + '</div>';
-      // Positionne le tooltip à côté du point dans le container.
+      // Positionne le tooltip à côté du point dans le container, avec clamp pour
+      // qu'il ne déborde jamais (à droite/à gauche/en bas/en haut). On lui pose
+      // d'abord la position "par défaut" (à droite du point), on rend, on mesure,
+      // puis on ajuste si nécessaire.
       const rect = el.getBoundingClientRect();
       const containerRect = document.getElementById('cmp-nuage').getBoundingClientRect();
-      const xLocal = rect.left - containerRect.left + rect.width + 8;
-      const yLocal = rect.top - containerRect.top - 4;
+      let xLocal = rect.left - containerRect.left + rect.width + 8;
+      let yLocal = rect.top  - containerRect.top  - 4;
       tt.style.left = xLocal + 'px';
-      tt.style.top = yLocal + 'px';
+      tt.style.top  = yLocal + 'px';
       tt.classList.add('on');
+      // Mesure après rendu (innerHTML déjà posé, classList.on rend l'élément visible
+      // → offsetWidth/Height fiables). On clamp pour qu'aucun bord ne sorte.
+      const ttW = tt.offsetWidth, ttH = tt.offsetHeight;
+      const cW = containerRect.width, cH = containerRect.height;
+      const PAD = 6;
+      // Si déborde à droite → bascule à gauche du point (sinon clamp au bord).
+      if (xLocal + ttW + PAD > cW) {
+        const xLeft = rect.left - containerRect.left - ttW - 8;
+        xLocal = (xLeft >= PAD) ? xLeft : Math.max(PAD, cW - ttW - PAD);
+      }
+      // Si déborde en bas → recale vers le haut.
+      if (yLocal + ttH + PAD > cH) yLocal = Math.max(PAD, cH - ttH - PAD);
+      // Garde-fou bords gauche/haut.
+      if (xLocal < PAD) xLocal = PAD;
+      if (yLocal < PAD) yLocal = PAD;
+      tt.style.left = xLocal + 'px';
+      tt.style.top  = yLocal + 'px';
     }
     // Mini-carte : illumine le polygone correspondant.
     if (_NuageCache.miniLayers && _NuageCache.miniLayers[ns]) {
@@ -10327,6 +10788,10 @@ function updateFooter() {
   // que le user voit le bureau actif d'un coup d'œil sans bouger la souris.
   window._cmpRowHover = function(ns) {
     if (!_cmpState) return;
+    // En mobile (portrait OU paysage), on ne déclenche ni tooltip Leaflet (caché
+    // par CSS) ni mid-bar quand on tape une ligne du graph — éviterait un flash
+    // visuel sans valeur.
+    if (window.matchMedia && window.matchMedia('(max-width: 480px), (orientation: landscape) and (max-height: 500px)').matches) return;
     const displaySide = _cmpDisplaySide();
     const layers = _cmpState['layers' + displaySide];
     if (!layers) return;
@@ -10339,6 +10804,7 @@ function updateFooter() {
   };
   window._cmpRowUnhover = function(ns) {
     if (!_cmpState) return;
+    if (window.matchMedia && window.matchMedia('(max-width: 480px), (orientation: landscape) and (max-height: 500px)').matches) return;
     const displaySide = _cmpDisplaySide();
     const layers = _cmpState['layers' + displaySide];
     if (!layers) return;
@@ -10403,6 +10869,10 @@ function updateFooter() {
     m.setMaxBounds(LR.pad(0.7));
     m.options.maxBoundsViscosity = 1.0;
     m.setMinZoom(11.5);
+    // Mémoise les bounds initiales pour pouvoir y revenir au sortir du mode
+    // Nuage (où les cartes sont display:none → invalidateSize sur container 0×0
+    // peut casser le zoom level).
+    m._cmpInitialBounds = LR;
 
     // ── Choroplèthe : sheet, baseColor, et style par bureau ──
     const sheet = getSheetForSel(sel);
@@ -11166,9 +11636,9 @@ function updateAnalyseLink() {
       }
     },
     {
-      title: 'Recherche universelle',
-      body: 'À tout moment, <kbd>⌘K</kbd> (ou <kbd>Ctrl</kbd>+<kbd>K</kbd>) pour chercher un bureau, un quartier, un·e candidat·e ou une élection.',
-      target: '.tb-search-btn',
+      title: 'Recherche et comparateur',
+      body: '<strong>Loupe</strong> en haut à droite — ou <kbd>⌘K</kbd> / <kbd>Ctrl</kbd>+<kbd>K</kbd> — pour chercher un bureau, un quartier, un·e candidat·e ou une élection.<br><br>Bouton <strong>⇄</strong> à côté : le <strong>comparateur</strong>. Deux cartes côte à côte, deux scrutins (ou deux candidat·es) au choix, et quatre vues — <strong>Absolu</strong>, <strong>Relatif</strong>, <strong>Différence</strong>, <strong>Nuage</strong> — pour faire ressortir les transferts de voix bureau par bureau.',
+      target: '#tb-compare-btn',
       placement: 'bottom',
       setup: () => {
         if (typeof closeOverlay === 'function' && document.getElementById('overlay').style.display !== 'none') closeOverlay();
@@ -11183,11 +11653,13 @@ function updateAnalyseLink() {
   ];
 
   // Auto-trigger : 1re visite OU paramètre ?tour=1
+  // Clé v3 : on a ajouté l'étape "Comparer" → tous les utilisateurs ayant fini le
+  // tour v2 reverront le tour pour découvrir cette nouvelle fonctionnalité.
   function shouldAutoStart() {
     try {
       const url = new URLSearchParams(location.search);
       if (url.get('tour') === '1') return true;
-      return !localStorage.getItem('lrvote_tour_carte_v2_seen');
+      return !localStorage.getItem('lrvote_tour_carte_v3_seen');
     } catch(_) { return false; }
   }
 
@@ -11246,9 +11718,9 @@ function updateAnalyseLink() {
       }
     },
     {
-      title: 'Recherche universelle',
-      body: 'Tape la <strong>loupe</strong> en haut à droite pour chercher un bureau, un quartier, un·e candidat·e ou une élection.',
-      target: '.tb-search-btn',
+      title: 'Recherche et comparateur',
+      body: '<strong>Loupe</strong> en haut à droite : chercher un bureau, un quartier, un·e candidat·e ou une élection.<br><br>Bouton <strong>⇄</strong> à côté : le <strong>comparateur</strong>. Deux cartes côte à côte, deux scrutins (ou deux candidat·es) au choix, et quatre vues — <strong>Absolu</strong>, <strong>Relatif</strong>, <strong>Différence</strong>, <strong>Nuage</strong> — pour faire ressortir les transferts de voix bureau par bureau. Astuce : passe ton téléphone en <strong>paysage</strong> pour mieux profiter du comparateur.',
+      target: '#tb-compare-btn',
       placement: 'bottom',
       setup: () => {
         if (typeof closeOverlay === 'function' && document.getElementById('overlay').style.display !== 'none') closeOverlay();
@@ -11268,7 +11740,7 @@ function updateAnalyseLink() {
 
   function start() {
     const steps = isMobile() ? STEPS_MOBILE : STEPS;
-    window.startGuidedTour(steps, { tourId: 'carte_v2' });
+    window.startGuidedTour(steps, { tourId: 'carte_v3' });
   }
   // Expose pour le menu
   window.startCarteTour = start;
