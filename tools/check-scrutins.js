@@ -158,8 +158,12 @@ function main() {
       const expectedCid = expectedWinnerCid(sheets[t]);
       if (!expectedCid) return;
       const expectedName = winnerNameFromCid(expectedCid, ctx);
-      // Vérifier que le winner attendu apparaît dans le HTML
-      if (!html.includes(expectedName)) {
+      // Comparaison robuste : on normalise les non-breaking hyphens (‑, U+2011) en
+      // tirets normaux des 2 côtés avant le includes — sinon des noms comme « Mar‑Anne »
+      // côté HTML ne matchent pas un expected qui contient un tiret régulier (ou inverse)
+      // — audit medium #20.
+      const norm = s => s.replace(/‑/g, '-');
+      if (!norm(html).includes(norm(expectedName))) {
         errors.push(`${fn} (${t}) : winner attendu '${expectedName}' (${expectedCid}) absent du HTML`);
       }
     });

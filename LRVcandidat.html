@@ -552,7 +552,10 @@ function render() {
     }
     const pa = c.pa ? '<span style="font-family:monospace;font-weight:700;color:#666;font-size:0.78rem">' + escapeHtml(c.pa) + '</span>' : '';
     const colorBorder = c.c || '#888';
-    return '<a class="candidature-card" style="border-left-color:' + escapeAttr(colorBorder) + '" href="LRVcarte.html#election=' + encodeURIComponent(c.election) + '&candidat=' + encodeURIComponent(cid) + '">'
+    // LRVcarte attend `mode=candidat&selection=<cid>` (cf. handler Cmd+K), pas `candidat=`.
+    // Avant ce fix, le lien ouvrait bien l'élection mais ne sélectionnait pas le candidat
+    // → choroplèthe restait sur le candidat par défaut (audit medium #26).
+    return '<a class="candidature-card" style="border-left-color:' + escapeAttr(colorBorder) + '" href="LRVcarte.html#election=' + encodeURIComponent(c.election) + '&mode=candidat&selection=' + encodeURIComponent(cid) + '">'
       + '<div class="candidature-year">' + yr + '</div>'
       + '<div class="candidature-body">'
       +   '<div class="candidature-elec">' + escapeHtml(c.election) + ' ' + pa + '</div>'

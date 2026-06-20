@@ -3762,6 +3762,11 @@ let currentMapSelection = null;   // candidateName | blocKey | null (choroplèth
 let currentSelectionMin = 0;
 let currentSelectionMax = 0;
 
+// Détection "vrai pointeur fin" (souris/trackpad) vs tactile, évaluée UNE FOIS
+// au load. Invariant pendant la session (un user qui swap souris ↔ touch n'est
+// pas notre cible). Évite de ré-appeler matchMedia à chaque mouseover des bureaux.
+const _HAS_HOVER = !!(window.matchMedia && window.matchMedia('(hover: hover)').matches);
+
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 
 function numStr(feature) {
@@ -4057,10 +4062,10 @@ function candInfo(name) {
       if (CAND_DATA[cid]) return CAND_DATA[cid];
     }
   }
-  const base = CAND_DATA[name] || {};
-  const elec = CAND_DATA[name + '|' + currentElection] || {};
-  const tour = CAND_DATA[name + '|' + currentElection + '|' + currentSheet] || {};
-  const merged = { ...base, ...elec, ...tour };
+  // Post-M5 : le format pipe-key (`Nom|Élection`, `Nom|Élection|Tour`) n'existe plus
+  // dans CAND_DATA — les 2 lookups étaient des no-op. Variations par tour gérées via
+  // `merged.tour_specific[currentSheet]` ci-dessous.
+  const merged = { ...(CAND_DATA[name] || {}) };
   // Applique tour_specific (M4.4) si présent
   if (merged.tour_specific && merged.tour_specific[currentSheet]) {
     Object.assign(merged, merged.tour_specific[currentSheet]);
@@ -5276,7 +5281,10 @@ function loadMap(){
       // (mobile/tablette), le hover est une simulation de touchend → on l'ignore
       // pour ne pas afficher le tooltip et la preview sidebar de façon inattendue
       // après un swipe-down ou un tap.
-      const hasHover = () => window.matchMedia && window.matchMedia('(hover: hover)').matches;
+      // Le résultat de matchMedia est invariant pendant la session — on l'a hoisté
+      // au scope module (_HAS_HOVER) pour éviter de ré-évaluer matchMedia à chaque
+      // mouseover/out (audit medium #6). hasHover() reste pour compat des call sites.
+      const hasHover = () => _HAS_HOVER;
       // On ne crée même pas le tooltip Leaflet sur touch : sinon une bulle vide
       // apparaît brièvement à chaque mouseover simulé (post-touchend).
       if (hasHover()) {
@@ -12878,93 +12886,6 @@ function updateAnalyseLink() {
     ctx.textBaseline = 'alphabetic';
   }
 
-  // Résumé textuel à droite de la carte Diff : delta moyen + top 3 progressions / reculs.
-  function drawDiffSummary(ctx, x, y, w, h, state) {
-    const cmpAPI = window._cmpExport;
-    if (!cmpAPI) return;
-    const sheetA = cmpAPI.getSheetForSel(state.A);
-    const sheetB = cmpAPI.getSheetForSel(state.B);
-    const items = cmpAPI.computeDiffBureauList(sheetA, state.A, sheetB, state.B);
-    if (!items.length) return;
-    const sorted = [...items].sort((a, b) => b.diff - a.diff);
-    const topPos = sorted.slice(0, 3);
-    const topNeg = sorted.slice(-3).reverse();
-    const mean = items.reduce((s, it) => s + it.diff, 0) / items.length;
-    const cityA = cmpAPI.computeCityScore(sheetA, state.A);
-    const cityB = cmpAPI.computeCityScore(sheetB, state.B);
-    const cityDelta = (typeof cityA === 'number' && typeof cityB === 'number') ? (cityB - cityA) : null;
-    // Cadre subtil
-    ctx.fillStyle = '#F7F3EE';
-    ctx.fillRect(x, y, w, h);
-    ctx.strokeStyle = '#E6DFD5';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
-    let cy = y + 30;
-    // Titre
-    ctx.fillStyle = '#1A1A1A';
-    ctx.font = '700 16px "Space Grotesk", system-ui, sans-serif';
-    ctx.fillText('B − A par bureau', x + 18, cy);
-    cy += 28;
-    // Bloc "Ville"
-    if (cityDelta !== null) {
-      ctx.fillStyle = '#5A5A5A';
-      ctx.font = '600 12px "Space Grotesk", system-ui, sans-serif';
-      ctx.fillText('LA ROCHELLE', x + 18, cy);
-      cy += 18;
-      ctx.fillStyle = cityDelta >= 0 ? '#1F7F3A' : '#9B2C2C';
-      ctx.font = '800 22px "Space Grotesk", system-ui, sans-serif';
-      ctx.fillText(fmtSigned(cityDelta) + ' pts', x + 18, cy);
-      cy += 30;
-    }
-    // Delta moyen bureau
-    ctx.fillStyle = '#5A5A5A';
-    ctx.font = '600 12px "Space Grotesk", system-ui, sans-serif';
-    ctx.fillText('DELTA MOYEN', x + 18, cy);
-    cy += 16;
-    ctx.fillStyle = mean >= 0 ? '#1F7F3A' : '#9B2C2C';
-    ctx.font = '700 16px "Space Grotesk", system-ui, sans-serif';
-    ctx.fillText(fmtSigned(mean) + ' pts (' + items.length + ' bureaux)', x + 18, cy);
-    cy += 28;
-    // Top 3 progressions
-    ctx.fillStyle = '#5A5A5A';
-    ctx.font = '600 12px "Space Grotesk", system-ui, sans-serif';
-    ctx.fillText('TOP PROGRESSIONS', x + 18, cy);
-    cy += 16;
-    ctx.font = '600 13px "Space Grotesk", system-ui, sans-serif';
-    topPos.forEach(it => {
-      const denom = bureauDenomFor(it.ns, state);
-      const lbl = parseInt(it.ns) + ' · ' + denom;
-      ctx.fillStyle = '#1A1A1A';
-      ctx.fillText(lbl, x + 18, cy);
-      ctx.fillStyle = '#1F7F3A';
-      ctx.font = '700 13px "Space Grotesk", system-ui, sans-serif';
-      ctx.textAlign = 'right';
-      ctx.fillText(fmtSigned(it.diff) + ' pts', x + w - 18, cy);
-      ctx.textAlign = 'left';
-      ctx.font = '600 13px "Space Grotesk", system-ui, sans-serif';
-      cy += 18;
-    });
-    cy += 6;
-    // Top 3 reculs
-    ctx.fillStyle = '#5A5A5A';
-    ctx.font = '600 12px "Space Grotesk", system-ui, sans-serif';
-    ctx.fillText('TOP RECULS', x + 18, cy);
-    cy += 16;
-    ctx.font = '600 13px "Space Grotesk", system-ui, sans-serif';
-    topNeg.forEach(it => {
-      const denom = bureauDenomFor(it.ns, state);
-      const lbl = parseInt(it.ns) + ' · ' + denom;
-      ctx.fillStyle = '#1A1A1A';
-      ctx.fillText(lbl, x + 18, cy);
-      ctx.fillStyle = '#9B2C2C';
-      ctx.font = '700 13px "Space Grotesk", system-ui, sans-serif';
-      ctx.textAlign = 'right';
-      ctx.fillText(fmtSigned(it.diff) + ' pts', x + w - 18, cy);
-      ctx.textAlign = 'left';
-      ctx.font = '600 13px "Space Grotesk", system-ui, sans-serif';
-      cy += 18;
-    });
-  }
   function fmtSigned(d) { return (d >= 0 ? '+' : '−') + Math.abs(d).toFixed(1).replace('.', ','); }
   // Graphique "papillon" (tornado chart) des écarts par quartier — rendu sur canvas.
   // Trié par delta signé descendant : progressions en haut (vert), reculs en bas (rouge).
@@ -14491,8 +14412,13 @@ function randomDiscover() {
   function neighborBureau(dir){
     if (!currentFeature) return null;
     const cur = numStr(currentFeature);
-    const sortedNums = Object.keys(BUREAU_INFO[CURRENT_ERA] || {})
-      .filter(id => (BUREAU_INFO[CURRENT_ERA][id].q || '') !== 'Nul')
+    // Utiliser l'ère de l'élection courante (pas CURRENT_ERA) : sinon les flèches
+    // ↑/↓ naviguent dans les bureaux 2026 alors que la fiche affiche une élection
+    // ancienne (audit medium #2).
+    const era = String((ELECTIONS[currentElection] || {}).my || CURRENT_ERA);
+    const erasInfo = BUREAU_INFO[era] || {};
+    const sortedNums = Object.keys(erasInfo)
+      .filter(id => (erasInfo[id].q || '') !== 'Nul')
       .sort((a,b) => parseInt(a) - parseInt(b));
     const i = sortedNums.indexOf(cur);
     const tgt = sortedNums[i + dir];

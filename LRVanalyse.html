@@ -1593,9 +1593,9 @@ function computeFamilyAggregation(cs, elecLabel) {
   const total = {}, shared = {};
   if (!cs) return { total, shared };
   Object.entries(cs).forEach(([cname, pct]) => {
-    const specific = CAND_DATA[cname + '|' + elecLabel];
-    const generic  = CAND_DATA[cname];
-    const tagsRaw = (specific && specific.t) || (generic && generic.t) || ['divers'];
+    // Post-M5 : seul `CAND_DATA[cname]` est peuplé (pipe-key obsolète).
+    const generic = CAND_DATA[cname];
+    const tagsRaw = (generic && generic.t) || ['divers'];
     const fams    = tagsRaw.filter(isFamilyValid);
     const list    = fams.length ? fams : ['divers'];
     const isMulti = list.length > 1;
@@ -1623,9 +1623,9 @@ function computeFamilyStackedSegments(cs, elecLabel, visibleSet, scale) {
   const sc = (typeof scale === 'number') ? scale : 1;
   const orderIdx = k => Object.keys(FAMILY_CONFIG).indexOf(k);
   Object.entries(cs).forEach(([cname, pct]) => {
-    const specific = CAND_DATA[cname + '|' + elecLabel];
-    const generic  = CAND_DATA[cname];
-    const tagsRaw  = (specific && specific.t) || (generic && generic.t) || ['divers'];
+    // Post-M5 : seul `CAND_DATA[cname]` est peuplé (pipe-key obsolète).
+    const generic = CAND_DATA[cname];
+    const tagsRaw = (generic && generic.t) || ['divers'];
     const fams     = tagsRaw.filter(isFamilyValid);
     const list     = fams.length ? fams : ['divers'];
     const visFams  = list.filter(f => visibleSet.has(f));
@@ -1675,14 +1675,14 @@ function computeBP(candScores, elecLabel) {
   if (!candScores) return {};
   const out = {};
   Object.entries(candScores).forEach(([cname, pct]) => {
-    const specific = CAND_DATA[cname + '|' + elecLabel];
-    const generic  = CAND_DATA[cname];
-    let bk = (specific && specific.bk) || (generic && generic.bk) || '';
+    // Post-M5 : seul `CAND_DATA[cname]` est peuplé (pipe-key obsolète).
+    const generic = CAND_DATA[cname];
+    let bk = (generic && generic.bk) || '';
     // Binôme (Départementales/Cantonales) : pas de bk sur l'entrée binôme,
     // on dérive des membres (même clé si identiques, sinon le 1er membre dont bk est défini).
     if (!bk && generic && Array.isArray(generic.binome) && generic.binome.length === 2) {
-      const m1 = CAND_DATA[generic.binome[0]+'|'+elecLabel] || CAND_DATA[generic.binome[0]] || {};
-      const m2 = CAND_DATA[generic.binome[1]+'|'+elecLabel] || CAND_DATA[generic.binome[1]] || {};
+      const m1 = CAND_DATA[generic.binome[0]] || {};
+      const m2 = CAND_DATA[generic.binome[1]] || {};
       const bk1 = m1.bk || '', bk2 = m2.bk || '';
       bk = (bk1 && bk1 === bk2) ? bk1 : (bk1 || bk2 || '');
     }
@@ -2344,7 +2344,10 @@ function getVilleData(typeFilter) {
 function getQBureauxForEra(quartier, eraYear) {
   const eraInfo = BUREAU_INFO[eraYear] || {};
   const qcEra = (QUARTIER_CORRESPONDANCES[quartier] || {})[eraYear];
-  if (qcEra !== undefined) {
+  // Test sur Array.isArray(qcEra) plutôt que `!== undefined` : si une entrée
+  // QUARTIER_CORRESPONDANCES vaut null/empty/string, on retombe sur le matching
+  // automatique au lieu de crasher sur `qcEra` non itérable (audit medium #8).
+  if (Array.isArray(qcEra)) {
     // Override explicite : résoudre les IDs 2026 → IDs historiques
     const histIds = [];
     for (const cur2026Id of qcEra) {

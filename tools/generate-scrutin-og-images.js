@@ -57,6 +57,8 @@ function slugifyElection(label) {
 function buildJobs(ELECTIONS) {
   const jobs = [];
   Object.entries(ELECTIONS).forEach(([label, el]) => {
+    // Skip les élections marquées draft (cohérent avec build-scrutins.js et check-scrutins.js)
+    if (el && el.draft === true) return;
     if (el.par_canton) {
       Object.keys(el.par_canton).sort().forEach(cid => {
         jobs.push({ slug: slugifyElection(label) + '-canton-' + cid, label, canton: cid });

@@ -542,9 +542,13 @@ function findAnniversaryFromDates(todayStr) {
   const matches = [];
   for (const [label, tours] of Object.entries(DATES)) {
     for (const [tour, dateStr] of Object.entries(tours)) {
-      const m = dateStr.match(/^(\d+ \S+) (\d{4})$/);
+      // Regex tolérante au "1er" (ex. "1er mai 2023") : normalise sur "1 mai 2023".
+      // Sans ça, les anniversaires des dates en 1er étaient silencieusement ignorés
+      // (audit medium #17).
+      const m = dateStr.match(/^(\d{1,2})(?:er)?\s+(\S+)\s+(\d{4})$/);
       if (!m) continue;
-      if (m[1] === todayMD && parseInt(m[2]) < todayYear) {
+      const md = `${parseInt(m[1])} ${m[2]}`;
+      if (md === todayMD && parseInt(m[3]) < todayYear) {
         matches.push({ election: label, tour });
       }
     }
@@ -1053,10 +1057,9 @@ console.log(rdv
   async function candInfo(name) {
     if (!name || name === 'Oui' || name === 'Non') return { prenom: '', nom: name, parti: '' };
     return page.evaluate((n, el, tr) => {
-      const cd = CAND_DATA?.[n + '|' + el + '|' + tr]
-              || CAND_DATA?.[n + '|' + el]
-              || CAND_DATA?.[n]
-              || {};
+      // Post-M5 : seul `CAND_DATA[n]` est peuplé. Les 2 lookups pipe-key (`n|el`,
+      // `n|el|tr`) étaient des no-op. Variations par tour gérées via `tour_specific`.
+      const cd = CAND_DATA?.[n] || {};
       // Cas binôme paritaire (Départementales/Cantonales modernes) : l'entrée
       // CAND_DATA n'a pas de p/n/s propres, on résout les 2 membres via PERSONS
       // — même logique que binomeMembers/binomeFullLabel dans LRVcarte (femme

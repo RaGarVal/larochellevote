@@ -186,8 +186,10 @@ function aggregateSheet(sheet) {
     voix_par_cand: {}, // cid → voix entières totales
     nb_bureaux: 0,
   };
-  Object.values(sheet || {}).forEach(bd => {
-    if (!bd) return;
+  // Exclure le bureau 0057 (non-géo : Français de l'étranger / détenus) — cohérent
+  // avec les agrégats quartier/canton et LRVcarte (audit medium #25).
+  Object.entries(sheet || {}).forEach(([ns, bd]) => {
+    if (!bd || ns === '0057') return;
     out.nb_bureaux++;
     out.inscrits += (bd.i || 0);
     out.exprimes += (bd.e || 0);
