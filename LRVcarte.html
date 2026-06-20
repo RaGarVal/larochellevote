@@ -3849,12 +3849,28 @@ function getBureauData(ns) {
   return null;
 }
 function aggregateBureauData(datas) {
-  const n = datas.length;
-  const res = { i: 0, e: 0, bn: 0, a: 0, c: {}, w: null };
+  // Audit medium #1 + CLAUDE.md "principe fondamental" : on agrège sur les voix
+  // ENTIÈRES (`bd._voix`) puis on dérive les pcts. La version naïve sommait des
+  // moyennes non pondérées (`a/n` + `pct/n`) → biais sur l'abstention et les scores
+  // pour les agrégats où les bureaux ont des tailles différentes.
+  const res = { i: 0, e: 0, bn: 0, a: 0, c: {}, _voix: {}, w: null };
+  let totalAbstVoix = 0;
   datas.forEach(d => {
-    res.i += (d.i||0); res.e += (d.e||0); res.bn += (d.bn||0);
-    res.a = +(res.a + (d.a||0)/n).toFixed(2);
-    Object.entries(d.c||{}).forEach(([k,v]) => { res.c[k] = +((res.c[k]||0) + v/n).toFixed(2); });
+    const dI = d.i || 0, dE = d.e || 0;
+    res.i += dI; res.e += dE; res.bn += (d.bn || 0);
+    totalAbstVoix += Math.round(dI * (d.a || 0) / 100);
+    if (d._voix) {
+      Object.entries(d._voix).forEach(([k, v]) => { res._voix[k] = (res._voix[k] || 0) + v; });
+    } else {
+      // Fallback legacy si pas de _voix (ancienne donnée non passée par l'IIFE).
+      Object.entries(d.c || {}).forEach(([k, pct]) => {
+        res._voix[k] = (res._voix[k] || 0) + Math.round(pct * dE / 100);
+      });
+    }
+  });
+  res.a = res.i > 0 ? +(totalAbstVoix * 100 / res.i).toFixed(2) : 0;
+  Object.entries(res._voix).forEach(([k, v]) => {
+    res.c[k] = res.e > 0 ? +(v * 100 / res.e).toFixed(2) : 0;
   });
   res.w = Object.entries(res.c).sort((a,b)=>b[1]-a[1])[0]?.[0] || null;
   return res;
@@ -4047,7 +4063,22 @@ function shortPa(pa) {
   return pa.replace(/\s+(libéral|souverainiste)$/, '');
 }
 
+// Cache de candInfo (audit medium #5). candInfo() est appelée massivement depuis
+// featureStyle, tooltips, renderCandidates, scoreOfSelInBureau. Le résultat ne
+// dépend que de (name, currentElection [pour Oui/Non], currentSheet) — clé incluse
+// dans le map. Entrées gelées pour interdire toute mutation par les callers
+// (toute mutation accidentelle corromprait des survols ultérieurs).
+const _candInfoCache = new Map();
 function candInfo(name) {
+  const _cacheKey = name + '|' + currentElection + '|' + currentSheet;
+  const _hit = _candInfoCache.get(_cacheKey);
+  if (_hit) return _hit;
+  const _result = _candInfoImpl(name);
+  Object.freeze(_result);
+  _candInfoCache.set(_cacheKey, _result);
+  return _result;
+}
+function _candInfoImpl(name) {
   // Post-migration M4 : `name` est un cand_id (ex. "alain-bucherie@cantonales-2004").
   // Le merge avec tour_specific[currentSheet] applique les variations par tour
   // (ex. Rousset 2015 al T1=PRG,PCF vs T2=PRG,PCF,EELV — Fountaine 2014 al T2=EELV).
@@ -6343,12 +6374,19 @@ document.addEventListener('mouseout', function(e){
   if (e.target.classList && e.target.classList.contains('btip')) hideBlocTip();
 });
 // On garde un mousemove ciblé pour suivre le curseur quand on est SUR un .btip.
-// Posé en delegation via closest() pour limiter l'overhead.
+// rAF throttle (audit medium #7) : sans ça, chaque mouvement de pixel força un
+// reflow synchrone via showBlocTip → tip.offsetWidth → main thread saturé.
+var _btipRafPending = false, _btipLastEv = null;
 document.addEventListener('mousemove', function(e){
   var el = e.target;
-  if (el && el.classList && el.classList.contains('btip')) {
-    showBlocTip(el, e.clientX, e.clientY);
-  }
+  if (!el || !el.classList || !el.classList.contains('btip')) return;
+  _btipLastEv = { el: el, x: e.clientX, y: e.clientY };
+  if (_btipRafPending) return;
+  _btipRafPending = true;
+  requestAnimationFrame(function(){
+    _btipRafPending = false;
+    if (_btipLastEv) showBlocTip(_btipLastEv.el, _btipLastEv.x, _btipLastEv.y);
+  });
 });
 
 // BLOC_LEGACY est désormais déclaré dans donnees.js (récupéré ici via le backup,

@@ -1646,7 +1646,21 @@ function computeFamilyStackedSegments(cs, elecLabel, visibleSet, scale) {
 
 // Applique l'agrégation correcte selon displayMode (blocs ou familles).
 // Conserve d.cs et d.bp d'origine ; remplace d.bp et ajoute d.bpShared en mode familles.
+// Audit low #2 : `applyAggregation(getVilleData(t))` était re-calculé à chaque
+// drawChart pour les overlays comparaison. getVilleData/getQuartierData sont déjà
+// mémoïsés et retournent toujours la MÊME référence Array pour la même clé →
+// on peut WeakMap-cacher applyAggregation par (rows-identity × displayMode|currentMode).
+const _applyAggCache = new WeakMap();
 function applyAggregation(rows) {
+  const subKey = displayMode + '|' + (typeof currentMode !== 'undefined' ? currentMode : '');
+  let entry = _applyAggCache.get(rows);
+  if (entry && entry[subKey]) return entry[subKey];
+  const computed = _applyAggregationImpl(rows);
+  if (!entry) { entry = {}; _applyAggCache.set(rows, entry); }
+  entry[subKey] = computed;
+  return computed;
+}
+function _applyAggregationImpl(rows) {
   if (displayMode === 'familles') {
     return rows.map(d => {
       const { total, shared } = computeFamilyAggregation(d.cs, d.label);
@@ -3008,7 +3022,24 @@ function getUncertainNote(eraYear) {
   return null;
 }
 
+// Cache : la fonction scanne REDECOUPAGES + BUREAU_CORRESPONDANCES à chaque appel
+// (refresh chart, drawFrise, etc.). L'output ne dépend que de (niveau, currentSelection),
+// invariant tant que l'utilisateur ne change pas de sélection. Audit low #1.
+let _boundaryChangesCache = { key: null, value: null };
+function _bcCacheKey() {
+  if (niveau === 'bureau')   return 'b|' + (document.getElementById('sel-bureau')?.value || '');
+  if (niveau === 'quartier') return 'q|' + (document.getElementById('sel-quartier')?.value || '');
+  if (niveau === 'canton')   return 'c|' + (document.getElementById('sel-canton')?.value || '');
+  return 'v|';
+}
 function getBoundaryChanges() {
+  const _k = _bcCacheKey();
+  if (_boundaryChangesCache.key === _k) return _boundaryChangesCache.value;
+  const _v = _getBoundaryChangesImpl();
+  _boundaryChangesCache = { key: _k, value: _v };
+  return _v;
+}
+function _getBoundaryChangesImpl() {
   // Retourne {electionLabel: {text, bureaux}} pour la vue courante
   const result = {};
 
@@ -3616,6 +3647,12 @@ function drawStackedChart(data) {
   // boucle yMax puis dans la boucle de rendu (et tooltip).
   const _ac = activeCategories();
   const _vs = getVisibleSet();
+  // Audit medium #10 : computeFamilyStackedSegments est appelé 2× par data point
+  // (yMax + render) quand chartScale='voix' + displayMode='familles'. On pré-
+  // calcule une fois pour toute la fonction.
+  const _segsByIdx = (displayMode === 'familles')
+    ? data.map(d => computeFamilyStackedSegments(d.cs, d.label, _vs, chartScale === 'voix' ? (d.e || 0) / 100 : 1))
+    : null;
 
   // Fenêtre courante (zoom/pan) : nombre de scrutins visibles + index de départ.
   // Même approche que drawChart : on rend TOUTES les barres avec des positions
@@ -3632,11 +3669,10 @@ function drawStackedChart(data) {
   if (chartScale === 'voix') {
     // Hauteur réelle de la barre = somme des candidats avec ≥1 famille visible.
     yMax = 0;
-    data.forEach(d => {
+    data.forEach((d, i) => {
       let sum;
       if (displayMode === 'familles') {
-        const segs = computeFamilyStackedSegments(d.cs, d.label, _vs, (d.e || 0) / 100);
-        sum = segs.reduce((s, sg) => s + sg.total, 0);
+        sum = _segsByIdx[i].reduce((s, sg) => s + sg.total, 0);
       } else {
         sum = Object.values(d.bp || {}).reduce((s, v) => s + v, 0);
       }
@@ -3710,7 +3746,7 @@ function drawStackedChart(data) {
     if (displayMode === 'familles') {
       // Décomposition par sous-ensembles : 1 segment par groupe de candidats
       // partageant le même set de familles visibles. Score complet (non splitté).
-      const segs = computeFamilyStackedSegments(d.cs, d.label, _vs, chartScale === 'voix' ? (d.e || 0) / 100 : 1);
+      const segs = _segsByIdx[i];
       segs.forEach(seg => {
         const v = seg.total;
         if (v <= 0.05) return;
@@ -4705,24 +4741,34 @@ function setupChartZoom() {
 
   // Préview de la pastille pendant le pan. Affiche les années de la fenêtre
   // qu'on aurait après commit du dx courant.
+  // Audit medium #11 : throttle rAF (comme previewFrise) — sans ça le handler
+  // tournait à 60+/sec pendant tout le pan, déclenchait des reflows et faisait
+  // saccader le drag sur device modeste.
+  let _panRangeRaf = 0;
+  let _panRangeDx = 0;
   function previewPanRange(dx) {
-    const s = getViewState();
-    const deltaIdx = -dx / s.unitX;
-    let newStart = startViewStart + deltaIdx;
-    const maxStart = Math.max(0, s.N - s.visibleCount);
-    if (newStart < 0) newStart = 0;
-    if (newStart > maxStart) newStart = maxStart;
-    const data = window._chartFullData || [];
-    const startEl = data[Math.round(newStart)];
-    const endEl = data[Math.round(newStart + s.visibleCount - 1)];
-    const pill = document.getElementById('chart-range-pill');
-    const txt  = document.getElementById('chart-range-pill-text');
-    if (!pill || !txt) return;
-    const yMin = startEl ? startEl.year : '?';
-    const yMax = endEl ? endEl.year : '?';
-    txt.textContent = (yMin === yMax) ? String(yMin) : (yMin + ' — ' + yMax);
-    pill.classList.add('visible');
-    clearTimeout(_rangePillHideTimer);
+    _panRangeDx = dx;
+    if (_panRangeRaf) return;
+    _panRangeRaf = requestAnimationFrame(() => {
+      _panRangeRaf = 0;
+      const s = getViewState();
+      const deltaIdx = -_panRangeDx / s.unitX;
+      let newStart = startViewStart + deltaIdx;
+      const maxStart = Math.max(0, s.N - s.visibleCount);
+      if (newStart < 0) newStart = 0;
+      if (newStart > maxStart) newStart = maxStart;
+      const data = window._chartFullData || [];
+      const startEl = data[Math.round(newStart)];
+      const endEl = data[Math.round(newStart + s.visibleCount - 1)];
+      const pill = document.getElementById('chart-range-pill');
+      const txt  = document.getElementById('chart-range-pill-text');
+      if (!pill || !txt) return;
+      const yMin = startEl ? startEl.year : '?';
+      const yMax = endEl ? endEl.year : '?';
+      txt.textContent = (yMin === yMax) ? String(yMin) : (yMin + ' — ' + yMax);
+      pill.classList.add('visible');
+      clearTimeout(_rangePillHideTimer);
+    });
   }
 
   // ── WHEEL (desktop) ──

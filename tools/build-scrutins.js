@@ -69,10 +69,9 @@ function loadData() {
   const donneesSuffix = ';Object.assign(globalThis,{' + donneesNames.join(',') + '});';
 
   const sharedNames = [
-    'PARTI_COLORS','elecTypePriority','isReferendum','derivePaForBinome',
+    'PARTI_COLORS','elecTypePriority','isReferendum',
     'getCantonEraForBureauEra','getCantonEraForElection','getCantonOfBureau',
     'getBureauxOfCanton','isCantonEraAlive','isCantonalElection','getCantonOfElection',
-    'personById','candById','candFullInfo','candidaturesOfPerson','candidaturesOfElection',
     'pickTextColor','pickTextColorForBg'
   ];
   const sharedSuffix = ';Object.assign(globalThis,{' + sharedNames.join(',') + '});';
@@ -241,28 +240,34 @@ function aggregateByQuartier(sheet, bureauInfo) {
  *  cantonEra = ère canton à utiliser (ex. "2015") ; bureauInfo doit contenir bd.c (canton id) */
 function aggregateByCanton(sheet, bureauInfo, cantonEra, cantonCorrespondances) {
   const out = {};
-  // Si on a cantonCorrespondances (ère canton "2015" rétro-applicable), on l'utilise
-  // pour rattacher les bureaux historiques aux cantons modernes.
+  // Pré-index O(C × E × L) UNE FOIS au lieu de O(B × C × E × L) sur le scan
+  // bureau-par-bureau (audit medium #23). `bureauToCids[ns]` = liste des cantonIds
+  // modernes auxquels ce bureau est rattaché via les correspondances rétroactives.
+  const bureauToCids = {};
+  if (cantonCorrespondances) {
+    Object.entries(cantonCorrespondances).forEach(([key, eraMap]) => {
+      if (!key.startsWith(cantonEra + ':')) return;
+      const cid = key.split(':')[1];
+      Object.values(eraMap || {}).forEach(list => {
+        if (!Array.isArray(list)) return;
+        list.forEach(ns => {
+          if (!bureauToCids[ns]) bureauToCids[ns] = [];
+          if (!bureauToCids[ns].includes(cid)) bureauToCids[ns].push(cid);
+        });
+      });
+    });
+  }
   Object.entries(sheet || {}).forEach(([ns, bd]) => {
     if (!bd) return;
     const info = bureauInfo[ns];
     if (!info) return;
-    let cantonIds = [];
+    const cantonIds = [];
     // 1. Match direct via info.c (le canton stocké pour cette ère)
     if (info.c) cantonIds.push(String(info.c));
-    // 2. Match via correspondances rétroactives (canton moderne ↔ bureaux historiques)
-    //    (utilisé pour les élections antérieures à l'ère canton donnée)
-    if (cantonCorrespondances) {
-      Object.entries(cantonCorrespondances).forEach(([key, eraMap]) => {
-        // key = "<era_canton>:<cid>", on ne retient que ceux qui matchent cantonEra
-        if (!key.startsWith(cantonEra + ':')) return;
-        const cid = key.split(':')[1];
-        // Si ce bureau est listé dans cette correspondance, l'ajouter
-        Object.values(eraMap || {}).forEach(list => {
-          if (Array.isArray(list) && list.includes(ns) && !cantonIds.includes(cid)) {
-            cantonIds.push(cid);
-          }
-        });
+    // 2. Match via correspondances rétroactives (lookup O(1) via l'index pré-calculé)
+    if (bureauToCids[ns]) {
+      bureauToCids[ns].forEach(cid => {
+        if (!cantonIds.includes(cid)) cantonIds.push(cid);
       });
     }
     cantonIds.forEach(cid => {
@@ -416,61 +421,11 @@ function dateFrToISO(s) {
   return `${year}-${month}-${day}`;
 }
 
-/** Dates connues des scrutins (dupliquées depuis daily-capture.js — à factoriser un jour) */
-const DATES = {
-  'Présidentielle 1988': { T1: '24 avril 1988', T2: '8 mai 1988' },
-  'Présidentielle 1995': { T1: '23 avril 1995', T2: '7 mai 1995' },
-  'Présidentielle 2002': { T1: '21 avril 2002', T2: '5 mai 2002' },
-  'Présidentielle 2007': { T1: '22 avril 2007', T2: '6 mai 2007' },
-  'Présidentielle 2012': { T1: '22 avril 2012', T2: '6 mai 2012' },
-  'Présidentielle 2017': { T1: '23 avril 2017', T2: '7 mai 2017' },
-  'Présidentielle 2022': { T1: '10 avril 2022', T2: '24 avril 2022' },
-  'Législatives 1988':   { T1: '5 juin 1988',   T2: '12 juin 1988' },
-  'Législatives 1993':   { T1: '21 mars 1993',  T2: '28 mars 1993' },
-  'Législatives 1997':   { T1: '25 mai 1997',   T2: '1er juin 1997' },
-  'Législatives 2002':   { T1: '9 juin 2002',   T2: '16 juin 2002' },
-  'Législatives 2007':   { T1: '10 juin 2007',  T2: '17 juin 2007' },
-  'Législatives 2012':   { T1: '10 juin 2012',  T2: '17 juin 2012' },
-  'Législatives 2017':   { T1: '11 juin 2017',  T2: '18 juin 2017' },
-  'Législatives 2022':   { T1: '12 juin 2022',  T2: '19 juin 2022' },
-  'Législatives 2024':   { T1: '30 juin 2024',  T2: '7 juillet 2024' },
-  'Municipales 1995':    { TU: '11 juin 1995'                     },
-  'Municipales 2001':    { T1: '11 mars 2001',  T2: '18 mars 2001' },
-  'Municipales 2008':    { T1: '9 mars 2008',   T2: '16 mars 2008' },
-  'Municipales 2014':    { T1: '23 mars 2014',  T2: '30 mars 2014' },
-  'Municipales 2020':    { T1: '15 mars 2020',  T2: '28 juin 2020' },
-  'Municipales 2026':    { T1: '15 mars 2026',  T2: '22 mars 2026' },
-  'Européennes 1989':    { TU: '18 juin 1989' },
-  'Européennes 1994':    { TU: '12 juin 1994' },
-  'Européennes 1999':    { TU: '13 juin 1999' },
-  'Européennes 2004':    { TU: '13 juin 2004' },
-  'Européennes 2009':    { TU: '7 juin 2009' },
-  'Européennes 2014':    { TU: '25 mai 2014' },
-  'Européennes 2019':    { TU: '26 mai 2019' },
-  'Européennes 2024':    { TU: '9 juin 2024' },
-  'Référendum 1992':     { TU: '20 septembre 1992' },
-  'Référendum 2000':     { TU: '24 septembre 2000' },
-  'Référendum 2005':     { TU: '29 mai 2005' },
-  'Législatives 1986':   { TU: '16 mars 1986' },
-  'Régionales 1986':     { TU: '16 mars 1986' },
-  'Cantonales 1988':     { T1: '25 septembre 1988', T2: '2 octobre 1988' },
-  'Cantonales 1992':     { T1: '22 mars 1992', T2: '29 mars 1992' },
-  'Cantonales 1994':     { T1: '20 mars 1994', T2: '27 mars 1994' },
-  'Cantonales 1998':     { T1: '15 mars 1998', T2: '22 mars 1998' },
-  'Cantonales 2001':     { T1: '11 mars 2001', T2: '18 mars 2001' },
-  'Cantonale partielle 2002': { T1: '22 septembre 2002', T2: '29 septembre 2002' },
-  'Cantonales 2004':     { T1: '21 mars 2004', T2: '28 mars 2004' },
-  'Cantonales 2008':     { T1: '9 mars 2008',  T2: '16 mars 2008' },
-  'Cantonales 2011':     { T1: '20 mars 2011', T2: '27 mars 2011' },
-  'Départementales 2015': { T1: '22 mars 2015', T2: '29 mars 2015' },
-  'Départementales 2021': { T1: '20 juin 2021', T2: '27 juin 2021' },
-  'Régionales 1992':     { TU: '22 mars 1992' },
-  'Régionales 1998':     { TU: '15 mars 1998' },
-  'Régionales 2004':     { T1: '21 mars 2004', T2: '28 mars 2004' },
-  'Régionales 2010':     { T1: '14 mars 2010', T2: '21 mars 2010' },
-  'Régionales 2015':     { T1: '6 décembre 2015', T2: '13 décembre 2015' },
-  'Régionales 2021':     { T1: '20 juin 2021', T2: '27 juin 2021' },
-};
+/** Dates connues des scrutins — importées depuis la single source of truth
+ *  ../dates.js (partagée avec daily-capture.js). Audit medium #22 : avant cet
+ *  extract, une copie locale qui ne contenait pas Municipales 1989 et Cantonale
+ *  partielle 1999 (2 pages scrutin sortaient sans date). */
+const { DATES } = require('../dates.js');
 
 // ─── Carte SVG inline ───────────────────────────────────────────────────────
 
@@ -569,17 +524,22 @@ function barBackground(cid, ctx) {
   return colorOfCand(cid, ctx);
 }
 
-/** Cherche la couleur représentative d'un parti via les candidats existants */
+/** Cherche la couleur représentative d'un parti via les candidats existants.
+ *  Audit low #10 : avant ce fix, le cache était populé "lazy" mais avec un linear
+ *  scan O(N=716) par cache-miss. Pour ~30 partis sollicités, c'est ~10700 itérations
+ *  vs 716 avec un index pré-construit en une seule passe. On bâtit l'index au 1er
+ *  appel et on l'utilise via lookup O(1) ensuite. */
 function partiColor(pa, ctx) {
   if (!pa) return null;
-  if (_partiColorCache.has(pa)) return _partiColorCache.get(pa);
-  // Parcourir CAND_DATA, prendre le premier candidat avec ce pa et une couleur
-  let found = null;
-  for (const [cid, cd] of Object.entries(ctx.CAND_DATA)) {
-    if (cd.pa === pa && cd.c) { found = cd.c; break; }
+  if (_partiColorCache.size === 0) {
+    // Pré-index : 1 seul scan de CAND_DATA, on prend la 1re couleur trouvée par pa.
+    for (const cd of Object.values(ctx.CAND_DATA)) {
+      if (cd && cd.pa && cd.c && !_partiColorCache.has(cd.pa)) {
+        _partiColorCache.set(cd.pa, cd.c);
+      }
+    }
   }
-  _partiColorCache.set(pa, found);
-  return found;
+  return _partiColorCache.get(pa) || null;
 }
 
 /** Bureau au format agrégé : "0017-19" → liste ['0017','0018','0019'].
@@ -865,6 +825,11 @@ function buildPageData(pageSpec, ctx) {
   // pour pointer vers le vrai voisin pertinent — sinon le triptyque restait vide.
   const adj = adjacentElections(label, ctx.ELECTIONS, ctx, canton);
 
+  // Cache de blocsForLabel : sans ça, l'agg du sheet voisin était refaite à chaque
+  // tour de l'élection courante (audit medium #24). Hoisté ici pour partager
+  // entre les itérations de tours.forEach ci-dessous.
+  const _blocsCache = new Map();
+
   // Pour chaque tour, agréger ville
   const byTour = {};
   tours.forEach(t => {
@@ -994,8 +959,10 @@ function buildPageData(pageSpec, ctx) {
     // n'a pas le même tour (ex. élection T1+T2 vs élection TU).
     function blocsForLabel(otherLabel, currentTour) {
       if (!otherLabel) return null;
+      const _ck = otherLabel + '|' + currentTour;
+      if (_blocsCache.has(_ck)) return _blocsCache.get(_ck);
       const otherEl = ctx.ELECTIONS[otherLabel];
-      if (!otherEl) return null;
+      if (!otherEl) { _blocsCache.set(_ck, null); return null; }
       let otherSheets;
       if (canton && otherEl.par_canton) {
         if (!otherEl.par_canton[canton]) return null; // série incompatible
@@ -1014,9 +981,11 @@ function buildPageData(pageSpec, ctx) {
       for (const tk of tourPriority) {
         if (otherSheets[tk]) { otherSheet = otherSheets[tk]; break; }
       }
-      if (!otherSheet) return null;
+      if (!otherSheet) { _blocsCache.set(_ck, null); return null; }
       const oa = aggregateSheet(otherSheet);
-      return computeBlocsFromVoix(oa.voix_par_cand, oa.exprimes, ctx.CAND_DATA, ctx.BLOC_LEGACY);
+      const result = computeBlocsFromVoix(oa.voix_par_cand, oa.exprimes, ctx.CAND_DATA, ctx.BLOC_LEGACY);
+      _blocsCache.set(_ck, result);
+      return result;
     }
     const prevBlocs = adj.prev ? blocsForLabel(adj.prev, t) : null;
     const nextBlocs = adj.next ? blocsForLabel(adj.next, t) : null;

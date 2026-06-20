@@ -255,46 +255,10 @@ function isDraftElection(elecLabel) {
 }
 if (typeof window !== 'undefined') window.isDraftElection = isDraftElection;
 
-// ───────────────────────────────────────────────────────────────
-//  derivePaForBinome — dérivation systématique du pa d'un binôme
-//  depuis ses partis individuels. Décision : on ne stocke plus pa
-//  côté binôme dans donnees.js, on le dérive au chargement via un
-//  IIFE qui appelle ce helper. Le parti qui compte est celui de
-//  chaque candidat (binome_partis), pas une étiquette globale.
-//
-//  Règles :
-//    • bp homogène (pa1 === pa2)               → pa1
-//    • DV* + vrai parti                        → vrai parti seul
-//      (un binôme "PRG + DVG" reste de famille PRG ; le DVG
-//      n'est qu'une étiquette administrative pour le co-équipier
-//      non encarté).
-//    • 2 vrais partis distincts                → "paF+paH" (femme devant
-//      si sexes connus, sinon ordre brut [a, b]).
-//    • 2 divers distincts                      → idem (femme devant)
-//    • bp invalide                             → '' (caller décide)
-//
-//  Paramètre sexes : tableau [s0, s1] des sexes des membres dans le
-//  même ordre que bp (depuis c.binome → PERSONS[pid].s). Optionnel —
-//  si absent on ne réordonne pas (label = ordre brut).
-//  Règle paritaire (mai 2026) : la candidate F passe devant l'homme H.
-// ───────────────────────────────────────────────────────────────
-function derivePaForBinome(bp, sexes) {
-  if (!Array.isArray(bp) || bp.length !== 2) return '';
-  let a = (bp[0] || '').trim();
-  let b = (bp[1] || '').trim();
-  if (!a || !b) return a || b || '';
-  if (a === b) return a;
-  const aDiv = /^DV/i.test(a);
-  const bDiv = /^DV/i.test(b);
-  // Mixte vrai + divers : on garde le vrai parti seul (lisibilité politique).
-  if (aDiv && !bDiv) return b;
-  if (bDiv && !aDiv) return a;
-  // 2 vrais OU 2 divers : on combine "paF+paH" (femme devant si connue).
-  if (Array.isArray(sexes) && sexes.length === 2) {
-    if (sexes[0] !== 'F' && sexes[1] === 'F') return b + '+' + a;
-  }
-  return a + '+' + b;
-}
+// derivePaForBinome supprimé (audit medium #14) : helper public sans aucun
+// caller — la logique vit dans l'IIFE de donnees.js (fonction locale `derive`)
+// qui s'exécute au chargement. Si un jour une page autre que donnees.js a
+// besoin de cette logique : 5 lignes à dupliquer ou ré-exposer ici.
 
 // ───────────────────────────────────────────────────────────────
 //  MENU LOGO (dropdown global) — réutilisé par les 4 pages
@@ -635,6 +599,54 @@ function getCantonOfElection(electionLabel) {
     }
   });
 
+  // ─── Cohérence PERSONS ↔ CANDIDATURES (audit medium #12) ───────────────
+  // Cas détectés :
+  //   (a) c.person référence un pid absent de PERSONS
+  //   (b) c.binome[i] référence un pid absent de PERSONS
+  //   (c) bd.c référence un cand_id absent de CANDIDATURES (et CAND_DATA)
+  if (typeof CANDIDATURES !== 'undefined' && typeof PERSONS !== 'undefined') {
+    Object.entries(CANDIDATURES).forEach(([cid, c]) => {
+      if (!c) return;
+      if (c.person && !PERSONS[c.person]) {
+        warnings.push('CANDIDATURE "' + cid + '" : person "' + c.person + '" absent de PERSONS.');
+      }
+      if (Array.isArray(c.binome)) {
+        c.binome.forEach(pid => {
+          if (pid && !PERSONS[pid]) {
+            warnings.push('CANDIDATURE "' + cid + '" (binôme) : person "' + pid + '" absent de PERSONS.');
+          }
+        });
+      }
+    });
+  }
+  // (c) — uniquement si CAND_DATA et CANDIDATURES existent. On itère un échantillon
+  // borné (5 élections max) pour ne pas exploser la console sur incident massif.
+  if (typeof ELECTIONS !== 'undefined' && typeof CANDIDATURES !== 'undefined') {
+    const SAMPLE_LIMIT = 5;
+    let elCount = 0;
+    const orphans = new Set();
+    Object.entries(ELECTIONS).forEach(([label, data]) => {
+      if (elCount >= SAMPLE_LIMIT || !data || !data.sheets) return;
+      Object.values(data.sheets).forEach(sh => {
+        Object.values(sh || {}).forEach(bd => {
+          if (!bd || !bd.c) return;
+          Object.keys(bd.c).forEach(refId => {
+            if (refId === 'Oui' || refId === 'Non') return;
+            if (/^Autres\s*\(\d+\s*listes?\)$/.test(refId)) return;
+            if (!CANDIDATURES[refId] && !(typeof CAND_DATA !== 'undefined' && CAND_DATA[refId])) {
+              orphans.add(refId);
+            }
+          });
+        });
+      });
+      elCount++;
+    });
+    if (orphans.size) {
+      warnings.push('SHEETS référencent ' + orphans.size + ' cand_id orphelin(s) (échantillon ' + elCount + ' élections) : '
+        + Array.from(orphans).slice(0, 5).join(', ') + (orphans.size > 5 ? '…' : ''));
+    }
+  }
+
   if (warnings.length) {
     console.warn('━'.repeat(64));
     console.warn('La Rochelle Vote — Validation des données : ' + warnings.length + ' avertissement(s)');
@@ -811,68 +823,9 @@ function getCantonOfElection(electionLabel) {
   });
 })();
 
-// ───────────────────────────────────────────────────────────────
-//  HELPERS PERSONS / CANDIDATURES (migration M4)
-//  API uniformisée d'accès aux nouvelles structures (donnees.js).
-//  Cohabite avec CAND_DATA tant que tous les call sites n'ont pas migré.
-// ───────────────────────────────────────────────────────────────
-
-// Retourne l'objet PERSON par son id (ex. "alain-bucherie") ou null.
-function personById(pid) {
-  return (typeof PERSONS !== 'undefined' && PERSONS[pid]) || null;
-}
-
-// Retourne l'objet CANDIDATURE par son id (ex. "alain-bucherie@cantonales-2004") ou null.
-function candById(cid) {
-  return (typeof CANDIDATURES !== 'undefined' && CANDIDATURES[cid]) || null;
-}
-
-// Retourne la candidature mergée avec l'identité de sa personne (ou des 2 membres
-// pour un binôme). Champs identité (p/n/s) viennent de PERSONS, le reste de la
-// CANDIDATURE. Pour un binôme, on ajoute `binome_members: [person1, person2]`.
-function candFullInfo(cid) {
-  const c = candById(cid);
-  if (!c) return null;
-  if (c.person) {
-    const p = personById(c.person);
-    if (p) return { p: p.p, n: p.n, s: p.s, ...c };
-    return { ...c };
-  }
-  if (Array.isArray(c.binome) && c.binome.length === 2) {
-    const m1 = personById(c.binome[0]);
-    const m2 = personById(c.binome[1]);
-    return { ...c, binome_members: [m1, m2] };
-  }
-  return { ...c };
-}
-
-// Toutes les candidatures (cand_id, candidature) d'une personne — y compris
-// celles où elle apparaît comme membre d'un binôme. Triées chronologiquement
-// via l'année extraite de l'élection (fallback 0 si pas d'année).
-function candidaturesOfPerson(pid) {
-  if (typeof CANDIDATURES === 'undefined') return [];
-  const result = [];
-  for (const cid of Object.keys(CANDIDATURES)) {
-    const c = CANDIDATURES[cid];
-    if (c.person === pid || (Array.isArray(c.binome) && c.binome.indexOf(pid) >= 0)) {
-      result.push([cid, c]);
-    }
-  }
-  result.sort((a, b) => {
-    // Garde-fou : si CANDIDATURE n'a pas de champ `election`, on prend year=0 (au lieu de crasher).
-    const ya = (a[1].election && a[1].election.match(/\d{4}/) || [0])[0];
-    const yb = (b[1].election && b[1].election.match(/\d{4}/) || [0])[0];
-    return parseInt(ya) - parseInt(yb);
-  });
-  return result;
-}
-
-// Toutes les candidatures d'une élection donnée.
-function candidaturesOfElection(electionLabel) {
-  if (typeof CANDIDATURES === 'undefined') return [];
-  const result = [];
-  for (const cid of Object.keys(CANDIDATURES)) {
-    if (CANDIDATURES[cid].election === electionLabel) result.push([cid, CANDIDATURES[cid]]);
-  }
-  return result;
-}
+// Helpers PERSONS / CANDIDATURES (personById, candById, candFullInfo,
+// candidaturesOfPerson, candidaturesOfElection) supprimés en juin 2026 :
+// aucun call site externe (LRVcarte/LRVanalyse/LRVcandidat utilisent CAND_DATA
+// directement, et build-scrutins/check-scrutins n'en ont jamais eu besoin).
+// Si une migration M5+ ressuscite le besoin, la couche est triviale à réécrire
+// (5-15 lignes par helper). Voir audit medium #13.

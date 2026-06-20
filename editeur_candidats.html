@@ -144,14 +144,11 @@
     <select id="filter-bk" onchange="filterCand()">
       <option value="">Toutes clés</option>
       <option value="exg">exg</option>
-      <option value="grg">grg</option>
       <option value="g">g</option>
-      <option value="eco">eco</option>
       <option value="c">c</option>
       <option value="d">d</option>
-      <option value="ds">ds</option>
       <option value="exd">exd</option>
-      <option value="?">?</option>
+      <option value="divers">divers</option>
     </select>
   </div>
   <table>
@@ -392,14 +389,10 @@ function setCand(key, field, value) {
 // ─────────────── CONSTRUCTION ───────────────
 function buildRows() {
   rows = Object.entries(CAND_DATA).map(([key, c]) => {
-    // Post-migration : key est un cand_id (ex. "alain-bucherie@cantonales-2004").
-    // Le label élection est dans c.election. Fallback sur l'ancien format |Élection
-    // pour les overrides legacy qui auraient pu subsister.
-    let elec = c.election || '';
-    if (!elec) {
-      const pipe = key.indexOf('|');
-      if (pipe >= 0) elec = key.slice(pipe + 1);
-    }
+    // Post-M5 : key EST un cand_id (ex. "alain-bucherie@cantonales-2004"), le
+    // label élection est dans c.election. Le fallback pipe-key (legacy M3) ne se
+    // déclenche plus — supprimé en audit low #19.
+    const elec = c.election || '';
     let p = c.p || '';
     let n = c.n || '';
     let s = c.s || '';

@@ -435,14 +435,19 @@ function statusOfCandidature(cid, c, scores) {
   if (!sc) return null;
   const label = (c.election || '');
   const isMunicipale = /^Municipales\b/i.test(label);
-  // Pour les Municipales : "Élu" si rank=1 (la circo correspond à LR).
-  // Pour les autres : on se contente de "1er à La Rochelle" — l'utilisateur sait
-  // que le résultat global peut différer (ex. Crépeau 1er à LR en 1993 mais
-  // battu dans la 1re circo qui inclut d'autres communes).
-  if (sc.rank === 1) {
-    return isMunicipale ? 'win' : 'first-lr';
-  }
-  return null;
+  // Pour les Municipales : "Élu" si rank=1 ET (le T2 a clôturé OU majorité absolue
+  // au T1). Sans cette précaution, un 1er au T1 sans majorité (où la liste a été
+  // battue au T2) apparaîtrait à tort comme Élu — cas où scores.T2 manque dans
+  // les données. Audit low #14.
+  if (sc.rank !== 1) return null;
+  if (!isMunicipale) return 'first-lr';
+  // Municipale : 3 chemins valides vers 'Élu' :
+  //   - finalTour = T2 (le second tour est joué et la liste est en tête)
+  //   - finalTour = TU (1 seul tour officiel : Municipales 1989, 1995)
+  //   - finalTour = T1 mais majorité absolue (sc.pct > 50 → pas de T2 organisé)
+  if (finalTour === 'T2' || finalTour === 'TU') return 'win';
+  if (finalTour === 'T1' && sc.pct > 50) return 'win';
+  return 'first-lr';
 }
 
 // ───── Render principal ─────────────────────────────────────────────────
@@ -482,7 +487,6 @@ function render() {
       if (pa && !partisChrono.includes(pa)) partisChrono.push(pa);
     });
   const partisHtml = partisChrono.map(pa => {
-    const col = (PARTI_NAMES[pa] !== undefined) ? null : null;
     // Trouver la couleur du parti dans une candidature
     const candWithCol = cands.find(({c}) => c.pa === pa && c.c);
     const bg = (candWithCol && candWithCol.c.c) || '#888';

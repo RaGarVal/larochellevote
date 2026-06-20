@@ -226,63 +226,11 @@ const FALLBACK = {
 };
 
 // ══ TABLE DES DATES D'ÉLECTIONS ══════════════════════════════════════════════
+// Importée depuis dates.js (single source of truth, partagée avec build-scrutins).
+// Audit medium #22 : avant cet extract, 2 copies divergentes (2 pages scrutin
+// se retrouvaient sans date côté build-scrutins).
+const { DATES } = require('./dates.js');
 
-const DATES = {
-  'Présidentielle 1988': { T1: '24 avril 1988',      T2: '8 mai 1988'       },
-  'Présidentielle 1995': { T1: '23 avril 1995',      T2: '7 mai 1995'       },
-  'Présidentielle 2002': { T1: '21 avril 2002',      T2: '5 mai 2002'       },
-  'Présidentielle 2007': { T1: '22 avril 2007',      T2: '6 mai 2007'       },
-  'Présidentielle 2012': { T1: '22 avril 2012',      T2: '6 mai 2012'       },
-  'Présidentielle 2017': { T1: '23 avril 2017',      T2: '7 mai 2017'       },
-  'Présidentielle 2022': { T1: '10 avril 2022',      T2: '24 avril 2022'    },
-  'Législatives 1988':   { T1: '5 juin 1988',        T2: '12 juin 1988'     },
-  'Législatives 1993':   { T1: '21 mars 1993',       T2: '28 mars 1993'     },
-  'Législatives 1997':   { T1: '25 mai 1997',        T2: '1er juin 1997'    },
-  'Législatives 2002':   { T1: '9 juin 2002',        T2: '16 juin 2002'     },
-  'Législatives 2007':   { T1: '10 juin 2007',       T2: '17 juin 2007'     },
-  'Législatives 2012':   { T1: '10 juin 2012',       T2: '17 juin 2012'     },
-  'Législatives 2017':   { T1: '11 juin 2017',       T2: '18 juin 2017'     },
-  'Législatives 2022':   { T1: '12 juin 2022',       T2: '19 juin 2022'     },
-  'Législatives 2024':   { T1: '30 juin 2024',       T2: '7 juillet 2024'   },
-  'Municipales 1989':    { TU: '12 mars 1989'                                },
-  'Municipales 1995':    { TU: '11 juin 1995'                                },
-  'Municipales 2001':    { T1: '11 mars 2001',       T2: '18 mars 2001'     },
-  'Municipales 2008':    { T1: '9 mars 2008',        T2: '16 mars 2008'     },
-  'Municipales 2014':    { T1: '23 mars 2014',       T2: '30 mars 2014'     },
-  'Municipales 2020':    { T1: '15 mars 2020',       T2: '28 juin 2020'     },
-  'Municipales 2026':    { T1: '15 mars 2026',       T2: '22 mars 2026'     },
-  'Européennes 1989':    { TU: '18 juin 1989'        },
-  'Européennes 1994':    { TU: '12 juin 1994'        },
-  'Européennes 1999':    { TU: '13 juin 1999'        },
-  'Européennes 2004':    { TU: '13 juin 2004'        },
-  'Européennes 2009':    { TU: '7 juin 2009'         },
-  'Européennes 2014':    { TU: '25 mai 2014'         },
-  'Européennes 2019':    { TU: '26 mai 2019'         },
-  'Européennes 2024':    { TU: '9 juin 2024'         },
-  'Référendum 1992':     { TU: '20 septembre 1992'   },
-  'Référendum 2000':     { TU: '24 septembre 2000'   },
-  'Référendum 2005':     { TU: '29 mai 2005'         },
-  'Législatives 1986':     { TU: '16 mars 1986'        },
-  'Régionales 1986':       { TU: '16 mars 1986'        },
-  'Cantonales 1988':       { T1: '25 septembre 1988', T2: '2 octobre 1988' },
-  'Cantonales 1992':       { T1: '22 mars 1992', T2: '29 mars 1992' },
-  'Cantonales 1994':       { T1: '20 mars 1994', T2: '27 mars 1994' },
-  'Cantonales 1998':       { T1: '15 mars 1998', T2: '22 mars 1998' },
-  'Cantonale partielle 1999': { T1: '20 juin 1999', T2: '27 juin 1999' },
-  'Cantonales 2001':       { T1: '11 mars 2001', T2: '18 mars 2001' },
-  'Cantonale partielle 2002': { T1: '22 septembre 2002', T2: '29 septembre 2002' },
-  'Cantonales 2004':       { T1: '21 mars 2004', T2: '28 mars 2004' },
-  'Cantonales 2008':       { T1: '9 mars 2008',  T2: '16 mars 2008' },
-  'Cantonales 2011':       { T1: '20 mars 2011', T2: '27 mars 2011' },
-  'Départementales 2015': { T1: '22 mars 2015', T2: '29 mars 2015' },
-  'Départementales 2021': { T1: '20 juin 2021', T2: '27 juin 2021'  },
-  'Régionales 1992':     { TU: '22 mars 1992'        },
-  'Régionales 1998':     { TU: '15 mars 1998'        },
-  'Régionales 2004':     { T1: '21 mars 2004',       T2: '28 mars 2004'     },
-  'Régionales 2010':     { T1: '14 mars 2010',       T2: '21 mars 2010'     },
-  'Régionales 2015':     { T1: '6 décembre 2015',    T2: '13 décembre 2015' },
-  'Régionales 2021':     { T1: '20 juin 2021',       T2: '27 juin 2021'     },
-};
 
 // ══ UTILITAIRES ══════════════════════════════════════════════════════════════
 
@@ -486,7 +434,9 @@ function getDate(electionLabel, tour) {
 // Pour le niveau 'carte', subCarte ∈ {'gagnants', 'candidat'} permet de distinguer
 // la carte mosaïque classique de la carte heatmap d'un candidat précis (suffixé "|cand:<nom>").
 function computeSignature(niveau, election, tour, bureau, quartier, subCarte, candidatName, canton) {
-  const niv = String(niveau || 'global').split(' ')[0]; // retire "(forcé)" éventuel
+  // Note historique : un `.split(' ')[0]` était posé ici pour gérer un suffixe
+  // "(forcé)" qui n'est plus appliqué côté caller. Retiré en audit low #9.
+  const niv = String(niveau || 'global');
   if (niv === 'bureau'   && bureau)   return `bureau|${election}|${tour}|${bureau}`;
   if (niv === 'quartier' && quartier) return `quartier|${election}|${tour}|${quartier}`;
   if (niv === 'canton'   && canton)   return `canton|${election}|${tour}|${canton}`;
@@ -826,8 +776,17 @@ console.log(rdv
     if (niveau === 'bureau' && !bureau) {
       const candidats = (bureauxParElection[election] || []).filter(n => bureauxInfoEra[n]);
       bureau = pickRandom(candidats);
+      // Si on a bien tiré un bureau, déduire son quartier pour que le fallback
+      // bureau→quartier (FALLBACK[bureau]) dans la cascade puisse en faire usage —
+      // sans ça, l'étape quartier était toujours skip (audit medium #18).
+      if (bureau && !quartier) {
+        quartier = bureauxInfoEra[bureau]?.quartier || null;
+      }
     }
-    if ((niveau === 'quartier' || (niveau === 'bureau' && !bureau)) && !quartier) {
+    // niveau='bureau' avec !bureau est désormais inaccessible : la branche au-dessus
+    // a soit tiré un bureau (et son quartier), soit pas (et alors pickRandom retourne
+    // undefined → on serait bloqué de toute façon). On simplifie (audit low #8).
+    if (niveau === 'quartier' && !quartier) {
       quartier = pickRandom(quartiersEra);
     }
     // Canton : on tire uniquement parmi les cantons modernes (3 cantons ère 2015).
@@ -1358,10 +1317,19 @@ console.log(rdv
   const outDir = path.join(__dirname, 'daily-tweet');
   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
 
+  // niveau_publie = niveauFinal (après cascade) normalisé en retirant " (forcé)".
+  // Calculé ici pour être stocké à la fois dans meta.json et history.json,
+  // cohérent entre les deux (audit low #7 : avant, meta.json stockait `niveauFinal`
+  // brut avec suffixe, alors que history.json le normalisait).
+  const niveauPublie = String(niveauFinal || niveau).replace(' (forcé)', '');
+
   fs.writeFileSync(path.join(outDir, 'image.png'),  screenshotBuffer);
   fs.writeFileSync(path.join(outDir, 'tweet.txt'),  tweetText, 'utf8');
   fs.writeFileSync(path.join(outDir, 'meta.json'),  JSON.stringify({
-    date: today, niveau: niveauFinal, election, tour, bureau, quartier, canton,
+    date: today,
+    niveau,                    // tirage initial (= sert à la signature anti-doublons)
+    niveau_publie: niveauPublie, // après cascade éventuelle, normalisé
+    election, tour, bureau, quartier, canton,
     subtype: subCarte || null,
     candidat: candidatPicked || null,
     signature,
@@ -1373,17 +1341,6 @@ console.log(rdv
   // la nouvelle, pour éviter qu'une même date apparaisse deux fois.
   const histPath = path.join(outDir, 'history.json');
   const updatedHistory = (tweetHistory || []).filter(e => e.date !== today);
-  // On stocke le niveau *initial* (celui qui sert à calculer la signature),
-  // pas niveauFinal qui peut différer après la cascade de repli (bureau → global
-  // si le tweet niveau bureau dépassait 280 chars). Cohérence avec la signature.
-  // subtype + candidat permettent au rééquilibrage auto-correctif de compter
-  // précisément les sous-types carte sans avoir à parser la signature.
-  //
-  // niveau_publie = niveauFinal (après cascade), normalisé en retirant le
-  // suffixe " (forcé)". Ajouté pour mesurer la VRAIE distribution publiée
-  // (vs `niveau` qui n'est que le tirage initial — souvent surreprésente
-  // bureau/carte là où le repli envoie en réalité vers global).
-  const niveauPublie = String(niveauFinal || niveau).replace(' (forcé)', '');
   updatedHistory.push({
     date: today,
     signature,
