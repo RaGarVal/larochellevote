@@ -64,12 +64,23 @@ if (!fs.existsSync(TWEET_TXT_PATH) || !fs.existsSync(IMAGE_PATH)) {
 let tweetText = fs.readFileSync(TWEET_TXT_PATH, 'utf8').trim();
 const imageBytes = fs.readFileSync(IMAGE_PATH);
 
-// Bluesky a une limite de 300 chars (sans raccourcissement d'URL contrairement à Twitter).
-// Si le tweet contient un deep link long et dépasse 300 chars, on le remplace par l'URL
-// du site simple (raccourci) pour rester dans les clous.
-if (tweetText.length > 300) {
-  console.log(`⚠️  Tweet trop long pour Bluesky (${tweetText.length} chars), remplacement du deep link par l'URL courte`);
+// Bluesky a une limite de 300 GRAPHÈMES (pas de code units UTF-16) — on compte
+// avec Intl.Segmenter pour rester aligné avec le comptage côté serveur. `.length`
+// surestime pour les emojis hors-BMP. Cf. audit low #20.
+function graphCount(s) {
+  if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+    return [...new Intl.Segmenter('fr', { granularity: 'grapheme' }).segment(s)].length;
+  }
+  return s.length; // fallback runtime sans Intl.Segmenter (très ancien Node)
+}
+// Si le tweet dépasse 300 graphèmes, on remplace d'abord le deep link long par l'URL
+// courte, puis on re-vérifie pour gérer le cas où ça déborde encore.
+if (graphCount(tweetText) > 300) {
+  console.log(`⚠️  Tweet trop long pour Bluesky (${graphCount(tweetText)} graphèmes), remplacement du deep link par l'URL courte`);
   tweetText = tweetText.replace(/https:\/\/larochellevote\.fr\/LRVcarte\.html#\S+/g, 'https://larochellevote.fr');
+  if (graphCount(tweetText) > 300) {
+    console.log(`⚠️  Toujours trop long (${graphCount(tweetText)} graphèmes) après remplacement — Bluesky rejettera probablement.`);
+  }
 }
 
 console.log(`📄 Texte du tweet : ${tweetText.length} caractères`);

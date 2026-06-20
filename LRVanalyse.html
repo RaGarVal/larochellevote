@@ -1784,11 +1784,11 @@ function toggleBase100() {
   // En base 100, les cantonales n'ont pas de référence ville → on coupe
   // automatiquement leur toggle (et le réactive à la sortie selon le niveau).
   // Refresh complet pour recharger les données filtrées par typeFilter.
-  if (typeof _applyDepToggleState === 'function') _applyDepToggleState();
+  _applyDepToggleState();
   if (typeof refresh === 'function') refresh();
   else if (chartType === 'empiles') drawStackedChart(window._chartData);
   else drawChart(window._chartData);
-  if (typeof writeURLState === 'function') writeURLState();
+  writeURLState();
 }
 function updateBase100Visibility() {
   const btn = document.getElementById('toggle-base100');
@@ -1803,7 +1803,7 @@ function updateBase100Visibility() {
     // Re-propage : si la base 100 s'éteint automatiquement (parce qu'on a
     // passé hors de la zone 1-2 catégories), le toggle Cantonales/Départementales
     // doit redevenir cliquable selon les règles du niveau courant.
-    if (typeof _applyDepToggleState === 'function') _applyDepToggleState();
+    _applyDepToggleState();
   }
 }
 function getQuartiersForBureau(bid) {
@@ -2181,7 +2181,7 @@ function applyHashSelection() {
   // Re-propage l'état final du toggle Cantonales/Départementales après lecture
   // de tous les paramètres : couvre les cas URL niveau=bureau (sans setNiveau()
   // appelé) ET base100=1 (priorité absolue dans _applyDepToggleState).
-  if (typeof _applyDepToggleState === 'function') _applyDepToggleState();
+  _applyDepToggleState();
 }
 
 // ─── Niveau ───────────────────────────────────────────────────────────────
@@ -2635,7 +2635,7 @@ function toggleVilleComparison() {
   document.getElementById('toggle-quartier-comp').classList.toggle('on', showQuartierComparison);
   if (chartType === 'empiles') drawStackedChart(window._chartData);
   else drawChart(window._chartData);
-  if (typeof writeURLState === 'function') writeURLState();
+  writeURLState();
 }
 
 function toggleQuartierComparison() {
@@ -2648,7 +2648,7 @@ function toggleQuartierComparison() {
     pop.style.display = 'none';
     if (chartType === 'empiles') drawStackedChart(window._chartData);
     else drawChart(window._chartData);
-    if (typeof writeURLState === 'function') writeURLState();
+    writeURLState();
     return;
   }
   // Sinon, calculer les quartiers du bureau
@@ -2674,7 +2674,7 @@ function selectCompareQuartier(qName) {
   document.getElementById('quartier-popover').style.display = 'none';
   if (chartType === 'empiles') drawStackedChart(window._chartData);
   else drawChart(window._chartData);
-  if (typeof writeURLState === 'function') writeURLState();
+  writeURLState();
 }
 
 function navigateSel(dir) {
@@ -2944,7 +2944,7 @@ function refresh() {
           : niveau === 'canton' ? (document.getElementById('sel-canton').value || currentCantonKey)
           : null);
   drawTable(data);  // ← full data (pas le slice : cf. spec)
-  if (typeof writeURLState === 'function') writeURLState();
+  writeURLState();
 }
 
 // ─── Zones d'incertitude ──────────────────────────────────────────────────
@@ -3149,7 +3149,10 @@ function drawBoundaryMarkers(html, data, xFn, PAD, cH, changes) {
     const isFirstOfEra = !seenEras.has(eraYear);
     seenEras.add(eraYear);
     const ch = changes[eraYear];
-    if (!ch || !isFirstOfEra || i === 0) return; // pas de badge avant la première élection
+    if (!ch || !isFirstOfEra) return;
+    // Note : pour i=0, xScale(-1) = PAD.left - unitX/2 → le marqueur tombe pile à
+    // PAD.left (bord gauche du chart), ce qui est désiré quand la 1re visible est
+    // aussi la 1re de l'ère après un filtre (audit low #6).
     const xCurr = xFn(i);
     const xPrev = xFn(i - 1);
     const x = Math.round((xPrev + xCurr) / 2);
