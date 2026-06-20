@@ -1,14 +1,14 @@
 {
-  "date": "2026-06-19",
-  "niveau": "bureau",
-  "election": "Législatives 2022",
-  "tour": "T2",
-  "bureau": "0015",
+  "date": "2026-06-20",
+  "niveau": "global",
+  "election": "Départementales 2021",
+  "tour": "T1",
+  "bureau": "0012",
   "quartier": null,
   "canton": null,
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Législatives 2022|T2|0015",
-  "chars": 254,
-  "generated_at": "2026-06-19T06:01:41.391Z"
+  "signature": "bureau|Départementales 2021|T1|0012",
+  "chars": 249,
+  "generated_at": "2026-06-20T06:01:10.507Z"
 }
