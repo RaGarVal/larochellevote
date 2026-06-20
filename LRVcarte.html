@@ -4596,15 +4596,6 @@ function isMultiline(el) {
   return el.offsetHeight > lineH * 1.5;
 }
 
-// Helper générique : détecte les éléments qui wrappent et applique une classe
-// pour les abréger.
-function applyAbbrevIfMultiline(elements, abbrevClass) {
-  elements.forEach(el => {
-    el.classList.remove(abbrevClass);
-    if (isMultiline(el)) el.classList.add(abbrevClass);
-  });
-}
-
 // Détecte si .cand-sub est passé sur une ligne DIFFÉRENTE de .cand-name dans
 // leur parent flex-wrap.
 // ⚠️ Subtilité : .cand-name (font ~1.3rem) et .cand-sub (font ~0.66rem) sont
@@ -4898,8 +4889,8 @@ function _setMapMoving(isMoving) {
   if (isMoving) {
     _cleanupTooltips();
   } else {
+    // 2 passes : immédiat + 200ms (la 50ms du milieu chevauchait sans gain mesurable).
     _cleanupTooltips();
-    setTimeout(_cleanupTooltips, 50);
     setTimeout(_cleanupTooltips, 200);
   }
 }
@@ -8659,9 +8650,6 @@ function updateFooter() {
     }));
     return Object.keys(FAMILY_CONFIG).filter(k => present.has(k));
   }
-  // Expose pour le choroplèthe de la phase 3.
-  window._cmpFamilyConfig = FAMILY_CONFIG;
-
   function el(id) { return document.getElementById(id); }
 
   function populateElections(selectId) {
@@ -11984,7 +11972,9 @@ function updateAnalyseLink() {
     const m = currentMapMode, s = currentMapSelection;
     if (m === 'candidat') {
       if (s) {
-        const cd = (typeof CAND_DATA !== 'undefined' && (CAND_DATA[s + '|' + currentElection] || CAND_DATA[s])) || {};
+        // candInfo(s) gère déjà tour_specific + hydratation PERSONS. Le legacy
+        // cascade `|currentElection` ci-dessous était une compat M3 morte post-M5.
+        const cd = (typeof candInfo === 'function') ? candInfo(s) : (CAND_DATA[s] || {});
         const nom = cd.n || s.replace(/\s*\([^)]*\)$/, '');
         const prenom = cd.p ? cd.p + ' ' : '';
         const pa = cd.pa ? ' (' + cd.pa + ')' : '';
@@ -14153,7 +14143,9 @@ function randomDiscover() {
         });
       });
       candsInElec.forEach(cname => {
-        const cd = (typeof CAND_DATA !== 'undefined' && (CAND_DATA[cname + '|' + elLabel] || CAND_DATA[cname])) || {};
+        // Post-M5 : cname EST le cand_id (ex. "alain-bucherie@cantonales-2004").
+        // La cascade `|elLabel` était une compat M3 morte → on simplifie.
+        const cd = (typeof CAND_DATA !== 'undefined' && CAND_DATA[cname]) || {};
         const nom = cd.n || cname;
         const prenom = cd.p || '';
         const pa = cd.pa || '';

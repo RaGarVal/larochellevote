@@ -1452,18 +1452,6 @@ input:focus-visible,
 <script src="shared.js"></script>
 
 <script>
-// ─── Configuration blocs ───────────────────────────────────────────────────
-const BLOCS_HIST = [
-  {key:'exg', label:'Extrême gauche',  color:'#7B0000'},
-  {key:'grg', label:'Gauche radicale', color:'#CC0100'},
-  {key:'g',   label:'Gauche',          color:'#CC0100'},
-  {key:'eco', label:'Écologie',         color:'#27AE60'},
-  {key:'c',   label:'Centre',           color:'#F1C232'},
-  {key:'d',   label:'Droite',           color:'#0F55CC'},
-  {key:'ds',  label:'Droite souverainiste', color:'#5A8FD0'},
-  {key:'exd', label:'Extrême droite',  color:'#20124D'},
-];
-
 // ─── Modes de regroupement ────────────────────────────────────────────────
 const BLOC_MODES = {
   2: [
@@ -1617,11 +1605,6 @@ function computeFamilyAggregation(cs, elecLabel) {
     });
   });
   return { total, shared };
-}
-
-// Compat : ne renvoie que les totaux, pour le code qui n'utilise pas bpShared.
-function aggregateBPByFamily(cs, elecLabel) {
-  return computeFamilyAggregation(cs, elecLabel).total;
 }
 
 // Pour une ligne donnée et un set de familles visibles, renvoie la liste des
@@ -1835,7 +1818,6 @@ function getQuartiersForBureau(bid) {
   }
   return quartiers;
 }
-let hoveredIdx = null;
 
 // ─── Init ─────────────────────────────────────────────────────────────────
 function init() {
@@ -2936,7 +2918,10 @@ function refresh() {
   const dataSig = N + '|' + (data[0]?.label || '') + '|' + (data[N - 1]?.label || '');
   const sigChanged = window._lastChartDataSig && window._lastChartDataSig !== dataSig;
   window._lastChartDataSig = dataSig;
-  if (sigChanged || chartVisibleCount > N || chartVisibleCount < CHART_MIN_VISIBLE) {
+  // Reset zoom : on ne déclenche `chartVisibleCount < CHART_MIN_VISIBLE` QUE si N
+  // peut accomoder le min — sinon un filtre qui réduit N en dessous du min reset
+  // à tort une vue valide (audit low #5).
+  if (sigChanged || chartVisibleCount > N || (chartVisibleCount < CHART_MIN_VISIBLE && N >= CHART_MIN_VISIBLE)) {
     chartViewStartIdx = 0;
     chartVisibleCount = N;
   }

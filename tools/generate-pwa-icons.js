@@ -41,7 +41,7 @@ const SIZES = [
 
 (async () => {
   if (!fs.existsSync(SVG_PATH)) {
-    console.error('❌ favicon.svg introuvable à', SVG_PATH);
+    console.error('❌ logo-pwa.svg introuvable à', SVG_PATH);
     process.exit(1);
   }
   const svgContent = fs.readFileSync(SVG_PATH, 'utf8');

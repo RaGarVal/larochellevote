@@ -12,12 +12,20 @@
 //  de modale ou focus programmatique).
 // ───────────────────────────────────────────────────────────────
 (function () {
-  function setMouse() { document.documentElement.setAttribute('data-input', 'mouse'); }
+  // Guard : setAttribute n'est appelé que si la valeur change vraiment, sinon
+  // chaque mousedown/touchstart écrit le DOM pour rien (audit perf).
+  function setMouse() {
+    if (document.documentElement.getAttribute('data-input') !== 'mouse') {
+      document.documentElement.setAttribute('data-input', 'mouse');
+    }
+  }
   function setKeyboard(e) {
     // Tab / flèches / Espace / Entrée / Échap → mode clavier
     if (e.key === 'Tab' || e.key === 'Escape' || e.key === 'Enter' || e.key === ' '
         || e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-      document.documentElement.setAttribute('data-input', 'keyboard');
+      if (document.documentElement.getAttribute('data-input') !== 'keyboard') {
+        document.documentElement.setAttribute('data-input', 'keyboard');
+      }
     }
   }
   document.addEventListener('mousedown', setMouse, true);
@@ -449,14 +457,20 @@ function setupAppMenu(opts) {
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && menu.classList.contains('open')) closeMenu();
   });
-  window.addEventListener('resize', () => { if (menu.classList.contains('open')) openMenu(); });
+  // Throttle rAF : pendant le drag de fenêtre, l'event resize fire 60+/sec
+  // et openMenu rebuild le menu à chaque tick. On collapse en 1 update/frame.
+  let _resizePending = false;
+  window.addEventListener('resize', () => {
+    if (_resizePending || !menu.classList.contains('open')) return;
+    _resizePending = true;
+    requestAnimationFrame(() => { _resizePending = false; if (menu.classList.contains('open')) openMenu(); });
+  });
 }
 
 // ───────────────────────────────────────────────────────────────
 //  ÈRES CARTOGRAPHIQUES — calculées dynamiquement depuis BUREAU_INFO
 // ───────────────────────────────────────────────────────────────
 //  ERAS         = liste de toutes les ères présentes en base, triées chronologiquement
-//                 (ex. ['1988','1993','1996','2004','2007','2010','2012','2015','2022','2026'])
 //  CURRENT_ERA  = la plus récente (= découpage "actuellement en vigueur")
 //
 //  Pourquoi : avant, ces deux valeurs étaient codées en dur à plusieurs endroits.
@@ -845,8 +859,9 @@ function candidaturesOfPerson(pid) {
     }
   }
   result.sort((a, b) => {
-    const ya = (a[1].election.match(/\d{4}/) || [0])[0];
-    const yb = (b[1].election.match(/\d{4}/) || [0])[0];
+    // Garde-fou : si CANDIDATURE n'a pas de champ `election`, on prend year=0 (au lieu de crasher).
+    const ya = (a[1].election && a[1].election.match(/\d{4}/) || [0])[0];
+    const yb = (b[1].election && b[1].election.match(/\d{4}/) || [0])[0];
     return parseInt(ya) - parseInt(yb);
   });
   return result;
