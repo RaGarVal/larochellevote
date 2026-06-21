@@ -1,14 +1,15 @@
 {
-  "date": "2026-06-20",
-  "niveau": "global",
-  "election": "Départementales 2021",
+  "date": "2026-06-21",
+  "niveau": "carte",
+  "niveau_publie": "carte",
+  "election": "Législatives 2022",
   "tour": "T1",
-  "bureau": "0012",
+  "bureau": null,
   "quartier": null,
   "canton": null,
-  "subtype": null,
-  "candidat": null,
-  "signature": "bureau|Départementales 2021|T1|0012",
+  "subtype": "candidat",
+  "candidat": "olivier-falorni@legislatives-2022",
+  "signature": "carte|Législatives 2022|T1|cand:olivier-falorni@legislatives-2022",
   "chars": 249,
-  "generated_at": "2026-06-20T06:01:10.507Z"
+  "generated_at": "2026-06-21T06:01:21.463Z"
 }
