@@ -1,14 +1,15 @@
 {
-  "date": "2026-06-20",
-  "niveau": "global",
-  "election": "Départementales 2021",
-  "tour": "T1",
-  "bureau": "0012",
+  "date": "2026-06-22",
+  "niveau": "carte",
+  "niveau_publie": "carte",
+  "election": "Européennes 2024",
+  "tour": "TU",
+  "bureau": null,
   "quartier": null,
   "canton": null,
-  "subtype": null,
-  "candidat": null,
-  "signature": "bureau|Départementales 2021|T1|0012",
-  "chars": 249,
-  "generated_at": "2026-06-20T06:01:10.507Z"
+  "subtype": "candidat",
+  "candidat": "valerie-hayer@europeennes-2024",
+  "signature": "carte|Européennes 2024|TU|cand:valerie-hayer@europeennes-2024",
+  "chars": 272,
+  "generated_at": "2026-06-22T06:01:54.552Z"
 }
