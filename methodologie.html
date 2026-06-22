@@ -1050,8 +1050,11 @@ setupSailAnimation();
       });
       candsInElec.forEach(cname => {
         const cd = (typeof CAND_DATA !== 'undefined' && CAND_DATA[cname]) || {};
-        const nom = cd.n || cname;
-        const prenom = cd.p || '';
+        // Identité résolue via PERSONS[cd.person] (post-M5 : p/n/s plus stockés
+        // sur la candidature pour les individuels).
+        const person = (cd.person && typeof PERSONS !== 'undefined') ? (PERSONS[cd.person] || {}) : {};
+        const nom = cd.n || person.n || cname;
+        const prenom = cd.p || person.p || '';
         const pa = cd.pa || '';
         const label = nom + (prenom ? ' ' + prenom : '') + (pa ? ' (' + pa + ')' : '');
         candEntries.push({ type: 'candidat', icon: '👤', label: label, sub: elLabel, key: cname, election: elLabel, search: norm(nom + ' ' + prenom + ' ' + pa + ' ' + cname + ' ' + elLabel) });

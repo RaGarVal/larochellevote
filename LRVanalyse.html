@@ -1453,28 +1453,31 @@ input:focus-visible,
 
 <script>
 // ─── Modes de regroupement ────────────────────────────────────────────────
+// Audit2 #15 : nettoyage des src arrays — les clés bk post-M5 valides sont
+// exg / g / c / d / exd / divers. Les anciennes (grg, eco, E, ds, autre)
+// étaient dead-letter, prétaient à confusion à la lecture.
 const BLOC_MODES = {
   2: [
-    {key:'G',   label:'Gauche',         color:'#CC0100', src:['exg','grg','g','eco','E']},
-    {key:'D',   label:'Droite',         color:'#0F55CC', src:['c','d','ds','exd','autre']}
+    {key:'G',   label:'Gauche',         color:'#CC0100', src:['exg','g']},
+    {key:'D',   label:'Droite',         color:'#0F55CC', src:['c','d','exd']}
   ],
   3: [
-    {key:'G',   label:'Gauche',         color:'#CC0100', src:['exg','grg','g','eco','E']},
+    {key:'G',   label:'Gauche',         color:'#CC0100', src:['exg','g']},
     {key:'C',   label:'Centre',         color:'#F1C232', src:['c']},
-    {key:'D',   label:'Droite',         color:'#0F55CC', src:['d','ds','exd','autre']}
+    {key:'D',   label:'Droite',         color:'#0F55CC', src:['d','exd']}
   ],
   4: [
-    {key:'G',   label:'Gauche',         color:'#CC0100', src:['exg','grg','g','eco','E']},
+    {key:'G',   label:'Gauche',         color:'#CC0100', src:['exg','g']},
     {key:'C',   label:'Centre',         color:'#F1C232', src:['c']},
-    {key:'D',   label:'Droite',         color:'#0F55CC', src:['d','ds']},
-    {key:'EXD', label:'Extrême droite', color:'#20124D', src:['exd','autre']}
+    {key:'D',   label:'Droite',         color:'#0F55CC', src:['d']},
+    {key:'EXD', label:'Extrême droite', color:'#20124D', src:['exd']}
   ],
   5: [
-    {key:'EXG', label:'Extrême gauche', color:'#7B0000', src:['exg','grg']},
-    {key:'G',   label:'Gauche',         color:'#CC0100', src:['g','eco','E']},
+    {key:'EXG', label:'Extrême gauche', color:'#7B0000', src:['exg']},
+    {key:'G',   label:'Gauche',         color:'#CC0100', src:['g']},
     {key:'C',   label:'Centre',         color:'#F1C232', src:['c']},
-    {key:'D',   label:'Droite',         color:'#0F55CC', src:['d','ds']},
-    {key:'EXD', label:'Extrême droite', color:'#20124D', src:['exd','autre']}
+    {key:'D',   label:'Droite',         color:'#0F55CC', src:['d']},
+    {key:'EXD', label:'Extrême droite', color:'#20124D', src:['exd']}
   ]
 };
 let currentMode = 4;
@@ -1779,6 +1782,13 @@ function setMode(n) {
 }
 
 const ABST_COLOR = '#AAAAAA';
+
+// MediaQueryList partagé — instancié une fois ici, lu via _MQ_MOBILE_PORTRAIT.matches
+// partout dans le fichier. Évite de re-instancier un MQL par appel à matchMedia(str).
+// Le MQL se met à jour automatiquement quand la viewport change (taille / orientation).
+const _MQ_MOBILE_PORTRAIT = (window.matchMedia
+  ? window.matchMedia('(max-width: 720px), (max-height: 500px) and (orientation: landscape)')
+  : { matches: false });
 
 // ─── État ─────────────────────────────────────────────────────────────────
 let niveau = 'ville';
@@ -2185,11 +2195,9 @@ function applyHashSelection() {
     if (b) b.classList.add('on');
   }
 
-  // Abstention
+  // Abstention — flag URL-only (pas de bouton UI exposé pour l'instant).
   if (params.get('abst') === '1') {
     showAbst = true;
-    const t = document.getElementById('toggle-abst');
-    if (t) t.classList.remove('off');
   }
 
   // Re-propage l'état final du toggle Cantonales/Départementales après lecture
@@ -2302,7 +2310,7 @@ function invalidateDataMemo() {
 }
 
 function getVilleData(typeFilter) {
-  const _mk = Array.isArray(typeFilter) ? typeFilter.slice().sort().join(',') : String(typeFilter || '');
+  const _mk = ((typeFilter instanceof Set) ? [...typeFilter].sort().join(',') : (Array.isArray(typeFilter) ? typeFilter.slice().sort().join(',') : String(typeFilter || '')));
   if (window._memoVille.has(_mk)) return window._memoVille.get(_mk);
   const result = [];
   for (const [label, elData] of Object.entries(ELECTIONS)) {
@@ -2383,7 +2391,7 @@ function getQBureauxForEra(quartier, eraYear) {
 }
 
 function getQuartierData(quartier, typeFilter) {
-  const _tk = Array.isArray(typeFilter) ? typeFilter.slice().sort().join(',') : String(typeFilter || '');
+  const _tk = ((typeFilter instanceof Set) ? [...typeFilter].sort().join(',') : (Array.isArray(typeFilter) ? typeFilter.slice().sort().join(',') : String(typeFilter || '')));
   const _mk = quartier + '|' + _tk;
   if (window._memoQuartier.has(_mk)) return window._memoQuartier.get(_mk);
   const result = [];
@@ -2481,7 +2489,7 @@ function getCBureauxForEra(cantonKey, eraB) {
 // les ères 1988-2012 → toutes les élections sont rétroactivement agrégées.
 function getCantonData(cantonKey, typeFilter) {
   if (!cantonKey) return [];
-  const _tk = Array.isArray(typeFilter) ? typeFilter.slice().sort().join(',') : String(typeFilter || '');
+  const _tk = ((typeFilter instanceof Set) ? [...typeFilter].sort().join(',') : (Array.isArray(typeFilter) ? typeFilter.slice().sort().join(',') : String(typeFilter || '')));
   const _mk = cantonKey + '|' + _tk;
   if (window._memoCanton.has(_mk)) return window._memoCanton.get(_mk);
   const wantCid = cantonKey.split(':')[1];
@@ -2721,7 +2729,7 @@ function setMarqueeText(el, text) {
   // Reset
   el.classList.remove('has-marquee');
   el.style.removeProperty('--marquee-distance');
-  const isMob = !!(window.matchMedia && window.matchMedia('(max-width: 720px), (max-height: 500px) and (orientation: landscape)').matches);
+  const isMob = !!_MQ_MOBILE_PORTRAIT.matches;
   if (!isMob) {
     el.innerHTML = '';
     el.textContent = text;
@@ -3196,7 +3204,14 @@ function drawBoundaryMarkers(html, data, xFn, PAD, cH, changes) {
       stroke="${st.color}" stroke-width="1.5" stroke-dasharray="${st.dash}" opacity="0.75"/>`;
     // Badge
     const eraYearEnc = encodeURIComponent(eraYear);
-    const firstLine = (ch.lines[0] || '').replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+    // Échappement JS-dans-attribut-HTML : le browser décode &#39; → ' AVANT d'exécuter
+    // l'onclick, donc on doit échapper en deux temps : d'abord \\ et \' pour le JS,
+    // ensuite &quot; pour l'attribut HTML. Sinon les apostrophes dans REDECOUPAGES
+    // (ex. « partie nord d'une commune ») cassent le onclick — audit2 #2.
+    const firstLine = (ch.lines[0] || '')
+      .replace(/\\/g, '\\\\')
+      .replace(/'/g, "\\'")
+      .replace(/"/g, '&quot;');
     html += `<g transform="translate(${x},${PAD.top+cH+56})" style="cursor:pointer"
       onmouseover="showBoundaryNote(event,'${eraYearEnc}')" onmouseout="hideTooltip()"
       onclick="openRedecoupageForm('${eraYear}','${firstLine}','${ch.type}')">
@@ -3206,6 +3221,30 @@ function drawBoundaryMarkers(html, data, xFn, PAD, cH, changes) {
     </g>`;
   });
   return html;
+}
+
+// Helpers de label X-axis — dédupliqués (audit2 #16+#17). Avant : ces 2 helpers
+// étaient redéfinis identiques dans drawChart ET drawStackedChart, risque d'oubli
+// si on en patche un seul. Maintenant module-scope, appelés par les 2.
+const _TYPE_INI = { 'Présidentielle':'P', 'Législatives':'L', 'Municipales':'M', 'Européennes':'E', 'Régionales':'R', 'Cantonales':'K', 'Départementales':'D' };
+function compactElecLabel(lbl) {
+  const m = lbl.match(/^(\S+)\s+(\d{4})(?:\s+(T\d))?/);
+  if (!m) return lbl;
+  const ini = _TYPE_INI[m[1]] || m[1].charAt(0);
+  const yy  = m[2].slice(-2);
+  const suf = m[3] === 'T2' ? '²' : '';
+  return ini + yy + suf;
+}
+function shortenElectionType(label) {
+  return label
+    .replace('Présidentielle','Prés.')
+    .replace('Législatives','Lég.')
+    .replace('Municipales','Mun.')
+    .replace('Européennes','Eur.')
+    .replace('Régionales','Rég.')
+    .replace('Départementales','Dép.')
+    .replace('Cantonales','Cant.')
+    .replace(/\s+\d{4}.*/, '');
 }
 
 // ─── SVG Chart ─────────────────────────────────────────────────────────────
@@ -3338,21 +3377,15 @@ function drawChart(data) {
   // Sur mobile (portrait OU paysage) : labels X ultra-compacts → 1 lettre (P/L/M/E/R) +
   // 2 chiffres d'année + suffixe "²" pour le 2e tour (ex. "L88", "P22²"), disposés en
   // quinconce sur 2 lignes pour gagner de l'espace horizontal.
-  const isMobP_x = !!(window.matchMedia && window.matchMedia('(max-width: 720px), (max-height: 500px) and (orientation: landscape)').matches);
-  const TYPE_INI = { 'Présidentielle':'P', 'Législatives':'L', 'Municipales':'M', 'Européennes':'E', 'Régionales':'R' };
-  function compactLabel(lbl) {
-    const m = lbl.match(/^(\S+)\s+(\d{4})(?:\s+(T\d))?/);
-    if (!m) return lbl;
-    const ini = TYPE_INI[m[1]] || m[1].charAt(0);
-    const yy  = m[2].slice(-2);
-    const suf = m[3] === 'T2' ? '²' : '';
-    return ini + yy + suf;
-  }
+  const isMobP_x = !!_MQ_MOBILE_PORTRAIT.matches;
+  // compactLabel et le typeLabel sont hoistés au scope module (compactElecLabel
+  // + shortenElectionType, audit2 #16+#17).
+  const compactLabel = compactElecLabel;
   // Lignes verticales + labels X
   data.forEach((d, i) => {
     const x = xScale(i);
     html += `<line class="chart-grid-v" x1="${x}" y1="${PAD.top}" x2="${x}" y2="${PAD.top+cH}" stroke-width="1"/>`;
-    const typeLabel = d.label.replace('Présidentielle','Prés.').replace('Législatives','Lég.').replace('Municipales','Mun.').replace('Européennes','Eur.').replace('Régionales','Rég.').replace('Départementales','Dép.').replace('Cantonales','Cant.').replace(/\s+\d{4}.*/, '');
+    const typeLabel = shortenElectionType(d.label);
     const yearLabel = d.label.match(/\d{4}.*/)?.[0] || '';
     const isUncertain = uncertainElections.has(d.label);
     // Élections incertaines : fill hardcodé légèrement plus pâle (signal visuel)
@@ -3729,16 +3762,9 @@ function drawStackedChart(data) {
   if (displayMode === 'blocs' && visibleBlocs.has('?')) blocs.push({key:'?', label:'Divers', color:'#A0E1E2'});
 
   // Sur mobile (portrait OU paysage) : labels X ultra-compacts en quinconce (cf. chart courbes)
-  const isMobP_emp = !!(window.matchMedia && window.matchMedia('(max-width: 720px), (max-height: 500px) and (orientation: landscape)').matches);
-  const TYPE_INI_E = { 'Présidentielle':'P', 'Législatives':'L', 'Municipales':'M', 'Européennes':'E', 'Régionales':'R' };
-  function compactLabelE(lbl) {
-    const m = lbl.match(/^(\S+)\s+(\d{4})(?:\s+(T\d))?/);
-    if (!m) return lbl;
-    const ini = TYPE_INI_E[m[1]] || m[1].charAt(0);
-    const yy  = m[2].slice(-2);
-    const suf = m[3] === 'T2' ? '²' : '';
-    return ini + yy + suf;
-  }
+  const isMobP_emp = !!_MQ_MOBILE_PORTRAIT.matches;
+  // compactLabelE/TYPE_INI_E dédupliqués → utilise les helpers module-scope.
+  const compactLabelE = compactElecLabel;
 
   data.forEach((d, i) => {
     const x = xCenter(i) - barW / 2;
@@ -3786,7 +3812,7 @@ function drawStackedChart(data) {
       html += `<line x1="${x-2}" y1="${ya}" x2="${x+barW+2}" y2="${ya}" stroke="${ABST_COLOR}" stroke-width="1.5" stroke-dasharray="3,2"/>`;
     }
     // Label X
-    const typeLabel = d.label.replace('Présidentielle','Prés.').replace('Législatives','Lég.').replace('Municipales','Mun.').replace('Européennes','Eur.').replace('Régionales','Rég.').replace('Départementales','Dép.').replace('Cantonales','Cant.').replace(/\s+\d{4}.*/, '');
+    const typeLabel = shortenElectionType(d.label);
     const yearLabel = d.label.match(/\d{4}.*/)?.[0] || '';
     const isUncertain = uncertainElections.has(d.label);
     const lFill = isUncertain ? '#bbb' : '#999';
@@ -3848,6 +3874,11 @@ function drawStackedChart(data) {
 // recalculer drawChart qui est lourd). Si omis, on utilise window._chartXScale.
 // previewWindow (optionnel) = {viewStart, visibleCount} pour filtrer les éras
 // affichées à la fenêtre visible (sinon on prend la fenêtre courante du chart).
+// Cache eraInfo (composé de niveau + bid) — invariant pendant le pan/zoom du chart.
+// Évite de rebâtir le mapping ERAS → {num, den, agg, ids} à chaque frame de drag.
+// Invalidé en changeant de bureau/quartier/canton ou de niveau.
+let _eraInfoCache = null;       // { key, info }
+
 function drawFrise(bid, xScaleOverride, previewWindow) {
   const el = document.getElementById('frise-area');
   if (!el) return;
@@ -3857,8 +3888,14 @@ function drawFrise(bid, xScaleOverride, previewWindow) {
   // ERAS provient de shared.js (calculé dynamiquement depuis BUREAU_INFO)
   // L'alternance des ères est gérée par les classes .alt-0 / .alt-1 (variables --frise-alt-0/1)
 
-  // Données (dénomination, n°) par ère — selon le niveau
-  const eraInfo = {};
+  // Données (dénomination, n°) par ère — selon le niveau. Cache la map eraInfo
+  // (dépend uniquement de niveau+bid, JAMAIS de la fenêtre/zoom).
+  const _eraKey = niveau + '|' + bid;
+  let eraInfo;
+  if (_eraInfoCache && _eraInfoCache.key === _eraKey) {
+    eraInfo = _eraInfoCache.info;
+  } else {
+    eraInfo = {};
 
   if (niveau === 'bureau') {
     const corr = BUREAU_CORRESPONDANCES[bid] || {};
@@ -3941,6 +3978,8 @@ function drawFrise(bid, xScaleOverride, previewWindow) {
         : null;
       eraInfo[era] = { num: nums, den: sharedQ || qname, agg: !!sharedQ, ids };
     });
+  }
+    _eraInfoCache = { key: _eraKey, info: eraInfo };
   }
 
   // Changements de redécoupage — maintenant indexés directement par ère
@@ -4379,12 +4418,6 @@ function toggleBloc(key) {
   updateBase100Visibility();
   refresh();
 }
-function toggleAbst() {
-  showAbst = !showAbst;
-  document.getElementById('toggle-abst').classList.toggle('off', !showAbst);
-  refresh();
-}
-
 // ─── Resize / changement d'orientation ───────────────────────────────────
 // Sur Chrome mobile, la rotation portrait↔paysage fait varier la taille du
 // conteneur du chart (la topbar est masquée en paysage, libérant de la place).
@@ -4551,12 +4584,6 @@ function setupChartZoom() {
   let startPinchCenterX = 0;  // X du milieu des 2 doigts au touchstart
   let axisLocked = false;
   let lockH = false;
-
-  // Convertit un delta-pixel en delta d'indices (en utilisant unitX pré-calculé par drawChart).
-  function pxToIdx(px) {
-    const u = window._chartUnitX;
-    return (u && u > 0) ? (px / u) : 0;
-  }
 
   // Calcule les bornes courantes pour les gestes.
   function getViewState() {
@@ -4872,7 +4899,7 @@ function dismissOrientationHint() {
 // dès que l'utilisateur scrolle vers la table ou tape ailleurs, pour ne pas
 // qu'il reste figé en superposition.
 function _isMobileViewport() {
-  return !!(window.matchMedia && window.matchMedia('(max-width: 720px), (max-height: 500px) and (orientation: landscape)').matches);
+  return !!_MQ_MOBILE_PORTRAIT.matches;
 }
 window.addEventListener('DOMContentLoaded', () => {
   const cs = document.getElementById('content-scroll');
@@ -5863,7 +5890,7 @@ function copyRedecoupageCode() {
   ];
 
   function isMobileTourViewport() {
-    return !!(window.matchMedia && window.matchMedia('(max-width: 720px), (max-height: 500px) and (orientation: landscape)').matches);
+    return !!_MQ_MOBILE_PORTRAIT.matches;
   }
 
   function shouldAutoStart() {
@@ -6364,9 +6391,13 @@ function randomDiscover() {
         });
       });
       candsInElec.forEach(cname => {
-        const cd = (typeof CAND_DATA !== 'undefined' && (CAND_DATA[cname + '|' + elLabel] || CAND_DATA[cname])) || {};
-        const nom = cd.n || cname;
-        const prenom = cd.p || '';
+        // Post-M5 : cname EST le cand_id ; la cascade `|elLabel` était une compat M3 morte.
+        const cd = (typeof CAND_DATA !== 'undefined' && CAND_DATA[cname]) || {};
+        // Identité : source de vérité = PERSONS[cd.person]. Les champs p/n
+        // éventuellement dénormalisés sur la candidature sont un fallback legacy.
+        const person = (cd.person && typeof PERSONS !== 'undefined') ? (PERSONS[cd.person] || {}) : {};
+        const nom = cd.n || person.n || cname;
+        const prenom = cd.p || person.p || '';
         const pa = cd.pa || '';
         const label = nom + (prenom ? ' ' + prenom : '') + (pa ? ' (' + pa + ')' : '');
         candEntries.push({

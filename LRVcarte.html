@@ -3879,17 +3879,21 @@ function aggregateBureauData(datas) {
 // Winner color
 
 
-// City-wide average per candidate for current sheet
+// Moyenne ville par candidat pour la sheet courante.
+// PRINCIPE FONDAMENTAL (cf. CLAUDE.md) : on agrège sur les voix entières (bd._voix),
+// jamais sur pct × exprimés / 100 (qui propage les arrondis des floats).
 function cityAverage() {
-  let totE = 0; const totals = {};
+  let totE = 0; const totalsV = {};
   Object.values(getSheetData()).forEach(d => {
-    if (!d) return; totE += d.e || 0;
-    Object.entries(d.c || {}).forEach(([k, v]) => {
-      totals[k] = (totals[k] || 0) + v * (d.e || 0) / 100;
+    if (!d) return;
+    totE += d.e || 0;
+    const voix = d._voix || {};
+    Object.entries(voix).forEach(([k, n]) => {
+      totalsV[k] = (totalsV[k] || 0) + (n || 0);
     });
   });
   const avg = {};
-  if (totE > 0) Object.entries(totals).forEach(([k, v]) => { avg[k] = +(v / totE * 100).toFixed(1); });
+  if (totE > 0) Object.entries(totalsV).forEach(([k, n]) => { avg[k] = +(n / totE * 100).toFixed(1); });
   return avg;
 }
 
@@ -3974,18 +3978,19 @@ function getExtremesByQuartier() {
     if (!q) return;
     getQuartierParts(q).forEach(qp => {
       const d = shData[ns]; if (!d) return;
-      if (!qAg[qp]) qAg[qp] = { totE: 0, candTotV: {} };
+      if (!qAg[qp]) qAg[qp] = { totE: 0, voix: {} };
       qAg[qp].totE += d.e || 0;
-      Object.entries(d.c || {}).forEach(([k, pct]) => {
-        qAg[qp].candTotV[k] = (qAg[qp].candTotV[k] || 0) + pct * (d.e || 0) / 100;
+      // Doctrine _voix : on agrège les voix entières, jamais pct × e / 100.
+      Object.entries(d._voix || {}).forEach(([k, n]) => {
+        qAg[qp].voix[k] = (qAg[qp].voix[k] || 0) + (n || 0);
       });
     });
   });
   // Calcul moyenne par quartier + détection des extrêmes
   Object.entries(qAg).forEach(([qName, ag]) => {
     if (ag.totE <= 0) return;
-    Object.entries(ag.candTotV).forEach(([k, v]) => {
-      const pct = +(v / ag.totE * 100).toFixed(1);
+    Object.entries(ag.voix).forEach(([k, n]) => {
+      const pct = +(n / ag.totE * 100).toFixed(1);
       if (!best[k]  || pct > best[k].pct)  best[k]  = { pct, num: qName };
       if (!worst[k] || pct < worst[k].pct) worst[k] = { pct, num: qName };
     });
@@ -4011,16 +4016,17 @@ function getExtremesByCanton() {
     if (!c) return;
     const cid = String(c);
     const d = shData[ns]; if (!d) return;
-    if (!cAg[cid]) cAg[cid] = { totE: 0, candTotV: {} };
+    if (!cAg[cid]) cAg[cid] = { totE: 0, voix: {} };
     cAg[cid].totE += d.e || 0;
-    Object.entries(d.c || {}).forEach(([k, pct]) => {
-      cAg[cid].candTotV[k] = (cAg[cid].candTotV[k] || 0) + pct * (d.e || 0) / 100;
+    // Doctrine _voix : on agrège les voix entières, jamais pct × e / 100.
+    Object.entries(d._voix || {}).forEach(([k, n]) => {
+      cAg[cid].voix[k] = (cAg[cid].voix[k] || 0) + (n || 0);
     });
   });
   Object.entries(cAg).forEach(([cid, ag]) => {
     if (ag.totE <= 0) return;
-    Object.entries(ag.candTotV).forEach(([k, v]) => {
-      const pct = +(v / ag.totE * 100).toFixed(1);
+    Object.entries(ag.voix).forEach(([k, n]) => {
+      const pct = +(n / ag.totE * 100).toFixed(1);
       if (!best[k]  || pct > best[k].pct)  best[k]  = { pct, num: cid };
       if (!worst[k] || pct < worst[k].pct) worst[k] = { pct, num: cid };
     });
@@ -4079,11 +4085,9 @@ function candInfo(name) {
   return _result;
 }
 function _candInfoImpl(name) {
-  // Post-migration M4 : `name` est un cand_id (ex. "alain-bucherie@cantonales-2004").
+  // Post-migration M4/M5 : `name` est un cand_id (ex. "alain-bucherie@cantonales-2004").
   // Le merge avec tour_specific[currentSheet] applique les variations par tour
   // (ex. Rousset 2015 al T1=PRG,PCF vs T2=PRG,PCF,EELV — Fountaine 2014 al T2=EELV).
-  // Compat legacy : si on tombe sur une ancienne clé "Nom Parti" via URL/cache,
-  // la cascade |Élection / |Tour fait le fallback (sera no-op après cleanup M5).
   // Référendums : plusieurs call sites utilisent les noms courts "Oui" et "Non"
   // (raccourci historique) ; on dérive le cand_id réel depuis l'élection courante.
   if ((name === 'Oui' || name === 'Non') && typeof isReferendum === 'function' && isReferendum(currentElection)) {
@@ -5946,21 +5950,18 @@ function buildCantonsPreviewHTML() {
   cids.forEach(cid => {
     const bureauNums = Object.keys(yearInfo).filter(ns => String(yearInfo[ns].c || '') === cid);
     let totI=0, totE=0, totAbst=0, totBn=0;
-    const candTotV = {}; const candTotVoix = {};
+    // Doctrine _voix : on agrège les voix entières, jamais pct × e / 100.
+    const candTotVoix = {};
     bureauNums.forEach(ns2 => {
       const d = shData[ns2]; if (!d) return;
       const abst_nb = Math.round((d.i||0)*(d.a||0)/100);
       totI += d.i||0; totE += d.e||0; totAbst += abst_nb; totBn += d.bn||0;
-      Object.entries(d.c || {}).forEach(([k,v]) => { candTotV[k] = (candTotV[k]||0) + v*(d.e||0)/100; });
-      if (d._voix) {
-        Object.entries(d._voix).forEach(([k,v]) => { candTotVoix[k] = (candTotVoix[k]||0) + v; });
-      }
+      Object.entries(d._voix || {}).forEach(([k,v]) => { candTotVoix[k] = (candTotVoix[k]||0) + v; });
     });
     if (!totE) return; // skip canton sans données
     const cAvg = {};
-    Object.entries(candTotV).forEach(([k,v]) => {
-      const vExact = candTotVoix[k];
-      cAvg[k] = vExact != null ? +(vExact/Math.max(totE,1)*100).toFixed(1) : +(v/Math.max(totE,1)*100).toFixed(1);
+    Object.entries(candTotVoix).forEach(([k,v]) => {
+      cAvg[k] = +(v/Math.max(totE,1)*100).toFixed(1);
     });
     const cWinner = Object.entries(cAvg).sort((a,b) => b[1]-a[1])[0];
     const cWinCol = cWinner ? colorOfCandidate(cWinner[0]) : '#ccc';
@@ -6098,19 +6099,18 @@ function _buildBureauPreviewHTMLImpl(feature) {
     }
     const shData = getSheetData();
     let totI = 0, totE = 0, totAbst = 0, totBn = 0;
-    const candTotV = {}; const candTotVoix = {};
+    // Doctrine _voix : on agrège les voix entières, jamais pct × e / 100.
+    const candTotVoix = {};
     Object.values(shData).forEach(d => {
       if (!d) return;
       const abst_nb = Math.round((d.i||0)*(d.a||0)/100);
       totI += d.i||0; totE += d.e||0; totAbst += abst_nb; totBn += d.bn||0;
-      Object.entries(d.c||{}).forEach(([k,v]) => { candTotV[k] = (candTotV[k]||0) + v*(d.e||0)/100; });
-      if (d._voix) Object.entries(d._voix).forEach(([k,v]) => { candTotVoix[k] = (candTotVoix[k]||0) + v; });
+      Object.entries(d._voix || {}).forEach(([k,v]) => { candTotVoix[k] = (candTotVoix[k]||0) + v; });
     });
     if (!totE) return '<div style="color:#aaa;font-style:italic;padding:16px 0;font-size:0.82rem">Aucune donnée disponible.</div>';
     const avg = {};
-    Object.entries(candTotV).forEach(([k,v]) => {
-      const ve = candTotVoix[k];
-      avg[k] = ve != null ? +(ve/Math.max(totE,1)*100).toFixed(1) : +(v/Math.max(totE,1)*100).toFixed(1);
+    Object.entries(candTotVoix).forEach(([k,v]) => {
+      avg[k] = +(v/Math.max(totE,1)*100).toFixed(1);
     });
     const winner = Object.entries(avg).sort((a,b) => b[1]-a[1])[0];
     const winCol = winner ? colorOfCandidate(winner[0]) : '#ccc';
@@ -6715,24 +6715,20 @@ function _blocsBarHTML(d, opts) {
 
 function renderGlobalFiche() {
   var shData = getSheetData();
-  var sheetLabel = currentSheet === 'TU' ? 'Tour unique' : currentSheet === 'T2' ? '2e tour' : '1er tour';
   var totI=0, totE=0, totAbst=0, totBn=0;
-  var candTotV = {}; var candTotVoix = {};
+  // Doctrine _voix : on agrège les voix entières, jamais pct × e / 100.
+  var candTotVoix = {};
   Object.values(shData).forEach(function(d) {
     if (!d) return;
     var an = Math.round((d.i||0)*(d.a||0)/100);
     totI+=d.i||0; totE+=d.e||0; totAbst+=an; totBn+=d.bn||0;
-    Object.entries(d.c||{}).forEach(function(kv) {
-      candTotV[kv[0]] = (candTotV[kv[0]]||0) + kv[1]*(d.e||0)/100;
-    });
-    if (d._voix) Object.entries(d._voix).forEach(function(kv) {
+    Object.entries(d._voix || {}).forEach(function(kv) {
       candTotVoix[kv[0]] = (candTotVoix[kv[0]]||0) + kv[1];
     });
   });
   var avg = {};
-  Object.entries(candTotV).forEach(function(kv) {
-    var ve = candTotVoix[kv[0]];
-    avg[kv[0]] = ve != null ? +(ve/Math.max(totE,1)*100).toFixed(1) : +(kv[1]/Math.max(totE,1)*100).toFixed(1);
+  Object.entries(candTotVoix).forEach(function(kv) {
+    avg[kv[0]] = +(kv[1]/Math.max(totE,1)*100).toFixed(1);
   });
   var winner = Object.entries(avg).sort(function(a,b){return b[1]-a[1];})[0];
   var winCol = winner ? colorOfCandidate(winner[0]) : '#ccc';
@@ -6767,7 +6763,6 @@ function renderGlobalFiche() {
   h += '<div class="split"><div id="mm-wrap"></div>' + sig + '</div>';
 
   // Blocs politiques — triptych global
-  var LEGACY = {'exg':'G','grg':'G','g':'G','eco':'G','E':'G','c':'C','d':'D','ds':'D','exd':'EXD','autre':'?'};
   function globalHistoBlocs(elecLabel) {
     var adjEl=ELECTIONS[elecLabel];
     var adjSh=adjEl?(currentSheet==='T2'?(adjEl.sheets['T2']||adjEl.sheets['TU']||adjEl.sheets['T1']):(adjEl.sheets['TU']||adjEl.sheets['T1'])):null;
@@ -7092,18 +7087,20 @@ function updateAccentColor(){
     var el0=ELECTIONS[currentElection];var mapYear=String(el0?el0.my:2026);
     var yearInfo=BUREAU_INFO[mapYear]||BUREAU_INFO[CURRENT_ERA]||{};
     var q=currentQuartier||(currentFeature?(getQuartierParts(bureauInfo(currentFeature).quartier||'')[0]||''):'');
-    var shData=getSheetData();var candTotV={};var totE=0;
+    // Doctrine _voix : on agrège les voix entières, jamais pct × e / 100.
+    var shData=getSheetData();var voix={};var totE=0;
     Object.keys(yearInfo).forEach(function(ns){
       if(getQuartierParts(yearInfo[ns].q||'').indexOf(q)<0)return;
       var d=shData[ns];if(!d)return;
-      totE+=d.e||0;Object.entries(d.c||{}).forEach(function(kv){candTotV[kv[0]]=(candTotV[kv[0]]||0)+kv[1]*(d.e||0)/100;});
+      totE+=d.e||0;Object.entries(d._voix||{}).forEach(function(kv){voix[kv[0]]=(voix[kv[0]]||0)+kv[1];});
     });
-    var winner=Object.entries(candTotV).sort(function(a,b){return b[1]-a[1];})[0];
+    var winner=Object.entries(voix).sort(function(a,b){return b[1]-a[1];})[0];
     setOverlayAccent(winner&&totE>0?sailColorForWinner(winner[0]):null);
   } else if(overlayTab==='global'){
-    var shData2=getSheetData();var candTotV2={};var totE2=0;
-    Object.values(shData2).forEach(function(d){if(!d)return;totE2+=d.e||0;Object.entries(d.c||{}).forEach(function(kv){candTotV2[kv[0]]=(candTotV2[kv[0]]||0)+kv[1]*(d.e||0)/100;});});
-    var winner2=Object.entries(candTotV2).sort(function(a,b){return b[1]-a[1];})[0];
+    // Doctrine _voix idem.
+    var shData2=getSheetData();var voix2={};var totE2=0;
+    Object.values(shData2).forEach(function(d){if(!d)return;totE2+=d.e||0;Object.entries(d._voix||{}).forEach(function(kv){voix2[kv[0]]=(voix2[kv[0]]||0)+kv[1];});});
+    var winner2=Object.entries(voix2).sort(function(a,b){return b[1]-a[1];})[0];
     setOverlayAccent(winner2&&totE2>0?sailColorForWinner(winner2[0]):null);
   } else if(overlayTab==='canton'){
     // Agrégation des bureaux du canton courant pour trouver le gagnant.
@@ -7289,12 +7286,13 @@ function renderQuartierList(){
     if(!q)return;
     getQuartierParts(q).forEach(function(qp){
       var d=shData[ns];if(!d)return;
-      if(!qAgg[qp])qAgg[qp]={totI:0,totE:0,totAbst:0,totBn:0,candTotV:{},nb:0};
+      if(!qAgg[qp])qAgg[qp]={totI:0,totE:0,totAbst:0,totBn:0,voix:{},nb:0};
       var an=Math.round((d.i||0)*(d.a||0)/100);
       qAgg[qp].totI+=d.i||0; qAgg[qp].totE+=d.e||0; qAgg[qp].totAbst+=an; qAgg[qp].totBn+=d.bn||0;
       qAgg[qp].nb++;
-      Object.entries(d.c||{}).forEach(function(kv){
-        qAgg[qp].candTotV[kv[0]]=(qAgg[qp].candTotV[kv[0]]||0)+kv[1]*(d.e||0)/100;
+      // Doctrine _voix : voix entières.
+      Object.entries(d._voix||{}).forEach(function(kv){
+        qAgg[qp].voix[kv[0]]=(qAgg[qp].voix[kv[0]]||0)+kv[1];
       });
     });
   });
@@ -7305,7 +7303,7 @@ function renderQuartierList(){
     var ag=qAgg[qp];
     if(ag.totE<=0)return;
     var avg={};
-    Object.entries(ag.candTotV).forEach(function(kv){avg[kv[0]]=+(kv[1]/ag.totE*100).toFixed(1);});
+    Object.entries(ag.voix).forEach(function(kv){avg[kv[0]]=+(kv[1]/ag.totE*100).toFixed(1);});
     var winner=Object.entries(avg).sort(function(a,b){return b[1]-a[1];})[0];
     var col=winner?colorOfCandidate(winner[0]):'#ccc';
     var ci=winner?candInfo(winner[0]):{};
@@ -7354,12 +7352,13 @@ function renderCantonList(){
     if(!c)return; // bureau sans canton (ex. 0057)
     var cid=String(c);
     var d=shData[ns];if(!d)return;
-    if(!cAgg[cid])cAgg[cid]={totI:0,totE:0,totAbst:0,totBn:0,candTotV:{},nb:0};
+    if(!cAgg[cid])cAgg[cid]={totI:0,totE:0,totAbst:0,totBn:0,voix:{},nb:0};
     var an=Math.round((d.i||0)*(d.a||0)/100);
     cAgg[cid].totI+=d.i||0; cAgg[cid].totE+=d.e||0; cAgg[cid].totAbst+=an; cAgg[cid].totBn+=d.bn||0;
     cAgg[cid].nb++;
-    Object.entries(d.c||{}).forEach(function(kv){
-      cAgg[cid].candTotV[kv[0]]=(cAgg[cid].candTotV[kv[0]]||0)+kv[1]*(d.e||0)/100;
+    // Doctrine _voix : voix entières.
+    Object.entries(d._voix||{}).forEach(function(kv){
+      cAgg[cid].voix[kv[0]]=(cAgg[cid].voix[kv[0]]||0)+kv[1];
     });
   });
   // Tri numérique par id canton (1, 2, 3, ..., 9)
@@ -7371,7 +7370,7 @@ function renderCantonList(){
     if(ag.totE<=0)return;
     var cantonName=(cantonsMeta[cid]||{}).name||('La Rochelle-'+cid);
     var avg={};
-    Object.entries(ag.candTotV).forEach(function(kv){avg[kv[0]]=+(kv[1]/ag.totE*100).toFixed(1);});
+    Object.entries(ag.voix).forEach(function(kv){avg[kv[0]]=+(kv[1]/ag.totE*100).toFixed(1);});
     var winner=Object.entries(avg).sort(function(a,b){return b[1]-a[1];})[0];
     var col=winner?colorOfCandidate(winner[0]):'#ccc';
     var ci=winner?candInfo(winner[0]):{};
@@ -7643,7 +7642,6 @@ function renderFiche(feature) {
   // anciennes ères (geodata.js généré sans tenir compte des renumérotations).
   const _curEra = String((ELECTIONS[currentElection] || {}).my || CURRENT_ERA);
   const histoKey = _resolveB2026FromHist(ns, _curEra);
-  const sheetLabel = currentSheet === 'TU' ? 'Tour unique' : currentSheet === 'T2' ? '2e tour' : '1er tour';
   // En cantonale : moyenne canton du bureau (chaque binôme n'est candidat que dans son canton).
   const cityAvg = refAverageForBureau(ns);
   const extr  = getExtremes();
@@ -7800,14 +7798,14 @@ function renderQuartier(){
   var q=currentQuartier||(getQuartierParts(info.quartier||'')[0]||'');
   if(!q){document.getElementById('ov-body').innerHTML='<div style="padding:20px;color:var(--text-meta)">Ce bureau n\'est pas rattaché à un quartier identifié.</div>';return;}
   const bureauNums=getBureausByQuartier(q);const shData=getSheetData();const cityAvg=cityAverage();
-  const sheetLabel=currentSheet==='TU'?'Tour unique':currentSheet==='T2'?'2e tour':'1er tour';
-  let totI=0,totE=0,totAbst=0,totBn=0;const candTotV={};const candTotVoix={};
+  // Doctrine _voix : on agrège les voix entières, jamais pct × e / 100.
+  let totI=0,totE=0,totAbst=0,totBn=0;const candTotVoix={};
   bureauNums.forEach(ns2=>{const d=shData[ns2];if(!d)return;
     const abst_nb=Math.round((d.i||0)*(d.a||0)/100);
     totI+=d.i||0;totE+=d.e||0;totAbst+=abst_nb;totBn+=d.bn||0;
-    Object.entries(d.c||{}).forEach(([k,v])=>{candTotV[k]=(candTotV[k]||0)+v*(d.e||0)/100;});
-    if(d._voix){Object.entries(d._voix).forEach(([k,v])=>{candTotVoix[k]=(candTotVoix[k]||0)+v;});}});
-  const qAvg={};Object.entries(candTotV).forEach(([k,v])=>{const ve=candTotVoix[k];qAvg[k]=ve!=null?+(ve/Math.max(totE,1)*100).toFixed(1):+(v/Math.max(totE,1)*100).toFixed(1);});
+    Object.entries(d._voix||{}).forEach(([k,v])=>{candTotVoix[k]=(candTotVoix[k]||0)+v;});
+  });
+  const qAvg={};Object.entries(candTotVoix).forEach(([k,v])=>{qAvg[k]=+(v/Math.max(totE,1)*100).toFixed(1);});
   const qWinner=Object.entries(qAvg).sort((a,b)=>b[1]-a[1])[0];
   const qWinCol=qWinner?colorOfCandidate(qWinner[0]):'#ccc';
   const abst_pct=totI>0?+(totAbst/totI*100).toFixed(1):0;
@@ -7915,24 +7913,17 @@ function renderCanton(){
   // Pour les élections non-cantonales, on garde la comparaison canton vs ville (pertinente).
   const cityAvg = (typeof isCantonalElection === 'function' && isCantonalElection(currentElection)) ? {} : cityAverage();
   let totI=0, totE=0, totAbst=0, totBn=0;
-  const candTotV = {};       // float accumulé via pct*e/100 (legacy, gardé pour cAvg)
-  const candTotVoix = {};    // entier exact sommé depuis _voix par bureau
+  // Doctrine _voix : on agrège les voix entières, jamais pct × e / 100.
+  const candTotVoix = {};
   bureauNums.forEach(ns2 => {
     const d = shData[ns2]; if (!d) return;
     const abst_nb = Math.round((d.i||0)*(d.a||0)/100);
     totI += d.i||0; totE += d.e||0; totAbst += abst_nb; totBn += d.bn||0;
-    Object.entries(d.c || {}).forEach(([k,v]) => { candTotV[k] = (candTotV[k]||0) + v*(d.e||0)/100; });
-    if (d._voix) {
-      Object.entries(d._voix).forEach(([k,v]) => { candTotVoix[k] = (candTotVoix[k]||0) + v; });
-    }
+    Object.entries(d._voix || {}).forEach(([k,v]) => { candTotVoix[k] = (candTotVoix[k]||0) + v; });
   });
   const cAvg = {};
-  // Recalcule cAvg depuis les voix entières quand disponibles (précis), sinon depuis candTotV.
-  Object.entries(candTotV).forEach(([k,v]) => {
-    const vExact = candTotVoix[k];
-    cAvg[k] = vExact != null
-      ? +(vExact/Math.max(totE,1)*100).toFixed(1)
-      : +(v/Math.max(totE,1)*100).toFixed(1);
+  Object.entries(candTotVoix).forEach(([k,v]) => {
+    cAvg[k] = +(v/Math.max(totE,1)*100).toFixed(1);
   });
   const cWinner = Object.entries(cAvg).sort((a,b) => b[1]-a[1])[0];
   const cWinCol = cWinner ? colorOfCandidate(cWinner[0]) : '#ccc';
@@ -9636,24 +9627,42 @@ function updateFooter() {
     function rangeOf(side) {
       return effectiveRangeFor(side);
     }
-    function highlightSideAt(side, targetPct) {
+    // Audit2 #11 : pré-calc pctByNs[side] au bind, lookup O(1) au lieu de
+    // scoreOfSelInBureau par frame × N bureaux. Cache invalidé à chaque
+    // bindLegendHover (donc à chaque swap / edit / changement de scale).
+    const _pctByNs = { A: null, B: null };
+    function _ensurePctByNs(side) {
+      if (_pctByNs[side]) return _pctByNs[side];
       const sel = _cmpState[side];
       const layers = _cmpState[side === 'A' ? 'layersA' : 'layersB'];
+      if (!layers || !sel) return null;
+      const sheet = getSheetForSel(sel);
+      const out = {};
+      Object.keys(layers).forEach(ns => {
+        const data = sheet[ns];
+        if (!data) return;
+        const { pct, present } = scoreOfSelInBureau(data, sel);
+        if (present) out[ns] = pct;
+      });
+      _pctByNs[side] = out;
+      return out;
+    }
+    function highlightSideAt(side, targetPct) {
+      const layers = _cmpState[side === 'A' ? 'layersA' : 'layersB'];
       const geo    = _cmpState[side === 'A' ? 'geoA'    : 'geoB'];
-      if (!layers || !geo || !sel) return;
+      if (!layers || !geo) return;
       const r = rangeOf(side);
       const amp = Math.max(0.01, r.max - r.min);
       const tol = Math.max(0.5, Math.min(2.5, amp * 0.04));
-      const sheet = getSheetForSel(sel);
-      Object.entries(layers).forEach(([ns, layer]) => {
-        const data = sheet[ns]; if (!data) return;
-        const { pct, present } = scoreOfSelInBureau(data, sel);
-        if (!present) return;
-        if (Math.abs(pct - targetPct) <= tol) {
-          layer.setStyle({ weight: 2.6, color: '#000' });
-          if (layer.bringToFront) layer.bringToFront();
-          highlighted.push({ layer, geo });
-        }
+      const pcts = _ensurePctByNs(side);
+      if (!pcts) return;
+      Object.entries(pcts).forEach(([ns, pct]) => {
+        if (Math.abs(pct - targetPct) > tol) return;
+        const layer = layers[ns];
+        if (!layer) return;
+        layer.setStyle({ weight: 2.6, color: '#000' });
+        if (layer.bringToFront) layer.bringToFront();
+        highlighted.push({ layer, geo });
       });
     }
     // Curseur fantôme sur l'AUTRE barre (mode relatif uniquement) : matérialise
@@ -10325,11 +10334,13 @@ function updateFooter() {
   (function attachCmpDiffDrag() {
     let dragging = false, startX = 0, startY = 0, startLeft = 0, startTop = 0;
     let drawerEl = null, parentRect = null;
+    // Audit2 #26 : hoist dimensions au mousedown — les offsetWidth/Height de la
+    // fenêtre ne changent pas pendant le drag, on évite N reflows synchrones.
+    let drawerW = 0, drawerH = 0;
     function onMove(e) {
       if (!dragging || !drawerEl) return;
       const dx = e.clientX - startX, dy = e.clientY - startY;
-      const w = drawerEl.offsetWidth, h = drawerEl.offsetHeight;
-      const minLeft = 60 - w;
+      const minLeft = 60 - drawerW;
       const maxLeft = parentRect.width - 60;
       const minTop = 0;
       const maxTop = parentRect.height - 40;
@@ -10362,6 +10373,8 @@ function updateFooter() {
       startTop  = rect.top  - parentRect.top;
       startX = e.clientX; startY = e.clientY;
       drawerEl = drawer;
+      drawerW = drawer.offsetWidth;
+      drawerH = drawer.offsetHeight;
       dragging = true;
       // Bascule du centrage CSS aux px explicites.
       drawer.style.transform = 'none';
@@ -11406,15 +11419,22 @@ function updateAnalyseLink() {
         updateOverlayTabs();
       }
     } else if (tab === 'global') {
-      // Ouvrir directement la fiche globale (cohérent avec openGlobalOverlay)
-      overlayTab = 'global';
-      currentFeature = null;
-      document.getElementById('ov-title').textContent = 'La Rochelle — Résultats globaux';
-      document.getElementById('ov-tabs').style.display = 'none';
-      setOverlayDisplay('flex');
-      if (typeof renderGlobalFiche === 'function') renderGlobalFiche();
-      showBureauListSidebar();
-      updateAccentColor();
+      // Réutilise openGlobalOverlay() qui gère la redirection cantonale (audit2 #9 :
+      // avant, on dupliquait son corps SANS la redirection, donc daily-capture qui
+      // pointait `tab=global` sur une cantonale ouvrait une fiche "Résultats globaux"
+      // calculée sur un seul canton → incohérence visible.
+      if (typeof openGlobalOverlay === 'function') {
+        openGlobalOverlay();
+      } else {
+        overlayTab = 'global';
+        currentFeature = null;
+        document.getElementById('ov-title').textContent = 'La Rochelle — Résultats globaux';
+        document.getElementById('ov-tabs').style.display = 'none';
+        setOverlayDisplay('flex');
+        if (typeof renderGlobalFiche === 'function') renderGlobalFiche();
+        showBureauListSidebar();
+        updateAccentColor();
+      }
     } else if (qname) {
       // Construire un currentFeature « factice » via le 1er bureau du quartier
       const yearInfo = BUREAU_INFO[CURRENT_ERA] || {};
@@ -13118,17 +13138,18 @@ function updateAnalyseLink() {
     }
 
     function aggData(numsOrAll){
-      let totI=0, totE=0, totAbst=0, totBn=0; const candTotV={};
+      // Doctrine _voix : on agrège les voix entières, jamais pct × e / 100.
+      let totI=0, totE=0, totAbst=0, totBn=0; const voix={};
       const apply = (d) => {
         if (!d) return;
         const an = Math.round((d.i||0)*(d.a||0)/100);
         totI += d.i||0; totE += d.e||0; totAbst += an; totBn += d.bn||0;
-        Object.entries(d.c||{}).forEach(([k,v]) => { candTotV[k] = (candTotV[k]||0) + v*(d.e||0)/100; });
+        Object.entries(d._voix||{}).forEach(([k,v]) => { voix[k] = (voix[k]||0) + v; });
       };
       if (numsOrAll === 'all') Object.values(sheetData).forEach(apply);
       else (numsOrAll||[]).forEach(ns2 => apply(sheetData[ns2]));
       const avg = {};
-      Object.entries(candTotV).forEach(([k,v]) => { avg[k] = +(v/Math.max(totE,1)*100).toFixed(1); });
+      Object.entries(voix).forEach(([k,v]) => { avg[k] = +(v/Math.max(totE,1)*100).toFixed(1); });
       const winner = Object.entries(avg).sort((a,b) => b[1]-a[1])[0];
       return { c: avg, e: totE, w: winner ? winner[0] : null, i: totI, a: totI>0 ? +(totAbst/totI*100).toFixed(1) : 0, bn: totBn };
     }
@@ -14105,8 +14126,11 @@ function randomDiscover() {
         // Post-M5 : cname EST le cand_id (ex. "alain-bucherie@cantonales-2004").
         // La cascade `|elLabel` était une compat M3 morte → on simplifie.
         const cd = (typeof CAND_DATA !== 'undefined' && CAND_DATA[cname]) || {};
-        const nom = cd.n || cname;
-        const prenom = cd.p || '';
+        // Identité : source de vérité = PERSONS[cd.person]. Les champs p/n
+        // éventuellement dénormalisés sur la candidature sont un fallback legacy.
+        const person = (cd.person && typeof PERSONS !== 'undefined') ? (PERSONS[cd.person] || {}) : {};
+        const nom = cd.n || person.n || cname;
+        const prenom = cd.p || person.p || '';
         const pa = cd.pa || '';
         const label = nom + (prenom ? ' ' + prenom : '') + (pa ? ' (' + pa + ')' : '');
         candEntries.push({
@@ -14245,13 +14269,63 @@ function randomDiscover() {
     inputEl = overlayEl.querySelector('#cmdk-input');
     listEl  = overlayEl.querySelector('#cmdk-list');
     overlayEl.addEventListener('click', e => { if (e.target === overlayEl) closeOverlayUI(); });
-    inputEl.addEventListener('input', () => { runSearch(); });
+    // Audit2 #10 : debounce 100ms sur la frappe — sans ça runSearch() + render() complet
+    // sur chaque keystroke à 200 ms de frappe rapide produit jank visible.
+    let _searchTimer = null;
+    inputEl.addEventListener('input', () => {
+      if (_searchTimer) clearTimeout(_searchTimer);
+      _searchTimer = setTimeout(() => { _searchTimer = null; runSearch(); }, 100);
+    });
     inputEl.addEventListener('keydown', e => {
       if (e.key === 'ArrowDown') { e.preventDefault(); moveCursor(1); }
       else if (e.key === 'ArrowUp') { e.preventDefault(); moveCursor(-1); }
       else if (e.key === 'Enter')   { e.preventDefault(); if (results[cursor]) pickItem(results[cursor]); }
       else if (e.key === 'Escape')  { e.preventDefault(); closeOverlayUI(); }
     });
+    // Audit2 #5 + #13 : event delegation sur listEl. Avant : 1 listener × N items
+    // recréés à chaque render + render() complet à chaque mousemove → jank ≥ 20 items.
+    // Maintenant : 2 listeners totaux (click + mousemove sur listEl), et mousemove
+    // ne re-render plus : swap juste les classes .cur via setCursor.
+    listEl.addEventListener('click', e => {
+      const it = e.target.closest('.cmdk-item');
+      if (!it || !listEl.contains(it)) return;
+      const i = parseInt(it.dataset.i);
+      if (results[i]) pickItem(results[i]);
+    });
+    listEl.addEventListener('mousemove', e => {
+      const it = e.target.closest('.cmdk-item');
+      if (!it || !listEl.contains(it)) return;
+      const i = parseInt(it.dataset.i);
+      if (!isNaN(i) && i !== cursor) setCursor(i);
+    });
+    // Tooltip badge : délégation aussi, 2 listeners totaux au lieu de N×2.
+    listEl.addEventListener('mouseover', e => {
+      const b = e.target.closest('.badge');
+      if (!b || !listEl.contains(b)) return;
+      const tip = b.dataset.tip;
+      if (!tip) return;
+      let t = document.getElementById('cmdk-tip');
+      if (!t) { t = document.createElement('div'); t.id = 'cmdk-tip'; document.body.appendChild(t); }
+      t.textContent = tip;
+      const r = b.getBoundingClientRect();
+      t.style.left = (r.left + r.width/2) + 'px';
+      t.style.top  = (r.bottom + 6) + 'px';
+      t.style.opacity = '1';
+    });
+    listEl.addEventListener('mouseout', e => {
+      const b = e.target.closest('.badge');
+      if (!b) return;
+      const t = document.getElementById('cmdk-tip');
+      if (t) t.style.opacity = '0';
+    });
+  }
+  // Swap les classes .cur sans re-render — utilisé par moveCursor + mousemove délégué.
+  function setCursor(i) {
+    if (i === cursor) return;
+    const items = listEl.children;
+    if (items[cursor]) items[cursor].classList.remove('cur');
+    cursor = i;
+    if (items[cursor]) items[cursor].classList.add('cur');
   }
   function runSearch(){
     results = filter(inputEl.value);
@@ -14271,28 +14345,9 @@ function randomDiscover() {
       + '</span>'
       + '<span class="sub">' + escapeHTML(r.sub) + '</span>'
       + '</div>').join('');
-    [...listEl.querySelectorAll('.cmdk-item')].forEach(el => {
-      el.addEventListener('click', () => { cursor = parseInt(el.dataset.i); pickItem(results[cursor]); });
-      el.addEventListener('mousemove', () => { const i = parseInt(el.dataset.i); if (i !== cursor) { cursor = i; render(); } });
-    });
-    // Tooltip flottant pour le badge (position fixe pour échapper à l'overflow de la liste)
-    [...listEl.querySelectorAll('.cmdk-item .badge')].forEach(b => {
-      const tip = b.dataset.tip;
-      if (!tip) return;
-      b.addEventListener('mouseenter', () => {
-        let t = document.getElementById('cmdk-tip');
-        if (!t) { t = document.createElement('div'); t.id = 'cmdk-tip'; document.body.appendChild(t); }
-        t.textContent = tip;
-        const r = b.getBoundingClientRect();
-        t.style.left = (r.left + r.width/2) + 'px';
-        t.style.top  = (r.bottom + 6) + 'px';
-        t.style.opacity = '1';
-      });
-      b.addEventListener('mouseleave', () => {
-        const t = document.getElementById('cmdk-tip');
-        if (t) t.style.opacity = '0';
-      });
-    });
+    // Click + mousemove items : event delegation posée une fois sur listEl
+    // (cf. buildOverlayUI). Plus de N listeners recréés à chaque render.
+    // Tooltip flottant pour le badge — délégation aussi.
     // Scroll-into-view pour l'élément courant
     const cur = listEl.querySelector('.cmdk-item.cur');
     if (cur) cur.scrollIntoView({ block: 'nearest' });
@@ -14300,8 +14355,10 @@ function randomDiscover() {
   function escapeHTML(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
   function moveCursor(d){
     if (!results.length) return;
-    cursor = (cursor + d + results.length) % results.length;
-    render();
+    const next = (cursor + d + results.length) % results.length;
+    setCursor(next);
+    const cur = listEl.querySelector('.cmdk-item.cur');
+    if (cur) cur.scrollIntoView({ block: 'nearest' });
   }
   let _cmdkTrap = null;
   function openOverlayUI(){
@@ -14498,6 +14555,10 @@ function randomDiscover() {
   document.addEventListener('keydown', (e) => {
     if (isTypingTarget(e.target)) return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
+    // En mode Comparateur, la carte principale est masquée → flèches no-op.
+    // Sinon ←/→ mute currentElection sur la map cachée et ↑/↓ tente d'ouvrir
+    // l'overlay bureau par-dessus le comparateur (audit2 #8).
+    if (document.body.classList.contains('is-compare')) return;
     const k = e.key;
     if (k === 'ArrowLeft' || k === 'ArrowRight') {
       const next = neighborElection(k === 'ArrowLeft' ? -1 : 1);

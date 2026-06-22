@@ -1238,11 +1238,14 @@
       if (b.q && b.q !== 'Nul') qSet.add(b.q);
     });
 
-    // Candidats : couples uniques (prénom + nom) dans CAND_DATA.
+    // Candidats : couples uniques (prénom + nom). Post-M5, p/n vivent dans PERSONS
+    // (CAND_DATA pour les individuels a juste un pointer `person`). On déduplique donc
+    // directement sur les PERSONS référencées par au moins une candidature.
     const candSet = new Set();
     Object.entries(C).forEach(([k, v]) => {
-      const p = (v.p || '').trim().toLowerCase();
-      let n = (v.n || '').trim();
+      const pers = (v.person && typeof PERSONS !== 'undefined') ? (PERSONS[v.person] || {}) : {};
+      const p = (v.p || pers.p || '').trim().toLowerCase();
+      let n = (v.n || pers.n || '').trim();
       if (!n) n = k.split(/[\s|]/)[0].trim();
       n = n.toLowerCase();
       if (p && n) candSet.add(p + '||' + n);
@@ -1401,8 +1404,11 @@
       candsInElec.forEach(cname => {
         // Post-M5 : cname EST le cand_id, format pipe-key obsolète (audit low #16).
         const cd = (typeof CAND_DATA !== 'undefined' && CAND_DATA[cname]) || {};
-        const nom = cd.n || cname;
-        const prenom = cd.p || '';
+        // Identité résolue via PERSONS[cd.person] (post-M5 : p/n/s plus stockés
+        // sur la candidature pour les individuels).
+        const person = (cd.person && typeof PERSONS !== 'undefined') ? (PERSONS[cd.person] || {}) : {};
+        const nom = cd.n || person.n || cname;
+        const prenom = cd.p || person.p || '';
         const pa = cd.pa || '';
         const label = nom + (prenom ? ' ' + prenom : '') + (pa ? ' (' + pa + ')' : '');
         candEntries.push({ type: 'candidat', icon: '👤', label: label, sub: elLabel, key: cname, election: elLabel, search: norm(nom + ' ' + prenom + ' ' + pa + ' ' + cname + ' ' + elLabel) });

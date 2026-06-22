@@ -1008,11 +1008,8 @@ console.log(rdv
   }
 
   // ── 5. Infos candidat depuis CAND_DATA ────────────────────────────────────
-  // Ordre de lookup (plus spécifique → plus général), cohérent avec
-  // l'implémentation de LRVcarte.html / LRVanalyse.html :
-  //   1. name|election|tour  (ex. "Royal PS-PRG|Régionales 2010|T1")
-  //   2. name|election       (override par scrutin)
-  //   3. name                (entrée générique)
+  // Post-M5 : `name` est un cand_id ; CAND_DATA[name] est l'unique lookup.
+  // Identité résolue via PERSONS[cd.person] (individuel) ou PERSONS[cd.binome[i]] (binôme).
   async function candInfo(name) {
     if (!name || name === 'Oui' || name === 'Non') return { prenom: '', nom: name, parti: '' };
     return page.evaluate((n, el, tr) => {
@@ -1033,7 +1030,10 @@ console.log(rdv
           .join(' / ');
         return { prenom: '', nom: nom || n, parti: cd.pa || '' };
       }
-      return { prenom: cd.p || '', nom: cd.n || n, parti: cd.pa || '' };
+      // Individuelle : identité dans PERSONS[cd.person]. Les p/n éventuellement
+      // dénormalisés sur la candidature ne sont qu'un fallback legacy (M5 incomplet).
+      const person = (cd.person && typeof PERSONS !== 'undefined') ? (PERSONS[cd.person] || {}) : {};
+      return { prenom: cd.p || person.p || '', nom: cd.n || person.n || n, parti: cd.pa || '' };
     }, name, election, tour);
   }
 
