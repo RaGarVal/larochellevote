@@ -543,8 +543,8 @@ function renderCand(filtered) {
     if (row.elec) {
       elecCell = '<span class="elec-badge">' + escapeHtml(row.elec) + '</span>';
     } else {
-      // chercher candElections[row.key] — la clé peut contenir | si override, sinon clé pure
-      const years = candElections[row.key] || candElections[row.key.split('|')[0]] || [];
+      // Post-M5 : row.key est un cand_id `<pid>@<slug>`, jamais une pipe-key.
+      const years = candElections[row.key] || [];
       elecCell = years.length
         ? '<span class="elec-years">' + escapeHtml(years.join(', ')) + '</span>'
         : '<span style="color:#ccc">—</span>';
@@ -836,13 +836,6 @@ function getCandidatureField(cid, field) {
 }
 function isCandidatureChanged(cid) {
   return !!(candidatureChanges[cid] && Object.keys(candidatureChanges[cid]).length);
-}
-
-function slugifyName(s) {
-  return (s || '').toLowerCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g,'')
-    .replace(/[^a-z0-9]+/g,'-')
-    .replace(/^-+|-+$/g,'');
 }
 
 // M4.2 — Construction directe depuis PERSONS + CANDIDATURES.
@@ -1702,7 +1695,6 @@ function validateNewElection() {
 
   // Validation candidatures : chaque doit pointer vers une PERSON existante ou nouvelle
   const candCount = Object.keys(data.candidatures || {}).length;
-  let cidCheckedFirst = null;
   Object.entries(data.candidatures || {}).forEach(([cid, c]) => {
     if (CANDIDATURES[cid]) errs.push('Candidature "' + cid + '" existe déjà');
     if (c.person) {
@@ -1715,7 +1707,6 @@ function validateNewElection() {
       errs.push('Candidature "' + cid + '" : ni "person" ni "binome[2]" valide');
     }
     if (c.election !== data.label) warns.push('Candidature "' + cid + '" : election="' + c.election + '" ne matche pas le label "' + data.label + '"');
-    if (!cidCheckedFirst) cidCheckedFirst = cid;
   });
 
   // Validation sheets (par_canton ou direct)
@@ -1792,17 +1783,13 @@ function exportNewElection() {
   if (data.par_canton) newElec.par_canton = data.par_canton;
   if (data.sheets) newElec.sheets = data.sheets;
 
-  // Construire les entrées CAND_DATA = identité + candidature
+  // Construire les entrées CAND_DATA = miroir de CANDIDATURES.
+  // Post-cleanup juin 2026 : on NE STAMP PLUS p/n/s sur la candidature — l'identité
+  // vit uniquement dans PERSONS[c.person] et y est résolue à la lecture.
+  // Cf. CLAUDE.md « Modèle de données — PERSONS + CANDIDATURES + CAND_DATA ».
   const newCandData = {};
   Object.entries(candidatures).forEach(([cid, c]) => {
-    const obj = { ...c };
-    if (c.person) {
-      const person = PERSONS[c.person] || newPersons[c.person] || {};
-      if (person.p) obj.p = person.p;
-      if (person.n) obj.n = person.n;
-      if (person.s) obj.s = person.s;
-    }
-    newCandData[cid] = obj;
+    newCandData[cid] = { ...c };
   });
 
   let txt = '// === NOUVELLE ÉLECTION ' + data.label + ' ===\n';
@@ -1936,13 +1923,21 @@ function showExport() {
   Object.entries(changesCand).forEach(([key, ch]) => {
     if (ch.bk !== undefined) bkOnly[key] = ch.bk;
   });
-  // CAND_CORRECTIONS — autres champs candidat
+  // CAND_CORRECTIONS — autres champs candidat. Post-cleanup juin 2026 : n/p/s NE SONT
+  // PLUS stampés sur la candidature ; on les route vers PERSONS[c.person] via personsChanges
+  // (= identité = source de vérité unique). Cf. CLAUDE.md « Modèle de données ».
+  // Pour les binômes, n/p/s sont synthétiques (concaténation des 2 membres) — on ignore.
   const candOther = {};
   Object.entries(changesCand).forEach(([key, ch]) => {
+    // Router n/p/s vers PERSONS du candidat (individuel uniquement).
+    const cd = (typeof CAND_DATA !== 'undefined' && CAND_DATA[key]) || {};
+    const pid = (cd.person && !Array.isArray(cd.binome)) ? cd.person : null;
+    if (pid) {
+      if (ch.nom    !== undefined) setPersonField(pid, 'n', ch.nom);
+      if (ch.prenom !== undefined) setPersonField(pid, 'p', ch.prenom);
+      if (ch.sexe   !== undefined) setPersonField(pid, 's', ch.sexe);
+    }
     const out = {};
-    if (ch.nom    !== undefined) out.n  = ch.nom;
-    if (ch.prenom !== undefined) out.p  = ch.prenom;
-    if (ch.sexe   !== undefined) out.s  = ch.sexe;
     if (ch.parti  !== undefined) out.pa = ch.parti;
     if (ch.t      !== undefined) out.t  = ch.t;
     if (ch.al     !== undefined) out.al = ch.al;
@@ -2020,14 +2015,10 @@ function showExport() {
   }
   if (nbPersons) {
     txt += '// Corrections PERSONS (identité + bio + mandats) — ' + nbPersons + ' profil(s) modifié(s)\n';
-    txt += '// Pour appliquer (identité p/n/s propagée à CAND_DATA + CANDIDATURES ; bio/mandats restent dans PERSONS) :\n';
+    txt += '// Post-cleanup juin 2026 : p/n/s vivent UNIQUEMENT dans PERSONS — résolus à la\n';
+    txt += '// lecture via PERSONS[c.person]. Plus de propagation à CAND_DATA / CANDIDATURES.\n';
     txt += '//   Object.entries(PERSON_CORRECTIONS).forEach(([pid,v]) => {\n';
     txt += '//     Object.assign(PERSONS[pid] = PERSONS[pid] || {}, v);\n';
-    txt += '//     const idCols = {}; ["p","n","s"].forEach(k => { if (k in v) idCols[k] = v[k]; });\n';
-    txt += '//     if (Object.keys(idCols).length) {\n';
-    txt += '//       Object.values(CAND_DATA).forEach(c => { if (c.person === pid) Object.assign(c, idCols); });\n';
-    txt += '//       Object.values(CANDIDATURES).forEach(c => { if (c.person === pid) Object.assign(c, idCols); });\n';
-    txt += '//     }\n';
     txt += '//   });\n';
     txt += 'const PERSON_CORRECTIONS = ' + JSON.stringify(personsChanges, null, 2) + ';\n\n';
   }

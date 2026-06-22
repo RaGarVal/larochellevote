@@ -394,7 +394,9 @@ function computeCandidatureScore(cid, c) {
         const info = (BUREAU_INFO[era] || {})[bid];
         if (!info || String(info.c || '') !== cantonOfCand) return;
       }
-      const v = (bd._voix && bd._voix[cid] != null) ? bd._voix[cid] : Math.round((bd.c[cid] || 0) * (bd.e || 0) / 100);
+      // Doctrine _voix : on lit l'entier exact. L'IIFE de donnees.js garantit
+      // _voix présent dès que bd.e > 0 — pas besoin de fallback pct × e / 100.
+      const v = (bd._voix && bd._voix[cid]) || 0;
       totV += v;
       totE += bd.e || 0;
       bureauWithCand++;
@@ -484,7 +486,7 @@ function render() {
     // Trouver la couleur du parti dans une candidature
     const candWithCol = cands.find(({c}) => c.pa === pa && c.c);
     const bg = (candWithCol && candWithCol.c.c) || '#888';
-    return '<span class="parti-chip" style="background:' + bg + '" title="' + escapeAttr(PARTI_NAMES[pa] || pa) + '">' + escapeHtml(pa) + '</span>';
+    return '<span class="parti-chip" style="background:' + escapeAttr(bg) + '" title="' + escapeAttr(PARTI_NAMES[pa] || pa) + '">' + escapeHtml(pa) + '</span>';
   }).join('');
 
   // Avatar couleur dominante
@@ -510,9 +512,10 @@ function render() {
       return ((a.a || 9999) - ya) - ((b.a || 9999) - yb);
     });
     const items = sorted.map(m => {
-      const period = m.a
-        ? (m.de === m.a ? String(m.de) : m.de + '–' + m.a)
-        : (m.de + ' →');
+      // Garde-fou m.de absent : sans ça, "undefined →" ou "undefined–2024" apparaît.
+      const period = m.de
+        ? (m.a ? (m.de === m.a ? String(m.de) : m.de + '–' + m.a) : (m.de + ' →'))
+        : (m.a ? '?–' + m.a : '?');
       const enCours = !m.a ? '<span class="mandat-en-cours">en cours</span>' : '';
       const circo = m.circo ? '<span class="mandat-circo">· ' + escapeHtml(m.circo) + '</span>' : '';
       return '<li class="mandat-item">'

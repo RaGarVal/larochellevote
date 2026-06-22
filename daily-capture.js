@@ -486,6 +486,11 @@ const schedule     = fs.existsSync(schedulePath)
 const MOIS_FR = ['janvier','février','mars','avril','mai','juin','juillet',
                  'août','septembre','octobre','novembre','décembre'];
 function findAnniversaryFromDates(todayStr) {
+  // Risque latent : si un draft (ELECTIONS[l].draft===true) finit par avoir une
+  // entrée dans DATES, il sera potentiellement tiré ici puis le code aval échouera
+  // (bureauxParElection[l] est vide pour les drafts). À ce jour aucun draft n'a de
+  // date dans DATES, donc cas non rencontré. Si ça change, filtrer ici en chargeant
+  // ELECTIONS depuis donnees.js (lecture seule, pas de re-sérialisation).
   const [yearStr, monthStr, dayStr] = todayStr.split('-');
   const todayMD = `${parseInt(dayStr)} ${MOIS_FR[parseInt(monthStr) - 1]}`;
   const todayYear = parseInt(yearStr);
@@ -817,17 +822,18 @@ console.log(rdv
           const sheet  = sheets[tr] || sheets.TU || sheets[Object.keys(sheets)[0]];
           if (!sheet) return [];
           const nums = Object.keys(sheet).filter(n => sheet[n]?.c && Object.keys(sheet[n].c).length > 0);
+          // Doctrine _voix : on agrège les voix entières, jamais pct × e / 100.
           const totalExp = nums.reduce((s, n) => s + (sheet[n]?.e || 0), 0);
-          const scores = {};
+          const voix = {};
           nums.forEach(n => {
             const bd = sheet[n];
-            if (!bd?.c || !bd.e) return;
-            Object.entries(bd.c).forEach(([cand, pct]) => {
+            if (!bd?._voix || !bd.e) return;
+            Object.entries(bd._voix).forEach(([cand, v]) => {
               if (/^Autres /.test(cand)) return;
-              scores[cand] = (scores[cand] || 0) + (pct / 100) * bd.e;
+              voix[cand] = (voix[cand] || 0) + v;
             });
           });
-          return Object.entries(scores).map(([cand, v]) => ({
+          return Object.entries(voix).map(([cand, v]) => ({
             cand, pct: totalExp > 0 ? (v / totalExp) * 100 : 0
           })).sort((a, b) => b.pct - a.pct);
         }, election, tour);
@@ -895,18 +901,19 @@ console.log(rdv
       return /^Autres /.test(cand);
     }
 
-    // Agrégation pondérée sur un ensemble de bureaux
+    // Agrégation pondérée sur un ensemble de bureaux.
+    // Doctrine _voix : on agrège les voix entières, jamais pct × e / 100.
     function aggregate(nums) {
       const totalExp = nums.reduce((s, n) => s + (sheet[n]?.e || 0), 0);
-      const scores   = {};
+      const voix     = {};
       nums.forEach(n => {
         const bd = sheet[n];
-        if (!bd?.c || !bd.e) return;
-        Object.entries(bd.c).forEach(([cand, pct]) => {
-          scores[cand] = (scores[cand] || 0) + (pct / 100) * bd.e;
+        if (!bd?._voix || !bd.e) return;
+        Object.entries(bd._voix).forEach(([cand, v]) => {
+          voix[cand] = (voix[cand] || 0) + v;
         });
       });
-      return { totalExp, ranked: Object.entries(scores)
+      return { totalExp, ranked: Object.entries(voix)
         .filter(([cand]) => !isPseudoCand(cand))
         .map(([cand, v]) => ({ cand, pct: totalExp > 0 ? (v / totalExp) * 100 : 0 }))
         .sort((a, b) => b.pct - a.pct) };
@@ -924,10 +931,13 @@ console.log(rdv
     // En mode subCarte='candidat', on profile un candidat tiré pondéré par son score,
     // pas forcément le gagnant. Le texte carte_* dit "X a obtenu Y % à La Rochelle"
     // ce qui reste factuellement correct même si X n'a pas gagné.
+    // Edge case : si le candidat tiré ne figure plus dans ranked (filtré comme pseudo,
+    // ou divergence dans les noms), on retombe sur cityWinner plutôt que d'afficher
+    // "X a obtenu 0 % à La Rochelle" (faux factuellement).
     let carteSubject = cityWinner;
     if (subjectCandidate) {
       const found = cityData.ranked.find(r => r.cand === subjectCandidate);
-      carteSubject = found || { cand: subjectCandidate, pct: 0 };
+      carteSubject = found || cityWinner;
     }
 
     // Meilleur bureau du sujet carte (= carteSubject, pas cityWinner). Sert au canva
@@ -967,11 +977,12 @@ console.log(rdv
       cantonWinner = cData.ranked[0] || null;
     }
 
-    // Cas référendum : remplacer le candidat par Oui/Non
+    // Cas référendum : remplacer le candidat par Oui/Non.
+    // Doctrine _voix : on agrège les voix entières, jamais pct × e / 100.
     function toRef(winner, nums) {
       if (!winner) return null;
-      const ouiTotal = nums.reduce((s, n) => s + ((sheet[n]?.c?.Oui || 0) / 100) * (sheet[n]?.e || 0), 0);
-      const nonTotal = nums.reduce((s, n) => s + ((sheet[n]?.c?.Non || 0) / 100) * (sheet[n]?.e || 0), 0);
+      const ouiTotal = nums.reduce((s, n) => s + (sheet[n]?._voix?.Oui || 0), 0);
+      const nonTotal = nums.reduce((s, n) => s + (sheet[n]?._voix?.Non || 0), 0);
       const exp      = nums.reduce((s, n) => s + (sheet[n]?.e || 0), 0);
       const rep      = ouiTotal >= nonTotal ? 'Oui' : 'Non';
       return { cand: rep, pct: exp > 0 ? Math.max(ouiTotal, nonTotal) / exp * 100 : 0 };
@@ -1000,7 +1011,10 @@ console.log(rdv
 
     return { cityWinner, carteSubject, bestBureau, bestBureauPct, bureauWinner, quartierWinner, cantonWinner };
 
-  }, election, tour, bureau, quartier, bureau ? null : (quartiersBureauxEra[quartier] || null), cantonBureaux, isRef, candidatPicked);
+  // bureausDuQuartier : toujours passer si quartier est connu (incluant niveau=bureau
+  // avec quartier déduit ligne 783), pour que la cascade bureau→quartier de FALLBACK
+  // puisse calculer un quartierWinner exploitable.
+  }, election, tour, bureau, quartier, (quartiersBureauxEra[quartier] || null), cantonBureaux, isRef, candidatPicked);
 
   if (!elecData) {
     console.error('❌ Données introuvables. Abandon.');
@@ -1127,7 +1141,12 @@ console.log(rdv
     // "{emoji} Le {date}, pour la {election}" par "🎂 Il y a N ans aujourd'hui,
     // pour la {election_anniv}" + verbes à l'imparfait. Vars `anniv_phrase` et
     // `election_anniv` injectées plus bas.
-    const isAnniv = !!rdv;
+    // Garde-fou N≥1 : un rdv schedule.json pour une élection de l'année courante
+    // (ex. day-of Législatives 2026) donnerait "Il y a 0 ans" — on retombe alors
+    // en template normal. Les anniv auto-détectés filtrent déjà via le check
+    // `parseInt(m[3]) < todayYear` dans findAnniversaryFromDates.
+    const annivN = rdv ? anniversaryYears(election, today) : null;
+    const isAnniv = !!rdv && annivN !== null && annivN >= 1;
     if (isAnniv) tpl = applyAnniversaryTemplate(tpl);
 
     // ── Troncatures niveau-template (étapes 2 et 3) ──────────────────────────
@@ -1159,7 +1178,7 @@ console.log(rdv
       // Variantes anniversaire (utilisées uniquement si le template a été
       // transformé par applyAnniversaryTemplate ; sinon ces placeholders
       // n'apparaissent pas dans le template et fillCaneva les ignore).
-      anniv_phrase:   isAnniv ? anniversaryPhrase(anniversaryYears(election, today)) : '',
+      anniv_phrase:   isAnniv ? anniversaryPhrase(annivN) : '',
       election_anniv: isAnniv ? formatElectionLabelFull(election) : '',
     };
 

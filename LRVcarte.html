@@ -4167,7 +4167,7 @@ function binomeAllies(name) {
 // Règle paritaire (mai 2026) : quand un binôme paritaire associe 2 vrais partis
 // distincts, la candidate F passe devant l'homme H dans l'ordre d'affichage.
 // Pour les binômes "vrai + divers", on ne combine pas (le pa dérivé reste le vrai
-// seul) — voir derivePaForBinome dans shared.js.
+// seul) — logique implémentée dans l'IIFE de donnees.js (fonction locale `derive`).
 function isDiversParti(pa) {
   return typeof pa === 'string' && /^DV/i.test(pa.trim());
 }

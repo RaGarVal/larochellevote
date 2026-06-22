@@ -253,7 +253,6 @@ function isDraftElection(elecLabel) {
   const e = ELECTIONS[elecLabel];
   return !!(e && e.draft === true);
 }
-if (typeof window !== 'undefined') window.isDraftElection = isDraftElection;
 
 // derivePaForBinome supprimé (audit medium #14) : helper public sans aucun
 // caller — la logique vit dans l'IIFE de donnees.js (fonction locale `derive`)

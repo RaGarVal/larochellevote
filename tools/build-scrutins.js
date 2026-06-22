@@ -127,7 +127,7 @@ function candNameHTML(cd, ctx) {
     const persons = orderedBinomePersons(cd, ctx);
     return persons.map(m => {
       const nomNB = nbDash(m.n || '');
-      if (!m.p) return nomNB;
+      if (!m.p) return esc(nomNB);  // safety : nomNB vient de PERSONS, mais cohérence avec le reste
       const short = abbreviatePrenom(m.p);
       return `<span class="cn-prenom-full">${esc(m.p)} </span><span class="cn-prenom-short">${esc(short)} </span>${esc(nomNB)}`;
     }).join(' / ');

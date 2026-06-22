@@ -34,7 +34,7 @@ function loadData() {
   sandbox.window.window = sandbox.window;
   vm.createContext(sandbox);
   vm.runInContext(donneesSrc + ';Object.assign(globalThis,{ELECTIONS,CAND_DATA,PERSONS,BUREAU_INFO});', sandbox);
-  vm.runInContext(sharedSrc + ';Object.assign(globalThis,{isCantonalElection});', sandbox);
+  vm.runInContext(sharedSrc, sandbox);
   return sandbox;
 }
 
@@ -61,10 +61,13 @@ function expectedSlugs(ctx) {
 }
 
 // ─── Agrégation ville (copiée depuis build-scrutins.js, voix entières) ──────
+// Exclure le bureau 0057 (non-géo : Français de l'étranger / détenus) — cohérent
+// avec build-scrutins.js:191 sinon expectedWinnerCid peut diverger du winner réel
+// affiché dans le HTML pour les élections où 0057 vote différemment du reste.
 function aggregateSheet(sheet) {
   const out = { exprimes: 0, voix: {} };
-  Object.values(sheet || {}).forEach(bd => {
-    if (!bd) return;
+  Object.entries(sheet || {}).forEach(([ns, bd]) => {
+    if (!bd || ns === '0057') return;
     out.exprimes += (bd.e || 0);
     if (bd._voix) {
       Object.entries(bd._voix).forEach(([cid, v]) => {

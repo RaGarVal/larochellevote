@@ -270,7 +270,7 @@ const REDECOUPAGES = {
 // est celui de chaque candidat" → plus de divergence possible entre l'étiquette
 // globale et les partis individuels. Règle paritaire : pour les binômes
 // mixtes 2 vrais partis (ou 2 divers), la candidate F passe devant l'homme H.
-// Voir aussi derivePaForBinome dans shared.js (même logique, helper exposé).
+// La logique est inline dans la fonction `derive` ci-dessous (helper public retiré).
 // Idempotent : peut être ré-exécuté sans dommage.
 (function(){
   function derive(bp, sexes) {
