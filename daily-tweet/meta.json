@@ -1,15 +1,15 @@
 {
-  "date": "2026-06-21",
+  "date": "2026-06-22",
   "niveau": "carte",
   "niveau_publie": "carte",
-  "election": "Législatives 2022",
-  "tour": "T1",
+  "election": "Européennes 2024",
+  "tour": "TU",
   "bureau": null,
   "quartier": null,
   "canton": null,
   "subtype": "candidat",
-  "candidat": "olivier-falorni@legislatives-2022",
-  "signature": "carte|Législatives 2022|T1|cand:olivier-falorni@legislatives-2022",
-  "chars": 249,
-  "generated_at": "2026-06-21T06:01:21.463Z"
+  "candidat": "valerie-hayer@europeennes-2024",
+  "signature": "carte|Européennes 2024|TU|cand:valerie-hayer@europeennes-2024",
+  "chars": 272,
+  "generated_at": "2026-06-22T06:01:54.552Z"
 }

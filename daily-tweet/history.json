@@ -507,5 +507,18 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "olivier-falorni@legislatives-2022"
+  },
+  {
+    "date": "2026-06-22",
+    "signature": "carte|Européennes 2024|TU|cand:valerie-hayer@europeennes-2024",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 1,
+    "election": "Européennes 2024",
+    "tour": "TU",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "valerie-hayer@europeennes-2024"
   }
 ]
