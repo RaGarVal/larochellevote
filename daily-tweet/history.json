@@ -520,5 +520,18 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "valerie-hayer@europeennes-2024"
+  },
+  {
+    "date": "2026-06-23",
+    "signature": "bureau|Municipales 1989|TU|0033",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Municipales 1989",
+    "tour": "TU",
+    "bureau": "0033",
+    "quartier": "Tasdon/Les Minimes",
+    "subtype": null,
+    "candidat": null
   }
 ]

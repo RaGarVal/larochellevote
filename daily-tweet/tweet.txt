@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🇪🇺 Le 9 juin 2024, pour les européennes, Valérie Hayer (RE) a obtenu 18,0 % à La Rochelle. 📍 Meilleur score dans le bureau n°23 · Coligny à La Genette.
+🏙️ Le 12 mars 1989, pour les municipales, Michel Crépeau (MRG) arrive en tête avec 56,0 % dans le bureau n°33 · Marais de Tasdon à Tasdon/Les Minimes.
 
-Les résultats de ce scrutin, bureau par bureau, sur https://larochellevote.fr/LRVcarte.html#election=Europ%C3%A9ennes+2024&selection=valerie-hayer%40europeennes-2024
+Les résultats de ce bureau, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Municipales+1989&bureau=0033
