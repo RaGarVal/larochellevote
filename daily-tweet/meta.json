@@ -1,15 +1,15 @@
 {
-  "date": "2026-06-22",
-  "niveau": "carte",
-  "niveau_publie": "carte",
-  "election": "Européennes 2024",
+  "date": "2026-06-23",
+  "niveau": "bureau",
+  "niveau_publie": "bureau",
+  "election": "Municipales 1989",
   "tour": "TU",
-  "bureau": null,
-  "quartier": null,
+  "bureau": "0033",
+  "quartier": "Tasdon/Les Minimes",
   "canton": null,
-  "subtype": "candidat",
-  "candidat": "valerie-hayer@europeennes-2024",
-  "signature": "carte|Européennes 2024|TU|cand:valerie-hayer@europeennes-2024",
-  "chars": 272,
-  "generated_at": "2026-06-22T06:01:54.552Z"
+  "subtype": null,
+  "candidat": null,
+  "signature": "bureau|Municipales 1989|TU|0033",
+  "chars": 269,
+  "generated_at": "2026-06-23T06:01:39.945Z"
 }
