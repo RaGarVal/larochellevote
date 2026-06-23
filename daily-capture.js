@@ -1188,8 +1188,17 @@ console.log(rdv
   let tweetText = null;
   let niveauFinal = niveau;
   let truncationStep = 1;
+  // Cascade FALLBACK effective : pour les élections cantonales (Départementales /
+  // Cantonales), les niveaux 'global' et 'quartier' n'ont pas de sens (chaque canton
+  // vote séparément, un quartier peut chevaucher plusieurs cantons). On les retire
+  // de la cascade. Cf. tweet du 2026-06-20 qui était tombé en "global Départementales
+  // 2021" via FALLBACK[bureau] → global après échec bureau et quartier (audit2-bis #2).
+  const isCantonalElec = /^(Cantonales?|Départementales?)\b/.test(election);
+  const fallbackChain = isCantonalElec
+    ? (FALLBACK[niveau] || [niveau]).filter(n => n !== 'global' && n !== 'quartier')
+    : (FALLBACK[niveau] || [niveau]);
   outer:
-  for (const niv of FALLBACK[niveau]) {
+  for (const niv of fallbackChain) {
     for (let step = 1; step <= 4; step++) {
       // Étape 3 inutile pour quartier/canton/global (pas de "à {quartier}" à retirer) :
       // on saute directement à l'étape 4 pour ne pas refaire un essai identique au 2.
@@ -1206,9 +1215,16 @@ console.log(rdv
   }
 
   if (!tweetText) {
-    // Dernier recours : texte global tronqué (étape 4 = toutes troncatures actives)
-    tweetText = await buildText('global', 4) || `${CHAPEAU}\n{site_url}`;
-    niveauFinal = 'global (forcé)';
+    // Dernier recours : texte global tronqué (étape 4 = toutes troncatures actives).
+    // Pour les cantonales, "global" n'a pas de sens — on retombe sur le canva 'bureau'
+    // étape 4 (prénoms en initiales). Si lui aussi dépasse, on émet un chapeau minimal.
+    if (isCantonalElec) {
+      tweetText = await buildText('bureau', 4) || `${CHAPEAU}\n{site_url}`;
+      niveauFinal = 'bureau (forcé)';
+    } else {
+      tweetText = await buildText('global', 4) || `${CHAPEAU}\n{site_url}`;
+      niveauFinal = 'global (forcé)';
+    }
     truncationStep = 4;
   }
 

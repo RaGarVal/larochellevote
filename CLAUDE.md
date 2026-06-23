@@ -63,7 +63,8 @@ Trois tables liées dans `donnees.js`, plus de lookup à 3 niveaux ni d'override
   Les sheets ELECTIONS référencent les `cand_id` directement (`bd.c["alain-rousset@regionales-2015"] = pct`).
 
 ### `CANDIDATURES[<cid>]` complet
-- **Individuelle** : `{ p, n, s, person: <pid>, election: "Régionales 2015", pa: code parti, bk, b, t: [familles], al: alliances, c: couleur hex?, tour_specific? }`
+- **Individuelle** : `{ person: <pid>, election: "Régionales 2015", pa: code parti, bk, b, t: [familles], al: alliances, c: couleur hex?, tour_specific? }`
+  Post-cleanup juin 2026 : **plus de `p`/`n`/`s` stockés sur la candidature** — l'identité vit uniquement dans `PERSONS[c.person]` et se résout à la lecture (`(PERSONS[c.person]||{}).p` etc.). Idem pour `CAND_DATA[cid]` (miroir strict de CANDIDATURES).
 - **Binôme** : `{ election, binome: [pid1, pid2], binome_partis: [pa1, pa2], pa: dérivé, bk, b, t, al?, tour_specific? }`
   Pas de `p`, `n`, `s` propres au binôme — ils sont dans PERSONS via les `pid` du couple.
 
@@ -75,7 +76,7 @@ Trois tables liées dans `donnees.js`, plus de lookup à 3 niveaux ni d'override
 ### Binômes paritaires (Cantonales/Départementales 2015+)
 - Une seule entrée CANDIDATURES, clé `<pid1>+<pid2>@<elec>`.
 - **`binome_partis: [pa1, pa2]`** = source de vérité pour les partis individuels. L'ordre suit l'ordre de `binome`.
-- **`pa`** est **dérivé automatiquement** depuis `binome_partis` au chargement (IIFE en fin de `donnees.js` + helper `derivePaForBinome` dans `shared.js`). Plus jamais de stockage divergent.
+- **`pa`** est **dérivé automatiquement** depuis `binome_partis` au chargement (IIFE en fin de `donnees.js`, fonction locale `derive`). Plus jamais de stockage divergent.
   - Règle de dérivation :
     - Homogène (pa1 = pa2) → `pa1`
     - DV* + vrai parti → vrai parti seul (le DV* éliminé)
