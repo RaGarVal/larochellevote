@@ -1,15 +1,15 @@
 {
-  "date": "2026-06-23",
-  "niveau": "bureau",
-  "niveau_publie": "bureau",
-  "election": "Municipales 1989",
-  "tour": "TU",
-  "bureau": "0033",
-  "quartier": "Tasdon/Les Minimes",
+  "date": "2026-06-24",
+  "niveau": "carte",
+  "niveau_publie": "carte",
+  "election": "Régionales 2010",
+  "tour": "T1",
+  "bureau": null,
+  "quartier": null,
   "canton": null,
-  "subtype": null,
+  "subtype": "gagnants",
   "candidat": null,
-  "signature": "bureau|Municipales 1989|TU|0033",
-  "chars": 269,
-  "generated_at": "2026-06-23T06:01:39.945Z"
+  "signature": "carte|Régionales 2010|T1",
+  "chars": 268,
+  "generated_at": "2026-06-24T06:01:37.595Z"
 }

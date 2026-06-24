@@ -533,5 +533,18 @@
     "quartier": "Tasdon/Les Minimes",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-06-24",
+    "signature": "carte|Régionales 2010|T1",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Régionales 2010",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "gagnants",
+    "candidat": null
   }
 ]
