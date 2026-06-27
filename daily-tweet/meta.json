@@ -1,15 +1,15 @@
 {
-  "date": "2026-06-26",
-  "niveau": "bureau",
-  "niveau_publie": "bureau",
-  "election": "Européennes 2014",
-  "tour": "TU",
-  "bureau": "0017",
-  "quartier": "Mireuil",
+  "date": "2026-06-27",
+  "niveau": "carte",
+  "niveau_publie": "carte",
+  "election": "Départementales 2021",
+  "tour": "T2",
+  "bureau": null,
+  "quartier": null,
   "canton": null,
-  "subtype": null,
-  "candidat": null,
-  "signature": "bureau|Européennes 2014|TU|0017",
-  "chars": 260,
-  "generated_at": "2026-06-26T06:01:27.544Z"
+  "subtype": "candidat",
+  "candidat": "jean-marc-soubeste+marion-pichot@departementales-2021",
+  "signature": "carte|Départementales 2021|T2|cand:jean-marc-soubeste+marion-pichot@departementales-2021",
+  "chars": 277,
+  "generated_at": "2026-06-27T06:01:16.339Z"
 }

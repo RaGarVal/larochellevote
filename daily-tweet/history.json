@@ -572,5 +572,18 @@
     "quartier": "Mireuil",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-06-27",
+    "signature": "carte|Départementales 2021|T2|cand:jean-marc-soubeste+marion-pichot@departementales-2021",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 3,
+    "election": "Départementales 2021",
+    "tour": "T2",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "jean-marc-soubeste+marion-pichot@departementales-2021"
   }
 ]
