@@ -533,5 +533,57 @@
     "quartier": "Tasdon/Les Minimes",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-06-24",
+    "signature": "carte|Régionales 2010|T1",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Régionales 2010",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "gagnants",
+    "candidat": null
+  },
+  {
+    "date": "2026-06-25",
+    "signature": "bureau|Régionales 1986|TU|0029",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Régionales 1986",
+    "tour": "TU",
+    "bureau": "0029",
+    "quartier": "Centre-ville",
+    "subtype": null,
+    "candidat": null
+  },
+  {
+    "date": "2026-06-26",
+    "signature": "bureau|Européennes 2014|TU|0017",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Européennes 2014",
+    "tour": "TU",
+    "bureau": "0017",
+    "quartier": "Mireuil",
+    "subtype": null,
+    "candidat": null
+  },
+  {
+    "date": "2026-06-27",
+    "signature": "carte|Départementales 2021|T2|cand:jean-marc-soubeste+marion-pichot@departementales-2021",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 3,
+    "election": "Départementales 2021",
+    "tour": "T2",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "jean-marc-soubeste+marion-pichot@departementales-2021"
   }
 ]
