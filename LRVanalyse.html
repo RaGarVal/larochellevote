@@ -56,7 +56,7 @@
   "mainEntity": {
     "@type": "Dataset",
     "name": "Archives électorales de La Rochelle, 1986-2026",
-    "description": "Résultats par bureau de vote pour 51 élections et 3 référendums organisés à La Rochelle entre 1986 et 2026.",
+    "description": "Résultats par bureau de vote pour 52 élections et 3 référendums organisés à La Rochelle entre 1985 et 2026.",
     "url": "https://larochellevote.fr/",
     "creator": {
       "@type": "Person",
@@ -420,7 +420,7 @@ select.ctrl-sel{width:100%;padding:7px 10px;border:1.5px solid var(--border-moda
 }
 #chart-zoom-reset:hover  { background: var(--bg-modal-hover); }
 #chart-zoom-reset:active { transform: scale(0.96); }
-@media (max-width: 720px) {
+@media (max-width: 1000px) {
   #chart-zoom-reset { padding: 8px 12px; min-height: 38px; }
 }
 
@@ -481,7 +481,7 @@ select.ctrl-sel{width:100%;padding:7px 10px;border:1.5px solid var(--border-moda
   border-color: rgba(255, 255, 255, 0.1);
   color: var(--text-chrome);
 }
-@media (max-width: 720px) {
+@media (max-width: 1000px) {
   #chart-zoom-hint { font-size: 0.92rem; padding: 14px 18px; max-width: 75%; }
 }
 
@@ -513,7 +513,7 @@ select.ctrl-sel{width:100%;padding:7px 10px;border:1.5px solid var(--border-moda
   opacity: 1;
   transform: translate(-50%, 0);
 }
-@media (max-width: 720px) {
+@media (max-width: 1000px) {
   #chart-range-pill { font-size: 0.8rem; padding: 5px 12px; }
 }
 /* Charts SVG : variables CSS appliquées via classes (compatible mode sombre) */
@@ -612,6 +612,9 @@ html[data-admin="1"] .rd-add-btn{display:block}
 .cc-cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--border-soft)}
 .cc-col{background:var(--bg-modal);padding:8px 10px;min-height:60px}
 .cc-col-ttl{font-size:0.7rem;font-weight:700;color:var(--text-meta);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+.cc-unplaced{background:#fff8e6;padding:8px 12px;border-top:2px dashed #f4c542}
+.cc-unplaced .cc-col-ttl{color:#bf6000}
+.cc-unplaced .cc-bv{background:#fff;border-color:#f4c542;color:#bf6000}
 .cc-bv{display:inline-flex;align-items:center;gap:4px;padding:3px 7px;margin:2px 3px 2px 0;border-radius:5px;background:var(--bg-modal-hover);font-size:0.74rem;font-weight:600;color:var(--text-modal);cursor:pointer;border:1px solid var(--border-soft);transition:all .12s}
 .cc-bv:hover{background:var(--bg-active);color:var(--text-active);border-color:var(--bg-active)}
 .cc-bv.moved{background:#fff3e0;border-color:#bf6000;color:#bf6000}
@@ -698,7 +701,7 @@ html[data-admin="1"] .rd-add-btn{display:block}
    - Chart en pleine largeur, table scrollable en dessous
    - Hint "↻ Paysage" en portrait, plein écran en paysage
    ═══════════════════════════════════════════════════════════════════════ */
-@media (max-width: 720px),
+@media (max-width: 1000px),
        (max-height: 500px) and (orientation: landscape) {
   /* — Topbar compactée — */
   #topbar { height: 56px; padding: 0 12px; gap: 8px; }
@@ -1170,12 +1173,12 @@ input:focus-visible,
 
 /* — Frise temporelle : masquée en mobile portrait (illisible, car écrasée),
      conservée en paysage (où elle a la place de respirer sous le chart) — */
-@media (max-width: 720px) and (orientation: portrait) {
+@media (max-width: 1000px) and (orientation: portrait) {
   #frise-area, #frise-area.visible { display: none !important; }
 }
 
 /* — Hint "↻ Paysage" : visible uniquement en mobile portrait, masqué quand l'utilisateur l'a fermé — */
-@media (max-width: 720px) and (orientation: portrait) {
+@media (max-width: 1000px) and (orientation: portrait) {
   #orientation-hint {
     display: flex;
     align-items: center;
@@ -1787,7 +1790,7 @@ const ABST_COLOR = '#AAAAAA';
 // partout dans le fichier. Évite de re-instancier un MQL par appel à matchMedia(str).
 // Le MQL se met à jour automatiquement quand la viewport change (taille / orientation).
 const _MQ_MOBILE_PORTRAIT = (window.matchMedia
-  ? window.matchMedia('(max-width: 720px), (max-height: 500px) and (orientation: landscape)')
+  ? window.matchMedia('(max-width: 1000px), (max-height: 500px) and (orientation: landscape)')
   : { matches: false });
 
 // ─── État ─────────────────────────────────────────────────────────────────
@@ -1885,11 +1888,11 @@ function init() {
         });
       selC.appendChild(og);
     }
-    // Anciens (ère 1985, période 1988-2014) ensuite
+    // Anciens (ère 1985, période 1985-2014) ensuite
     const anciens = (CANTON_INFO['1985'] || {}).cantons || {};
     if (Object.keys(anciens).length) {
       const og = document.createElement('optgroup');
-      og.label = 'Anciens cantons (carte 1985, 1988-2014)';
+      og.label = 'Anciens cantons (carte 1985, 1985-2014)';
       Object.entries(anciens)
         .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
         .forEach(([cid, meta]) => {
@@ -2453,7 +2456,7 @@ function getCBureauxForEra(cantonKey, eraB) {
   const cid = parts[1];
   const eraBureauNum = parseInt(eraB);
 
-  // Anciens cantons (ère 1985, période 1988-2014) : seulement valides pour les ères bureau
+  // Anciens cantons (ère 1985, période 1985-2014) : seulement valides pour les ères bureau
   // antérieures à 2015. Pour ces ères, on lit directement BUREAU_INFO[era][ns].c.
   if (eraCanton === '1985') {
     if (eraBureauNum >= 2015) return []; // canton historique mort
@@ -2772,7 +2775,7 @@ function updateContentTitle() {
   const sub   = document.getElementById('ct-sub');
   const era = document.getElementById('tb-era');
   // Visible sauf : mode ville, ou ancien canton (ère canton 1985 — l'info est déjà
-  // dans le sous-titre "Canton actif de 1988 à 2014").
+  // dans le sous-titre "Canton actif de 1985 à 2014").
   if (era) {
     let hide = niveau === 'ville';
     if (!hide && niveau === 'canton') {
@@ -2812,7 +2815,7 @@ function updateContentTitle() {
     const cantonInfo = ((typeof CANTON_INFO !== 'undefined' && CANTON_INFO[eraCanton]) || {});
     const eraEnd = cantonInfo.era_end;
     const status = eraEnd
-      ? 'Canton actif de ' + (cantonInfo.era_start ? Math.max(1988, parseInt(cantonInfo.era_start)) : 1988) + ' à ' + eraEnd
+      ? 'Canton actif de ' + (cantonInfo.era_start ? parseInt(cantonInfo.era_start) : 1985) + ' à ' + eraEnd
       : 'Canton créé en ' + eraCanton;
     // Choix de l'ère de référence pour la liste des bureaux affichés
     const refEra = eraEnd ? '2012' : CURRENT_ERA;
@@ -3247,6 +3250,28 @@ function shortenElectionType(label) {
     .replace(/\s+\d{4}.*/, '');
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────────────
+// Tickage "nice" pour le mode voix : on s'aligne sur des multiples de 1/2/2,5/5
+// × 10^n pour éviter d'afficher des yMax de 1548 ou 3215. Renvoie { yMax, ticks }.
+// targetCount = nombre de ticks visés (par défaut 5, ticks 0..yMax inclus).
+function niceVoixScale(rawMax, targetCount = 5) {
+  if (!(rawMax > 0)) return { yMax: 1, ticks: [0, 1] };
+  const rawStep = rawMax / targetCount;
+  const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const norm = rawStep / mag;
+  let nice;
+  if (norm < 1.5)      nice = 1;
+  else if (norm < 3)   nice = 2;
+  else if (norm < 4)   nice = 2.5;
+  else if (norm < 7.5) nice = 5;
+  else                 nice = 10;
+  const step = nice * mag;
+  const yMax = Math.ceil(rawMax / step) * step;
+  const ticks = [];
+  for (let v = 0; v <= yMax + step * 0.001; v += step) ticks.push(v);
+  return { yMax, ticks };
+}
+
 // ─── SVG Chart ─────────────────────────────────────────────────────────────
 function drawChart(data) {
   const svg = document.getElementById('chart-svg');
@@ -3275,12 +3300,17 @@ function drawChart(data) {
   // Inset unitX/2 à gauche : 1er scrutin visible centré sur PAD.left + unitX/2,
   // dernier sur PAD.left + cW - unitX/2.
   const xScale = i => PAD.left + unitX/2 + (i - viewStart) * unitX;
-  // Échelle Y dynamique : 0-100 en mode pct, 0-maxV en mode voix, ou bornes recadrées en base 100
+  // Échelle Y dynamique : 0-100 en mode pct, 0-maxV en mode voix (avec ticks
+  // "nice" — multiples de 1/2/2,5/5 × 10^n pour éviter des yMax type 1548 voix),
+  // ou bornes recadrées en base 100.
   let yMax = 100, yMin = 0;
+  let voixTicksOverride = null;
   if (chartScale === 'voix') {
-    yMax = 0;
-    data.forEach(d => Object.values(d.bp || {}).forEach(v => { if (v > yMax) yMax = v; }));
-    yMax = yMax * 1.05 || 1;
+    let m = 0;
+    data.forEach(d => Object.values(d.bp || {}).forEach(v => { if (v > m) m = v; }));
+    const nice = niceVoixScale(m * 1.05 || 1);
+    yMax = nice.yMax;
+    voixTicksOverride = nice.ticks;
   }
   let yScale = v => PAD.top + cH - ((v - yMin) / (yMax - yMin)) * cH;
 
@@ -3354,7 +3384,7 @@ function drawChart(data) {
   // Grille horizontale — ticks dynamiques selon échelle
   let yTicks, yLabel;
   if (chartScale === 'voix') {
-    yTicks = [0, yMax*0.25, yMax*0.5, yMax*0.75, yMax].map(v => Math.round(v));
+    yTicks = voixTicksOverride || [0, yMax*0.25, yMax*0.5, yMax*0.75, yMax].map(v => Math.round(v));
     yLabel = v => v.toLocaleString('fr-FR');
   } else if (base100Data) {
     // Ticks équirépartis incluant 100 (base de référence)
@@ -3377,9 +3407,18 @@ function drawChart(data) {
   // Sur mobile (portrait OU paysage) : labels X ultra-compacts → 1 lettre (P/L/M/E/R) +
   // 2 chiffres d'année + suffixe "²" pour le 2e tour (ex. "L88", "P22²"), disposés en
   // quinconce sur 2 lignes pour gagner de l'espace horizontal.
-  const isMobP_x = !!_MQ_MOBILE_PORTRAIT.matches;
-  // compactLabel et le typeLabel sont hoistés au scope module (compactElecLabel
-  // + shortenElectionType, audit2 #16+#17).
+  // Choix du mode d'étiquetage de l'axe X selon l'espace par tick (= unitX).
+  // 4 modes, 3 seuils — dégradation progressive :
+  //   - long : 2 lignes "Prés." + "2022" — confortable dès ~36 px par tick
+  //   - mid  : compactElecLabel ("L02²") sur 1 ligne — de 22 à 36 px
+  //   - compact : même "L02²" en quinconce → espacement effectif 2×unitX — 12 à 22 px
+  //   - compact-half : compact + 1 label sur 2 — seulement < 12 px par tick
+  // Largeurs : "Prés." ~28, "2022 T1" ~38, "L02²" ~22 — seuils calés sur ces tailles.
+  // _MQ_MOBILE_PORTRAIT.matches force au minimum compact (cohérence mobile).
+  const xMode = (unitX < 12) ? 'compact-half'
+              : (unitX < 22) ? 'compact'
+              : (unitX < 30 || _MQ_MOBILE_PORTRAIT.matches) ? 'mid'
+              : 'long';
   const compactLabel = compactElecLabel;
   // Lignes verticales + labels X
   data.forEach((d, i) => {
@@ -3391,12 +3430,25 @@ function drawChart(data) {
     // Élections incertaines : fill hardcodé légèrement plus pâle (signal visuel)
     const labelClass = isUncertain ? '' : 'class="chart-label"';
     const labelFill = isUncertain ? 'fill="#bbb"' : '';
-    if (isMobP_x) {
+    if (xMode === 'compact-half') {
+      // 1 label sur 2 affiché. Quinconce sur les ticks visibles uniquement (i%2===0)
+      // pour que les 2 lignes restent peuplées de manière équilibrée.
+      if (i % 2 === 0) {
+        const compact = compactLabel(d.label);
+        const yLbl = (i % 4 === 0) ? PAD.top+cH+18 : PAD.top+cH+32;
+        html += `<text ${labelClass} ${labelFill} x="${x}" y="${yLbl}" style="font-size:9px" font-family="'Space Grotesk', 'Segoe UI', system-ui, sans-serif" text-anchor="middle">${compact}</text>`;
+      }
+    } else if (xMode === 'compact') {
       const compact = compactLabel(d.label);
       // Quinconce : labels d'index pair en haut (+18), impair en bas (+32) → 2× plus d'espace horizontal effectif
       const yLbl = (i % 2 === 0) ? PAD.top+cH+18 : PAD.top+cH+32;
       // style inline pour outrepasser la règle CSS .chart-label (12px) en mobile
       html += `<text ${labelClass} ${labelFill} x="${x}" y="${yLbl}" style="font-size:9px" font-family="'Space Grotesk', 'Segoe UI', system-ui, sans-serif" text-anchor="middle">${compact}</text>`;
+    } else if (xMode === 'mid') {
+      // 1 seule ligne, format compact "L02²" — plus aéré qu'en zigzag, moins long
+      // que le format 2 lignes "Prés. 2022".
+      const compact = compactLabel(d.label);
+      html += `<text ${labelClass} ${labelFill} x="${x}" y="${PAD.top+cH+22}" font-size="10" font-family="'Space Grotesk', 'Segoe UI', system-ui, sans-serif" text-anchor="middle">${compact}</text>`;
     } else {
       html += `<text ${labelClass} ${labelFill} x="${x}" y="${PAD.top+cH+18}" font-size="10" font-family="'Space Grotesk', 'Segoe UI', system-ui, sans-serif" text-anchor="middle">${typeLabel}</text>`;
       html += `<text ${labelClass} ${labelFill} x="${x}" y="${PAD.top+cH+30}" font-size="10" font-family="'Space Grotesk', 'Segoe UI', system-ui, sans-serif" text-anchor="middle">${yearLabel}</text>`;
@@ -3697,11 +3749,13 @@ function drawStackedChart(data) {
   // xCenter : indice ABSOLU → centre de la barre. Barres hors fenêtre = centres
   // négatifs ou > cW+PAD.left, clippées par clipPath.
   const xCenter = i => PAD.left + gap / 2 + (i - viewStart) * gap;
-  // Échelle Y dynamique : 0-100 en mode pct, 0-maxV en mode voix
+  // Échelle Y dynamique : 0-100 en mode pct, 0-maxV en mode voix (ticks nice
+  // → multiples ronds via niceVoixScale).
   let yMax = 100;
+  let voixTicksOverride = null;
   if (chartScale === 'voix') {
     // Hauteur réelle de la barre = somme des candidats avec ≥1 famille visible.
-    yMax = 0;
+    let m = 0;
     data.forEach((d, i) => {
       let sum;
       if (displayMode === 'familles') {
@@ -3709,9 +3763,11 @@ function drawStackedChart(data) {
       } else {
         sum = Object.values(d.bp || {}).reduce((s, v) => s + v, 0);
       }
-      if (sum > yMax) yMax = sum;
+      if (sum > m) m = sum;
     });
-    yMax = yMax * 1.05 || 1;
+    const nice = niceVoixScale(m * 1.05 || 1);
+    yMax = nice.yMax;
+    voixTicksOverride = nice.ticks;
   }
   const yScale = v => PAD.top + cH - (v / yMax) * cH;
 
@@ -3745,9 +3801,10 @@ function drawStackedChart(data) {
     });
   }
 
-  // Grille horizontale — ticks dynamiques selon échelle
+  // Grille horizontale — ticks dynamiques selon échelle. En voix on utilise
+  // les ticks "nice" calculés par niceVoixScale (multiples ronds).
   const yTicks = chartScale === 'voix'
-    ? [0, yMax*0.25, yMax*0.5, yMax*0.75, yMax].map(v => Math.round(v))
+    ? (voixTicksOverride || [0, yMax*0.25, yMax*0.5, yMax*0.75, yMax].map(v => Math.round(v)))
     : [0, 20, 40, 60, 80, 100];
   const yLabel = v => chartScale === 'voix' ? v.toLocaleString('fr-FR') : v + '%';
   yTicks.forEach(y => {
@@ -3761,8 +3818,12 @@ function drawStackedChart(data) {
   const blocs = [..._ac];
   if (displayMode === 'blocs' && visibleBlocs.has('?')) blocs.push({key:'?', label:'Divers', color:'#A0E1E2'});
 
-  // Sur mobile (portrait OU paysage) : labels X ultra-compacts en quinconce (cf. chart courbes)
-  const isMobP_emp = !!_MQ_MOBILE_PORTRAIT.matches;
+  // Mode des labels X selon l'espace par tick (= gap en empilés). Mêmes seuils
+  // que drawChart courbes (cf. commentaires là-bas). 4 modes, 3 seuils.
+  const xModeEmp = (gap < 12) ? 'compact-half'
+                : (gap < 22) ? 'compact'
+                : (gap < 30 || _MQ_MOBILE_PORTRAIT.matches) ? 'mid'
+                : 'long';
   // compactLabelE/TYPE_INI_E dédupliqués → utilise les helpers module-scope.
   const compactLabelE = compactElecLabel;
 
@@ -3816,11 +3877,21 @@ function drawStackedChart(data) {
     const yearLabel = d.label.match(/\d{4}.*/)?.[0] || '';
     const isUncertain = uncertainElections.has(d.label);
     const lFill = isUncertain ? '#bbb' : '#999';
-    if (isMobP_emp) {
+    if (xModeEmp === 'compact-half') {
+      if (i % 2 === 0) {
+        const compact = compactLabelE(d.label);
+        const yLbl = (i % 4 === 0) ? PAD.top+cH+18 : PAD.top+cH+32;
+        html += `<text x="${xCenter(i)}" y="${yLbl}" style="font-size:9px" fill="${lFill}" font-family="'Space Grotesk', 'Segoe UI', system-ui, sans-serif" text-anchor="middle">${compact}</text>`;
+      }
+    } else if (xModeEmp === 'compact') {
       const compact = compactLabelE(d.label);
       // Quinconce : labels d'index pair en haut (+18), impair en bas (+32)
       const yLbl = (i % 2 === 0) ? PAD.top+cH+18 : PAD.top+cH+32;
       html += `<text x="${xCenter(i)}" y="${yLbl}" style="font-size:9px" fill="${lFill}" font-family="'Space Grotesk', 'Segoe UI', system-ui, sans-serif" text-anchor="middle">${compact}</text>`;
+    } else if (xModeEmp === 'mid') {
+      // 1 ligne format compact "L02²" sans quinconce.
+      const compact = compactLabelE(d.label);
+      html += `<text x="${xCenter(i)}" y="${PAD.top+cH+22}" font-size="10" fill="${lFill}" font-family="'Space Grotesk', 'Segoe UI', system-ui, sans-serif" text-anchor="middle">${compact}</text>`;
     } else {
       html += `<text x="${xCenter(i)}" y="${PAD.top+cH+18}" font-size="10" fill="${lFill}" font-family="'Space Grotesk', 'Segoe UI', system-ui, sans-serif" text-anchor="middle">${typeLabel}</text>`;
       html += `<text x="${xCenter(i)}" y="${PAD.top+cH+30}" font-size="10" fill="${lFill}" font-family="'Space Grotesk', 'Segoe UI', system-ui, sans-serif" text-anchor="middle">${yearLabel}</text>`;
@@ -4957,11 +5028,12 @@ window.addEventListener('DOMContentLoaded', () => {
   <div id="ccorresp-dialog">
     <h3 id="ccorresp-title">Correspondances historiques — Cantons modernes</h3>
     <div class="cc-mini-help">
-      Pour chaque ère bureau (1988-2012), les bureaux historiques sont répartis dans
+      Pour chaque ère bureau (1985-2012), les bureaux historiques sont répartis dans
       les 3 cantons modernes (créés en 2015). Clique sur un bureau pour cocher ou décocher
       les cantons où il appartient — un bureau peut être présent dans <strong>plusieurs cantons
       simultanément</strong> (comptage entier dans chacun, comme les quartiers partagés).
-      Une fois terminé, génère le code à copier dans <code>donnees.js</code>.
+      Les bureaux <span style="color:#bf6000;font-weight:600">non placés</span> apparaissent
+      en bandeau orange sous la grille. Une fois terminé, génère le code à copier dans <code>donnees.js</code>.
     </div>
     <div id="ccorresp-body"></div>
     <pre id="cc-code"></pre>
@@ -5161,7 +5233,23 @@ function openCCorrespPanel() {
   }
   // Clone profond pour édition isolée
   _ccEdits = JSON.parse(JSON.stringify(CANTON_CORRESPONDANCES));
-  _ccOriginal = JSON.parse(JSON.stringify(CANTON_CORRESPONDANCES));
+  // Seed des ères ajoutées après coup (1985 avec les Cantonales 1985, 1989 avec
+  // les Municipales 1989 / Européennes 1989). Pour chaque ère cible, on dérive
+  // le placement initial d'une ère source proche :
+  //   1985 → copie de 1988 (40 bureaux communs ; 0041 à placer manuellement)
+  //   1989 → copie de 1985 (qui inclut déjà le 0041 si l'utilisateur l'a placé)
+  // Les bureaux restants à placer apparaissent dans le bandeau "Non placés".
+  const PRESEED = { '1985': '1988', '1989': '1985' };
+  Object.keys(_ccEdits).forEach(cKey => {
+    Object.entries(PRESEED).forEach(([target, source]) => {
+      if ((_ccEdits[cKey][target] || []).length) return; // déjà défini → on respecte
+      if (!_ccEdits[cKey][source]) return;
+      const targetBureaux = new Set(Object.keys((typeof BUREAU_INFO !== 'undefined' && BUREAU_INFO[target]) || {}));
+      _ccEdits[cKey][target] = _ccEdits[cKey][source].filter(bid => targetBureaux.has(bid));
+    });
+  });
+  // _ccOriginal = état post-seed pour que le seed ne fasse pas tout passer en "modifié".
+  _ccOriginal = JSON.parse(JSON.stringify(_ccEdits));
   renderCCorrespBody();
   document.getElementById('cc-code').classList.remove('show');
   document.getElementById('cc-code').textContent = '';
@@ -5258,7 +5346,33 @@ function renderCCorrespBody() {
       });
       html += '</div>';
     });
-    html += '</div></div>';
+    html += '</div>';
+    // Bandeau "Non placés" : bureaux de l'ère qui ne sont dans aucun canton.
+    // Permet à l'utilisateur de placer les bureaux nouvellement référencés (ex.
+    // 0041 en ère 1985 absent de l'ère 1988).
+    const placed = new Set();
+    ['1', '2', '3'].forEach(cid => {
+      ((_ccEdits['2015:' + cid] || {})[eraB] || []).forEach(b => placed.add(b));
+    });
+    const allBur = Object.keys((BUREAU_INFO || {})[eraB] || {}).sort();
+    const unplaced = allBur.filter(b => !placed.has(b));
+    if (unplaced.length) {
+      html += '<div class="cc-unplaced">';
+      html += '<div class="cc-col-ttl">⚠️ Non placés · ' + unplaced.length + '</div>';
+      unplaced.forEach(bid => {
+        const info = (BUREAU_INFO[eraB] || {})[bid] || {};
+        const den = (info.den || '').replace(/–/g, '–').slice(0, 22);
+        html += '<span class="cc-bv" '
+             + 'data-bid="' + bid + '" data-era="' + eraB + '" '
+             + 'onclick="_ccShowMenu(this)" '
+             + 'title="' + (info.den || '').replace(/"/g, '&quot;') + (info.q ? ' / ' + info.q : '') + '">'
+             + '<span class="cc-bv-id">' + bid + '</span>'
+             + (den ? ' <span class="cc-bv-den">' + den + '</span>' : '')
+             + '</span>';
+      });
+      html += '</div>';
+    }
+    html += '</div>';
   });
   document.getElementById('ccorresp-body').innerHTML = html;
 }
@@ -5789,7 +5903,7 @@ function copyRedecoupageCode() {
     },
     {
       title: 'Frise des redécoupages',
-      body: 'Sous le graphique, la frise retrace l\'<strong>histoire géographique</strong> de ce bureau : son nom et son numéro à chaque ère depuis 1986. Les macarons (verts, oranges, jaunes) signalent les redécoupages majeurs ou mineurs — survolez-les pour lire le détail. Voici par exemple le bureau N°41 — Médiathèque–Ville-en-Bois (Les Minimes).<br><br><strong>Cliquez sur la frise pour découvrir les différents tracés du bureau à travers les ères.</strong>',
+      body: 'Sous le graphique, la frise retrace l\'<strong>histoire géographique</strong> de ce bureau : son nom et son numéro à chaque ère depuis 1985. Les macarons (verts, oranges, jaunes) signalent les redécoupages majeurs ou mineurs — survolez-les pour lire le détail. Voici par exemple le bureau N°41 — Médiathèque–Ville-en-Bois (Les Minimes).<br><br><strong>Cliquez sur la frise pour découvrir les différents tracés du bureau à travers les ères.</strong>',
       target: '#frise-area',
       targetPad: { top: 90 },  // Inclut les macarons SVG qui sont juste au-dessus de la frise
       placement: 'top',
@@ -6156,10 +6270,25 @@ function copyRedecoupageCode() {
     // sont volontairement omises car non pertinentes dans une image partagée.
     const parts = [];
     parts.push(displayMode === 'familles' ? 'Familles politiques' : 'Blocs politiques');
-    parts.push(chartScale === 'voix' ? 'En voix' : 'En %');
+    // Échelle : voix > base 100 > pct. Mutuellement exclusifs côté affichage —
+    // "En %" n'aurait pas de sens en base 100 (= ratios, pas pourcentages).
+    if (chartScale === 'voix')      parts.push('En voix');
+    else if (showBase100)           parts.push('Base 100');
+    else                            parts.push('En %');
     if (showVilleComparison) parts.push('Comparé à la ville');
     if (showQuartierComparison && compareQuartierName) parts.push('Comparé à ' + compareQuartierName);
-    if (showBase100) parts.push('Base 100');
+    // Contexte filtre élections : 0 off → "Toutes élections", 1 off → "sauf X",
+    // 2+ off → "Détail des élections représentées" (trop long à lister).
+    const all = document.querySelectorAll('.type-toggle:not(.disabled)');
+    const off = document.querySelectorAll('.type-toggle:not(.on):not(.disabled)');
+    if (off.length === 0) {
+      parts.push('Toutes élections');
+    } else if (off.length === 1) {
+      const lbl = (off[0].textContent || '').trim() || 'un type';
+      parts.push('Toutes élections sauf ' + lbl);
+    } else if (off.length < all.length) {
+      parts.push('Détail des élections représentées');
+    }
     return parts.join(' · ');
   }
 
@@ -6185,6 +6314,369 @@ function copyRedecoupageCode() {
       const img = new Image();
       img.onload = () => resolve({ img, w: rect.width, h: rect.height });
       img.onerror = () => reject(new Error('SVG load failed'));
+      img.src = url;
+    });
+  }
+
+  // Reconstruit un SVG dédié à l'export image (1200×675).
+  // Le SVG d'écran est tuné pour l'interaction (lignes fines, axes mince, fonts 10-12px)
+  // → rendu "capture d'écran" pâle. On redessine ici avec des paramètres "édition" :
+  // lignes 3,2 px caps arrondis, axes 1,5 px, labels 16 px, marqueurs terminaux +
+  // valeur dernière année, grille pointillée discrète. Le résultat est un objet image
+  // pensé pour le partage social, pas un screenshot.
+  function buildExportChartSVG(w, h) {
+    const fullData = window._chartFullData || [];
+    if (!fullData.length) return null;
+    const cats = activeCategories();
+    const vs = getVisibleSet();
+    const visCats = cats.filter(c => vs.has(c.key));
+    if (!visCats.length) return null;
+
+    // Mode base 100 : 1 ou 2 blocs visibles + comparaison active (ville ou quartier)
+    // + niveau non-ville. Mêmes conditions que drawChart pour rester cohérent.
+    // Quand actif, on remplace les valeurs absolues par des ratios à la référence.
+    let base100Data = null;
+    let base100Blocks = [];
+    if (typeof showBase100 !== 'undefined' && showBase100 && niveau !== 'ville'
+        && visCats.length >= 1 && visCats.length <= 2
+        && ((typeof showVilleComparison !== 'undefined' && showVilleComparison)
+            || (typeof showQuartierComparison !== 'undefined' && showQuartierComparison && compareQuartierName))) {
+      base100Blocks = visCats.map(c => c.key);
+      const typeFilter = (typeof getActiveTypes === 'function') ? getActiveTypes() : null;
+      const refData = (typeof showVilleComparison !== 'undefined' && showVilleComparison)
+        ? applyAggregation(getVilleData(typeFilter))
+        : applyAggregation(getQuartierData(compareQuartierName, typeFilter));
+      const refByLabel = {}; refData.forEach(d => { refByLabel[d.label] = d; });
+      base100Data = fullData.map(d => {
+        const ref = refByLabel[d.label]; const ratios = {};
+        base100Blocks.forEach(b => {
+          const v = d.bp?.[b], refV = ref ? ref.bp?.[b] : undefined;
+          ratios[b] = (refV > 0 && v !== undefined) ? (v / refV) * 100 : null;
+        });
+        return { label: d.label, year: d.year, ratios };
+      });
+    }
+
+    // Échelle Y : base 100 utilise des ratios (autour de 100), voix le max,
+    // pct par défaut (0-100).
+    let yMin = 0, yMax = 100;
+    if (base100Data) {
+      const allR = [];
+      base100Data.forEach(d => Object.values(d.ratios).forEach(r => { if (r !== null) allR.push(r); }));
+      if (allR.length) {
+        const minR = Math.min(...allR, 100), maxR = Math.max(...allR, 100);
+        const margin = Math.max(15, (maxR - minR) * 0.2);
+        yMin = Math.floor((minR - margin) / 10) * 10;
+        yMax = Math.ceil((maxR + margin) / 10) * 10;
+      }
+    } else if (chartScale === 'voix') {
+      let m = 0;
+      if (chartType === 'empiles') {
+        if (displayMode === 'familles') {
+          // Familles : hauteur d'une barre = somme des segs (= candidats × familles).
+          fullData.forEach(d => {
+            const segs = computeFamilyStackedSegments(d.cs, d.label, vs, (d.e || 0) / 100);
+            const sum = segs.reduce((s, sg) => s + sg.total, 0);
+            if (sum > m) m = sum;
+          });
+        } else {
+          // Blocs : hauteur d'une barre = somme des voix des blocs visibles.
+          fullData.forEach(d => {
+            let sum = 0;
+            visCats.forEach(c => { const v = d.bp?.[c.key]; if (typeof v === 'number') sum += v; });
+            if (sum > m) m = sum;
+          });
+        }
+      } else {
+        // Courbes : max d'une série individuelle.
+        fullData.forEach(d => visCats.forEach(c => { const v = d.bp?.[c.key]; if (typeof v === 'number' && v > m) m = v; }));
+      }
+      // Ticks "nice" (multiples ronds) : yMax = ceil(m × 1.08 / step) × step
+      // où step ∈ {1, 2, 2.5, 5} × 10^n.
+      const nice = niceVoixScale(m * 1.08 || 1);
+      yMax = nice.yMax;
+    }
+    const yFmt = base100Data ? (v => String(Math.round(v)))
+                : (chartScale === 'voix' ? (v => String(Math.round(v))) : (v => v + ' %'));
+
+    // Padding : en courbes, la légende vit DANS l'aire de tracé (top-left). En
+    // empilés les barres montent jusqu'au haut → on sort la légende dans la marge
+    // haute pour qu'elle ne soit jamais recouverte. PAD.bottom = 56 loge l'axe X,
+    // les labels année ET les marqueurs d'événements (compacts pour tout tenir).
+    const legendInPlot = chartType !== 'empiles';
+    const PAD = { top: legendInPlot ? 28 : 56, right: 36, bottom: 56, left: 64 };
+    const cW = w - PAD.left - PAD.right;
+    const cH = h - PAD.top - PAD.bottom;
+    const n = fullData.length;
+    // Inset 0,5 unitX de chaque côté pour ne pas coller aux bords.
+    const unitX = cW / Math.max(1, n);
+    const xAt = i => PAD.left + unitX / 2 + i * unitX;
+    const yAt = v => PAD.top + cH - ((v - yMin) / (yMax - yMin)) * cH;
+
+    // ── Graduations Y : multiples ronds en base 100 (incluant 100) ou en voix
+    // (via niceVoixScale), 5 niveaux égaux en pct.
+    let yTicks;
+    if (base100Data) {
+      yTicks = [];
+      const tickStep = Math.max(5, Math.ceil((yMax - yMin) / 4 / 5) * 5);
+      for (let v = yMin; v <= yMax + 0.01; v += tickStep) yTicks.push(v);
+      if (!yTicks.includes(100)) { yTicks.push(100); yTicks.sort((a, b) => a - b); }
+    } else if (chartScale === 'voix') {
+      yTicks = niceVoixScale(yMax).ticks;
+    } else {
+      yTicks = [];
+      const step = (yMax - yMin) / 5;
+      for (let k = 0; k <= 5; k++) yTicks.push(+(yMin + k * step).toFixed(2));
+    }
+
+    // ── Graduations X : on évite la sur-densité — max 8 ticks même si N=30. ─
+    const stepX = Math.max(1, Math.ceil(n / 8));
+    const xTickIdx = [];
+    for (let i = 0; i < n; i += stepX) xTickIdx.push(i);
+    if (xTickIdx[xTickIdx.length - 1] !== n - 1) xTickIdx.push(n - 1);
+
+    let svg = '';
+    svg += `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" font-family="'Space Grotesk', 'Segoe UI', system-ui, sans-serif">`;
+    // Defs hachures : utilisées en mode empilés + familles pour les segments dont
+    // les candidats appartiennent à 2+ familles (overlap). 2 angles (45° et 135°)
+    // permettent de cumuler 2 familles partenaires sans confusion visuelle.
+    if (chartType === 'empiles' && displayMode === 'familles' && typeof FAMILY_CONFIG !== 'undefined') {
+      svg += '<defs>';
+      Object.entries(FAMILY_CONFIG).forEach(([key, cfg]) => {
+        const sk = slugifyKey(key);
+        svg += `<pattern id="exp-hatch-${sk}" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="${cfg.color}" stroke-width="2.5" opacity="0.9"/></pattern>`;
+        svg += `<pattern id="exp-hatch-${sk}-x" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(135)"><line x1="0" y1="0" x2="0" y2="6" stroke="${cfg.color}" stroke-width="2.5" opacity="0.9"/></pattern>`;
+      });
+      svg += '</defs>';
+    }
+    svg += `<rect width="${w}" height="${h}" fill="#fff"/>`;
+
+    // Détection de la comparaison active (sans la rendre encore). Les courbes
+    // pointillées seront dessinées plus bas dans le bloc overlay ; on l'ajoute
+    // simplement dans la légende ici pour rendre le pattern lisible.
+    // En mode base 100, la « comparaison » devient la ligne de référence à 100
+    // — on note "<ref> (base 100)" dans la légende, et on dessine cette ligne
+    // unique à y=100 au lieu des courbes pointillées par bloc.
+    let compareLabel = null;
+    if (typeof showVilleComparison !== 'undefined' && showVilleComparison && niveau !== 'ville') {
+      compareLabel = base100Data ? 'ville (base 100)' : 'ville';
+    } else if (typeof showQuartierComparison !== 'undefined' && showQuartierComparison && niveau === 'bureau' && compareQuartierName) {
+      compareLabel = base100Data ? (compareQuartierName + ' (base 100)') : compareQuartierName;
+    }
+
+    // Légende. Marqueur = court segment de ligne colorée (22×3 px, caps arrondis)
+    // qui réplique le tracé de la courbe correspondante. Item additionnel pointillé
+    // pour la comparaison active, en gris.
+    // Position : DANS l'aire de tracé (top-left) en mode courbes, AU-DESSUS dans la
+    // marge en mode empilés (les barres occupent toute la zone de tracé).
+    {
+      const LEG_X = legendInPlot ? PAD.left + 14 : PAD.left;
+      const LEG_Y = legendInPlot ? PAD.top + 18 : 26;
+      const MARK_W = 22;
+      let x = LEG_X;
+      visCats.forEach(cat => {
+        svg += `<line x1="${x}" y1="${LEG_Y - 1}" x2="${x + MARK_W}" y2="${LEG_Y - 1}" stroke="${cat.color}" stroke-width="3.2" stroke-linecap="round"/>`;
+        svg += `<text x="${x + MARK_W + 8}" y="${LEG_Y + 4}" font-size="15" fill="#1A1A1A" font-weight="500">${cat.label}</text>`;
+        x += MARK_W + 8 + Math.round(cat.label.length * 8.5) + 22;
+      });
+      if (compareLabel) {
+        svg += `<line x1="${x}" y1="${LEG_Y - 1}" x2="${x + MARK_W}" y2="${LEG_Y - 1}" stroke="#7A7A7A" stroke-width="2.4" stroke-dasharray="5 4" stroke-linecap="round"/>`;
+        svg += `<text x="${x + MARK_W + 8}" y="${LEG_Y + 4}" font-size="15" fill="#5A5A5A" font-style="italic">${compareLabel}</text>`;
+      }
+    }
+
+    // Grille Y horizontale (pointillée discrète).
+    yTicks.forEach(v => {
+      const y = yAt(v);
+      svg += `<line x1="${PAD.left}" y1="${y}" x2="${w - PAD.right}" y2="${y}" stroke="#E6DFD5" stroke-width="0.8" stroke-dasharray="3 4"/>`;
+      svg += `<text x="${PAD.left - 10}" y="${y + 5}" font-size="15" fill="#5A5A5A" text-anchor="end" font-weight="500">${yFmt(v)}</text>`;
+    });
+
+    // Marqueurs d'événements bureau : créations + redécoupages MAJEURS (les
+    // « mineurs » sont volontairement filtrés, trop bruyants à l'image). Dessinés :
+    //   - ligne verticale pointillée sur la hauteur du chart (contexte visuel)
+    //   - triangle ▴ + label italique compact dans la marge basse (sous l'année)
+    // Couleurs : vert création / ambre redécoupage majeur.
+    // Anti-chevauchement : si l'événement suivant est trop proche, on bascule le
+    // label de l'événement courant à GAUCHE du triangle (anchor=end) ; sinon RIGHT.
+    {
+      const bc = (typeof getBoundaryChanges === 'function') ? getBoundaryChanges() : null;
+      if (bc) {
+        const eraToFirstIdx = {};
+        fullData.forEach((d, i) => {
+          const e = String((ELECTIONS[d.label] || {}).my || CURRENT_ERA);
+          if (eraToFirstIdx[e] === undefined) eraToFirstIdx[e] = i;
+        });
+        const events = [];
+        Object.entries(bc).forEach(([era, info]) => {
+          if (info.type !== 'creation' && info.type !== 'majeur') return;
+          const idx = eraToFirstIdx[era];
+          if (idx === undefined) return;
+          const x = xAt(idx) - unitX / 2;  // « juste avant ce scrutin »
+          events.push({
+            x,
+            color: info.type === 'creation' ? '#2D8F4D' : '#C97A1F',
+            text:  info.type === 'creation' ? 'Création du bureau' : 'Redécoupage majeur',
+          });
+        });
+        events.sort((a, b) => a.x - b.x);
+        // Estimation largeur label italique 11px : ~6,5 px/caractère.
+        const LABEL_W = 130;
+        events.forEach((ev, i) => {
+          const gapNext = (i < events.length - 1) ? (events[i + 1].x - ev.x) : Infinity;
+          // Côté par défaut = droit. On bascule à GAUCHE si :
+          //  • l'événement suivant est trop proche (chevauchement futur), OU
+          //  • le label à droite déborderait du SVG (cas des événements récents
+          //    près du bord droit, ex. redécoupage 2026).
+          const overflowsRight = (ev.x + 9 + LABEL_W) > (w - 4);
+          const side = (gapNext < LABEL_W || overflowsRight) ? 'left' : 'right';
+          // Ligne verticale sur la hauteur du chart
+          svg += `<line x1="${ev.x}" y1="${PAD.top}" x2="${ev.x}" y2="${PAD.top + cH}" stroke="${ev.color}" stroke-width="1.4" stroke-dasharray="5 5" opacity="0.55"/>`;
+          // Triangle ▴ compact : pointe à y=PAD.top+cH+36, base à +44 (= 8 px hauteur)
+          const baseY = PAD.top + cH + 44;
+          const tipY  = PAD.top + cH + 36;
+          svg += `<polygon points="${ev.x - 5},${baseY} ${ev.x + 5},${baseY} ${ev.x},${tipY}" fill="${ev.color}"/>`;
+          // Label italique à droite (anchor=start) ou à gauche (anchor=end) du triangle
+          const lx = side === 'right' ? ev.x + 9 : ev.x - 9;
+          const anchor = side === 'right' ? 'start' : 'end';
+          // Baseline du texte alignée sur la base du triangle (y = baseY) : les
+          // glyphes droits s'appuient visuellement sur la ligne horizontale de la base.
+          svg += `<text x="${lx}" y="${baseY}" font-size="11" fill="${ev.color}" font-style="italic" font-weight="500" text-anchor="${anchor}">${ev.text}</text>`;
+        });
+      }
+    }
+
+    // Axe X — ligne pleine + ticks "P. 2012" (initiale type + année 4 chiffres,
+    // suffixe ² pour les T2). Plus parlant qu'une année seule, surtout quand plusieurs
+    // scrutins de la même année voisinent (ex. Lég. 2007 + Présid. 2007 + Mun. 2008).
+    function tickLabelOf(label) {
+      const m = String(label || '').match(/^(\S+)\s+(\d{4})(?:\s+(T\d))?/);
+      if (!m) return label || '';
+      const ini = _TYPE_INI[m[1]] || m[1].charAt(0);
+      const suf = m[3] === 'T2' ? '²' : '';
+      return ini + '. ' + m[2] + suf;
+    }
+    svg += `<line x1="${PAD.left}" y1="${PAD.top + cH}" x2="${w - PAD.right}" y2="${PAD.top + cH}" stroke="#A89C84" stroke-width="1.4"/>`;
+    xTickIdx.forEach(i => {
+      const x = xAt(i);
+      const lbl = tickLabelOf(fullData[i].label || fullData[i].year);
+      svg += `<line x1="${x}" y1="${PAD.top + cH}" x2="${x}" y2="${PAD.top + cH + 6}" stroke="#A89C84" stroke-width="1.4"/>`;
+      svg += `<text x="${x}" y="${PAD.top + cH + 26}" font-size="15" fill="#5A5A5A" text-anchor="middle" font-weight="500">${lbl}</text>`;
+    });
+
+    // Overlays de comparaison. 2 cas distincts :
+    //  • Base 100 actif : une seule ligne horizontale à y=100 (la référence = 100 %).
+    //  • Sinon : pour chaque bloc visible, courbe pointillée de la référence
+    //    (ville ou quartier), opacité ~30 %, sans points.
+    if (base100Data) {
+      const yRef = yAt(100);
+      svg += `<line x1="${PAD.left}" y1="${yRef}" x2="${w - PAD.right}" y2="${yRef}" stroke="#7A7A7A" stroke-width="2" stroke-dasharray="6 4" stroke-linecap="round"/>`;
+    } else if (compareLabel) {
+      const typeFilter = (typeof getActiveTypes === 'function') ? getActiveTypes() : null;
+      const refData = (compareLabel === 'ville')
+        ? applyAggregation(getVilleData(typeFilter))
+        : applyAggregation(getQuartierData(compareQuartierName, typeFilter));
+      const map = {}; refData.forEach(d => { map[d.label] = d; });
+      visCats.forEach(cat => {
+        const pts = [];
+        fullData.forEach((d, i) => {
+          const rd = map[d.label]; const v = rd ? rd.bp?.[cat.key] : undefined;
+          if (typeof v === 'number') pts.push(`${xAt(i)},${yAt(v)}`);
+        });
+        if (pts.length > 1) {
+          svg += `<polyline points="${pts.join(' ')}" fill="none" stroke="${cat.color}" stroke-width="2" stroke-dasharray="7 5" stroke-linecap="round" stroke-linejoin="round" opacity="0.3"/>`;
+        }
+      });
+    }
+
+    // Mode EMPILÉS : barres empilées par catégorie, ordre fixe activeCategories
+    // (bas → haut). Pas compatible avec base 100 (qui force "courbes" côté UI).
+    // Pour les familles avec hachures (overlaps), on perd l'info de chevauchement
+    // — la barre prend la couleur de la première famille du segment — choix
+    // pragmatique pour rester lisible dans un format image.
+    if (chartType === 'empiles' && !base100Data) {
+      const gap = cW / Math.max(1, n);
+      const barW = Math.max(3, gap * 0.72);
+      const voixScale = i => chartScale === 'voix' ? ((fullData[i].e || 0) / 100) : 1;
+      fullData.forEach((d, i) => {
+        const x = xAt(i) - barW / 2;
+        let cum = 0;
+        if (displayMode === 'familles') {
+          // Segments = groupes de candidats partageant le même set de familles
+          // visibles. Le 1er fam donne la couleur de base ; les suivants se
+          // superposent en hachures (alternance 45°/135° pour distinguer 2 partenaires).
+          const segs = computeFamilyStackedSegments(d.cs, d.label, vs, voixScale(i));
+          segs.forEach(seg => {
+            const v = seg.total;
+            if (v <= 0.05) return;
+            const yTop = yAt(cum + v);
+            const segH = Math.max(1, (v / (yMax - yMin)) * cH);
+            const baseColor = (FAMILY_CONFIG[seg.fams[0]] || {}).color || '#888';
+            svg += `<rect x="${x}" y="${yTop}" width="${barW}" height="${segH}" fill="${baseColor}"/>`;
+            seg.fams.slice(1).forEach((f, k) => {
+              const variant = (k % 2 === 0) ? '' : '-x';
+              svg += `<rect x="${x}" y="${yTop}" width="${barW}" height="${segH}" fill="url(#exp-hatch-${slugifyKey(f)}${variant})"/>`;
+            });
+            cum += v;
+          });
+        } else {
+          // Blocs : 1 rect par bloc visible.
+          visCats.forEach(cat => {
+            const v = d.bp?.[cat.key] || 0;
+            if (v <= 0.05) return;
+            const yTop = yAt(cum + v);
+            const segH = Math.max(1, (v / (yMax - yMin)) * cH);
+            svg += `<rect x="${x}" y="${yTop}" width="${barW}" height="${segH}" fill="${cat.color}"/>`;
+            cum += v;
+          });
+        }
+      });
+      // Grille de référence redessinée PAR-DESSUS les barres (en empilés, les
+      // barres pleines masqueraient complètement les lignes de la 1re passe).
+      // Pointillés blancs semi-transparents pour rester lisibles sur n'importe
+      // quelle couleur de bloc en dessous.
+      yTicks.forEach(v => {
+        const y = yAt(v);
+        svg += `<line x1="${PAD.left}" y1="${y}" x2="${w - PAD.right}" y2="${y}" stroke="#FFFFFF" stroke-width="0.8" stroke-dasharray="3 4" opacity="0.55"/>`;
+      });
+    } else {
+      // Mode COURBES : pour chaque série visible, polyline + marqueur disque terminal
+      // (sobre, sans label valeur — la légende en haut suffit à identifier les séries).
+      // En base 100, on lit d.ratios[cat.key] (= ratio vs référence) à la place de
+      // d.bp[cat.key], et on monte le stroke à 4 px (1-2 courbes seulement = lisibles).
+      const series = base100Data
+        ? base100Data.map(d => ({ year: d.year, val: k => d.ratios[k] }))
+        : fullData.map(d => ({ year: d.year, val: k => d.bp?.[k] }));
+      const lineW = base100Data ? 4 : 3.2;
+      const dotR = base100Data ? 6 : 5.5;
+      visCats.forEach(cat => {
+        const pts = [];
+        let lastIdx = -1, lastVal = null;
+        series.forEach((d, i) => {
+          const v = d.val(cat.key);
+          if (typeof v !== 'number') return;
+          pts.push(`${xAt(i)},${yAt(v)}`);
+          lastIdx = i; lastVal = v;
+        });
+        if (!pts.length) return;
+        svg += `<polyline points="${pts.join(' ')}" fill="none" stroke="${cat.color}" stroke-width="${lineW}" stroke-linecap="round" stroke-linejoin="round"/>`;
+        if (lastVal !== null) {
+          svg += `<circle cx="${xAt(lastIdx)}" cy="${yAt(lastVal)}" r="${dotR}" fill="${cat.color}"/>`;
+        }
+      });
+    }
+
+    svg += '</svg>';
+    return svg;
+  }
+
+  // Charge un SVG construit en string en image → utilisable par drawImage(canvas).
+  function svgStrToImage(svgStr) {
+    return new Promise((resolve, reject) => {
+      const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('Export SVG load failed'));
       img.src = url;
     });
   }
@@ -6219,57 +6711,42 @@ function copyRedecoupageCode() {
     ctx.fillText(getAnalyseSubtitle(), textX, 74);
 
     // Calcul de la zone visuelle :
-    // la légende des blocs/familles se cale juste au-dessus du pied,
-    // et le chart prend tout l'espace restant entre l'en-tête et la légende.
+    // depuis l'intégration de la légende DANS le SVG export (en haut du chart),
+    // la bande de légende du pied est supprimée — le chart prend tout l'espace
+    // restant entre l'en-tête et le pied. drawAnalyseLegend n'est plus appelée.
     const visTop = HEADER_H + 20;
-    const set = (typeof getVisibleSet === 'function') ? getVisibleSet() : null;
-    const legendItems = (set && set.size) || 0;
-    const legendLines = legendItems > 4 ? 2 : (legendItems > 0 ? 1 : 0);
-    const legendH = legendLines * 22;
-    // Position cible : le bas de la légende à 5px au-dessus du bandeau de pied
-    const legendBottomY = H - FOOTER_H - 5;
-    const legendTopY = legendBottomY - legendH;
-    const visBottom = (legendLines > 0) ? (legendTopY - 10) : (legendBottomY);
+    const visBottom = H - FOOTER_H - 5;
     const visW = W - 2 * PAD;
     const visH = visBottom - visTop;
 
-    const chartSvg = document.getElementById('chart-svg');
-    if (chartSvg) {
-      try {
-        const { img, w, h } = await svgToImage(chartSvg);
-        const ratio = Math.min(visW / w, visH / h);
-        const dw = w * ratio, dh = h * ratio;
-        const dx = PAD + (visW - dw) / 2;
-        const dy = visTop + (visH - dh) / 2;
-        ctx.fillStyle = '#fff';
-        ctx.strokeStyle = '#E6DFD5';
-        ctx.lineWidth = 1;
-        if (typeof ctx.roundRect === 'function') {
-          ctx.beginPath(); ctx.roundRect(PAD, visTop, visW, visH, 10); ctx.fill(); ctx.stroke();
-        } else {
-          ctx.fillRect(PAD, visTop, visW, visH);
-          ctx.strokeRect(PAD, visTop, visW, visH);
-        }
-        ctx.drawImage(img, dx, dy, dw, dh);
-      } catch (e) {
+    // Chart redessiné pour l'export (lignes plus grasses, axes lisibles, marqueurs
+    // terminaux annotés). Le SVG d'écran est ignoré côté image — il était trop fin
+    // pour ce format et donnait une sensation de capture d'écran.
+    try {
+      const svgStr = buildExportChartSVG(visW, visH);
+      if (svgStr) {
+        const img = await svgStrToImage(svgStr);
+        ctx.drawImage(img, PAD, visTop, visW, visH);
+      } else {
         ctx.fillStyle = '#999';
         ctx.font = '500 16px "Space Grotesk", system-ui, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('Erreur lors du rendu du graphique', W/2, visTop + visH/2);
+        ctx.fillText('Aucune donnée à afficher', W / 2, visTop + visH / 2);
         ctx.textAlign = 'left';
       }
-    }
-
-    // Légende blocs/familles (collée juste au-dessus du pied)
-    if (legendLines > 0) {
-      drawAnalyseLegend(ctx, PAD, legendTopY, visW);
+    } catch (e) {
+      ctx.fillStyle = '#999';
+      ctx.font = '500 16px "Space Grotesk", system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Erreur lors du rendu du graphique', W / 2, visTop + visH / 2);
+      ctx.textAlign = 'left';
     }
 
     // Pied
     ctx.fillStyle = '#5A5A5A';
     ctx.font = '500 13px "Space Grotesk", system-ui, sans-serif';
     const today = new Date().toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' });
-    ctx.fillText('lrvote.fr · @LaRochelleVote · exporté le ' + today, PAD, H - 22);
+    ctx.fillText('larochellevote.fr · @LaRochelleVote · exporté le ' + today, PAD, H - 22);
 
     return canvas;
   }

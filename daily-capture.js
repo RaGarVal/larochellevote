@@ -119,6 +119,16 @@ Les résultats de ce scrutin, bureau par bureau, sur {site_url}`,
 
 Les résultats de ce scrutin, bureau par bureau, sur {site_url}`,
 
+  // Carte cantonale (Départementales/Cantonales) en mode subCarte='candidat'.
+  // Le binôme n'est candidat que dans SON canton — score et meilleur bureau sont
+  // calculés au sein de ce canton, jamais sur la ville entière.
+  carte_cantonale:
+`${CHAPEAU}
+
+{emoji} Le {date_election}, pour les {election} {tour}, {prenom_nom} ({parti}) a obtenu {score} % dans le canton de {canton_nom}. 📍 Meilleur score dans le bureau n°{bureau_num} · {denomination}.
+
+Les résultats de ce scrutin, bureau par bureau, sur {site_url}`,
+
   // ── FICHE BUREAU ───────────────────────────────────────────────────────────
   // Vue panneau d'un bureau. Texte : gagnant dans ce bureau.
 
@@ -815,35 +825,72 @@ console.log(rdv
       }
 
       if (subCarte === 'candidat') {
-        // Récupère les scores ville pour (election, tour) et tire un candidat pondéré
-        // par son score (option D). Les pseudo-candidats "Autres X listes" sont filtrés.
-        const cityScores = await page.evaluate((el, tr) => {
+        // Récupère les scores pour (election, tour) et tire un candidat pondéré
+        // par son score. Les pseudo-candidats "Autres X listes" sont filtrés.
+        // Pour les cantonales/départementales : un binôme n'est candidat que dans
+        // SON canton — on calcule pct = voix-canton / exprimés-canton (et on
+        // mémorise le canton pour la suite). Sinon ville entière.
+        const isCantonalElec = /^(Cantonales?|Départementales?)\b/.test(election);
+        const eraElec = electionEra[election] || '2026';
+        const cityScores = await page.evaluate((el, tr, isCant, eraB) => {
           const sheets = ELECTIONS?.[el]?.sheets || {};
           const sheet  = sheets[tr] || sheets.TU || sheets[Object.keys(sheets)[0]];
           if (!sheet) return [];
+          const bi = BUREAU_INFO?.[eraB] || {};
           const nums = Object.keys(sheet).filter(n => sheet[n]?.c && Object.keys(sheet[n].c).length > 0);
           // Doctrine _voix : on agrège les voix entières, jamais pct × e / 100.
-          const totalExp = nums.reduce((s, n) => s + (sheet[n]?.e || 0), 0);
-          const voix = {};
+          if (!isCant) {
+            const totalExp = nums.reduce((s, n) => s + (sheet[n]?.e || 0), 0);
+            const voix = {};
+            nums.forEach(n => {
+              const bd = sheet[n];
+              if (!bd?._voix || !bd.e) return;
+              Object.entries(bd._voix).forEach(([cand, v]) => {
+                if (/^Autres /.test(cand)) return;
+                voix[cand] = (voix[cand] || 0) + v;
+              });
+            });
+            return Object.entries(voix).map(([cand, v]) => ({
+              cand, pct: totalExp > 0 ? (v / totalExp) * 100 : 0, canton: null
+            })).sort((a, b) => b.pct - a.pct);
+          }
+          // Cantonale : agréger par canton (cid via BUREAU_INFO[era][bureau].c).
+          const cantonStats = {}; // { cid: { exp, voix: { cand: v } } }
+          const candCanton  = {}; // { cand: cid }
           nums.forEach(n => {
             const bd = sheet[n];
             if (!bd?._voix || !bd.e) return;
+            const cid = String(bi[n]?.c || '');
+            if (!cid) return;
+            if (!cantonStats[cid]) cantonStats[cid] = { exp: 0, voix: {} };
+            cantonStats[cid].exp += bd.e || 0;
             Object.entries(bd._voix).forEach(([cand, v]) => {
               if (/^Autres /.test(cand)) return;
-              voix[cand] = (voix[cand] || 0) + v;
+              cantonStats[cid].voix[cand] = (cantonStats[cid].voix[cand] || 0) + v;
+              if (!candCanton[cand]) candCanton[cand] = cid;
             });
           });
-          return Object.entries(voix).map(([cand, v]) => ({
-            cand, pct: totalExp > 0 ? (v / totalExp) * 100 : 0
-          })).sort((a, b) => b.pct - a.pct);
-        }, election, tour);
+          const out = [];
+          Object.entries(candCanton).forEach(([cand, cid]) => {
+            const st = cantonStats[cid];
+            if (!st || st.exp === 0) return;
+            out.push({ cand, pct: (st.voix[cand] || 0) / st.exp * 100, canton: cid });
+          });
+          return out.sort((a, b) => b.pct - a.pct);
+        }, election, tour, isCantonalElec, eraElec);
 
         if (cityScores.length === 0) {
           // Aucun candidat exploitable → on retombe en "gagnants"
           subCarte = 'gagnants';
         } else {
-          // Tirage pondéré par le score ville (un candidat à 30 % est 6× plus probable qu'un à 5 %)
+          // Tirage pondéré par le score (un candidat à 30 % est 6× plus probable qu'un à 5 %)
           candidatPicked = pickWeightedFromList(cityScores.map(s => ({ key: s.cand, weight: s.pct })));
+          // Mémoriser le canton du candidat tiré (pour cantonales) — réutilisé plus
+          // bas pour restreindre l'agrégat principal au canton du candidat.
+          if (isCantonalElec && candidatPicked) {
+            const found = cityScores.find(s => s.cand === candidatPicked);
+            if (found && found.canton) canton = found.canton;
+          }
         }
       }
     }
@@ -929,23 +976,35 @@ console.log(rdv
 
     // carteSubject = sujet du canva carte_* (peut différer du gagnant ville).
     // En mode subCarte='candidat', on profile un candidat tiré pondéré par son score,
-    // pas forcément le gagnant. Le texte carte_* dit "X a obtenu Y % à La Rochelle"
-    // ce qui reste factuellement correct même si X n'a pas gagné.
-    // Edge case : si le candidat tiré ne figure plus dans ranked (filtré comme pseudo,
-    // ou divergence dans les noms), on retombe sur cityWinner plutôt que d'afficher
-    // "X a obtenu 0 % à La Rochelle" (faux factuellement).
+    // pas forcément le gagnant.
+    // CANTONALES/DÉPARTEMENTALES : le binôme n'est candidat que dans UN canton — on
+    // calcule pct et meilleur bureau AU SEIN DU CANTON (bureausDuCanton fourni).
+    // Sinon (présidentielle, etc.) : agrégat ville classique.
     let carteSubject = cityWinner;
-    if (subjectCandidate) {
-      const found = cityData.ranked.find(r => r.cand === subjectCandidate);
-      carteSubject = found || cityWinner;
-    }
-
-    // Meilleur bureau du sujet carte (= carteSubject, pas cityWinner). Sert au canva
-    // carte_* qui mentionne "📍 Meilleur score dans le bureau n°…". Si on est sur
-    // subCarte='candidat' avec Simoné, on veut SON meilleur bureau personnel, pas
-    // celui du vrai gagnant ville.
     let bestBureau = null, bestBureauPct = -1;
-    if (carteSubject) {
+    if (subjectCandidate) {
+      const isCantonalCandidat = Array.isArray(bureausDuCanton) && bureausDuCanton.length > 0;
+      const scopeNums = isCantonalCandidat
+        ? bureausDuCanton.filter(n => sheet[n])
+        : allNums;
+      if (isCantonalCandidat) {
+        const cantonData = aggregate(scopeNums);
+        const found = cantonData.ranked.find(r => r.cand === subjectCandidate);
+        carteSubject = found || cantonData.ranked[0] || cityWinner;
+      } else {
+        const found = cityData.ranked.find(r => r.cand === subjectCandidate);
+        carteSubject = found || cityWinner;
+      }
+      // Meilleur bureau du sujet carte. Pour cantonale-candidat : restreint au canton.
+      if (carteSubject) {
+        scopeNums.forEach(n => {
+          const p = sheet[n]?.c?.[carteSubject.cand];
+          if (typeof p === 'number' && p > bestBureauPct) { bestBureauPct = p; bestBureau = n; }
+        });
+        if (bestBureauPct < 0) bestBureauPct = 0;
+      }
+    } else if (carteSubject) {
+      // Mode 'gagnants' classique : meilleur bureau du gagnant ville sur tout l'agrégat.
       allNums.forEach(n => {
         const p = sheet[n]?.c?.[carteSubject.cand];
         if (typeof p === 'number' && p > bestBureauPct) { bestBureauPct = p; bestBureau = n; }
@@ -1103,7 +1162,13 @@ console.log(rdv
   //   2. Si même l'étape 4 dépasse 280 chars, on cascade vers le niveau suivant
   //      de FALLBACK[niveau] (filet de sécurité, rarement déclenché en pratique).
   async function buildText(niv, step = 1) {
-    const key = `${niv}_${suffix}`;
+    // Choix du canva : par défaut `${niv}_${suffix}`. Exception : carte_cantonale
+    // (Départementales/Cantonales en mode subCarte='candidat') — score et meilleur
+    // bureau sont au sein du canton du candidat, pas la ville. Texte = "à La Rochelle-N".
+    const isCantonalCarteCandidat = niv === 'carte'
+      && subCarte === 'candidat'
+      && /^(Cantonales?|Départementales?)\b/.test(election);
+    const key = isCantonalCarteCandidat ? 'carte_cantonale' : `${niv}_${suffix}`;
     let tpl = C[key];
     if (!tpl) return null;
 
@@ -1113,6 +1178,10 @@ console.log(rdv
       // pondéré (subCarte='candidat'). Cf. carteSubject dans elecData.
       winner = elecData.carteSubject;
       extra  = { ...carteVars };
+      // Cantonale-candidat : ajouter canton_nom pour {canton_nom} du canva.
+      if (isCantonalCarteCandidat && canton) {
+        extra.canton_nom = (cantonsModernes && cantonsModernes[canton]) || ('La Rochelle-' + canton);
+      }
     } else if (niv === 'bureau') {
       winner = elecData.bureauWinner;
       extra  = { ...bureauVars };

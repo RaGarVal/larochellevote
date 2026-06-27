@@ -46,6 +46,7 @@ const DATES = {
   'Régionales 2010':     { T1: '14 mars 2010',       T2: '21 mars 2010'     },
   'Régionales 2015':     { T1: '6 décembre 2015',    T2: '13 décembre 2015' },
   'Régionales 2021':     { T1: '20 juin 2021',       T2: '27 juin 2021'     },
+  'Cantonales 1985':     { T1: '10 mars 1985',       T2: '17 mars 1985'     },
   'Cantonales 1988':     { T1: '25 septembre 1988',  T2: '2 octobre 1988'   },
   'Cantonales 1992':     { T1: '22 mars 1992',       T2: '29 mars 1992'     },
   'Cantonales 1994':     { T1: '20 mars 1994',       T2: '27 mars 1994'     },

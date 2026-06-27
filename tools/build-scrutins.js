@@ -1365,7 +1365,7 @@ section.s-block p { font-size: 1rem; line-height: 1.6; color: var(--text-body); 
 .cand-sub.parti-abbrev .cand-parti-short { display: inline; }
 
 /* Palier intermédiaire (tablette / fenêtre étroite) : juste réduit polices. */
-@media (max-width: 900px) and (min-width: 721px) {
+@media (max-width: 1000px) and (min-width: 721px) {
   .cand-name { font-size: 1.05rem; }
   .cand-sub { font-size: 0.78rem; }
   .cand-pct { font-size: 1.2rem; }
@@ -1437,7 +1437,7 @@ footer.s-foot { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(-
 footer.s-foot a { color: var(--text-chrome-muted); text-decoration: none; }
 footer.s-foot a:hover { color: var(--text-chrome); }
 
-@media (max-width: 720px) {
+@media (max-width: 1000px) {
   #topbar { height: 56px; padding: 0 12px; gap: 8px; }
   .tb-nav { display: none; }
   .tb-logo { font-size: 1.6rem; gap: 3px; flex-shrink: 0; }

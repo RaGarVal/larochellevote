@@ -65,7 +65,7 @@
     "mainEntity": {
       "@type": "Dataset",
       "name": "Archives électorales de La Rochelle, 1986-2026",
-      "description": "Résultats par bureau de vote pour 51 élections et 3 référendums organisés à La Rochelle entre 1986 et 2026.",
+      "description": "Résultats par bureau de vote pour 52 élections et 3 référendums organisés à La Rochelle entre 1985 et 2026.",
       "url": "https://larochellevote.fr/",
       "creator": {
         "@type": "Person",
@@ -263,7 +263,7 @@ body {
 #compare-modal .cmp-action-primary:disabled { opacity: .42; cursor: not-allowed; }
 #compare-modal .cmp-action-cancel { background: transparent; color: var(--text-modal-muted); border: 1px solid var(--border-modal); }
 #compare-modal .cmp-action-cancel:hover { color: var(--text-modal); border-color: var(--text-modal-muted); }
-@media (max-width: 720px) {
+@media (max-width: 1000px) {
   #compare-modal .cmp-card { width: calc(100vw - 24px); max-height: 95vh; }
   #compare-modal .cmp-grid { grid-template-columns: 1fr; gap: 12px; }
 }
@@ -290,7 +290,7 @@ body.is-compare #tb-cmp-exit { display: inline-flex !important; }
   transition: all .15s; margin-left: 4px;
 }
 #tb-cmp-exit:hover { background: var(--accent-warm); color: #fff; border-color: var(--accent-warm); transform: scale(1.05); }
-@media (max-width: 720px) {
+@media (max-width: 1000px) {
   body.is-compare #tb-comparateur { font-size: 1rem; }
   #tb-cmp-exit { width: 26px; height: 26px; font-size: 0.8rem; }
 }
@@ -1084,7 +1084,7 @@ body.is-cmp-diff.is-cmp-diff-collapsed #cmp-diff-reopen {
 .cmp-diff-tornado-bar.outside.neg .cmp-diff-tornado-value {
   right: 100%; padding-right: 5px; color: var(--text-modal);
 }
-@media (max-width: 720px) {
+@media (max-width: 1000px) {
   body.is-cmp-diff #cmp-diff-drawer {
     /* Mobile : fenêtre quasi pleine largeur, hauteur 60vh. */
     width: calc(100% - 16px);
@@ -1633,7 +1633,7 @@ body.is-cmp-diff.is-cmp-diff-collapsed #cmp-diff-reopen {
   }
   .cmp-side-letter-b { grid-column: 5 !important; grid-row: 1 !important; }
   /* Annule le filet horizontal au-dessus de la bande B (héritage du layout stacké
-     portrait via la MQ @media (max-width: 720px) → s'active aussi sur certains
+     portrait via la MQ @media (max-width: 1000px) → s'active aussi sur certains
      téléphones en paysage si width ≤ 720). Sans sens sur 1 ligne. */
   .cmp-banner-title.cmp-banner-title-b {
     border-top: none !important;
@@ -1795,7 +1795,7 @@ body.is-cmp-diff.is-cmp-diff-collapsed #cmp-diff-reopen {
   font-size: 0.66rem; font-weight: 700; padding: 2px 6px; border-radius: 3px; white-space: nowrap;
 }
 .cmp-legend-cursor.ghost::after { background: rgba(0,0,0,0.7); }
-@media (max-width: 720px) {
+@media (max-width: 1000px) {
   body.is-compare #cmp-view { top: 56px; }
   .cmp-banner { grid-template-columns: auto 1fr auto; gap: 8px; padding: 8px 10px; }
   .cmp-banner-title { font-size: 0.78rem; }
@@ -2046,7 +2046,7 @@ select#el-select {
    qui donne un contrôle pixel-précis du pattern (tiret 3 px + gap 2 px),
    indépendant de la hauteur du conteneur. Garanti d'afficher plusieurs
    tirets même sur les barres les plus courtes. */
-@media (max-width: 720px) {
+@media (max-width: 1000px) {
   :root { --bar-mark: #666; }
   [data-theme="dark"] { --bar-mark: rgba(236,230,221,0.95); }
   /* Repère "moyenne ville" sur les barres par candidat */
@@ -2174,6 +2174,21 @@ select#el-select {
 /* Palier additionnel de la cascade : tronquer le badge meilleur/pire à juste
    "meilleur" ou "pire" (sans " bureau" / " quartier"). */
 .cand-sub.extr-short .extr-suffix { display: none; }
+
+/* Duel : badge "▲ meilleur bureau" / "▼ pire bureau".
+   Par défaut : version inline collée au nom (.extr-inline visible, .extr-row cachée).
+   Quand le duel devient étroit, on cache l'inline et on révèle la version ligne
+   (.extr-row) insérée entre voix et prénom. Évite que la badge tronque le nom ou
+   pousse à un wrap moche.
+   Container query inline-size sur .duel-wrap (= le grid contenant les 2 cellules
+   + le VS) — garantit que les DEUX badges basculent SIMULTANÉMENT, même si les
+   cellules n'ont pas exactement la même largeur effective (paddings, borders). */
+.duel-wrap { container-type: inline-size; }
+.duel-block .extr-row { display: none; }
+@container (max-width: 600px) {
+  .duel-block .extr-inline { display: none; }
+  .duel-block .extr-row    { display: block; }
+}
 #ov-tabs { display: none; }
 .otab { padding: 5px 12px; font-size: 0.83rem; font-weight: 600; border: none; border-radius: 5px; cursor: pointer; color: var(--text-meta); background: none; transition: all 0.12s; }
 .otab.on { color: var(--text-modal); background: var(--bg-tab-active); }
@@ -2409,7 +2424,7 @@ select#el-select {
    hauteur des boutons modes via align-self:stretch. */
 /* Bouton chevron pour escamoter la légende — styles communs (visuels). Le
    positionnement diffère entre desktop (cf. @media min-width:721px : flex item
-   à hauteur des boutons modes) et mobile (cf. @media max-width:720px : flex
+   à hauteur des boutons modes) et mobile (cf. @media max-width: 1000px : flex
    item dans le flow horizontal des boutons modes). */
 #legend-toggle{display:flex;align-items:center;justify-content:center;border:1px solid var(--border-modal);background:var(--bg-modal);cursor:pointer;color:var(--text-modal);font-size:0.9rem;line-height:1;padding:0;border-radius:4px;font-weight:700;}
 #legend-toggle:hover{color:var(--text-modal);background:var(--bg-modal-hover);}
@@ -2425,7 +2440,7 @@ select#el-select {
    placer le chevron sur la même ligne que les boutons modes (sans se reposer
    sur position:absolute qui s'alignait mal verticalement). Le body bascule
    sur sa propre ligne en-dessous via flex-basis: 100%. Le mobile garde son
-   propre layout (cf. @media max-width:720px). */
+   propre layout (cf. @media max-width: 1000px). */
 @media (min-width: 721px) {
   #map-legend       { display: flex; flex-wrap: wrap; align-items: stretch; }
   #map-mode-btns    { order: 1; flex: 1; min-width: 0; }
@@ -2484,7 +2499,7 @@ select#el-select {
 /* Mobile : la question prend trop de place verticale à 1.47rem sur petit écran
    (souvent 3-4 lignes). On la ramène à une taille plus mesurée et on resserre
    un peu le padding pour gagner de la hauteur visible avant le duel. */
-@media (max-width: 720px) {
+@media (max-width: 1000px) {
   .ref-question {
     font-size: 1.05rem;
     line-height: 1.35;
@@ -2504,7 +2519,7 @@ select#el-select {
  *  Ce bloc est placé en FIN de feuille pour gagner naturellement la cascade
  *  contre les règles desktop définies plus haut.
  * ───────────────────────────────────────────────────────────────── */
-@media (max-width: 720px) {
+@media (max-width: 1000px) {
   /* === Topbar compactée === */
   #topbar { height: 56px; padding: 0 12px; gap: 8px; }
   .tb-nav { display: none; }                 /* nav "La carte / L'analyse" — on est déjà sur la carte */
@@ -3054,21 +3069,27 @@ select#el-select {
   }
   .q-brow > *:nth-child(4) { grid-area: bar; margin-left: 0 !important; padding-top: 0 !important; }
 
-  /* Variante pour la liste GLOBALE (fiche globale) : chaque row a seulement 3 enfants
-     (nom_quartier, abstention, barre) — donc grid 2 cols. */
-  [data-list-type="quartiers"] .q-brow {
+  /* Variante pour les listes GLOBALES (fiche globale) — quartiers ET cantons :
+     chaque row a seulement 3 enfants (nom, abstention, barre) — donc grid 2 cols. */
+  [data-list-type="quartiers"] .q-brow,
+  [data-list-type="cantons"]   .q-brow {
     grid-template-columns: 1fr auto;
     grid-template-areas:
       "name abst"
       "bar  bar";
   }
-  [data-list-type="quartiers"] .q-brow > *:nth-child(1) { grid-area: name; min-width: 0; }
-  [data-list-type="quartiers"] .q-brow > *:nth-child(2) { grid-area: abst; text-align: right !important; padding-top: 0 !important; }
-  [data-list-type="quartiers"] .q-brow > *:nth-child(3) { grid-area: bar;  margin-left: 0 !important; padding-top: 0 !important; }
+  [data-list-type="quartiers"] .q-brow > *:nth-child(1),
+  [data-list-type="cantons"]   .q-brow > *:nth-child(1) { grid-area: name; min-width: 0; }
+  [data-list-type="quartiers"] .q-brow > *:nth-child(2),
+  [data-list-type="cantons"]   .q-brow > *:nth-child(2) { grid-area: abst; text-align: right !important; padding-top: 0 !important; }
+  [data-list-type="quartiers"] .q-brow > *:nth-child(3),
+  [data-list-type="cantons"]   .q-brow > *:nth-child(3) { grid-area: bar;  margin-left: 0 !important; padding-top: 0 !important; }
   /* Dans ce contexte, :nth-child(3) est la barre (pas l'abstention) → annuler le label "Abs." */
-  [data-list-type="quartiers"] .q-brow > *:nth-child(3)::before { content: none; }
+  [data-list-type="quartiers"] .q-brow > *:nth-child(3)::before,
+  [data-list-type="cantons"]   .q-brow > *:nth-child(3)::before { content: none; }
   /* Et ajouter "Abs." devant :nth-child(2) (l'abstention dans ce contexte) */
-  [data-list-type="quartiers"] .q-brow > *:nth-child(2)::before {
+  [data-list-type="quartiers"] .q-brow > *:nth-child(2)::before,
+  [data-list-type="cantons"]   .q-brow > *:nth-child(2)::before {
     content: "Abs. ";
     font-size: 0.78em; font-weight: 500; opacity: 0.55; margin-right: 2px;
   }
@@ -3184,7 +3205,7 @@ select#el-select {
    on peut s'offrir des boutons modes carte un peu plus généreux sans
    gêner. En dessous de 640 px, on garde les règles compactes par défaut.
    ───────────────────────────────────────────────────────────────── */
-@media (min-width: 640px) and (max-width: 720px) {
+@media (min-width: 640px) and (max-width: 1000px) {
   #map-mode-btns .mmbtn {
     font-size: 0.85rem;   /* 0.75 → 0.85rem : un poil plus lisible quand l'écran le permet */
     padding: 12px 8px;    /* 10/4 → 12/8 : tap target plus confortable */
@@ -3367,7 +3388,7 @@ input:focus-visible,
     <a href="LRVanalyse.html" class="tb-nav-link" id="tb-link-analyse">L'analyse</a>
   </nav>
   <div id="tb-center">
-    <span id="tb-election" role="button" tabindex="0" aria-label="Changer d'élection" onclick="if (window.matchMedia && window.matchMedia('(max-width: 720px)').matches) openElecSheet();">Municipales 2026</span>
+    <span id="tb-election" role="button" tabindex="0" aria-label="Changer d'élection" onclick="if (window.matchMedia && window.matchMedia('(max-width: 1000px)').matches) openElecSheet();">Municipales 2026</span>
     <span id="tb-tour" style="display:none">1er tour</span>
     <span id="tb-comparateur" style="display:none">Le Comparateur</span>
     <!-- Bouton Quitter — visible UNIQUEMENT en mode Comparateur (cf. CSS body.is-compare) -->
@@ -3594,6 +3615,7 @@ input:focus-visible,
         <option value="Cantonales 1994">Cantonales 1994</option>
         <option value="Cantonales 1992">Cantonales 1992</option>
         <option value="Cantonales 1988">Cantonales 1988</option>
+        <option value="Cantonales 1985">Cantonales 1985</option>
       </optgroup>
       <optgroup label="Référendums">
         <option value="Référendum 2005">Référendum 2005 — TCE</option>
@@ -3731,7 +3753,7 @@ const HAS_T2 = new Set(['Présidentielle 1988','Présidentielle 1995','Présiden
   'Législatives 2012','Législatives 2017','Législatives 2022','Législatives 2024',
   'Municipales 2014','Municipales 2020','Municipales 2026',
   'Régionales 2004','Régionales 2010','Régionales 2015','Régionales 2021',
-  'Cantonales 1988','Cantonales 1992','Cantonales 1994','Cantonales 1998','Cantonale partielle 1999','Cantonales 2001','Cantonale partielle 2002','Cantonales 2004','Cantonales 2008','Cantonales 2011','Départementales 2015','Départementales 2021']);
+  'Cantonales 1985','Cantonales 1988','Cantonales 1992','Cantonales 1994','Cantonales 1998','Cantonale partielle 1999','Cantonales 2001','Cantonale partielle 2002','Cantonales 2004','Cantonales 2008','Cantonales 2011','Départementales 2015','Départementales 2021']);
 const HAS_TU = new Set(['Législatives 1986','Régionales 1986','Municipales 1989','Municipales 1995','Régionales 1992','Régionales 1998','Européennes 1989','Européennes 1994','Européennes 1999','Européennes 2004','Européennes 2009','Européennes 2014','Européennes 2019','Européennes 2024']);
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
@@ -4847,7 +4869,7 @@ const LR_BOUNDS = L.latLngBounds(L.latLng(46.133, -1.230), L.latLng(46.193, -1.1
 //  - setZoom(-0.3) après fitBounds → dézoom modéré (~25 % d'étendue en plus)
 //    pour aérer le cadrage sur desktop.
 function fitMapToCity(animate) {
-  const isMobile = window.matchMedia && window.matchMedia('(max-width: 720px)').matches;
+  const isMobile = window.matchMedia && window.matchMedia('(max-width: 1000px)').matches;
   const sidebar = document.getElementById('sidebar');
   const sbW = (!isMobile && sidebar) ? sidebar.offsetWidth : 0;
   // Décalage horizontal progressif : sur grand écran, on pousse la ville plus à
@@ -5538,7 +5560,7 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
   // Mobile : on réduit toutes les tailles en mode "full" pour que le duel
   // tienne dans la largeur disponible sans déborder (deux blocs côte à côte
   // sur < 400 px = très contraint sinon).
-  const isMobileDuel = !!(window.matchMedia && window.matchMedia('(max-width: 720px)').matches);
+  const isMobileDuel = !!(window.matchMedia && window.matchMedia('(max-width: 1000px)').matches);
   const nomSize  = isRefDuel ? (isMobileDuel ? '2.2rem' : '3.2rem')
                               : (isMobileDuel ? '1.6rem' : '2.2rem');
   const nomSizeC = isRefDuel ? '2.0rem' : '1.4rem'; // version compact (sidebar)
@@ -5586,25 +5608,20 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
       : scoreCore + arrowOnScore;
     // Mobile : on remplace le nom complet du parti par son acronyme court (pa).
     const partiToShow = (isMobileDuel && !c) ? (pa || parti) : parti;
-    // Mobile (full) : on transforme la cellule "nom" en hôte de tourniquet — le JS
-    // mesurera après insertion DOM et activera l'animation si le texte déborde.
-    // L'attribut data-align permet au JS de connaître le sens du défilement.
-    // Binôme : nomHtml contient un <br>, l'animation translateX d'un seul span ne marche pas.
-    // On split en 2 sous-hosts marquise indépendants (un par ligne) si mobile full.
+    // Mode full (!c) : on transforme la cellule "nom" en hôte de tourniquet — le
+    // JS setupDuelMarquees mesurera après insertion DOM et activera l'animation
+    // SI le texte déborde (no-op sinon). L'attribut data-align indique le sens du
+    // défilement. Actif desktop + mobile pour gérer aussi les fenêtres étroites.
+    // Binôme : nomHtml contient un <br>, on split en 2 sous-hosts marquise indépendants.
     const hasBr = nomHtml.indexOf('<br>') >= 0;
-    // Binôme : on génère TOUJOURS 2 sous-hosts (mobile + desktop + compact) pour
-    // que la cascade d'abréviation prénom soit applicable partout. La marquise
-    // translateX reste réservée au mobile (gérée dans applyMarquee).
-    // Candidat simple mobile : un seul host marquise classique (comportement actuel).
-    const nomAttrs = (isMobileDuel && !c && !hasBr) ? ' class="duel-nom-host" data-align="'+align+'"' : '';
+    const nomAttrs = (!c && !hasBr) ? ' class="duel-nom-host" data-align="'+align+'"' : '';
     let nomInner;
     if (hasBr) {
       // Sous-hosts binôme : alignement explicite (text-align) selon le côté du duel.
-      // Le sous-host display:block ne propage pas toujours fiable l'héritage.
       nomInner = nomHtml.split('<br>').map(line =>
         '<div class="duel-nom-host" data-align="'+align+'" style="text-align:'+align+'"><span class="duel-nom-inner">'+line+'</span></div>'
       ).join('');
-    } else if (isMobileDuel && !c) {
+    } else if (!c) {
       nomInner = '<span class="duel-nom-inner">'+nomHtml+'</span>';
     } else {
       nomInner = nomHtml;
@@ -5612,18 +5629,24 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
     // flex:1 1 0 + min-width:0 + overflow:hidden : garantit que chaque côté du duel
     // prend EXACTEMENT 50 % de l'espace disponible (le VS reste donc strictement centré),
     // même si un des noms est plus long que l'autre. Le débordement est clippé.
+    // Badge ligne (.extr-row) : insérée entre voix et prénom — masquée par défaut,
+    // révélée par la container query quand la cellule est étroite. Couleur sur fond
+    // coloré (winner = onColor=true).
+    const extrRowHtml = arrowForRow(name, true);
     return (c
-      ? '<div style="flex:1 1 0;min-width:0;overflow:hidden;background:'+col+';padding:10px 12px;text-align:'+align+'">'
+      ? '<div class="duel-block" style="flex:1 1 0;min-width:0;overflow:hidden;background:'+col+';padding:10px 12px;text-align:'+align+'">'
         + '<div style="font-size:2.2rem;font-weight:900;color:'+txtCol+';line-height:1">'+scoreHtml+'</div>'
         + diffLine(name, pct, true, align, c, txtCol)
         + '<div style="font-size:0.82rem;color:'+_tc(0.75)+';margin-top:3px">'+voix.toLocaleString('fr-FR')+' voix</div>'
+        + extrRowHtml
         + '<div style="font-size:'+nomSizeC+';font-weight:700;color:'+txtCol+';margin-top:8px">'+(hasBr ? nomInner : nomHtml)+'</div>'
         + (pa ? '<div style="font-size:0.68rem;color:'+_tc(0.7)+';margin-top:3px">'+pa+'</div>' : '')
         + '</div>'
-      : '<div style="flex:1 1 0;min-width:0;overflow:hidden;background:'+col+';padding:'+dPad+';text-align:'+align+'">'
+      : '<div class="duel-block" style="flex:1 1 0;min-width:0;overflow:hidden;background:'+col+';padding:'+dPad+';text-align:'+align+'">'
         + '<div style="font-size:'+dScoreSize+';font-weight:900;color:'+txtCol+';line-height:1">'+scoreHtml+'</div>'
         + diffLine(name, pct, true, align, c, txtCol)
         + '<div style="font-size:'+dVoixSize+';color:'+_tc(0.75)+';margin-top:'+dGapVoix+'">'+voix.toLocaleString('fr-FR')+' voix</div>'
+        + extrRowHtml
         + (prenom ? '<div style="font-size:'+dPrenomSize+';color:'+_tc(0.85)+';margin-top:'+dGapPrenom+';line-height:1">'+prenom+'</div>' : '')
         + '<div'+nomAttrs+' style="font-size:'+nomSize+';font-weight:700;color:'+txtCol+';margin-top:'+(isRefDuel?dGapPrenom:'2px')+';line-height:1">'+nomInner+'</div>'
         + (partiToShow ? '<div style="font-size:'+dPartiSize+';color:'+_tc(0.7)+';margin-top:'+dGapParti+'">'+partiToShow+'</div>' : '')
@@ -5654,20 +5677,16 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
     // Marquise mobile sur la cellule nom (cf. blockWinner pour le détail).
     // Binôme : nomHtml contient un <br>, l'animation translateX d'un seul span ne marche pas.
     // On split en 2 sous-hosts marquise indépendants (un par ligne) si mobile full.
+    // Cf. blockWinner : marquise activée en mode full (!c), candidat simple ou binôme.
+    // Le JS setupDuelMarquees ne lance l'animation que si le texte déborde vraiment.
     const hasBr = nomHtml.indexOf('<br>') >= 0;
-    // Binôme : on génère TOUJOURS 2 sous-hosts (mobile + desktop + compact) pour
-    // que la cascade d'abréviation prénom soit applicable partout. La marquise
-    // translateX reste réservée au mobile (gérée dans applyMarquee).
-    // Candidat simple mobile : un seul host marquise classique (comportement actuel).
-    const nomAttrs = (isMobileDuel && !c && !hasBr) ? ' class="duel-nom-host" data-align="'+align+'"' : '';
+    const nomAttrs = (!c && !hasBr) ? ' class="duel-nom-host" data-align="'+align+'"' : '';
     let nomInner;
     if (hasBr) {
-      // Sous-hosts binôme : alignement explicite (text-align) selon le côté du duel.
-      // Le sous-host display:block ne propage pas toujours fiable l'héritage.
       nomInner = nomHtml.split('<br>').map(line =>
         '<div class="duel-nom-host" data-align="'+align+'" style="text-align:'+align+'"><span class="duel-nom-inner">'+line+'</span></div>'
       ).join('');
-    } else if (isMobileDuel && !c) {
+    } else if (!c) {
       nomInner = '<span class="duel-nom-inner">'+nomHtml+'</span>';
     } else {
       nomInner = nomHtml;
@@ -5695,18 +5714,25 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
     // Idem blockWinner : 50/50 strict, VS centré, débordement clippé.
     // Si binôme à 2 vrais partis : la classe _bcbClass active un ::before qui couvre
     // la border avec le linear-gradient, via les variables CSS injectées dans _bcbVars.
+    // Badge ligne meilleur/pire — masquée par défaut, révélée par container query
+    // quand la cellule est étroite. Loser : fond clair → couleurs vert/rouge directs.
+    const extrRowHtml = arrowForRow(name, false);
+    // Classes : combinaison « duel-block » (active la container query) + bcbClass binôme.
+    const _classes = ('duel-block ' + _bcbClass.trim()).trim();
     return (c
-      ? '<div class="'+_bcbClass.trim()+'" style="flex:1 1 0;min-width:0;overflow:hidden;padding:10px 12px;text-align:'+align+';background:var(--bg-card);'+_borderCss+_bcbVars+'">'
+      ? '<div class="'+_classes+'" style="flex:1 1 0;min-width:0;overflow:hidden;padding:10px 12px;text-align:'+align+';background:var(--bg-card);'+_borderCss+_bcbVars+'">'
         + '<div style="font-size:2.2rem;font-weight:900;color:'+col+';line-height:1">'+pct.toFixed(1)+'<span style="font-size:0.5em;margin-left:0.12em">%</span></div>'
         + diffLine(name, pct, false, align, c)
         + '<div style="font-size:0.82rem;color:var(--text-modal-muted);margin-top:3px">'+voix.toLocaleString('fr-FR')+' voix</div>'
+        + extrRowHtml
         + '<div style="font-size:'+nomSizeC+';font-weight:700;color:var(--text-modal);margin-top:8px">'+(hasBr ? nomInner : nomHtml)+'</div>'
         + (pa ? '<div style="font-size:0.68rem;color:var(--text-modal-muted);margin-top:3px">'+pa+'</div>' : '')
         + '</div>'
-      : '<div class="'+_bcbClass.trim()+'" style="flex:1 1 0;min-width:0;overflow:hidden;padding:'+dPad+';text-align:'+align+';background:var(--bg-card);'+_borderCss+_bcbVars+'">'
+      : '<div class="'+_classes+'" style="flex:1 1 0;min-width:0;overflow:hidden;padding:'+dPad+';text-align:'+align+';background:var(--bg-card);'+_borderCss+_bcbVars+'">'
         + '<div style="font-size:'+dScoreSize+';font-weight:900;color:'+col+';line-height:1">'+scoreHtml+'</div>'
         + diffLine(name, pct, false, align, c)
         + '<div style="font-size:'+dVoixSize+';color:var(--text-modal-muted);margin-top:'+dGapVoix+'">'+voix.toLocaleString('fr-FR')+' voix</div>'
+        + extrRowHtml
         + (prenom ? '<div style="font-size:'+dPrenomSize+';color:var(--text-modal-muted);margin-top:'+dGapPrenom+';line-height:1">'+prenom+'</div>' : '')
         + '<div'+nomAttrs+' style="font-size:'+nomSize+';font-weight:700;color:var(--text-modal);margin-top:'+(isRefDuel?dGapPrenom:'2px')+';line-height:1">'+nomInner+'</div>'
         + (partiToShow ? '<div style="font-size:'+dPartiSize+';color:var(--text-modal-muted);margin-top:'+dGapParti+'">'+partiToShow+'</div>' : '')
@@ -5737,10 +5763,27 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
       const col = isBest ? colBest : colWorst;
       return '<span style="color:'+col+';font-size:0.42em;font-weight:900;vertical-align:0.4em;margin:0 0.2em">'+sym+'</span>';
     }
-    // Desktop full : symbole + étiquette texte, côté nom
+    // Desktop full : symbole + étiquette texte, côté nom. Wrappé dans .extr-inline
+    // pour pouvoir être masqué par la container query quand la cellule est étroite
+    // (cf. .duel-block CSS) — la version « ligne » (.extr-row) prend alors le relais.
     return isBest
-      ? ' <span style="color:'+colBest+';font-size:0.68rem;font-weight:700">▲ meilleur '+_xLab+'</span>'
-      : ' <span style="color:'+colWorst+';font-size:0.68rem;font-weight:700">▼ pire '+_xLab+'</span>';
+      ? ' <span class="extr-inline" style="color:'+colBest+';font-size:0.68rem;font-weight:700">▲ meilleur '+_xLab+'</span>'
+      : ' <span class="extr-inline" style="color:'+colWorst+';font-size:0.68rem;font-weight:700">▼ pire '+_xLab+'</span>';
+  }
+  // Version « ligne » du badge meilleur/pire : div standalone qui s'insère entre
+  // voix et prénom dans chaque bloc duel. Activée par container query quand la
+  // cellule est étroite (cf. .duel-block CSS).
+  function arrowForRow(name, onColor) {
+    if (!extr || !ns || ns === 'ville') return '';
+    const isBest  = extr.best  && extr.best[name]  && extr.best[name].num  === ns;
+    const isWorst = extr.worst && extr.worst[name] && extr.worst[name].num === ns;
+    if (!isBest && !isWorst) return '';
+    const col = onColor
+      ? 'rgba(255,255,255,0.85)'
+      : (isBest ? '#1a7a4a' : '#b91c1c');
+    const sym = isBest ? '▲' : '▼';
+    const lbl = (isBest ? 'meilleur ' : 'pire ') + _xLab;
+    return '<div class="extr-row" style="font-size:0.7rem;font-weight:600;margin-top:4px;color:'+col+'">'+sym+'\xa0'+lbl+'</div>';
   }
   const pad = compact ? '10px' : (isMobileDuel ? '8px' : '16px');
   const vsDiv = '<div style="padding:0 '+pad+';display:flex;align-items:center;flex-shrink:0">'
@@ -5771,7 +5814,7 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
   // pixel-parfait. Le minmax(0, 1fr) est crucial : sans le min=0, une colonne 1fr
   // peut grandir au-delà de sa part si son contenu (min-content) est plus large,
   // ce qui décalerait le VS. Avec min=0, la colonne peut shrinker à 0 si besoin.
-  return '<div style="display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:stretch;border-radius:'+radius+';overflow:hidden;margin-bottom:'+margin+'">'
+  return '<div class="duel-wrap" style="display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:stretch;border-radius:'+radius+';overflow:hidden;margin-bottom:'+margin+'">'
     + leftBlock + vsDiv + rightBlock + '</div>';
 }
 
@@ -6762,23 +6805,64 @@ function renderGlobalFiche() {
   sig += '</div>';
   h += '<div class="split"><div id="mm-wrap"></div>' + sig + '</div>';
 
-  // Blocs politiques — triptych global
+  // Blocs politiques — triptych global. Doctrine _voix : on agrège les voix
+  // entières par bloc à travers TOUS les bureaux de l'élection adjacente, puis
+  // on divise par la somme des exprimés. Évite la moyenne arithmétique des pct
+  // (qui sous-pondère les gros bureaux et donnait des écarts visibles dans le
+  // triptyque vs la barre centrale calculée correctement).
+  // Fallback HISTORIQUE (anciens scrutins sans sheets exposées) : on garde la
+  // moyenne arithmétique faute de mieux (pas d'exprimés par bureau dispo).
   function globalHistoBlocs(elecLabel) {
-    var adjEl=ELECTIONS[elecLabel];
-    var adjSh=adjEl?(currentSheet==='T2'?(adjEl.sheets['T2']||adjEl.sheets['TU']||adjEl.sheets['T1']):(adjEl.sheets['TU']||adjEl.sheets['T1'])):null;
-    var totals={}; var count=0;
+    var adjEl = ELECTIONS[elecLabel];
+    var adjSh = adjEl ? (currentSheet==='T2' ? (adjEl.sheets['T2']||adjEl.sheets['TU']||adjEl.sheets['T1']) : (adjEl.sheets['TU']||adjEl.sheets['T1'])) : null;
+    // Helper : bloc d'un candidat dans le contexte de elecLabel (merge cascade).
+    function _blocOf(name) {
+      var info = Object.assign({}, CAND_DATA[name] || {}, CAND_DATA[name+'|'+elecLabel] || {});
+      var b = info.b || '';
+      if (!b && Array.isArray(info.binome) && info.binome.length === 2) {
+        var m1 = Object.assign({}, CAND_DATA[info.binome[0]] || {}, CAND_DATA[info.binome[0]+'|'+elecLabel] || {});
+        var m2 = Object.assign({}, CAND_DATA[info.binome[1]] || {}, CAND_DATA[info.binome[1]+'|'+elecLabel] || {});
+        var b1 = m1.b || '', b2 = m2.b || '';
+        b = (b1 && b1 === b2) ? b1 : (b1 || b2 || '');
+      }
+      return b || '?';
+    }
+    // 1) Tentative doctrine _voix sur les sheets disponibles.
+    var totalsV = {};   // voix entières par bloc
+    var totalE  = 0;
+    if (adjSh) {
+      Object.keys(HISTORIQUE).forEach(function(bk) {
+        var d = adjSh[bk];
+        if (!d || !d._voix) return;
+        var e = d.e || 0;
+        if (e <= 0) return;
+        totalE += e;
+        Object.entries(d._voix).forEach(function(kv) {
+          var b = _blocOf(kv[0]);
+          totalsV[b] = (totalsV[b] || 0) + kv[1];
+        });
+      });
+    }
+    if (totalE > 0) {
+      var result = {};
+      Object.entries(totalsV).forEach(function(kv) {
+        result[kv[0]] = +(kv[1] / totalE * 100).toFixed(1);
+      });
+      return result;
+    }
+    // 2) Fallback : HISTORIQUE (anciens scrutins pré-saisie), moyenne arithmétique.
+    var totals = {}; var count = 0;
     Object.keys(HISTORIQUE).forEach(function(bk) {
-      var blocs=null;
-      if(adjSh){var d=adjSh[bk];if(d)blocs=computeBlocsAdj(d,elecLabel);}
-      if(!blocs){var entry=(HISTORIQUE[bk]||[]).find(function(r){return r.l===elecLabel;});
-        if(!entry||!entry.b)return;
-        blocs=remapBlocs(entry.b);}
-      if(!blocs)return;
+      var entry = (HISTORIQUE[bk]||[]).find(function(r){return r.l===elecLabel;});
+      if (!entry || !entry.b) return;
+      var blocs = remapBlocs(entry.b);
+      if (!blocs) return;
       count++;
       Object.entries(blocs).forEach(function(kv){totals[kv[0]]=(totals[kv[0]]||0)+kv[1];});
     });
-    if(!count)return null;
-    var a={};Object.entries(totals).forEach(function(kv){a[kv[0]]=+(kv[1]/count).toFixed(1);});
+    if (!count) return null;
+    var a = {};
+    Object.entries(totals).forEach(function(kv){a[kv[0]]=+(kv[1]/count).toFixed(1);});
     return a;
   }
   function barSegsG(blocs, elec) {
@@ -6851,11 +6935,12 @@ function renderQuartierListGlobal() {
   var yearInfo = BUREAU_INFO[mapYear] || BUREAU_INFO[CURRENT_ERA] || {};
   var LINE = '<div style="position:absolute;top:0;bottom:0;left:50%;width:0;border-left:1.5px dashed rgba(255,255,255,0.65);pointer-events:none;z-index:2"></div>';
 
-  // Collecter les quartiers et leurs bureaux (en tenant compte de getQuartierParts)
+  // Collecter les quartiers et leurs bureaux (en tenant compte de getQuartierParts).
+  // Quartier 'Nul' = bureau 0057 (non-géo, Français de l'étranger / détenus) → exclu.
   var quartierBureaux = {};
   Object.keys(yearInfo).forEach(function(ns) {
     var q = yearInfo[ns].q || '';
-    if (!q) return;
+    if (!q || q === 'Nul') return;
     var parts = getQuartierParts(q);
     parts.forEach(function(qp) {
       if (!quartierBureaux[qp]) quartierBureaux[qp] = [];
@@ -7279,11 +7364,12 @@ function renderQuartierList(){
   var el0=ELECTIONS[currentElection];
   var mapYear=String(el0?el0.my:2026);
   var yearInfo=BUREAU_INFO[mapYear]||BUREAU_INFO[CURRENT_ERA]||{};
-  // Aggrégation par quartier (multi-quartiers via getQuartierParts)
+  // Aggrégation par quartier (multi-quartiers via getQuartierParts).
+  // Quartier 'Nul' = bureau 0057 (non-géo) → exclu.
   var qAgg={};
   Object.keys(yearInfo).forEach(function(ns){
     var q=yearInfo[ns].q;
-    if(!q)return;
+    if(!q || q==='Nul')return;
     getQuartierParts(q).forEach(function(qp){
       var d=shData[ns];if(!d)return;
       if(!qAgg[qp])qAgg[qp]={totI:0,totE:0,totAbst:0,totBn:0,voix:{},nb:0};
@@ -8188,7 +8274,7 @@ function setMapMode(mode) {
   function init() {
     const leg = document.getElementById('map-legend');
     if (!leg) return;
-    if (!window.matchMedia('(max-width: 720px)').matches) {
+    if (!window.matchMedia('(max-width: 1000px)').matches) {
       leg.classList.add('expanded');
       const btn = document.getElementById('legend-toggle');
       if (btn) btn.setAttribute('aria-expanded', 'true');
@@ -8268,11 +8354,12 @@ function renderMapLegend() {
       }
       // Tabs UI — sur mobile, placés en BAS de la légende (cf. ordre concat plus bas),
       // donc on remplace margin-bottom par margin-top pour préserver l'espacement.
-      const _isMobLeg = window.matchMedia && window.matchMedia('(max-width: 720px)').matches;
+      const _isMobLeg = window.matchMedia && window.matchMedia('(max-width: 1000px)').matches;
       const _tabsMg = _isMobLeg ? 'margin-top:8px' : 'margin-bottom:6px';
-      // flex-wrap au cas où 5+ cantons (ex. Cantonales 2011) : on autorise un retour
-      // à la ligne plutôt que des boutons écrasés et illisibles.
-      cantonTabsHtml = '<div class="leg-canton-tabs" style="display:flex;flex-wrap:wrap;gap:4px;'+_tabsMg+'">';
+      // Labels « C N » volontairement très courts pour que tous les cantons (jusqu'à 9
+      // pour les Cantonales 1985-2011) tiennent sur UNE seule ligne. nowrap + flex:1
+      // partagé : chaque bouton prend exactement 1/N de la largeur dispo.
+      cantonTabsHtml = '<div class="leg-canton-tabs" style="display:flex;flex-wrap:nowrap;gap:3px;'+_tabsMg+'">';
       availableCantons.forEach(c => {
         const sel = c === legendCantonFilter;
         const disabled = cantonsPourvus.has(c);
@@ -8286,9 +8373,9 @@ function renderMapLegend() {
         const _tip    = disabled ? ' class="has-tooltip" data-tooltip="Canton pourvu au premier tour"' : '';
         const _dis    = disabled ? ' disabled' : '';
         cantonTabsHtml += '<button'+_dis+_click+_tip+' '
-          + 'style="flex:1 0 auto;min-width:64px;padding:3px 6px;border:1px solid '+_border+';border-radius:4px;'
+          + 'style="flex:1 1 0;min-width:0;padding:3px 4px;border:1px solid '+_border+';border-radius:4px;'
           + 'background:'+_bg+';color:'+_fg+';cursor:'+_cursor+';'
-          + 'font-size:0.7rem;font-weight:'+(sel?'700':'500')+';">Canton '+c+'</button>';
+          + 'font-size:0.7rem;font-weight:'+(sel?'700':'500')+';">Ct. '+c+'</button>';
       });
       cantonTabsHtml += '</div>';
       // Filtrer shData sur les bureaux du canton sélectionné
@@ -8353,7 +8440,7 @@ function renderMapLegend() {
     //   - Desktop : tabs canton en HAUT, puis rows, puis gradient
     //   - Mobile  : rows + gradient en haut, tabs canton en BAS (mieux à proximité
     //               du pouce sur petit écran, et la liste candidats reste visible).
-    const _isMobLegOrder = window.matchMedia && window.matchMedia('(max-width: 720px)').matches;
+    const _isMobLegOrder = window.matchMedia && window.matchMedia('(max-width: 1000px)').matches;
     el.innerHTML = _isMobLegOrder ? (rows + grad + cantonTabsHtml) : (cantonTabsHtml + rows + grad);
   } else if (currentMapMode === 'bloc') {
     const wins = {}, present = new Set();
@@ -11828,7 +11915,7 @@ function updateAnalyseLink() {
   ];
 
   function isMobile() {
-    return !!(window.matchMedia && window.matchMedia('(max-width: 720px)').matches);
+    return !!(window.matchMedia && window.matchMedia('(max-width: 1000px)').matches);
   }
 
   function start() {
@@ -14633,7 +14720,7 @@ function randomDiscover() {
 // ─────────────────────────────────────────────────────────────────────────
 (function setupSwipeDownToClose(){
   function isMobile() {
-    return window.matchMedia && window.matchMedia('(max-width: 720px)').matches;
+    return window.matchMedia && window.matchMedia('(max-width: 1000px)').matches;
   }
   const overlay = document.getElementById('overlay');
   const ovBody  = document.getElementById('ov-body');

@@ -711,7 +711,7 @@ function getCantonOfElection(electionLabel) {
   color: var(--text-chrome-muted, #999);
   border-color: rgba(255,255,255,0.08);
 }
-@media (max-width: 720px) {
+@media (max-width: 1000px) {
   /* Mobile : encore plus discret — icône seule, très petit, opacité basse */
   #soutenir-pill {
     bottom: ${isCarte ? '64px' : '12px'};
