@@ -56,7 +56,7 @@
   "mainEntity": {
     "@type": "Dataset",
     "name": "Archives électorales de La Rochelle, 1986-2026",
-    "description": "Résultats par bureau de vote pour 52 élections et 3 référendums organisés à La Rochelle entre 1985 et 2026.",
+    "description": "Résultats par bureau de vote pour 55 élections et 3 référendums organisés à La Rochelle entre 1982 et 2026.",
     "url": "https://larochellevote.fr/",
     "creator": {
       "@type": "Person",
@@ -1867,42 +1867,44 @@ function init() {
     selQ.appendChild(o);
   });
 
-  // Remplir le sélecteur de cantons : 2 optgroups (modernes "carte 2015" + anciens "carte 1985").
-  // La valeur du <option> est la clé "<era_canton>:<cid>" pour distinguer les modernes des anciens.
+  // Remplir le sélecteur de cantons : itère dynamiquement les ères CANTON_INFO.
+  // Cantons actuels (era_end=null) en haut, anciens (era_end défini) triés du plus récent au plus ancien.
+  // La valeur du <option> est la clé "<era_canton>:<cid>" pour distinguer les ères.
   const selC = document.getElementById('sel-canton');
   if (selC && typeof CANTON_INFO !== 'undefined') {
     selC.innerHTML = '';
-    // Modernes (ère 2015) en premier
-    const modernes = (CANTON_INFO['2015'] || {}).cantons || {};
-    if (Object.keys(modernes).length) {
+    const eraEntries = Object.entries(CANTON_INFO);
+    const actuels = eraEntries.filter(([, info]) => !info.era_end);
+    const anciens = eraEntries.filter(([, info]) => info.era_end)
+      .sort((a, b) => parseInt(b[0]) - parseInt(a[0])); // plus récent en premier
+    // Bloc "actuels"
+    actuels.forEach(([eraCanton, info]) => {
       const og = document.createElement('optgroup');
-      og.label = 'Cantons actuels (carte 2015)';
-      Object.entries(modernes)
+      og.label = 'Cantons actuels (carte ' + eraCanton + ')';
+      Object.entries(info.cantons || {})
         .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
         .forEach(([cid, meta]) => {
           const o = document.createElement('option');
-          o.value = '2015:' + cid;
-          // Pas de suffixe "carte 2015" : l'optgroup le rappelle déjà.
+          o.value = eraCanton + ':' + cid;
           o.textContent = meta.name || ('La Rochelle-' + cid);
           og.appendChild(o);
         });
       selC.appendChild(og);
-    }
-    // Anciens (ère 1985, période 1985-2014) ensuite
-    const anciens = (CANTON_INFO['1985'] || {}).cantons || {};
-    if (Object.keys(anciens).length) {
+    });
+    // Blocs "anciens" (un par ère canton historique)
+    anciens.forEach(([eraCanton, info]) => {
       const og = document.createElement('optgroup');
-      og.label = 'Anciens cantons (carte 1985, 1985-2014)';
-      Object.entries(anciens)
+      og.label = 'Anciens cantons (carte ' + eraCanton + ', ' + info.era_start + '-' + info.era_end + ')';
+      Object.entries(info.cantons || {})
         .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
         .forEach(([cid, meta]) => {
           const o = document.createElement('option');
-          o.value = '1985:' + cid;
+          o.value = eraCanton + ':' + cid;
           o.textContent = meta.name || ('La Rochelle-' + cid);
           og.appendChild(o);
         });
       selC.appendChild(og);
-    }
+    });
   }
 
   // Remplir le sélecteur de bureaux
@@ -2456,31 +2458,36 @@ function getCBureauxForEra(cantonKey, eraB) {
   const cid = parts[1];
   const eraBureauNum = parseInt(eraB);
 
-  // Anciens cantons (ère 1985, période 1985-2014) : seulement valides pour les ères bureau
-  // antérieures à 2015. Pour ces ères, on lit directement BUREAU_INFO[era][ns].c.
-  if (eraCanton === '1985') {
-    if (eraBureauNum >= 2015) return []; // canton historique mort
+  const cantonEraInfo = (typeof CANTON_INFO !== 'undefined' && CANTON_INFO[eraCanton]) || null;
+  if (!cantonEraInfo) return [];
+  const startNum = cantonEraInfo.era_start ? parseInt(cantonEraInfo.era_start) : null;
+  const endNum   = cantonEraInfo.era_end   ? parseInt(cantonEraInfo.era_end)   : null;
+
+  // Ancien canton (era_end défini) : valide seulement pour ères bureau ∈ [era_start, era_end].
+  // On lit directement BUREAU_INFO[era][b].c (le canton est défini bureau par bureau à cette époque).
+  if (endNum != null) {
+    if (startNum != null && eraBureauNum < startNum) return [];
+    // Ère bureau > era_end : on tronque (canton mort).
+    // NB: une ère bureau strictement supérieure à era_end signifie en pratique "ère bureau
+    // postérieure à la fin de vie du canton". Comme les ères bureau sont nommées par leur
+    // année de DÉBUT, une ère bureau dont l'année de début est postérieure à era_end est mort.
+    if (eraBureauNum > endNum) return [];
     const eraInfo = BUREAU_INFO[eraB] || {};
     return Object.entries(eraInfo)
       .filter(([, b]) => String(b.c || '') === String(cid))
       .map(([id]) => id);
   }
 
-  // Cantons modernes (ère 2015) : pour les ères ≥ 2015, on lit directement .c.
-  // Pour les ères antérieures, on utilise CANTON_CORRESPONDANCES (mapping inféré
-  // qui dit quels bureaux historiques composent rétroactivement ce canton moderne).
-  if (eraCanton === '2015') {
-    if (eraBureauNum >= 2015) {
-      const eraInfo = BUREAU_INFO[eraB] || {};
-      return Object.entries(eraInfo)
-        .filter(([, b]) => String(b.c || '') === String(cid))
-        .map(([id]) => id);
-    }
-    // Ère antérieure : utiliser CANTON_CORRESPONDANCES
-    if (typeof CANTON_CORRESPONDANCES === 'undefined') return [];
-    return ((CANTON_CORRESPONDANCES[cantonKey] || {})[eraB]) || [];
+  // Canton actuel (era_end = null) : pour ère bureau ≥ era_start, on lit directement .c.
+  // Pour les ères antérieures, on s'appuie sur CANTON_CORRESPONDANCES (mapping rétroactif).
+  if (startNum != null && eraBureauNum >= startNum) {
+    const eraInfo = BUREAU_INFO[eraB] || {};
+    return Object.entries(eraInfo)
+      .filter(([, b]) => String(b.c || '') === String(cid))
+      .map(([id]) => id);
   }
-  return [];
+  if (typeof CANTON_CORRESPONDANCES === 'undefined') return [];
+  return ((CANTON_CORRESPONDANCES[cantonKey] || {})[eraB]) || [];
 }
 
 // Agrégation des résultats par canton, calquée sur getQuartierData.
@@ -2774,14 +2781,15 @@ function updateContentTitle() {
   const name  = document.getElementById('ct-name');
   const sub   = document.getElementById('ct-sub');
   const era = document.getElementById('tb-era');
-  // Visible sauf : mode ville, ou ancien canton (ère canton 1985 — l'info est déjà
-  // dans le sous-titre "Canton actif de 1985 à 2014").
+  // Visible sauf : mode ville, ou ancien canton (toute ère canton avec era_end —
+  // l'info de période est déjà dans le sous-titre "Canton actif de X à Y").
   if (era) {
     let hide = niveau === 'ville';
     if (!hide && niveau === 'canton') {
       const cKey = (document.getElementById('sel-canton')||{}).value || currentCantonKey || '';
       const eraCanton = cKey.split(':')[0];
-      if (eraCanton === '1985') hide = true;
+      const cInfo = (typeof CANTON_INFO !== 'undefined' && CANTON_INFO[eraCanton]) || null;
+      if (cInfo && cInfo.era_end) hide = true;
     }
     era.style.display = hide ? 'none' : '';
   }
@@ -5233,13 +5241,14 @@ function openCCorrespPanel() {
   }
   // Clone profond pour édition isolée
   _ccEdits = JSON.parse(JSON.stringify(CANTON_CORRESPONDANCES));
-  // Seed des ères ajoutées après coup (1985 avec les Cantonales 1985, 1989 avec
-  // les Municipales 1989 / Européennes 1989). Pour chaque ère cible, on dérive
-  // le placement initial d'une ère source proche :
+  // Seed des ères ajoutées après coup (1982 avec Muni 1983/Eu 1984, 1985 avec
+  // les Cantonales 1985, 1989 avec Muni 1989/Eu 1989). Pour chaque ère cible,
+  // on dérive le placement initial d'une ère source proche :
   //   1985 → copie de 1988 (40 bureaux communs ; 0041 à placer manuellement)
   //   1989 → copie de 1985 (qui inclut déjà le 0041 si l'utilisateur l'a placé)
+  //   1982 → copie de 1985 (bureaux strictement identiques 0001-0041)
   // Les bureaux restants à placer apparaissent dans le bandeau "Non placés".
-  const PRESEED = { '1985': '1988', '1989': '1985' };
+  const PRESEED = { '1985': '1988', '1989': '1985', '1982': '1985' };
   Object.keys(_ccEdits).forEach(cKey => {
     Object.entries(PRESEED).forEach(([target, source]) => {
       if ((_ccEdits[cKey][target] || []).length) return; // déjà défini → on respecte
@@ -5903,7 +5912,7 @@ function copyRedecoupageCode() {
     },
     {
       title: 'Frise des redécoupages',
-      body: 'Sous le graphique, la frise retrace l\'<strong>histoire géographique</strong> de ce bureau : son nom et son numéro à chaque ère depuis 1985. Les macarons (verts, oranges, jaunes) signalent les redécoupages majeurs ou mineurs — survolez-les pour lire le détail. Voici par exemple le bureau N°41 — Médiathèque–Ville-en-Bois (Les Minimes).<br><br><strong>Cliquez sur la frise pour découvrir les différents tracés du bureau à travers les ères.</strong>',
+      body: 'Sous le graphique, la frise retrace l\'<strong>histoire géographique</strong> de ce bureau : son nom et son numéro à chaque ère depuis 1982. Les macarons (verts, oranges, jaunes) signalent les redécoupages majeurs ou mineurs — survolez-les pour lire le détail. Voici par exemple le bureau N°41 — Médiathèque–Ville-en-Bois (Les Minimes).<br><br><strong>Cliquez sur la frise pour découvrir les différents tracés du bureau à travers les ères.</strong>',
       target: '#frise-area',
       targetPad: { top: 90 },  // Inclut les macarons SVG qui sont juste au-dessus de la frise
       placement: 'top',

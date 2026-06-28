@@ -456,10 +456,6 @@ footer.s-foot a:hover { color: var(--text-chrome); }
       <h3>Blocs politiques</h3>
       <div class="trip-wrap">
         
-        <a class="trip-side" href="/scrutins/departementales-2015-canton-2.html" title="Départementales 2015">
-          <div class="trip-bar trip-bar-side"><div class="bb-seg" title="Gauche : 55,1 %" style="width:55.10%;background:#CC0100"></div><div class="bb-seg" title="Droite : 33,5 %" style="width:33.50%;background:#0F55CC"></div><div class="bb-seg" title="Extrême droite : 11,4 %" style="width:11.40%;background:#20124D"></div></div>
-          <span class="trip-side-label">Départementales 2015 <span class="trip-side-meta">(suivant)</span></span>
-        </a>
         <div class="trip-bar trip-bar-current"><div class="bb-seg" title="Gauche : 76,7 %" style="width:76.62%;background:#CC0100"></div><div class="bb-seg" title="Centre : 6,3 %" style="width:6.29%;background:#F1C232"></div><div class="bb-seg" title="Droite : 9,4 %" style="width:9.39%;background:#0F55CC"></div><div class="bb-seg" title="Extrême droite : 7,7 %" style="width:7.69%;background:#20124D"></div><div class="trip-mid-line"></div></div>
         
         <a class="trip-side" href="/scrutins/cantonales-2001-canton-2.html" title="Cantonales 2001">
@@ -489,7 +485,7 @@ footer.s-foot a:hover { color: var(--text-chrome); }
     </section>
 
     <footer class="s-foot">
-      <span>Page générée le 27 juin 2026 à partir des données de <a href="/">larochellevote.fr</a>.</span>
+      <span>Page générée le 28 juin 2026 à partir des données de <a href="/">larochellevote.fr</a>.</span>
       <span><a href="/methodologie.html">Méthodologie &amp; sources →</a></span>
     </footer>
 
@@ -608,6 +604,28 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 </script>
+
+<!-- Cloudflare Web Analytics — avec opt-out par localStorage (?notrack=1 pour activer l'exclusion) -->
+<script>
+  (function() {
+    try {
+      var url = new URL(location.href);
+      if (url.searchParams.get('notrack') === '1') {
+        localStorage.setItem('lrvote_no_track', '1');
+        url.searchParams.delete('notrack');
+        history.replaceState(null, '', url.pathname + url.search + url.hash);
+        return;
+      }
+      if (localStorage.getItem('lrvote_no_track') === '1') return;
+    } catch(_) {}
+    var s = document.createElement('script');
+    s.defer = true;
+    s.src = 'https://static.cloudflareinsights.com/beacon.min.js';
+    s.setAttribute('data-cf-beacon', '{"token": "65e9e43629c74f448a059b679fcc2484"}');
+    document.head.appendChild(s);
+  })();
+</script>
+<!-- End Cloudflare Web Analytics -->
 
 </body>
 </html>

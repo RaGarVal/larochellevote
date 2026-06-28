@@ -499,10 +499,6 @@ footer.s-foot a:hover { color: var(--text-chrome); }
         </a>
         <div class="trip-bar trip-bar-current"><div class="bb-seg" title="Gauche : 63,8 %" style="width:63.86%;background:#CC0100"></div><div class="bb-seg" title="Droite : 19,0 %" style="width:19.02%;background:#0F55CC"></div><div class="bb-seg" title="Extrême droite : 17,1 %" style="width:17.12%;background:#20124D"></div><div class="trip-mid-line"></div></div>
         
-        <a class="trip-side" href="/scrutins/cantonales-2011-canton-3.html" title="Cantonales 2011">
-          <div class="trip-bar trip-bar-side"><div class="bb-seg" title="Gauche : 66,6 %" style="width:66.60%;background:#CC0100"></div><div class="bb-seg" title="Droite : 21,5 %" style="width:21.50%;background:#0F55CC"></div><div class="bb-seg" title="Extrême droite : 11,9 %" style="width:11.90%;background:#20124D"></div></div>
-          <span class="trip-side-label">Cantonales 2011 <span class="trip-side-meta">(précédent)</span></span>
-        </a>
       </div>
       <p class="s-blocs-legend">
         <span class="bl-item"><span class="bl-dot" style="background:#CC0100"></span>Gauche 63,8 %</span><span class="bl-item"><span class="bl-dot" style="background:#0F55CC"></span>Droite 19,0 %</span><span class="bl-item"><span class="bl-dot" style="background:#20124D"></span>Extrême droite 17,1 %</span>
@@ -573,10 +569,6 @@ footer.s-foot a:hover { color: var(--text-chrome); }
         </a>
         <div class="trip-bar trip-bar-current"><div class="bb-seg" title="Gauche : 100,0 %" style="width:100.00%;background:#CC0100"></div><div class="trip-mid-line"></div></div>
         
-        <a class="trip-side" href="/scrutins/cantonales-2011-canton-3.html" title="Cantonales 2011">
-          <div class="trip-bar trip-bar-side"><div class="bb-seg" title="Gauche : 69,2 %" style="width:69.20%;background:#CC0100"></div><div class="bb-seg" title="Droite : 30,8 %" style="width:30.80%;background:#0F55CC"></div></div>
-          <span class="trip-side-label">Cantonales 2011 <span class="trip-side-meta">(précédent)</span></span>
-        </a>
       </div>
       <p class="s-blocs-legend">
         <span class="bl-item"><span class="bl-dot" style="background:#CC0100"></span>Gauche 100,0 %</span>
@@ -600,7 +592,7 @@ footer.s-foot a:hover { color: var(--text-chrome); }
     </section>
 
     <footer class="s-foot">
-      <span>Page générée le 27 juin 2026 à partir des données de <a href="/">larochellevote.fr</a>.</span>
+      <span>Page générée le 28 juin 2026 à partir des données de <a href="/">larochellevote.fr</a>.</span>
       <span><a href="/methodologie.html">Méthodologie &amp; sources →</a></span>
     </footer>
 
@@ -719,6 +711,28 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 </script>
+
+<!-- Cloudflare Web Analytics — avec opt-out par localStorage (?notrack=1 pour activer l'exclusion) -->
+<script>
+  (function() {
+    try {
+      var url = new URL(location.href);
+      if (url.searchParams.get('notrack') === '1') {
+        localStorage.setItem('lrvote_no_track', '1');
+        url.searchParams.delete('notrack');
+        history.replaceState(null, '', url.pathname + url.search + url.hash);
+        return;
+      }
+      if (localStorage.getItem('lrvote_no_track') === '1') return;
+    } catch(_) {}
+    var s = document.createElement('script');
+    s.defer = true;
+    s.src = 'https://static.cloudflareinsights.com/beacon.min.js';
+    s.setAttribute('data-cf-beacon', '{"token": "65e9e43629c74f448a059b679fcc2484"}');
+    document.head.appendChild(s);
+  })();
+</script>
+<!-- End Cloudflare Web Analytics -->
 
 </body>
 </html>

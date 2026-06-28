@@ -65,7 +65,7 @@
     "mainEntity": {
       "@type": "Dataset",
       "name": "Archives électorales de La Rochelle, 1986-2026",
-      "description": "Résultats par bureau de vote pour 52 élections et 3 référendums organisés à La Rochelle entre 1985 et 2026.",
+      "description": "Résultats par bureau de vote pour 55 élections et 3 référendums organisés à La Rochelle entre 1982 et 2026.",
       "url": "https://larochellevote.fr/",
       "creator": {
         "@type": "Person",
@@ -3281,8 +3281,9 @@ input:focus-visible,
   overflow: hidden;
   white-space: nowrap;
   /* line-height généreux pour ne pas clipper les descendantes (j, g, y, p, q)
-     malgré le overflow:hidden qui clippe aussi verticalement. */
-  line-height: 1.15;
+     malgré le overflow:hidden qui clippe aussi verticalement. 1.15 était trop
+     serré sur Space Grotesk → on passe à 1.35. */
+  line-height: 1.35;
 }
 /* Caler l'inner à droite ou gauche selon le côté du duel via flexbox (text-align
    ne fonctionne pas de manière fiable sur un inline-block plus large que son host). */
@@ -3561,6 +3562,7 @@ input:focus-visible,
         <option value="Municipales 2001">Municipales 2001</option>
         <option value="Municipales 1995">Municipales 1995</option>
         <option value="Municipales 1989">Municipales 1989</option>
+        <option value="Municipales 1983">Municipales 1983</option>
       </optgroup>
       <optgroup label="Présidentielles">
         <option value="Présidentielle 2022">Présidentielle 2022</option>
@@ -3592,6 +3594,7 @@ input:focus-visible,
         <option value="Européennes 1999">Européennes 1999</option>
         <option value="Européennes 1994">Européennes 1994</option>
         <option value="Européennes 1989">Européennes 1989</option>
+        <option value="Européennes 1984">Européennes 1984</option>
       </optgroup>
       <optgroup label="Régionales">
         <option value="Régionales 2021">Régionales 2021</option>
@@ -3616,6 +3619,7 @@ input:focus-visible,
         <option value="Cantonales 1992">Cantonales 1992</option>
         <option value="Cantonales 1988">Cantonales 1988</option>
         <option value="Cantonales 1985">Cantonales 1985</option>
+        <option value="Cantonales 1982">Cantonales 1982</option>
       </optgroup>
       <optgroup label="Référendums">
         <option value="Référendum 2005">Référendum 2005 — TCE</option>
@@ -3753,8 +3757,8 @@ const HAS_T2 = new Set(['Présidentielle 1988','Présidentielle 1995','Présiden
   'Législatives 2012','Législatives 2017','Législatives 2022','Législatives 2024',
   'Municipales 2014','Municipales 2020','Municipales 2026',
   'Régionales 2004','Régionales 2010','Régionales 2015','Régionales 2021',
-  'Cantonales 1985','Cantonales 1988','Cantonales 1992','Cantonales 1994','Cantonales 1998','Cantonale partielle 1999','Cantonales 2001','Cantonale partielle 2002','Cantonales 2004','Cantonales 2008','Cantonales 2011','Départementales 2015','Départementales 2021']);
-const HAS_TU = new Set(['Législatives 1986','Régionales 1986','Municipales 1989','Municipales 1995','Régionales 1992','Régionales 1998','Européennes 1989','Européennes 1994','Européennes 1999','Européennes 2004','Européennes 2009','Européennes 2014','Européennes 2019','Européennes 2024']);
+  'Cantonales 1982','Cantonales 1985','Cantonales 1988','Cantonales 1992','Cantonales 1994','Cantonales 1998','Cantonale partielle 1999','Cantonales 2001','Cantonale partielle 2002','Cantonales 2004','Cantonales 2008','Cantonales 2011','Départementales 2015','Départementales 2021']);
+const HAS_TU = new Set(['Législatives 1986','Régionales 1986','Municipales 1983','Municipales 1989','Municipales 1995','Régionales 1992','Régionales 1998','Européennes 1984','Européennes 1989','Européennes 1994','Européennes 1999','Européennes 2004','Européennes 2009','Européennes 2014','Européennes 2019','Européennes 2024']);
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 // Élection initiale : on prend la plus récente parmi les Municipales (la plus
@@ -5647,8 +5651,8 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
         + diffLine(name, pct, true, align, c, txtCol)
         + '<div style="font-size:'+dVoixSize+';color:'+_tc(0.75)+';margin-top:'+dGapVoix+'">'+voix.toLocaleString('fr-FR')+' voix</div>'
         + extrRowHtml
-        + (prenom ? '<div style="font-size:'+dPrenomSize+';color:'+_tc(0.85)+';margin-top:'+dGapPrenom+';line-height:1">'+prenom+'</div>' : '')
-        + '<div'+nomAttrs+' style="font-size:'+nomSize+';font-weight:700;color:'+txtCol+';margin-top:'+(isRefDuel?dGapPrenom:'2px')+';line-height:1">'+nomInner+'</div>'
+        + (prenom ? '<div style="font-size:'+dPrenomSize+';color:'+_tc(0.85)+';margin-top:'+dGapPrenom+';line-height:1.2">'+prenom+'</div>' : '')
+        + '<div'+nomAttrs+' style="font-size:'+nomSize+';font-weight:700;color:'+txtCol+';margin-top:'+(isRefDuel?dGapPrenom:'2px')+';line-height:1.2">'+nomInner+'</div>'
         + (partiToShow ? '<div style="font-size:'+dPartiSize+';color:'+_tc(0.7)+';margin-top:'+dGapParti+'">'+partiToShow+'</div>' : '')
         + (allie ? '<div style="font-size:'+dAllieSize+';color:'+_tc(0.55)+';margin-top:2px">'+allie+'</div>' : '')
         + '</div>'
@@ -5733,8 +5737,8 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
         + diffLine(name, pct, false, align, c)
         + '<div style="font-size:'+dVoixSize+';color:var(--text-modal-muted);margin-top:'+dGapVoix+'">'+voix.toLocaleString('fr-FR')+' voix</div>'
         + extrRowHtml
-        + (prenom ? '<div style="font-size:'+dPrenomSize+';color:var(--text-modal-muted);margin-top:'+dGapPrenom+';line-height:1">'+prenom+'</div>' : '')
-        + '<div'+nomAttrs+' style="font-size:'+nomSize+';font-weight:700;color:var(--text-modal);margin-top:'+(isRefDuel?dGapPrenom:'2px')+';line-height:1">'+nomInner+'</div>'
+        + (prenom ? '<div style="font-size:'+dPrenomSize+';color:var(--text-modal-muted);margin-top:'+dGapPrenom+';line-height:1.2">'+prenom+'</div>' : '')
+        + '<div'+nomAttrs+' style="font-size:'+nomSize+';font-weight:700;color:var(--text-modal);margin-top:'+(isRefDuel?dGapPrenom:'2px')+';line-height:1.2">'+nomInner+'</div>'
         + (partiToShow ? '<div style="font-size:'+dPartiSize+';color:var(--text-modal-muted);margin-top:'+dGapParti+'">'+partiToShow+'</div>' : '')
         + (allie ? '<div style="font-size:'+dAllieSize+';color:var(--text-modal-muted);margin-top:2px">'+allie+'</div>' : '')
         + '</div>'
@@ -6042,11 +6046,11 @@ function buildCantonsPreviewHTML() {
           : '<div class="fiche-sub" style="visibility:hidden">-</div><div class="fiche-sub" style="visibility:hidden">-</div>')
       + '</div>'
       + '<span class="fiche-id-chevron">›</span></div>';
-    // Avertissement spécifique aux cantons historiques (ère 1985) qui débordaient
-    // sur des communes voisines : 5 (Puilboreau, St-Xandre, Marsilly, Esnandes),
-    // 8 (Périgny, Dompierre), 9 (L'Houmeau, Lagord, Nieul). Version courte
-    // uniformisée pour la sidebar étroite ; détails dans la fiche (renderCanton).
-    if (String(cantonEra) === '1985' && ['5','8','9'].includes(cid)) {
+    // Avertissement spécifique aux cantons historiques qui débordaient sur des
+    // communes voisines (1985:5/8/9 + 1982:1/6). Version courte uniformisée pour
+    // la sidebar étroite ; détails dans la fiche (renderCanton).
+    const _hlrSidebar = new Set(['1985:5','1985:8','1985:9','1982:1','1982:6']);
+    if (_hlrSidebar.has(String(cantonEra) + ':' + cid)) {
       html += '<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:6px;padding:7px 10px;margin:-4px 0 10px;font-size:0.68rem;color:#7a6000;line-height:1.45">'
         + '<strong>Avertissement</strong> — Partie rochelaise uniquement.'
         + '</div>';
@@ -6633,11 +6637,34 @@ function renderBlocTriptychQuartier(qData,bureauNums,currentCantonId){
   }
   function aggregateBlocs(elecLabel){
     const adjEl=ELECTIONS[elecLabel];
-    const adjSh=adjEl?(currentSheet==='T2'?(adjEl.sheets['T2']||adjEl.sheets['TU']||adjEl.sheets['T1']):(adjEl.sheets['TU']||adjEl.sheets['T1'])):null;
+    // Sheets candidats du scrutin adjacent : on essaie T2 d'abord (si on est en T2),
+    // puis TU, puis T1. Pour un canton sans T2 (ex. élu au 1er tour), on retombera
+    // sur T1 grâce au fallback per-bureau plus bas.
+    const adjShT2 = adjEl && adjEl.sheets ? adjEl.sheets['T2'] : null;
+    const adjShTU = adjEl && adjEl.sheets ? adjEl.sheets['TU'] : null;
+    const adjShT1 = adjEl && adjEl.sheets ? adjEl.sheets['T1'] : null;
+    const adjShPrim = currentSheet==='T2' ? (adjShT2 || adjShTU || adjShT1) : (adjShTU || adjShT1);
+    // Pour les fiches canton : les numéros de bureau ne sont pas comparables d'une ère
+    // à l'autre (ex : bureau 0026 = C4 en 1992 mais C5 en 1985). On doit donc relire
+    // les bureaux du canton à l'ère DE L'ÉLECTION ADJACENTE, pas à l'ère courante.
+    // Pour quartier (currentCantonId absent), on garde le lookup direct par numéro
+    // (les quartiers ne changent généralement pas de territoire à ce point).
+    let targetBureauNums = bureauNums;
+    if (currentCantonId && adjEl && adjEl.my) {
+      const adjEra = String(adjEl.my);
+      const adjYearInfo = BUREAU_INFO[adjEra] || {};
+      const inAdjCanton = Object.entries(adjYearInfo)
+        .filter(([, b]) => String(b.c || '') === String(currentCantonId))
+        .map(([id]) => id);
+      if (inAdjCanton.length) targetBureauNums = inAdjCanton;
+    }
     const totals={};let count=0;
-    bureauNums.forEach(ns2=>{
+    targetBureauNums.forEach(ns2=>{
       let blocs=null;
-      if(adjSh){const d=adjSh[ns2];if(d)blocs=computeBlocsAdj(d,elecLabel);}
+      // Fallback per-bureau : si le bureau n'est pas dans la sheet primaire (T2 typiquement),
+      // on retombe sur T1 (cas : canton sans T2 parce qu'élu au 1er tour).
+      const d = (adjShPrim && adjShPrim[ns2]) || (adjShT1 && adjShT1[ns2]);
+      if (d) blocs = computeBlocsAdj(d, elecLabel);
       if(!blocs){const entry=(HISTORIQUE[ns2]||[]).find(r=>r.l===elecLabel);if(!entry||!entry.b)return;
         blocs=remapBlocs(entry.b);}
       if(!blocs)return;
@@ -7655,10 +7682,17 @@ function _adjacentElections(currentLabel, currentCantonId) {
   // Sur une fiche canton : on saute les scrutins multi-canton qui ne couvrent pas
   // `currentCantonId` (typiquement les partielles n'incluant qu'un autre canton),
   // pour pointer vers le vrai voisin pertinent — sinon le triptyque restait vide.
+  // Garde-fou : on n'autorise pas non plus de navigation entre ères canton
+  // différentes (my_canton). Ex. Cantonales 1985 (carte 9 cantons) ↔ Cantonales
+  // 1982 (carte 6 cantons) sont des univers cantonaux incompatibles → pas de
+  // lien triptyque entre les deux. Aligné sur tools/build-scrutins.js.
+  const curCantonEra = String(curEl.my_canton || '');
   const hasCanton = function(l) {
     if (!currentCantonId) return true;
     const e = ELECTIONS[l];
-    if (!e || !e.par_canton) return true;
+    if (!e) return true;
+    if (curCantonEra && String(e.my_canton || '') !== curCantonEra) return false;
+    if (!e.par_canton) return true;
     return !!e.par_canton[currentCantonId];
   };
   return {
@@ -8033,17 +8067,20 @@ function renderCanton(){
     + '</div>'
     + '</div>'
     + '</div>';
-  // Avertissement spécifique aux cantons historiques (ère 1985) qui débordaient
-  // sur les communes voisines. Les chiffres affichés ne couvrent que la partie
-  // rochelaise (bureaux La Rochelle).
-  const _alertes1985 = {
-    '5': 'Le canton La Rochelle-5 (1985) comprenait aussi les communes de Puilboreau, Saint-Xandre, Marsilly et Esnandes. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
-    '8': 'Le canton La Rochelle-8 (1985) comprenait aussi les communes de Périgny et Dompierre-sur-Mer. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
-    '9': 'Le canton La Rochelle-9 (1985) comprenait aussi les communes de L\'Houmeau, Lagord et Nieul-sur-Mer. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
+  // Avertissement spécifique aux cantons historiques qui débordaient sur les
+  // communes voisines. Les chiffres affichés ne couvrent que la partie rochelaise
+  // (bureaux La Rochelle). Clé : "<era_canton>:<cid>".
+  const _alertesHorsLR = {
+    '1985:5': 'Le canton La Rochelle-5 (1985) comprenait aussi les communes de Puilboreau, Saint-Xandre, Marsilly et Esnandes. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
+    '1985:8': 'Le canton La Rochelle-8 (1985) comprenait aussi les communes de Périgny et Dompierre-sur-Mer. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
+    '1985:9': 'Le canton La Rochelle-9 (1985) comprenait aussi les communes de L\'Houmeau, Lagord et Nieul-sur-Mer. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
+    '1982:1': 'Le canton La Rochelle-1 (1982) comprenait aussi les communes de Nieul-sur-Mer, Lagord et L\'Houmeau. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
+    '1982:6': 'Le canton La Rochelle-6 (1982) comprenait aussi les communes d\'Aytré, Angoulins et Châtelaillon-Plage. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
   };
-  if (String(cantonEra) === '1985' && _alertes1985[String(cid)]) {
+  const _alerteKey = String(cantonEra) + ':' + String(cid);
+  if (_alertesHorsLR[_alerteKey]) {
     h += '<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:0.72rem;color:#7a6000;line-height:1.5">'
-      + '<strong>Avertissement</strong> — ' + _alertes1985[String(cid)]
+      + '<strong>Avertissement</strong> — ' + _alertesHorsLR[_alerteKey]
       + '</div>';
   }
   if (totE > 0) {
@@ -8356,9 +8393,10 @@ function renderMapLegend() {
       // donc on remplace margin-bottom par margin-top pour préserver l'espacement.
       const _isMobLeg = window.matchMedia && window.matchMedia('(max-width: 1000px)').matches;
       const _tabsMg = _isMobLeg ? 'margin-top:8px' : 'margin-bottom:6px';
-      // Labels « C N » volontairement très courts pour que tous les cantons (jusqu'à 9
-      // pour les Cantonales 1985-2011) tiennent sur UNE seule ligne. nowrap + flex:1
-      // partagé : chaque bouton prend exactement 1/N de la largeur dispo.
+      // Labels : « Canton N » par défaut ; abrégé en « Ct. N » uniquement si on a
+      // ≥7 cantons (cas Cantonales 1985-2011 avec 9 cantons) pour tenir sur 1 ligne.
+      // nowrap + flex:1 partagé : chaque bouton prend exactement 1/N de la largeur dispo.
+      const _shortLabel = availableCantons.length >= 7;
       cantonTabsHtml = '<div class="leg-canton-tabs" style="display:flex;flex-wrap:nowrap;gap:3px;'+_tabsMg+'">';
       availableCantons.forEach(c => {
         const sel = c === legendCantonFilter;
@@ -8375,7 +8413,7 @@ function renderMapLegend() {
         cantonTabsHtml += '<button'+_dis+_click+_tip+' '
           + 'style="flex:1 1 0;min-width:0;padding:3px 4px;border:1px solid '+_border+';border-radius:4px;'
           + 'background:'+_bg+';color:'+_fg+';cursor:'+_cursor+';'
-          + 'font-size:0.7rem;font-weight:'+(sel?'700':'500')+';">Ct. '+c+'</button>';
+          + 'font-size:0.7rem;font-weight:'+(sel?'700':'500')+';">'+(_shortLabel?('Ct. '+c):('Canton '+c))+'</button>';
       });
       cantonTabsHtml += '</div>';
       // Filtrer shData sur les bureaux du canton sélectionné
@@ -8616,6 +8654,8 @@ function setElection(label){
   } else { currentFeature=null; renderGlobal(); }
   if(document.getElementById('sb-bureau-list').style.display!=='none') renderBureauList();
   if(document.getElementById('sb-quartier-list').style.display!=='none') renderQuartierList();
+  const _elC = document.getElementById('sb-canton-list');
+  if (_elC && _elC.style.display !== 'none' && typeof renderCantonList === 'function') renderCantonList();
   if (typeof writeURLState === 'function') writeURLState();
 }
 
@@ -8647,6 +8687,8 @@ function setSheet(sheet){
   updateAccentColor();
   if(document.getElementById('sb-bureau-list').style.display!=='none') renderBureauList();
   if(document.getElementById('sb-quartier-list').style.display!=='none') renderQuartierList();
+  const _elC2 = document.getElementById('sb-canton-list');
+  if (_elC2 && _elC2.style.display !== 'none' && typeof renderCantonList === 'function') renderCantonList();
   if (typeof writeURLState === 'function') writeURLState();
 }
 

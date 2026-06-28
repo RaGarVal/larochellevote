@@ -349,14 +349,20 @@ function adjacentElections(label, ELECTIONS, ctx, currentCanton) {
   const idx = sorted.findIndex(e => e.label === label);
 
   // Pour une page canton : on cherche le voisin le plus proche dont le par_canton
-  // contient `currentCanton`. Pour les ères modernes (Départementales 2015+),
-  // les cantons sont 1/2/3 (incompatibles avec les anciennes cantonales 1/3/4/5/6/7/8/9)
-  // — dans ce cas on s'arrête au passage de frontière par sécurité (pas de lien
-  // trompeur entre les deux générations).
+  // contient `currentCanton`. Garde-fou supplémentaire : on n'autorise pas de
+  // navigation entre ères canton différentes (my_canton). Ex. Cantonales 1985
+  // (carte canton 1985, 9 cantons) ↔ Cantonales 1982 (carte canton 1982, 6 cantons)
+  // = deux univers cantonaux incompatibles → pas de lien triptyque entre les deux.
+  // Idem 1985 ↔ 2015 (modernes 1/2/3 vs anciens 1-9), géré par le filtre par_canton.
+  const curCantonEra = String(curEl.my_canton || '');
   function hasCanton(neighborLabel) {
     if (!currentCanton) return true;
     const e = ELECTIONS[neighborLabel];
-    if (!e || !e.par_canton) return true;
+    if (!e) return true;
+    // Bloque les voisins d'une autre ère canton (cantonales 1982 isolées des 1985+,
+    // cantonales 1985 sans précédent 1982).
+    if (curCantonEra && String(e.my_canton || '') !== curCantonEra) return false;
+    if (!e.par_canton) return true;
     return !!e.par_canton[currentCanton];
   }
 
@@ -1203,18 +1209,20 @@ function renderHTML(data, opts) {
     return segs;
   }
 
-  // Avertissement canton hors LR (ère 1985 → cantons 5, 8, 9)
+  // Avertissement canton hors LR (cantons historiques qui débordaient sur les
+  // communes voisines). Clé : "<era_canton>:<cid>".
   let cantonWarning = '';
   if (canton) {
     const cantonEra = el.my_canton || '2015';
-    if (cantonEra === '1985') {
-      const warnings = {
-        '5': 'Le canton La Rochelle-5 (1985) comprenait aussi les communes de Puilboreau, Saint-Xandre, Marsilly et Esnandes. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
-        '8': 'Le canton La Rochelle-8 (1985) comprenait aussi les communes de Périgny et Dompierre-sur-Mer. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
-        '9': 'Le canton La Rochelle-9 (1985) comprenait aussi les communes de L\'Houmeau, Lagord et Nieul-sur-Mer. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
-      };
-      if (warnings[canton]) cantonWarning = warnings[canton];
-    }
+    const warnings = {
+      '1985:5': 'Le canton La Rochelle-5 (1985) comprenait aussi les communes de Puilboreau, Saint-Xandre, Marsilly et Esnandes. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
+      '1985:8': 'Le canton La Rochelle-8 (1985) comprenait aussi les communes de Périgny et Dompierre-sur-Mer. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
+      '1985:9': 'Le canton La Rochelle-9 (1985) comprenait aussi les communes de L\'Houmeau, Lagord et Nieul-sur-Mer. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
+      '1982:1': 'Le canton La Rochelle-1 (1982) comprenait aussi les communes de Nieul-sur-Mer, Lagord et L\'Houmeau. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
+      '1982:6': 'Le canton La Rochelle-6 (1982) comprenait aussi les communes d\'Aytré, Angoulins et Châtelaillon-Plage. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
+    };
+    const k = cantonEra + ':' + canton;
+    if (warnings[k]) cantonWarning = warnings[k];
   }
 
   // Date de génération
@@ -1815,6 +1823,28 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 </script>
+
+<!-- Cloudflare Web Analytics — avec opt-out par localStorage (?notrack=1 pour activer l'exclusion) -->
+<script>
+  (function() {
+    try {
+      var url = new URL(location.href);
+      if (url.searchParams.get('notrack') === '1') {
+        localStorage.setItem('lrvote_no_track', '1');
+        url.searchParams.delete('notrack');
+        history.replaceState(null, '', url.pathname + url.search + url.hash);
+        return;
+      }
+      if (localStorage.getItem('lrvote_no_track') === '1') return;
+    } catch(_) {}
+    var s = document.createElement('script');
+    s.defer = true;
+    s.src = 'https://static.cloudflareinsights.com/beacon.min.js';
+    s.setAttribute('data-cf-beacon', '{"token": "65e9e43629c74f448a059b679fcc2484"}');
+    document.head.appendChild(s);
+  })();
+</script>
+<!-- End Cloudflare Web Analytics -->
 
 </body>
 </html>
