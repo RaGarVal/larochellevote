@@ -5642,7 +5642,6 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
         + '<div style="font-size:2.2rem;font-weight:900;color:'+txtCol+';line-height:1">'+scoreHtml+'</div>'
         + diffLine(name, pct, true, align, c, txtCol)
         + '<div style="font-size:0.82rem;color:'+_tc(0.75)+';margin-top:3px">'+voix.toLocaleString('fr-FR')+' voix</div>'
-        + extrRowHtml
         + '<div style="font-size:'+nomSizeC+';font-weight:700;color:'+txtCol+';margin-top:8px">'+(hasBr ? nomInner : nomHtml)+'</div>'
         + (pa ? '<div style="font-size:0.68rem;color:'+_tc(0.7)+';margin-top:3px">'+pa+'</div>' : '')
         + '</div>'
@@ -5728,7 +5727,6 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
         + '<div style="font-size:2.2rem;font-weight:900;color:'+col+';line-height:1">'+pct.toFixed(1)+'<span style="font-size:0.5em;margin-left:0.12em">%</span></div>'
         + diffLine(name, pct, false, align, c)
         + '<div style="font-size:0.82rem;color:var(--text-modal-muted);margin-top:3px">'+voix.toLocaleString('fr-FR')+' voix</div>'
-        + extrRowHtml
         + '<div style="font-size:'+nomSizeC+';font-weight:700;color:var(--text-modal);margin-top:8px">'+(hasBr ? nomInner : nomHtml)+'</div>'
         + (pa ? '<div style="font-size:0.68rem;color:var(--text-modal-muted);margin-top:3px">'+pa+'</div>' : '')
         + '</div>'
@@ -8538,7 +8536,8 @@ function setElection(label){
   const oldEra = String(ELECTIONS[currentElection]?.my || CURRENT_ERA);
   const newEra = String(ELECTIONS[label]?.my || CURRENT_ERA);
   const prevNumero = prevFeature ? numStr(prevFeature) : null;
-  const prevB2026 = prevFeature ? (prevFeature.properties.b2026 || prevNumero) : null;
+  // Les features MAPS_DATA n'ont pas la propriété b2026 — on la résout via BUREAU_CORRESPONDANCES.
+  const prevB2026 = prevFeature ? _resolveB2026FromHist(prevNumero, oldEra) : null;
   currentElection=label; currentFeature=null;
   if (typeof _invalidateExtremesCache === 'function') _invalidateExtremesCache();
   if (preservedBlocSel) {
@@ -8619,25 +8618,32 @@ function setElection(label){
         }
       }
     } else {
-      // Forward : recherche inverse — quels 2026 IDs descendent de prevNumero à oldEra ?
-      // Si prevNumero est un agrégat (ex "0035-37" en 1988), on l'éclate en numéros individuels
-      // pour interroger BUREAU_CORRESPONDANCES (qui ne connaît que les numéros individuels).
-      const prevNumList = (typeof isAggNs === 'function' && isAggNs(prevNumero) && typeof aggNumList === 'function')
-        ? aggNumList(prevNumero).map(n => String(n).padStart(4, '0'))
-        : [prevNumero];
-      const candidates = [];
-      Object.entries(BUREAU_CORRESPONDANCES).forEach(([b26, c]) => {
-        if (!c || typeof c !== 'object') return;
-        const v = c[oldEra];
-        if (v === undefined) return;
-        const ids = Array.isArray(v) ? v.map(r => typeof r==='string'?r:r.id) : [v];
-        if (prevNumList.some(p => ids.includes(p))) candidates.push(b26);
-      });
-      // Préférer le candidat qui partage le numero actuel (continuité d'identité)
-      let target = candidates.includes(prevNumero) ? prevNumero : candidates[0];
-      if (!target) target = prevB2026 || prevNumero;
-      newFeature = gj.features.find(f => f.properties.b2026 === target)
-                || gj.features.find(f => numStr(f) === target);
+      // Forward : même approche que backward, puisque prevB2026 est maintenant
+      // correctement résolu via _resolveB2026FromHist (qui scanne BUREAU_CORRESPONDANCES,
+      // les features de MAPS_DATA n'ayant pas la propriété b2026 pour les ères historiques).
+      // On lookup les bureaux newEra correspondants.
+      const corr = BUREAU_CORRESPONDANCES[prevB2026] || {};
+      const ref = corr[newEra];
+      const targets = ref === undefined ? [prevNumero]
+                    : Array.isArray(ref) ? ref.map(r => typeof r==='string'?r:r.id)
+                    : [ref];
+      // Préférer la cible qui partage le numero actuel (continuité d'identité)
+      const sortedT = targets.includes(prevNumero) ? [prevNumero, ...targets.filter(t=>t!==prevNumero)] : targets;
+      for (const t of sortedT) {
+        newFeature = gj.features.find(f => numStr(f) === t);
+        if (newFeature) break;
+      }
+      // Fallback agrégat (cf. branche backward).
+      if (!newFeature) {
+        for (const f of gj.features) {
+          const ns = numStr(f);
+          if (typeof isAggNs === 'function' && isAggNs(ns)) {
+            const nums = (typeof aggNumList === 'function' ? aggNumList(ns) : [])
+                          .map(n => String(n).padStart(4, '0'));
+            if (sortedT.some(t => nums.includes(t))) { newFeature = f; break; }
+          }
+        }
+      }
     }
   }
 
@@ -14552,7 +14558,11 @@ function randomDiscover() {
     if (overlayTab === 'global' || (!currentFeature && !currentQuartier && !currentCanton)) return true;
     // Mode BUREAU : bureau courant a-t-il des données dans l'une des sheets ?
     if (overlayTab === 'bureau' && currentFeature) {
-      const b2026 = currentFeature.properties.b2026 || numStr(currentFeature);
+      // L'ère du currentFeature = celle de l'élection courante (les features sont
+      // chargées depuis MAPS_DATA[ELECTIONS[currentElection].my]). On résout son
+      // b2026 via _resolveB2026FromHist (les features n'ont pas la propriété b2026).
+      const currentEra = String((ELECTIONS[currentElection] || {}).my || CURRENT_ERA);
+      const b2026 = _resolveB2026FromHist(numStr(currentFeature), currentEra);
       const candidates = bureauNumsInEra(b2026, era);
       for (const tour of tours) {
         for (const ns of candidates) {
