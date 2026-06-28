@@ -585,5 +585,18 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "jean-marc-soubeste+marion-pichot@departementales-2021"
+  },
+  {
+    "date": "2026-06-28",
+    "signature": "bureau|Municipales 2020|T2|0051",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 2,
+    "election": "Municipales 2020",
+    "tour": "T2",
+    "bureau": "0051",
+    "quartier": "Villeneuve-les-Salines",
+    "subtype": null,
+    "candidat": null
   }
 ]
