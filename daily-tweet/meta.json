@@ -1,15 +1,15 @@
 {
-  "date": "2026-06-28",
-  "niveau": "bureau",
-  "niveau_publie": "bureau",
-  "election": "Municipales 2020",
-  "tour": "T2",
-  "bureau": "0051",
-  "quartier": "Villeneuve-les-Salines",
+  "date": "2026-06-29",
+  "niveau": "carte",
+  "niveau_publie": "carte",
+  "election": "Européennes 2004",
+  "tour": "TU",
+  "bureau": null,
+  "quartier": null,
   "canton": null,
-  "subtype": null,
-  "candidat": null,
-  "signature": "bureau|Municipales 2020|T2|0051",
-  "chars": 260,
-  "generated_at": "2026-06-28T06:01:14.462Z"
+  "subtype": "candidat",
+  "candidat": "jo-le-guen@europeennes-2004",
+  "signature": "carte|Européennes 2004|TU|cand:jo-le-guen@europeennes-2004",
+  "chars": 241,
+  "generated_at": "2026-06-29T06:01:57.206Z"
 }
