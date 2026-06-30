@@ -4,6 +4,7 @@
 // scrutin sans date). Format JJ mois YYYY, séparé par tour.
 
 const DATES = {
+  'Présidentielle 1981': { T1: '26 avril 1981',      T2: '10 mai 1981'      },
   'Présidentielle 1988': { T1: '24 avril 1988',      T2: '8 mai 1988'       },
   'Présidentielle 1995': { T1: '23 avril 1995',      T2: '7 mai 1995'       },
   'Présidentielle 2002': { T1: '21 avril 2002',      T2: '5 mai 2002'       },
@@ -11,6 +12,7 @@ const DATES = {
   'Présidentielle 2012': { T1: '22 avril 2012',      T2: '6 mai 2012'       },
   'Présidentielle 2017': { T1: '23 avril 2017',      T2: '7 mai 2017'       },
   'Présidentielle 2022': { T1: '10 avril 2022',      T2: '24 avril 2022'    },
+  'Législatives 1981':   { T1: '14 juin 1981',       T2: '21 juin 1981'     },
   'Législatives 1986':   { TU: '16 mars 1986'        },
   'Législatives 1988':   { T1: '5 juin 1988',        T2: '12 juin 1988'     },
   'Législatives 1993':   { T1: '21 mars 1993',       T2: '28 mars 1993'     },
