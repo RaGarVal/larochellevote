@@ -598,5 +598,31 @@
     "quartier": "Villeneuve-les-Salines",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-06-29",
+    "signature": "carte|Européennes 2004|TU|cand:jo-le-guen@europeennes-2004",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Européennes 2004",
+    "tour": "TU",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "jo-le-guen@europeennes-2004"
+  },
+  {
+    "date": "2026-06-30",
+    "signature": "carte|Législatives 2024|T1|cand:olivier-falorni@legislatives-2024",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Législatives 2024",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "olivier-falorni@legislatives-2024"
   }
 ]
