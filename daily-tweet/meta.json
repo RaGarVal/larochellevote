@@ -1,15 +1,15 @@
 {
-  "date": "2026-06-29",
+  "date": "2026-06-30",
   "niveau": "carte",
   "niveau_publie": "carte",
-  "election": "Européennes 2004",
-  "tour": "TU",
+  "election": "Législatives 2024",
+  "tour": "T1",
   "bureau": null,
   "quartier": null,
   "canton": null,
   "subtype": "candidat",
-  "candidat": "jo-le-guen@europeennes-2004",
-  "signature": "carte|Européennes 2004|TU|cand:jo-le-guen@europeennes-2004",
-  "chars": 241,
-  "generated_at": "2026-06-29T06:01:57.206Z"
+  "candidat": "olivier-falorni@legislatives-2024",
+  "signature": "carte|Législatives 2024|T1|cand:olivier-falorni@legislatives-2024",
+  "chars": 260,
+  "generated_at": "2026-06-30T06:02:01.146Z"
 }
