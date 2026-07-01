@@ -624,5 +624,18 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "olivier-falorni@legislatives-2024"
+  },
+  {
+    "date": "2026-07-01",
+    "signature": "carte|Législatives 2002|T1|cand:maxime-bono@legislatives-2002",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Législatives 2002",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "maxime-bono@legislatives-2002"
   }
 ]

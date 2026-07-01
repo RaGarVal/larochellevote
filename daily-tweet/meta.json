@@ -1,15 +1,15 @@
 {
-  "date": "2026-06-30",
+  "date": "2026-07-01",
   "niveau": "carte",
   "niveau_publie": "carte",
-  "election": "Législatives 2024",
+  "election": "Législatives 2002",
   "tour": "T1",
   "bureau": null,
   "quartier": null,
   "canton": null,
   "subtype": "candidat",
-  "candidat": "olivier-falorni@legislatives-2024",
-  "signature": "carte|Législatives 2024|T1|cand:olivier-falorni@legislatives-2024",
-  "chars": 260,
-  "generated_at": "2026-06-30T06:02:01.146Z"
+  "candidat": "maxime-bono@legislatives-2002",
+  "signature": "carte|Législatives 2002|T1|cand:maxime-bono@legislatives-2002",
+  "chars": 253,
+  "generated_at": "2026-07-01T06:01:46.319Z"
 }
