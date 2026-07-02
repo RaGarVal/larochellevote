@@ -637,5 +637,18 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "maxime-bono@legislatives-2002"
+  },
+  {
+    "date": "2026-07-02",
+    "signature": "bureau|Municipales 1989|TU|0020",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Municipales 1989",
+    "tour": "TU",
+    "bureau": "0020",
+    "quartier": "Centre-ville",
+    "subtype": null,
+    "candidat": null
   }
 ]

@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🏛️ Le 9 juin 2002, pour les législatives (1er tour), Maxime Bono (PS) a obtenu 41,4 % à La Rochelle. 📍 Meilleur score dans le bureau n°6 · Place d'Île-de-France à Port-Neuf.
+🏙️ Le 12 mars 1989, pour les municipales, Michel Crépeau (MRG) arrive en tête avec 39,4 % dans le bureau n°20 · Vieux-port ouest à Centre-ville.
 
-Détails sur https://larochellevote.fr/LRVcarte.html#election=L%C3%A9gislatives+2002&tour=T1&selection=maxime-bono%40legislatives-2002
+Les résultats de ce bureau, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Municipales+1989&bureau=0020

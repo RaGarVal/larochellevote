@@ -1,15 +1,15 @@
 {
-  "date": "2026-07-01",
-  "niveau": "carte",
-  "niveau_publie": "carte",
-  "election": "Législatives 2002",
-  "tour": "T1",
-  "bureau": null,
-  "quartier": null,
+  "date": "2026-07-02",
+  "niveau": "bureau",
+  "niveau_publie": "bureau",
+  "election": "Municipales 1989",
+  "tour": "TU",
+  "bureau": "0020",
+  "quartier": "Centre-ville",
   "canton": null,
-  "subtype": "candidat",
-  "candidat": "maxime-bono@legislatives-2002",
-  "signature": "carte|Législatives 2002|T1|cand:maxime-bono@legislatives-2002",
-  "chars": 253,
-  "generated_at": "2026-07-01T06:01:46.319Z"
+  "subtype": null,
+  "candidat": null,
+  "signature": "bureau|Municipales 1989|TU|0020",
+  "chars": 263,
+  "generated_at": "2026-07-02T06:01:40.453Z"
 }
