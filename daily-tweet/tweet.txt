@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🏙️ Le 12 mars 1989, pour les municipales, Michel Crépeau (MRG) arrive en tête avec 39,4 % dans le bureau n°20 · Vieux-port ouest à Centre-ville.
+👤 Le 10 avril 2022, pour la présidentielle (1er tour), Emmanuel Macron (LREM) arrive en tête avec 42,4 % dans le bureau n°24 · Sécurité sociale à La Genette.
 
-Les résultats de ce bureau, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Municipales+1989&bureau=0020
+Les résultats de ce bureau, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Pr%C3%A9sidentielle+2022&tour=T1&bureau=0024

@@ -1,15 +1,15 @@
 {
-  "date": "2026-07-02",
+  "date": "2026-07-03",
   "niveau": "bureau",
   "niveau_publie": "bureau",
-  "election": "Municipales 1989",
-  "tour": "TU",
-  "bureau": "0020",
-  "quartier": "Centre-ville",
+  "election": "Présidentielle 2022",
+  "tour": "T1",
+  "bureau": "0024",
+  "quartier": "La Genette",
   "canton": null,
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Municipales 1989|TU|0020",
-  "chars": 263,
-  "generated_at": "2026-07-02T06:01:40.453Z"
+  "signature": "bureau|Présidentielle 2022|T1|0024",
+  "chars": 276,
+  "generated_at": "2026-07-03T06:01:47.360Z"
 }
