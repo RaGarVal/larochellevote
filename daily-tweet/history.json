@@ -624,5 +624,44 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "olivier-falorni@legislatives-2024"
+  },
+  {
+    "date": "2026-07-01",
+    "signature": "carte|Législatives 2002|T1|cand:maxime-bono@legislatives-2002",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Législatives 2002",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "maxime-bono@legislatives-2002"
+  },
+  {
+    "date": "2026-07-02",
+    "signature": "bureau|Municipales 1989|TU|0020",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Municipales 1989",
+    "tour": "TU",
+    "bureau": "0020",
+    "quartier": "Centre-ville",
+    "subtype": null,
+    "candidat": null
+  },
+  {
+    "date": "2026-07-03",
+    "signature": "bureau|Présidentielle 2022|T1|0024",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Présidentielle 2022",
+    "tour": "T1",
+    "bureau": "0024",
+    "quartier": "La Genette",
+    "subtype": null,
+    "candidat": null
   }
 ]

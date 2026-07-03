@@ -1,15 +1,15 @@
 {
-  "date": "2026-06-30",
-  "niveau": "carte",
-  "niveau_publie": "carte",
-  "election": "Législatives 2024",
+  "date": "2026-07-03",
+  "niveau": "bureau",
+  "niveau_publie": "bureau",
+  "election": "Présidentielle 2022",
   "tour": "T1",
-  "bureau": null,
-  "quartier": null,
+  "bureau": "0024",
+  "quartier": "La Genette",
   "canton": null,
-  "subtype": "candidat",
-  "candidat": "olivier-falorni@legislatives-2024",
-  "signature": "carte|Législatives 2024|T1|cand:olivier-falorni@legislatives-2024",
-  "chars": 260,
-  "generated_at": "2026-06-30T06:02:01.146Z"
+  "subtype": null,
+  "candidat": null,
+  "signature": "bureau|Présidentielle 2022|T1|0024",
+  "chars": 276,
+  "generated_at": "2026-07-03T06:01:47.360Z"
 }
