@@ -40,6 +40,7 @@ const DATES = {
   'Européennes 2014':    { TU: '25 mai 2014'         },
   'Européennes 2019':    { TU: '26 mai 2019'         },
   'Européennes 2024':    { TU: '9 juin 2024'         },
+  'Référendum 1988':     { TU: '6 novembre 1988'     },
   'Référendum 1992':     { TU: '20 septembre 1992'   },
   'Référendum 2000':     { TU: '24 septembre 2000'   },
   'Référendum 2005':     { TU: '29 mai 2005'         },
