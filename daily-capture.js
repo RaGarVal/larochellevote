@@ -19,7 +19,7 @@
  *   Étage 1 — Troncatures progressives à chaque niveau :
  *     Étape 1 → texte complet
  *     Étape 2 → CTA raccourcie ("Détails sur {url}")
- *     Étape 3 → suffixe " à {quartier}" retiré (bureau + carte uniquement)
+ *     Étape 3 → suffixe " {prep_quartier_court}" retiré (bureau + carte uniquement)
  *     Étape 4 → prénom → initiale (Marielle → M., Marie-Hélène → MH.)
  *
  *   Étage 2 — Si l'étape 4 dépasse encore 280, repli vers le niveau plus large :
@@ -101,21 +101,21 @@ const C = {
   carte_presidentielle:
 `${CHAPEAU}
 
-{emoji} Le {date_election}, pour la {election} {tour}, {prenom_nom} ({parti}) a obtenu {score} % à La Rochelle. 📍 Meilleur score dans le bureau n°{bureau_num} · {denomination} à {quartier}.
+{emoji} Le {date_election}, pour la {election} {tour}, {prenom_nom} ({parti}) a obtenu {score} % à La Rochelle. 📍 Meilleur score dans le bureau n°{bureau_num} · {denomination} {prep_quartier_court}.
 
 Les résultats de ce scrutin, bureau par bureau, sur {site_url}`,
 
   carte_referendum:
 `${CHAPEAU}
 
-{emoji} Le {date_election}, pour le {election}, le {reponse} a obtenu {score} % à La Rochelle. 📍 Meilleur score dans le bureau n°{bureau_num} · {denomination} à {quartier}.
+{emoji} Le {date_election}, pour le {election}, le {reponse} a obtenu {score} % à La Rochelle. 📍 Meilleur score dans le bureau n°{bureau_num} · {denomination} {prep_quartier_court}.
 
 Les résultats de ce scrutin, bureau par bureau, sur {site_url}`,
 
   carte_autres:
 `${CHAPEAU}
 
-{emoji} Le {date_election}, pour les {election} {tour}, {prenom_nom} ({parti}) a obtenu {score} % à La Rochelle. 📍 Meilleur score dans le bureau n°{bureau_num} · {denomination} à {quartier}.
+{emoji} Le {date_election}, pour les {election} {tour}, {prenom_nom} ({parti}) a obtenu {score} % à La Rochelle. 📍 Meilleur score dans le bureau n°{bureau_num} · {denomination} {prep_quartier_court}.
 
 Les résultats de ce scrutin, bureau par bureau, sur {site_url}`,
 
@@ -135,21 +135,21 @@ Les résultats de ce scrutin, bureau par bureau, sur {site_url}`,
   bureau_presidentielle:
 `${CHAPEAU}
 
-{emoji} Le {date_election}, pour la {election} {tour}, {prenom_nom} ({parti}) arrive en tête avec {score} % dans le bureau n°{bureau_num} · {denomination} à {quartier}.
+{emoji} Le {date_election}, pour la {election} {tour}, {prenom_nom} ({parti}) arrive en tête avec {score} % dans le bureau n°{bureau_num} · {denomination} {prep_quartier_court}.
 
 Les résultats de ce bureau, et tous les autres, sur {site_url}`,
 
   bureau_referendum:
 `${CHAPEAU}
 
-{emoji} Le {date_election}, pour le {election}, le {reponse} est arrivé en tête avec {score} % dans le bureau n°{bureau_num} · {denomination} à {quartier}.
+{emoji} Le {date_election}, pour le {election}, le {reponse} est arrivé en tête avec {score} % dans le bureau n°{bureau_num} · {denomination} {prep_quartier_court}.
 
 Les résultats de ce bureau, et tous les autres, sur {site_url}`,
 
   bureau_autres:
 `${CHAPEAU}
 
-{emoji} Le {date_election}, pour les {election} {tour}, {prenom_nom} ({parti}) arrive en tête avec {score} % dans le bureau n°{bureau_num} · {denomination} à {quartier}.
+{emoji} Le {date_election}, pour les {election} {tour}, {prenom_nom} ({parti}) arrive en tête avec {score} % dans le bureau n°{bureau_num} · {denomination} {prep_quartier_court}.
 
 Les résultats de ce bureau, et tous les autres, sur {site_url}`,
 
@@ -159,21 +159,21 @@ Les résultats de ce bureau, et tous les autres, sur {site_url}`,
   quartier_presidentielle:
 `${CHAPEAU}
 
-{emoji} Le {date_election}, pour la {election} {tour}, {prenom_nom} ({parti}) arrive en tête avec {score} % dans le quartier de {quartier}.
+{emoji} Le {date_election}, pour la {election} {tour}, {prenom_nom} ({parti}) arrive en tête avec {score} % {prep_quartier_long}.
 
 Les résultats de ce quartier, et tous les autres, sur {site_url}`,
 
   quartier_referendum:
 `${CHAPEAU}
 
-{emoji} Le {date_election}, pour le {election}, le {reponse} est arrivé en tête avec {score} % dans le quartier de {quartier}.
+{emoji} Le {date_election}, pour le {election}, le {reponse} est arrivé en tête avec {score} % {prep_quartier_long}.
 
 Les résultats de ce quartier, et tous les autres, sur {site_url}`,
 
   quartier_autres:
 `${CHAPEAU}
 
-{emoji} Le {date_election}, pour les {election} {tour}, {prenom_nom} ({parti}) arrive en tête avec {score} % dans le quartier de {quartier}.
+{emoji} Le {date_election}, pour les {election} {tour}, {prenom_nom} ({parti}) arrive en tête avec {score} % {prep_quartier_long}.
 
 Les résultats de ce quartier, et tous les autres, sur {site_url}`,
 
@@ -322,6 +322,24 @@ function subtypeOfHistoryEntry(e) {
 
 function fillCaneva(tpl, vars) {
   return tpl.replace(/\{(\w+)\}/g, (_, k) => vars[k] !== undefined ? vars[k] : '');
+}
+
+// Préposition adaptée pour mentionner un quartier rochelais dans un tweet.
+// mode='short' → forme suffixe attaché à un bureau (ex. "… · Marché à Fétilly").
+// mode='long'  → forme centrale d'une fiche quartier (ex. "arrive en tête dans le quartier de Fétilly").
+// Cas particuliers d'article : "Centre-ville" et "Les Minimes" ne prennent pas
+// "à" (produit "à Centre-ville" / "à Les Minimes") — on override pour "dans le
+// Centre-ville" et "aux Minimes". Étendable si d'autres quartiers posent souci.
+const QUARTIER_OVERRIDES = {
+  'Centre-ville':      { short: 'dans le Centre-ville',           long: 'dans le Centre-ville' },
+  'Les Minimes':       { short: 'aux Minimes',                    long: 'aux Minimes' },
+  'Laleu/La Pallice':  { short: 'à Laleu / La Pallice',           long: 'dans le quartier de Laleu / La Pallice' },
+};
+function prepQuartier(q, mode) {
+  if (!q) return '';
+  const o = QUARTIER_OVERRIDES[q];
+  if (o) return o[mode] || o.short;
+  return mode === 'long' ? 'dans le quartier de ' + q : 'à ' + q;
 }
 
 function formatPct(val) {
@@ -1124,6 +1142,8 @@ console.log(rdv
     bureau_num:   elecData.bestBureau ? String(parseInt(elecData.bestBureau)) : '?',
     denomination: bestBInfo.denomination || '',
     quartier:     bestBInfo.quartier || '',
+    prep_quartier_court: prepQuartier(bestBInfo.quartier || '', 'short'),
+    prep_quartier_long:  prepQuartier(bestBInfo.quartier || '', 'long'),
   };
 
   // Info bureau sélectionné (pour fiche bureau) — idem, ère de l'élection
@@ -1132,6 +1152,8 @@ console.log(rdv
     bureau_num:   bureau ? String(parseInt(bureau)) : '?',
     denomination: bInfo.denomination || '',
     quartier:     bInfo.quartier || '',
+    prep_quartier_court: prepQuartier(bInfo.quartier || '', 'short'),
+    prep_quartier_long:  prepQuartier(bInfo.quartier || '', 'long'),
   };
 
   // Construit l'URL profonde vers la vue exacte du tweet (carte/bureau/quartier/canton/global)
@@ -1187,7 +1209,12 @@ console.log(rdv
       extra  = { ...bureauVars };
     } else if (niv === 'quartier') {
       winner = elecData.quartierWinner;
-      extra  = { quartier: quartier || bInfo.quartier || '?' };
+      const q = quartier || bInfo.quartier || '?';
+      extra  = {
+        quartier: q,
+        prep_quartier_court: prepQuartier(q, 'short'),
+        prep_quartier_long:  prepQuartier(q, 'long'),
+      };
     } else if (niv === 'canton') {
       winner = elecData.cantonWinner;
       // Le nom du canton (ex. "La Rochelle-1") vient de cantonsModernes calculé plus haut.
@@ -1225,11 +1252,11 @@ console.log(rdv
     if (step >= 2) {
       tpl = tpl.replace(/\n\nLes résultats de [^\n]+sur \{site_url\}$/, '\n\nDétails sur {site_url}');
     }
-    // Étape 3 : retire le suffixe " à {quartier}" (uniquement bureau et carte,
+    // Étape 3 : retire le suffixe " {prep_quartier_court}" (uniquement bureau et carte,
     // qui ont la structure "n°X · DENOM à QUARTIER"). N/A pour quartier/canton/
     // global où l'unité géo EST le sujet du tweet.
     if (step >= 3 && (niv === 'bureau' || niv === 'carte')) {
-      tpl = tpl.replace(' · {denomination} à {quartier}', ' · {denomination}');
+      tpl = tpl.replace(' · {denomination} {prep_quartier_court}', ' · {denomination}');
     }
 
     const ci = await candInfo(winner?.cand);

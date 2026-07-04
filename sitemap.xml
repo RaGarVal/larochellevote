@@ -626,6 +626,18 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://larochellevote.fr/scrutins/legislatives-1981.html</loc>
+    <lastmod>2026-07-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://larochellevote.fr/scrutins/presidentielle-1981.html</loc>
+    <lastmod>2026-07-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://larochellevote.fr/scrutins/referendum-1988.html</loc>
     <lastmod>2026-07-03</lastmod>
     <changefreq>monthly</changefreq>
