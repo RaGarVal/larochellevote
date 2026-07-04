@@ -663,5 +663,18 @@
     "quartier": "La Genette",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-07-04",
+    "signature": "carte|Régionales 2010|T1|cand:dominique-bussereau@regionales-2010",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Régionales 2010",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "dominique-bussereau@regionales-2010"
   }
 ]
