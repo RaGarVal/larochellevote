@@ -1,15 +1,15 @@
 {
-  "date": "2026-07-03",
-  "niveau": "bureau",
-  "niveau_publie": "bureau",
-  "election": "Présidentielle 2022",
+  "date": "2026-07-04",
+  "niveau": "carte",
+  "niveau_publie": "carte",
+  "election": "Régionales 2010",
   "tour": "T1",
-  "bureau": "0024",
-  "quartier": "La Genette",
+  "bureau": null,
+  "quartier": null,
   "canton": null,
-  "subtype": null,
-  "candidat": null,
-  "signature": "bureau|Présidentielle 2022|T1|0024",
-  "chars": 276,
-  "generated_at": "2026-07-03T06:01:47.360Z"
+  "subtype": "candidat",
+  "candidat": "dominique-bussereau@regionales-2010",
+  "signature": "carte|Régionales 2010|T1|cand:dominique-bussereau@regionales-2010",
+  "chars": 258,
+  "generated_at": "2026-07-04T06:01:13.759Z"
 }
