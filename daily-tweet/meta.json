@@ -1,15 +1,15 @@
 {
-  "date": "2026-07-04",
-  "niveau": "carte",
-  "niveau_publie": "carte",
-  "election": "Régionales 2010",
-  "tour": "T1",
-  "bureau": null,
-  "quartier": null,
+  "date": "2026-07-05",
+  "niveau": "bureau",
+  "niveau_publie": "bureau",
+  "election": "Européennes 2019",
+  "tour": "TU",
+  "bureau": "0040",
+  "quartier": "Les Minimes",
   "canton": null,
-  "subtype": "candidat",
-  "candidat": "dominique-bussereau@regionales-2010",
-  "signature": "carte|Régionales 2010|T1|cand:dominique-bussereau@regionales-2010",
-  "chars": 258,
-  "generated_at": "2026-07-04T06:01:13.759Z"
+  "subtype": null,
+  "candidat": null,
+  "signature": "bureau|Européennes 2019|TU|0040",
+  "chars": 263,
+  "generated_at": "2026-07-05T06:01:34.480Z"
 }

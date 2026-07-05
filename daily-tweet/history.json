@@ -676,5 +676,18 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "dominique-bussereau@regionales-2010"
+  },
+  {
+    "date": "2026-07-05",
+    "signature": "bureau|Européennes 2019|TU|0040",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Européennes 2019",
+    "tour": "TU",
+    "bureau": "0040",
+    "quartier": "Les Minimes",
+    "subtype": null,
+    "candidat": null
   }
 ]
