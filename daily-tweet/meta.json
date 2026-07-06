@@ -1,15 +1,15 @@
 {
-  "date": "2026-07-05",
-  "niveau": "bureau",
-  "niveau_publie": "bureau",
-  "election": "Européennes 2019",
+  "date": "2026-07-06",
+  "niveau": "quartier",
+  "niveau_publie": "quartier",
+  "election": "Régionales 1986",
   "tour": "TU",
-  "bureau": "0040",
-  "quartier": "Les Minimes",
+  "bureau": null,
+  "quartier": "Centre-ville",
   "canton": null,
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Européennes 2019|TU|0040",
-  "chars": 263,
-  "generated_at": "2026-07-05T06:01:34.480Z"
+  "signature": "quartier|Régionales 1986|TU|Centre-ville",
+  "chars": 233,
+  "generated_at": "2026-07-06T06:01:47.868Z"
 }

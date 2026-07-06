@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🇪🇺 Le 26 mai 2019, pour les européennes, Nathalie Loiseau (LREM) arrive en tête avec 31,8 % dans le bureau n°40 · Port des Minimes aux Minimes.
+🏙️ Le 16 mars 1986, pour les régionales, François Blaizot (UDF) arrive en tête avec 39,3 % dans le Centre-ville.
 
-Les résultats de ce bureau, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Europ%C3%A9ennes+2019&bureau=0040
+Les résultats de ce quartier, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=R%C3%A9gionales+1986&quartier=Centre-ville

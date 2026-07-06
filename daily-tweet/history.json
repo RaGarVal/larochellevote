@@ -689,5 +689,18 @@
     "quartier": "Les Minimes",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-07-06",
+    "signature": "quartier|Régionales 1986|TU|Centre-ville",
+    "niveau": "quartier",
+    "niveau_publie": "quartier",
+    "truncation_step": 1,
+    "election": "Régionales 1986",
+    "tour": "TU",
+    "bureau": null,
+    "quartier": "Centre-ville",
+    "subtype": null,
+    "candidat": null
   }
 ]
