@@ -702,5 +702,18 @@
     "quartier": "Centre-ville",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-07-07",
+    "signature": "carte|Législatives 2024|T2|cand:emma-chauveau@legislatives-2024",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 1,
+    "election": "Législatives 2024",
+    "tour": "T2",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "emma-chauveau@legislatives-2024"
   }
 ]
