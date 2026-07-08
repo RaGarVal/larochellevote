@@ -1,15 +1,15 @@
 {
-  "date": "2026-07-07",
+  "date": "2026-07-08",
   "niveau": "carte",
   "niveau_publie": "carte",
-  "election": "Législatives 2024",
-  "tour": "T2",
+  "election": "Présidentielle 2022",
+  "tour": "T1",
   "bureau": null,
   "quartier": null,
   "canton": null,
   "subtype": "candidat",
-  "candidat": "emma-chauveau@legislatives-2024",
-  "signature": "carte|Législatives 2024|T2|cand:emma-chauveau@legislatives-2024",
-  "chars": 277,
-  "generated_at": "2026-07-07T06:01:38.247Z"
+  "candidat": "emmanuel-macron@presidentielle-2022",
+  "signature": "carte|Présidentielle 2022|T1|cand:emmanuel-macron@presidentielle-2022",
+  "chars": 249,
+  "generated_at": "2026-07-08T06:01:30.505Z"
 }
