@@ -728,5 +728,18 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "emmanuel-macron@presidentielle-2022"
+  },
+  {
+    "date": "2026-07-09",
+    "signature": "bureau|Législatives 1981|T1|0015",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Législatives 1981",
+    "tour": "T1",
+    "bureau": "0015",
+    "quartier": "Laleu/La Pallice",
+    "subtype": null,
+    "candidat": null
   }
 ]

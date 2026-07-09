@@ -1,15 +1,15 @@
 {
-  "date": "2026-07-08",
-  "niveau": "carte",
-  "niveau_publie": "carte",
-  "election": "Présidentielle 2022",
+  "date": "2026-07-09",
+  "niveau": "bureau",
+  "niveau_publie": "bureau",
+  "election": "Législatives 1981",
   "tour": "T1",
-  "bureau": null,
-  "quartier": null,
+  "bureau": "0015",
+  "quartier": "Laleu/La Pallice",
   "canton": null,
-  "subtype": "candidat",
-  "candidat": "emmanuel-macron@presidentielle-2022",
-  "signature": "carte|Présidentielle 2022|T1|cand:emmanuel-macron@presidentielle-2022",
-  "chars": 249,
-  "generated_at": "2026-07-08T06:01:30.505Z"
+  "subtype": null,
+  "candidat": null,
+  "signature": "bureau|Législatives 1981|T1|0015",
+  "chars": 277,
+  "generated_at": "2026-07-09T06:01:55.617Z"
 }
