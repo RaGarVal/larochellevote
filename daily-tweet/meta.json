@@ -1,15 +1,15 @@
 {
-  "date": "2026-07-09",
+  "date": "2026-07-10",
   "niveau": "bureau",
   "niveau_publie": "bureau",
-  "election": "Législatives 1981",
-  "tour": "T1",
-  "bureau": "0015",
-  "quartier": "Laleu/La Pallice",
+  "election": "Régionales 1998",
+  "tour": "TU",
+  "bureau": "0011",
+  "quartier": "Mireuil",
   "canton": null,
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Législatives 1981|T1|0015",
-  "chars": 277,
-  "generated_at": "2026-07-09T06:01:55.617Z"
+  "signature": "bureau|Régionales 1998|TU|0011",
+  "chars": 270,
+  "generated_at": "2026-07-10T06:01:22.996Z"
 }

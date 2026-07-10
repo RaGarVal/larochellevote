@@ -741,5 +741,18 @@
     "quartier": "Laleu/La Pallice",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-07-10",
+    "signature": "bureau|Régionales 1998|TU|0011",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Régionales 1998",
+    "tour": "TU",
+    "bureau": "0011",
+    "quartier": "Mireuil",
+    "subtype": null,
+    "candidat": null
   }
 ]
