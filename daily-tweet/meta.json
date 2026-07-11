@@ -1,15 +1,15 @@
 {
-  "date": "2026-07-10",
-  "niveau": "bureau",
-  "niveau_publie": "bureau",
-  "election": "Régionales 1998",
-  "tour": "TU",
-  "bureau": "0011",
-  "quartier": "Mireuil",
+  "date": "2026-07-11",
+  "niveau": "carte",
+  "niveau_publie": "carte",
+  "election": "Législatives 1997",
+  "tour": "T1",
+  "bureau": null,
+  "quartier": null,
   "canton": null,
-  "subtype": null,
-  "candidat": null,
-  "signature": "bureau|Régionales 1998|TU|0011",
-  "chars": 270,
-  "generated_at": "2026-07-10T06:01:22.996Z"
+  "subtype": "candidat",
+  "candidat": "michel-crepeau@legislatives-1997",
+  "signature": "carte|Législatives 1997|T1|cand:michel-crepeau@legislatives-1997",
+  "chars": 275,
+  "generated_at": "2026-07-11T06:01:02.730Z"
 }

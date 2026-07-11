@@ -754,5 +754,18 @@
     "quartier": "Mireuil",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-07-11",
+    "signature": "carte|Législatives 1997|T1|cand:michel-crepeau@legislatives-1997",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Législatives 1997",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "michel-crepeau@legislatives-1997"
   }
 ]
