@@ -767,5 +767,18 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "michel-crepeau@legislatives-1997"
+  },
+  {
+    "date": "2026-07-12",
+    "signature": "carte|Européennes 2004|TU|cand:roselyne-bachelot@europeennes-2004",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Européennes 2004",
+    "tour": "TU",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "roselyne-bachelot@europeennes-2004"
   }
 ]
