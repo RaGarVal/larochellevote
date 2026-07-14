@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-👤 Le 10 avril 2022, pour la présidentielle (1er tour), Jean-Luc Mélenchon (LFI) arrive en tête avec 29,8 % dans le bureau n°6 · Place d'Île-de-France à Port-Neuf.
+👤 Le 24 avril 1988, pour la présidentielle (1er tour), François Mitterrand (PS) arrive en tête avec 36,1 % dans le quartier de Saint-Maurice.
 
-Détails sur https://larochellevote.fr/LRVcarte.html#election=Pr%C3%A9sidentielle+2022&tour=T1&bureau=0006
+Les résultats de ce quartier, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Pr%C3%A9sidentielle+1988&tour=T1&quartier=Saint-Maurice

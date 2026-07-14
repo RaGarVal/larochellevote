@@ -1,15 +1,15 @@
 {
-  "date": "2026-07-13",
-  "niveau": "bureau",
-  "niveau_publie": "bureau",
-  "election": "Présidentielle 2022",
+  "date": "2026-07-14",
+  "niveau": "quartier",
+  "niveau_publie": "quartier",
+  "election": "Présidentielle 1988",
   "tour": "T1",
-  "bureau": "0006",
-  "quartier": "Port-Neuf",
+  "bureau": null,
+  "quartier": "Saint-Maurice",
   "canton": null,
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Présidentielle 2022|T1|0006",
-  "chars": 241,
-  "generated_at": "2026-07-13T06:01:33.956Z"
+  "signature": "quartier|Présidentielle 1988|T1|Saint-Maurice",
+  "chars": 262,
+  "generated_at": "2026-07-14T06:01:58.406Z"
 }
