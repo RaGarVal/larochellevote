@@ -1,15 +1,15 @@
 {
-  "date": "2026-07-14",
-  "niveau": "quartier",
-  "niveau_publie": "quartier",
-  "election": "Présidentielle 1988",
-  "tour": "T1",
-  "bureau": null,
-  "quartier": "Saint-Maurice",
+  "date": "2026-07-15",
+  "niveau": "bureau",
+  "niveau_publie": "bureau",
+  "election": "Européennes 1999",
+  "tour": "TU",
+  "bureau": "0037",
+  "quartier": "Tasdon/Les Minimes",
   "canton": null,
   "subtype": null,
   "candidat": null,
-  "signature": "quartier|Présidentielle 1988|T1|Saint-Maurice",
-  "chars": 262,
-  "generated_at": "2026-07-14T06:01:58.406Z"
+  "signature": "bureau|Européennes 1999|TU|0037",
+  "chars": 245,
+  "generated_at": "2026-07-15T06:02:01.068Z"
 }

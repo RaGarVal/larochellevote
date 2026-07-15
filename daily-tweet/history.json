@@ -806,5 +806,18 @@
     "quartier": "Saint-Maurice",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-07-15",
+    "signature": "bureau|Européennes 1999|TU|0037",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 2,
+    "election": "Européennes 1999",
+    "tour": "TU",
+    "bureau": "0037",
+    "quartier": "Tasdon/Les Minimes",
+    "subtype": null,
+    "candidat": null
   }
 ]
