@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🇪🇺 Le 13 juin 1999, pour les européennes, François Hollande (PS) arrive en tête avec 32,8 % dans le bureau n°37 · Ville-en-Bois–Place du Canton à Tasdon/Les Minimes.
+🇪🇺 Le 26 mai 2019, pour les européennes, Nathalie Loiseau (LREM) arrive en tête avec 22,6 % dans le canton de La Rochelle-1.
 
-Détails sur https://larochellevote.fr/LRVcarte.html#election=Europ%C3%A9ennes+1999&bureau=0037
+Les résultats de ce canton, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Europ%C3%A9ennes+2019&canton=1

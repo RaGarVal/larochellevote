@@ -1,15 +1,15 @@
 {
-  "date": "2026-07-15",
-  "niveau": "bureau",
-  "niveau_publie": "bureau",
-  "election": "Européennes 1999",
+  "date": "2026-07-16",
+  "niveau": "canton",
+  "niveau_publie": "canton",
+  "election": "Européennes 2019",
   "tour": "TU",
-  "bureau": "0037",
-  "quartier": "Tasdon/Les Minimes",
-  "canton": null,
+  "bureau": null,
+  "quartier": null,
+  "canton": "1",
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Européennes 1999|TU|0037",
-  "chars": 245,
-  "generated_at": "2026-07-15T06:02:01.068Z"
+  "signature": "canton|Européennes 2019|TU|1",
+  "chars": 244,
+  "generated_at": "2026-07-16T06:01:05.405Z"
 }
