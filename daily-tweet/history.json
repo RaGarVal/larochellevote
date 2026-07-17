@@ -832,5 +832,18 @@
     "quartier": null,
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-07-17",
+    "signature": "carte|Présidentielle 2022|T1|cand:marine-le-pen@presidentielle-2022",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Présidentielle 2022",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "marine-le-pen@presidentielle-2022"
   }
 ]
