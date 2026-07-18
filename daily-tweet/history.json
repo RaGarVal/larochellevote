@@ -845,5 +845,18 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "marine-le-pen@presidentielle-2022"
+  },
+  {
+    "date": "2026-07-18",
+    "signature": "bureau|Présidentielle 2007|T1|0004",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Présidentielle 2007",
+    "tour": "T1",
+    "bureau": "0004",
+    "quartier": "Saint-Maurice",
+    "subtype": null,
+    "candidat": null
   }
 ]

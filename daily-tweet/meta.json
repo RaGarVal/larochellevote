@@ -1,15 +1,15 @@
 {
-  "date": "2026-07-17",
-  "niveau": "carte",
-  "niveau_publie": "carte",
-  "election": "Présidentielle 2022",
+  "date": "2026-07-18",
+  "niveau": "bureau",
+  "niveau_publie": "bureau",
+  "election": "Présidentielle 2007",
   "tour": "T1",
-  "bureau": null,
-  "quartier": null,
+  "bureau": "0004",
+  "quartier": "Saint-Maurice",
   "canton": null,
-  "subtype": "candidat",
-  "candidat": "marine-le-pen@presidentielle-2022",
-  "signature": "carte|Présidentielle 2022|T1|cand:marine-le-pen@presidentielle-2022",
-  "chars": 258,
-  "generated_at": "2026-07-17T06:01:07.306Z"
+  "subtype": null,
+  "candidat": null,
+  "signature": "bureau|Présidentielle 2007|T1|0004",
+  "chars": 276,
+  "generated_at": "2026-07-18T06:01:16.617Z"
 }
