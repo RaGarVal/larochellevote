@@ -858,5 +858,18 @@
     "quartier": "Saint-Maurice",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-07-19",
+    "signature": "carte|Municipales 2026|T1|cand:thibaut-guiraud@municipales-2026",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Municipales 2026",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "thibaut-guiraud@municipales-2026"
   }
 ]
