@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🏙️ Le 15 mars 2026, pour les municipales (1er tour), Thibaut Guiraud (DVG) a obtenu 15,6 % à La Rochelle. 📍 Meilleur score dans le bureau n°23 · Coligny à La Genette.
+🏙️ Le 15 mars 2020, pour les municipales (1er tour), Jean-François Fountaine (DVG) arrive en tête avec 38,2 % dans le bureau n°21 · Église de La Genette à La Genette.
 
-Détails sur https://larochellevote.fr/LRVcarte.html#election=Municipales+2026&tour=T1&selection=thibaut-guiraud%40municipales-2026
+Détails sur https://larochellevote.fr/LRVcarte.html#election=Municipales+2020&tour=T1&bureau=0021

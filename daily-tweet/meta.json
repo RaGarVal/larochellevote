@@ -1,15 +1,15 @@
 {
-  "date": "2026-07-19",
-  "niveau": "carte",
-  "niveau_publie": "carte",
-  "election": "Municipales 2026",
+  "date": "2026-07-20",
+  "niveau": "bureau",
+  "niveau_publie": "bureau",
+  "election": "Municipales 2020",
   "tour": "T1",
-  "bureau": null,
-  "quartier": null,
+  "bureau": "0021",
+  "quartier": "La Genette",
   "canton": null,
-  "subtype": "candidat",
-  "candidat": "thibaut-guiraud@municipales-2026",
-  "signature": "carte|Municipales 2026|T1|cand:thibaut-guiraud@municipales-2026",
-  "chars": 246,
-  "generated_at": "2026-07-19T06:01:07.725Z"
+  "subtype": null,
+  "candidat": null,
+  "signature": "bureau|Municipales 2020|T1|0021",
+  "chars": 245,
+  "generated_at": "2026-07-20T06:01:34.696Z"
 }

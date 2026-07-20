@@ -871,5 +871,18 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "thibaut-guiraud@municipales-2026"
+  },
+  {
+    "date": "2026-07-20",
+    "signature": "bureau|Municipales 2020|T1|0021",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 2,
+    "election": "Municipales 2020",
+    "tour": "T1",
+    "bureau": "0021",
+    "quartier": "La Genette",
+    "subtype": null,
+    "candidat": null
   }
 ]
