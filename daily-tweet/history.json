@@ -884,5 +884,18 @@
     "quartier": "La Genette",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-07-21",
+    "signature": "carte|Présidentielle 2002|T1",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Présidentielle 2002",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "gagnants",
+    "candidat": null
   }
 ]
