@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-👤 Le 21 avril 2002, pour la présidentielle (1er tour), Lionel Jospin (PS) a obtenu 22,0 % à La Rochelle. 📍 Meilleur score dans le bureau n°15 · Grandes-Varennes–Le Parco à Mireuil.
+🇪🇺 Le 13 juin 1999, pour les européennes, François Hollande (PS) arrive en tête avec 21,3 % dans le bureau n°33 · Place du marché–Porte-Royale dans le Centre-ville.
 
-Détails sur https://larochellevote.fr/LRVcarte.html#election=Pr%C3%A9sidentielle+2002&tour=T1
+Détails sur https://larochellevote.fr/LRVcarte.html#election=Europ%C3%A9ennes+1999&bureau=0033

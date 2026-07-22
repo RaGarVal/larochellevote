@@ -1,15 +1,15 @@
 {
-  "date": "2026-07-21",
-  "niveau": "carte",
-  "niveau_publie": "carte",
-  "election": "Présidentielle 2002",
-  "tour": "T1",
-  "bureau": null,
-  "quartier": null,
+  "date": "2026-07-22",
+  "niveau": "bureau",
+  "niveau_publie": "bureau",
+  "election": "Européennes 1999",
+  "tour": "TU",
+  "bureau": "0033",
+  "quartier": "Centre-ville",
   "canton": null,
-  "subtype": "gagnants",
+  "subtype": null,
   "candidat": null,
-  "signature": "carte|Présidentielle 2002|T1",
-  "chars": 260,
-  "generated_at": "2026-07-21T06:01:18.087Z"
+  "signature": "bureau|Européennes 1999|TU|0033",
+  "chars": 244,
+  "generated_at": "2026-07-22T06:01:26.774Z"
 }
