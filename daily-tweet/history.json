@@ -910,5 +910,18 @@
     "quartier": "Centre-ville",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-07-23",
+    "signature": "bureau|Municipales 1983|TU|0041",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Municipales 1983",
+    "tour": "TU",
+    "bureau": "0041",
+    "quartier": "Tasdon/Les Minimes",
+    "subtype": null,
+    "candidat": null
   }
 ]

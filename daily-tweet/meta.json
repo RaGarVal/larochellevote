@@ -1,15 +1,15 @@
 {
-  "date": "2026-07-22",
+  "date": "2026-07-23",
   "niveau": "bureau",
   "niveau_publie": "bureau",
-  "election": "Européennes 1999",
+  "election": "Municipales 1983",
   "tour": "TU",
-  "bureau": "0033",
-  "quartier": "Centre-ville",
+  "bureau": "0041",
+  "quartier": "Tasdon/Les Minimes",
   "canton": null,
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Européennes 1999|TU|0033",
-  "chars": 244,
-  "generated_at": "2026-07-22T06:01:26.774Z"
+  "signature": "bureau|Municipales 1983|TU|0041",
+  "chars": 273,
+  "generated_at": "2026-07-23T06:01:20.069Z"
 }

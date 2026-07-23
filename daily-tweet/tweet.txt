@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🇪🇺 Le 13 juin 1999, pour les européennes, François Hollande (PS) arrive en tête avec 21,3 % dans le bureau n°33 · Place du marché–Porte-Royale dans le Centre-ville.
+🏙️ Le 6 mars 1983, pour les municipales, Michel Crépeau (MRG) arrive en tête avec 72,1 % dans le bureau n°41 · Bongraine–Les Minimes à Tasdon/Les Minimes.
 
-Détails sur https://larochellevote.fr/LRVcarte.html#election=Europ%C3%A9ennes+1999&bureau=0033
+Les résultats de ce bureau, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Municipales+1983&bureau=0041
