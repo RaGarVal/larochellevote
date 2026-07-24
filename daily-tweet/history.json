@@ -923,5 +923,18 @@
     "quartier": "Tasdon/Les Minimes",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-07-24",
+    "signature": "carte|Présidentielle 1988|T1|cand:jacques-chirac@presidentielle-1988",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Présidentielle 1988",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "jacques-chirac@presidentielle-1988"
   }
 ]
