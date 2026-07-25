@@ -1,15 +1,15 @@
 {
-  "date": "2026-07-04",
+  "date": "2026-07-25",
   "niveau": "carte",
   "niveau_publie": "carte",
-  "election": "Régionales 2010",
-  "tour": "T1",
+  "election": "Municipales 1995",
+  "tour": "TU",
   "bureau": null,
   "quartier": null,
   "canton": null,
   "subtype": "candidat",
-  "candidat": "dominique-bussereau@regionales-2010",
-  "signature": "carte|Régionales 2010|T1|cand:dominique-bussereau@regionales-2010",
-  "chars": 258,
-  "generated_at": "2026-07-04T06:01:13.759Z"
+  "candidat": "michel-crepeau@municipales-1995",
+  "signature": "carte|Municipales 1995|TU|cand:michel-crepeau@municipales-1995",
+  "chars": 248,
+  "generated_at": "2026-07-25T06:00:54.952Z"
 }
