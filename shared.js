@@ -822,6 +822,30 @@ function getCantonOfElection(electionLabel) {
   });
 })();
 
+// ───────────────────────────────────────────────────────────────
+//  HELPER QUARTIER — parse le champ `q` d'un bureau vers ses quartiers réels.
+// ───────────────────────────────────────────────────────────────
+//
+//  Un seul séparateur pour les vrais multi-quartiers : la **virgule** ",".
+//  Le "/" n'est JAMAIS un séparateur — il fait partie intégrante du nom du quartier.
+//  Exemples :
+//   - "Port-Neuf, La Genette" → ["Port-Neuf", "La Genette"]  (bureau à cheval)
+//   - "Laleu/La Pallice"     → ["Laleu/La Pallice"]  (nom composé unique)
+//   - "Tasdon/Les Minimes"   → ["Tasdon/Les Minimes"] (nom composé unique 1979-1996 ;
+//                              n'apparaît plus après 2004 où Tasdon et Les Minimes
+//                              sont classés séparément par ère)
+//   - "Centre-ville"         → ["Centre-ville"]
+//
+//  Utilisé par LRVcarte, LRVanalyse, LRVcandidat. Le paramètre `era` est conservé
+//  pour compat descendante mais n'est plus utilisé (garde-fou remplacé par la règle
+//  simple "/" ⇒ jamais split).
+if (typeof window !== 'undefined') {
+  window.getQuartierParts = function (q /*, era*/) {
+    if (!q) return [];
+    return q.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+  };
+}
+
 // Helpers PERSONS / CANDIDATURES (personById, candById, candFullInfo,
 // candidaturesOfPerson, candidaturesOfElection) supprimés en juin 2026 :
 // aucun call site externe (LRVcarte/LRVanalyse/LRVcandidat utilisent CAND_DATA

@@ -56,7 +56,7 @@
   "mainEntity": {
     "@type": "Dataset",
     "name": "Archives électorales de La Rochelle, 1986-2026",
-    "description": "Résultats par bureau de vote pour 57 élections et 4 référendums organisés à La Rochelle entre 1981 et 2026.",
+    "description": "Résultats par bureau de vote pour 59 élections et 4 référendums organisés à La Rochelle entre 1979 et 2026.",
     "url": "https://larochellevote.fr/",
     "creator": {
       "@type": "Person",
@@ -1838,7 +1838,7 @@ function getQuartiersForBureau(bid) {
   let quartiers = info.q ? [info.q] : [];
   if (typeof QUARTIER_CORRESPONDANCES !== 'undefined') {
     Object.keys(QUARTIER_CORRESPONDANCES).forEach(qName => {
-      if (qName.indexOf('/') >= 0) return;
+      if (getQuartierParts(qName).length>1) return;
       const arr = QUARTIER_CORRESPONDANCES[qName] && QUARTIER_CORRESPONDANCES[qName][CURRENT_ERA];
       if (arr && arr.indexOf(bid) >= 0 && quartiers.indexOf(qName) < 0) quartiers.push(qName);
     });
@@ -1858,7 +1858,12 @@ function init() {
   const quartiers = new Set();
   const eraData = BUREAU_INFO[CURRENT_ERA] || BUREAU_INFO[Object.keys(BUREAU_INFO).pop()];
   if (eraData) {
-    Object.values(eraData).forEach(b => { if (b.q && b.q !== 'Nul') quartiers.add(b.q); });
+    // Décomposer les multi-quartiers (séparateur ",") pour que "Port-Neuf, La Genette"
+    // apparaisse comme deux entrées "Port-Neuf" + "La Genette". Le "/" n'est jamais
+    // un séparateur (Laleu/La Pallice = 1 quartier).
+    Object.values(eraData).forEach(b => {
+      if (b.q && b.q !== 'Nul') getQuartierParts(b.q).forEach(q => quartiers.add(q));
+    });
   }
   const selQ = document.getElementById('sel-quartier');
   [...quartiers].sort().forEach(q => {
@@ -2389,7 +2394,7 @@ function getQBureauxForEra(quartier, eraYear) {
   const ids = Object.entries(eraInfo)
     .filter(([, b]) => {
       const q = b.q || '';
-      return q === quartier || q.split('/').map(s=>s.trim()).includes(quartier);
+      return q === quartier || getQuartierParts(q).includes(quartier);
     })
     .map(([id]) => id);
   return { ids, method: 'auto' };
@@ -2840,7 +2845,7 @@ function updateContentTitle() {
     let quartiers = info.q ? [info.q] : [];
     if (typeof QUARTIER_CORRESPONDANCES !== 'undefined') {
       Object.keys(QUARTIER_CORRESPONDANCES).forEach(qName => {
-        if (qName.indexOf('/') >= 0) return;
+        if (getQuartierParts(qName).length>1) return;
         const arr = QUARTIER_CORRESPONDANCES[qName] && QUARTIER_CORRESPONDANCES[qName][CURRENT_ERA];
         if (arr && arr.indexOf(bid) >= 0 && quartiers.indexOf(qName) < 0) {
           quartiers.push(qName);
@@ -3008,8 +3013,8 @@ function getUncertainElections() {
     Object.entries(ZONES_INCERTAINES).forEach(([key]) => {
       const [zone, eraYear] = key.split('|');
       const zoneQ = zone.startsWith('quartier:') ? zone.slice(9) : null;
-      if (zoneQ && (q === zoneQ || q.split('/').map(s => s.trim()).includes(zoneQ)
-                                || zoneQ.split('/').map(s => s.trim()).includes(q))) {
+      if (zoneQ && (q === zoneQ || getQuartierParts(q).includes(zoneQ)
+                                || getQuartierParts(zoneQ).includes(q))) {
         Object.entries(ELECTIONS).forEach(([label, el]) => {
       if (typeof isDraftElection === "function" && isDraftElection(label)) return;
           if (String(el.my || CURRENT_ERA) === eraYear) uncertain.add(label);
@@ -3035,7 +3040,7 @@ function getUncertainNote(eraYear) {
       const [zone, ey] = key.split('|');
       if (ey !== String(eraYear)) continue;
       const zoneQ = zone.startsWith('quartier:') ? zone.slice(9) : null;
-      if (zoneQ && (q === zoneQ || q.split('/').includes(zoneQ) || zoneQ.split('/').includes(q))) return text;
+      if (zoneQ && (q === zoneQ || getQuartierParts(q).includes(zoneQ) || getQuartierParts(zoneQ).includes(q))) return text;
     }
   }
   return null;
@@ -3097,38 +3102,14 @@ function _getBoundaryChangesImpl() {
 
   } else if (niveau === 'quartier') {
     const q = document.getElementById('sel-quartier').value;
-    const eraData = BUREAU_INFO[CURRENT_ERA] || {};
-    const seen = {};
-    // Recenser les ères avec override quartier (null = supprimer, objet = remplacer)
-    const quartierOverrides = {};
+    // Notes de quartier : uniquement les entrées REDECOUPAGES explicites "quartier:<name>|<era>".
+    // Les redécoupages de bureau ne remontent PAS automatiquement — un redécoupage bureau
+    // ne fait pas forcément sens à l'échelle du quartier.
     Object.entries(REDECOUPAGES).forEach(([key, val]) => {
-      if (key.startsWith('quartier:' + q + '|')) {
-        quartierOverrides[key.split('|')[1]] = val; // null ou objet
-      }
-    });
-    Object.entries(BUREAU_CORRESPONDANCES).forEach(([bid, corr]) => {
-      const bInfo = eraData[bid] || {};
-      const bq = bInfo.q || '';
-      if (bq !== q && !bq.split('/').map(s=>s.trim()).includes(q)) return;
-      // corr.notes ignorés ici (trop techniques) — seuls les REDECOUPAGES explicites créent des notices.
-      // Via REDECOUPAGES pour ce bureau
-      Object.entries(REDECOUPAGES).forEach(([key, val]) => {
-        const parts = key.split('|');
-        if (parts.length !== 2 || parts[0] !== bid) return;
-        if (parts[1] in quartierOverrides) return; // supprimé ou remplacé au niveau quartier
-        const e = readEntry(val);
-        if (!e) return;
-        const sk = parts[1] + '|' + e.text;
-        if (!seen[sk]) { seen[sk] = true; addChange(parts[1], e.text, e.type); }
-      });
-    });
-    // Via REDECOUPAGES pour le quartier entier (null = supprimé, objet = notice de remplacement)
-    Object.entries(REDECOUPAGES).forEach(([key, val]) => {
-      if (key.startsWith('quartier:' + q + '|')) {
-        if (val === null) return; // suppression explicite
-        const e = readEntry(val);
-        if (e) addChange(key.split('|')[1], e.text, e.type);
-      }
+      if (!key.startsWith('quartier:' + q + '|')) return;
+      if (val === null) return; // suppression explicite
+      const e = readEntry(val);
+      if (e) addChange(key.split('|')[1], e.text, e.type);
     });
 
   } else if (niveau === 'canton') {
@@ -4046,16 +4027,21 @@ function drawFrise(bid, xScaleOverride, previewWindow) {
       const nums = ids.length > 0
         ? ids.map(id => String(parseInt(id))).sort((a, b) => +a - +b).join('+')
         : '—';
-      // Détecter si les bureaux appartenaient à un quartier partagé (q="A/B")
+      // Détecter si les bureaux appartenaient à un quartier historique composé (ex "Tasdon/Les Minimes")
+      // dont fait partie le quartier moderne cherché. Split explicite sur "/" ici (cas spécifique
+      // aux noms historiques composés, PAS une décomposition multi-quartier générale).
       const eraSheet = BUREAU_INFO[era] || {};
       const sharedQ = ids.length > 0
         ? (() => {
             const q0 = (eraSheet[ids[0]] || {}).q || '';
-            return (q0 !== qname && q0.includes('/') && q0.split('/').map(s=>s.trim()).includes(qname))
+            return (q0 !== qname && q0.includes('/')
+                    && q0.split('/').map(s => s.trim()).includes(qname))
               ? q0 : null;
           })()
         : null;
-      eraInfo[era] = { num: nums, den: sharedQ || qname, agg: !!sharedQ, ids };
+      // Pas de hachures : le nom composé historique (ex "Tasdon/Les Minimes") est une
+      // dénomination d'époque authentique, pas une reconstruction rétroactive.
+      eraInfo[era] = { num: nums, den: sharedQ || qname, agg: false, ids };
     });
   }
     _eraInfoCache = { key: _eraKey, info: eraInfo };
@@ -5912,7 +5898,7 @@ function copyRedecoupageCode() {
     },
     {
       title: 'Frise des redécoupages',
-      body: 'Sous le graphique, la frise retrace l\'<strong>histoire géographique</strong> de ce bureau : son nom et son numéro à chaque ère depuis 1981. Les macarons (verts, oranges, jaunes) signalent les redécoupages majeurs ou mineurs — survolez-les pour lire le détail. Voici par exemple le bureau N°41 — Médiathèque–Ville-en-Bois (Les Minimes).<br><br><strong>Cliquez sur la frise pour découvrir les différents tracés du bureau à travers les ères.</strong>',
+      body: 'Sous le graphique, la frise retrace l\'<strong>histoire géographique</strong> de ce bureau : son nom et son numéro à chaque ère depuis 1979. Les macarons (verts, oranges, jaunes) signalent les redécoupages majeurs ou mineurs — survolez-les pour lire le détail. Voici par exemple le bureau N°41 — Médiathèque–Ville-en-Bois (Les Minimes).<br><br><strong>Cliquez sur la frise pour découvrir les différents tracés du bureau à travers les ères.</strong>',
       target: '#frise-area',
       targetPad: { top: 90 },  // Inclut les macarons SVG qui sont juste au-dessus de la frise
       placement: 'top',
@@ -6859,7 +6845,7 @@ function randomDiscover() {
     });
     const quartiers = new Set();
     Object.values(b2026).forEach(b => { if (b && b.q && b.q !== 'Nul') {
-      String(b.q).split('/').map(s => s.trim()).forEach(q => quartiers.add(q));
+      getQuartierParts(String(b.q)).forEach(q => quartiers.add(q));
     }});
     [...quartiers].sort().forEach(q => {
       items.push({ type: 'quartier', icon: '🏘', label: q, sub: 'Quartier', key: q, search: norm(q) });

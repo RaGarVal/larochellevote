@@ -65,7 +65,7 @@
     "mainEntity": {
       "@type": "Dataset",
       "name": "Archives électorales de La Rochelle, 1986-2026",
-      "description": "Résultats par bureau de vote pour 57 élections et 4 référendums organisés à La Rochelle entre 1981 et 2026.",
+      "description": "Résultats par bureau de vote pour 59 élections et 4 référendums organisés à La Rochelle entre 1979 et 2026.",
       "url": "https://larochellevote.fr/",
       "creator": {
         "@type": "Person",
@@ -3590,6 +3590,7 @@ input:focus-visible,
         <option value="Européennes 1994">Européennes 1994</option>
         <option value="Européennes 1989">Européennes 1989</option>
         <option value="Européennes 1984">Européennes 1984</option>
+        <option value="Européennes 1979">Européennes 1979</option>
       </optgroup>
       <optgroup label="Régionales">
         <option value="Régionales 2021">Régionales 2021</option>
@@ -3615,6 +3616,7 @@ input:focus-visible,
         <option value="Cantonales 1988">Cantonales 1988</option>
         <option value="Cantonales 1985">Cantonales 1985</option>
         <option value="Cantonales 1982">Cantonales 1982</option>
+        <option value="Cantonales 1979">Cantonales 1979</option>
       </optgroup>
       <optgroup label="Référendums">
         <option value="Référendum 2005">Référendum 2005 — TCE</option>
@@ -3753,8 +3755,8 @@ const HAS_T2 = new Set(['Présidentielle 1981','Présidentielle 1988','Présiden
   'Législatives 2012','Législatives 2017','Législatives 2022','Législatives 2024',
   'Municipales 2014','Municipales 2020','Municipales 2026',
   'Régionales 2004','Régionales 2010','Régionales 2015','Régionales 2021',
-  'Cantonales 1982','Cantonales 1985','Cantonales 1988','Cantonales 1992','Cantonales 1994','Cantonales 1998','Cantonale partielle 1999','Cantonales 2001','Cantonale partielle 2002','Cantonales 2004','Cantonales 2008','Cantonales 2011','Départementales 2015','Départementales 2021']);
-const HAS_TU = new Set(['Législatives 1986','Régionales 1986','Municipales 1983','Municipales 1989','Municipales 1995','Régionales 1992','Régionales 1998','Européennes 1984','Européennes 1989','Européennes 1994','Européennes 1999','Européennes 2004','Européennes 2009','Européennes 2014','Européennes 2019','Européennes 2024']);
+  'Cantonales 1979','Cantonales 1982','Cantonales 1985','Cantonales 1988','Cantonales 1992','Cantonales 1994','Cantonales 1998','Cantonale partielle 1999','Cantonales 2001','Cantonale partielle 2002','Cantonales 2004','Cantonales 2008','Cantonales 2011','Départementales 2015','Départementales 2021']);
+const HAS_TU = new Set(['Législatives 1986','Régionales 1986','Municipales 1983','Municipales 1989','Municipales 1995','Régionales 1992','Régionales 1998','Européennes 1979','Européennes 1984','Européennes 1989','Européennes 1994','Européennes 1999','Européennes 2004','Européennes 2009','Européennes 2014','Européennes 2019','Européennes 2024']);
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 // Élection initiale : on prend la plus récente parmi les Municipales (la plus
@@ -3838,7 +3840,7 @@ function getBureausByQuartier(quartier){
   // Bureaux dont q correspond directement (split sur "/" gardé pour rétrocompatibilité)
   const direct=Object.keys(yearInfo).filter(num=>{
     const q=yearInfo[num].q||'';
-    return q===quartier||q.split('/').map(s=>s.trim()).includes(quartier);
+    return q===quartier||getQuartierParts(q).includes(quartier);
   });
   // Override explicite via QUARTIER_CORRESPONDANCES — bureaux partagés (ex : 0004 entre Port-Neuf et La Genette depuis 2015)
   const override=(typeof QUARTIER_CORRESPONDANCES!=='undefined' &&
@@ -6043,7 +6045,7 @@ function buildCantonsPreviewHTML() {
     // Avertissement spécifique aux cantons historiques qui débordaient sur des
     // communes voisines (1985:5/8/9 + 1982:1/6). Version courte uniformisée pour
     // la sidebar étroite ; détails dans la fiche (renderCanton).
-    const _hlrSidebar = new Set(['1985:5','1985:8','1985:9','1982:1','1982:6']);
+    const _hlrSidebar = new Set(['1985:5','1985:8','1985:9','1982:1','1982:6','1973:2']);
     if (_hlrSidebar.has(String(cantonEra) + ':' + cid)) {
       html += '<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:6px;padding:7px 10px;margin:-4px 0 10px;font-size:0.68rem;color:#7a6000;line-height:1.45">'
         + '<strong>Avertissement</strong> — Partie rochelaise uniquement.'
@@ -8070,6 +8072,7 @@ function renderCanton(){
     '1985:9': 'Le canton La Rochelle-9 (1985) comprenait aussi les communes de L\'Houmeau, Lagord et Nieul-sur-Mer. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
     '1982:1': 'Le canton La Rochelle-1 (1982) comprenait aussi les communes de Nieul-sur-Mer, Lagord et L\'Houmeau. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
     '1982:6': 'Le canton La Rochelle-6 (1982) comprenait aussi les communes d\'Aytré, Angoulins et Châtelaillon-Plage. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
+    '1973:2': 'Le canton La Rochelle-2 (1973) comprenait aussi les communes de Nieul-sur-Mer, Lagord, Dompierre-sur-Mer, Esnandes, Marsilly, Puilboreau, Saint-Xandre et L\'Houmeau. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
   };
   const _alerteKey = String(cantonEra) + ':' + String(cid);
   if (_alertesHorsLR[_alerteKey]) {
@@ -8200,14 +8203,12 @@ function selectCantonFromList(cid) {
 
 // ── ELECTION / SHEET SELECTION ────────────────────────────────────────────────
 
+// Retourne les quartiers d'un bureau. Un seul séparateur pour les vrais multi-
+// quartiers : la virgule ",". Le "/" fait TOUJOURS partie du nom d'un quartier
+// unique (cas "Laleu/La Pallice" et "Tasdon/Les Minimes" avant 2004).
 function getQuartierParts(q){
   if(!q)return[];
-  var parts=q.split('/').map(function(s){return s.trim();}).filter(Boolean);
-  if(parts.length<=1)return parts;
-  var el0=ELECTIONS[currentElection];var mapYear0=String(el0?el0.my:2026);
-  var yearInfo=BUREAU_INFO[mapYear0]||BUREAU_INFO[CURRENT_ERA]||{};var allQ={};
-  Object.values(yearInfo).forEach(function(b){if(b.q)allQ[b.q]=1;});
-  return parts.every(function(p){return allQ[p];})?parts:[q];
+  return q.split(',').map(function(s){return s.trim();}).filter(Boolean);
 }
 // Liste tous les quartiers d'un bureau : q officiel (split sur "/") + overrides
 // via QUARTIER_CORRESPONDANCES (bureaux partagés entre plusieurs quartiers)
@@ -10544,7 +10545,7 @@ function updateFooter() {
   // Ex. "Laleu/La Pallice" → ["Laleu/La Pallice"] (1 seul quartier, le slash fait partie du nom).
   function _quartierPartsForEra(q, era) {
     if (!q) return [];
-    const parts = q.split('/').map(s => s.trim()).filter(Boolean);
+    const parts = getQuartierParts(q).filter(Boolean);
     if (parts.length <= 1) return parts;
     const yearInfo = BUREAU_INFO[era] || {};
     const allQ = Object.create(null);
@@ -14237,7 +14238,7 @@ function randomDiscover() {
     const quartiers = new Set();
     Object.values(b2026).forEach(b => { if (b && b.q && b.q !== 'Nul') {
       // Certaines valeurs `q` peuvent contenir plusieurs quartiers séparés par /
-      String(b.q).split('/').map(s => s.trim()).forEach(q => quartiers.add(q));
+      getQuartierParts(String(b.q)).forEach(q => quartiers.add(q));
     }});
     [...quartiers].sort().forEach(q => {
       items.push({ type: 'quartier', icon: '🏘', label: q, sub: 'Quartier', key: q, search: norm(q) });
@@ -14576,7 +14577,7 @@ function randomDiscover() {
       const yi = BUREAU_INFO[era] || {};
       for (const ns of Object.keys(yi)) {
         const q = yi[ns].q || '';
-        if (q !== currentQuartier && !q.split('/').map(s => s.trim()).includes(currentQuartier)) continue;
+        if (q !== currentQuartier && !getQuartierParts(q).includes(currentQuartier)) continue;
         for (const tour of tours) {
           if (el.sheets[tour] && el.sheets[tour][ns]) return true;
         }

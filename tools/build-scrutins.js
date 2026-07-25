@@ -1220,6 +1220,7 @@ function renderHTML(data, opts) {
       '1985:9': 'Le canton La Rochelle-9 (1985) comprenait aussi les communes de L\'Houmeau, Lagord et Nieul-sur-Mer. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
       '1982:1': 'Le canton La Rochelle-1 (1982) comprenait aussi les communes de Nieul-sur-Mer, Lagord et L\'Houmeau. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
       '1982:6': 'Le canton La Rochelle-6 (1982) comprenait aussi les communes d\'Aytré, Angoulins et Châtelaillon-Plage. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
+      '1973:2': 'Le canton La Rochelle-2 (1973) comprenait aussi les communes de Nieul-sur-Mer, Lagord, Dompierre-sur-Mer, Esnandes, Marsilly, Puilboreau, Saint-Xandre et L\'Houmeau. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
     };
     const k = cantonEra + ':' + canton;
     if (warnings[k]) cantonWarning = warnings[k];
