@@ -936,5 +936,18 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "jacques-chirac@presidentielle-1988"
+  },
+  {
+    "date": "2026-07-25",
+    "signature": "carte|Municipales 1995|TU|cand:michel-crepeau@municipales-1995",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Municipales 1995",
+    "tour": "TU",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "michel-crepeau@municipales-1995"
   }
 ]
