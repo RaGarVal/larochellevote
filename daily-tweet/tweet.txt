@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🏙️ Le 11 juin 1995, pour les municipales, Michel Crépeau (Radical) a obtenu 58,0 % à La Rochelle. 📍 Meilleur score dans le bureau n°39 · Bongraine à Tasdon/Les Minimes.
+🏙️ Le 6 décembre 2015, pour les régionales (1er tour), Alain Rousset (PS) arrive en tête avec 32,9 % dans le Centre-ville.
 
-Détails sur https://larochellevote.fr/LRVcarte.html#election=Municipales+1995&selection=michel-crepeau%40municipales-1995
+Les résultats de ce quartier, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=R%C3%A9gionales+2015&tour=T1&quartier=Centre-ville

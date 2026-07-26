@@ -949,5 +949,18 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "michel-crepeau@municipales-1995"
+  },
+  {
+    "date": "2026-07-26",
+    "signature": "quartier|Régionales 2015|T1|Centre-ville",
+    "niveau": "quartier",
+    "niveau_publie": "quartier",
+    "truncation_step": 1,
+    "election": "Régionales 2015",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": "Centre-ville",
+    "subtype": null,
+    "candidat": null
   }
 ]
