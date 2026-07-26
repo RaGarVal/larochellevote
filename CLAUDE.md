@@ -110,6 +110,40 @@ Au runtime, `candInfo(name)` dans LRVcarte applique `Object.assign(merged, c.tou
 ### Bureau `0057`
 Bureau non-géographique (Français de l'étranger / détenus). Exclu de la plupart des calculs via `NON_GEO = new Set(['0057'])`.
 
+### Ères « section » (pré-1979)
+
+Avant 1979, **l'unité géographique cartographiée la plus fine est la section** (pas le bureau). Les bureaux existent (résultats stockés bureau par bureau) mais la carte ne trace qu'un contour par section — chaque section regroupe 1 à 5 bureaux qui votaient au même endroit. Ère concernée à ce jour : **1976** (autres ères pré-1976 à venir).
+
+**Structure de données** :
+- **`BUREAU_INFO['1976'][bid]`** : format enrichi `{nom, den, q, c, sec, bnom}`.
+  - `sec` = nom de la section à laquelle appartient le bureau (ex `"Fétilly"`). Clé qui match `properties.sec` dans MAPS_DATA.
+  - `bnom` = nom du bureau au sein de la section (ex `"Fétilly 1"`, `"Fétilly 2"`). Optionnel, absent si un seul bureau dans la section.
+  - `nom` = souvent = `sec` (redondance assumée pour compat).
+- **`MAPS_DATA['1976']`** : GeoJSON avec `properties.sec` comme identifiant principal (au lieu de `properties.numero`). 19 features pour 19 sections. `properties.canton`, `properties.quartier`, `properties.denomination` renseignés depuis le 1er bureau de la section.
+- **`BUREAU_CORRESPONDANCES[bid_2026]["1976"]`** : nom de la section 1976 dont descend le bureau 2026 (ex `"Fétilly"`). Édité via le module `openBCorrespPanel` de LRVanalyse.
+
+**Helpers dans `shared.js`** — génériques et extensibles aux futures ères pré-1976 :
+- `ERAS_SECTION` : liste dynamique des ères dont au moins un bureau porte `sec`.
+- `isSectionEra(era)` : bool.
+- `getSectionOfBureau(bid, era)` : nom de la section, ou `null`.
+- `getBureauxOfSection(secName, era)` : liste des bids dans la section, triés numériquement.
+
+**Comportement UI** :
+- **LRVcarte** :
+  - Choroplèthe = section (19 polygones colorés par winner agrégé).
+  - Click section → fiche section avec agrégat + tableau des bureaux internes (non-cliquables, `cursor:default` — pas de fiche bureau pour ces ères).
+  - Sidebar liste → sections (au lieu de bureaux) via le patch section-aware de `renderBureauList`.
+  - Fiche quartier/canton → sub-liste "N sections du quartier/canton" (au lieu de "N bureaux") en ère section.
+- **LRVanalyse** :
+  - Niveau Bureau : la courbe agrège via section pour toutes les ères section. `getBureauHistData` utilise `mergeRefData` sur les bids de la section quand `ref` est un nom de section.
+  - Frise : bloc marqué `.section` (fond gris + bordure pointillée + italique) pour les ères section. N° = liste des bids de la section joints par `+` (ex `37+38`). Dénomination = celle du 1er bureau.
+  - Graph : bandeau gris `.chart-section-zone` sur le fond couvrant la portion pré-1979 (**uniquement au niveau Bureau**).
+  - Clic frise → mini-carte reçoit `secName` en plus, matche via `properties.sec`.
+  - Segments cassés : la courbe se coupe entre 2 points consécutifs si > 4 élections consécutives sans valeur pour ce bloc/candidat (helper `_splitSegs` dans `drawChart`, `MAX_GAP = 4`).
+- **Modules d'édition** :
+  - `openBCorrespPanel` (LRVanalyse) : édite `BUREAU_CORRESPONDANCES[bid_2026]["<ère section>"] = "<sec>"` pour chaque bureau moderne. Un select par ère section (extensible aux futures ères).
+  - `openCCorrespPanel` (LRVanalyse) : les ères section sont initialisées à `[]` dans `_ccEdits`, le user assigne les **sections** (pas les bids) aux 3 cantons modernes. `renderCCorrespBody` détecte `isSectionEra(era)` et liste les 19 sections comme unités.
+
 ### Cantons (cf. roadmap cantonales/départementales)
 - **`BUREAU_INFO[era][bureau].c`** : id canton du bureau pour cette ère (string `"1"` à `"9"` selon ère).
 - **`CANTON_INFO[era_canton]`** : 2 ères actuellement présentes :

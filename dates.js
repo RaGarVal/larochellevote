@@ -4,6 +4,7 @@
 // scrutin sans date). Format JJ mois YYYY, séparé par tour.
 
 const DATES = {
+  'Présidentielle 1974': { T1: '5 mai 1974',         T2: '19 mai 1974'      },
   'Présidentielle 1981': { T1: '26 avril 1981',      T2: '10 mai 1981'      },
   'Présidentielle 1988': { T1: '24 avril 1988',      T2: '8 mai 1988'       },
   'Présidentielle 1995': { T1: '23 avril 1995',      T2: '7 mai 1995'       },
@@ -12,6 +13,8 @@ const DATES = {
   'Présidentielle 2012': { T1: '22 avril 2012',      T2: '6 mai 2012'       },
   'Présidentielle 2017': { T1: '23 avril 2017',      T2: '7 mai 2017'       },
   'Présidentielle 2022': { T1: '10 avril 2022',      T2: '24 avril 2022'    },
+  'Législatives 1973':   { T1: '4 mars 1973',        T2: '11 mars 1973'     },
+  'Législatives 1978':   { T1: '12 mars 1978',       T2: '19 mars 1978'     },
   'Législatives 1981':   { T1: '14 juin 1981',       T2: '21 juin 1981'     },
   'Législatives 1986':   { TU: '16 mars 1986'        },
   'Législatives 1988':   { T1: '5 juin 1988',        T2: '12 juin 1988'     },
@@ -23,6 +26,7 @@ const DATES = {
   'Législatives 2017':   { T1: '11 juin 2017',       T2: '18 juin 2017'     },
   'Législatives 2022':   { T1: '12 juin 2022',       T2: '19 juin 2022'     },
   'Législatives 2024':   { T1: '30 juin 2024',       T2: '7 juillet 2024'   },
+  'Municipales 1977':    { TU: '13 mars 1977'        },
   'Municipales 1983':    { TU: '6 mars 1983'         },
   'Municipales 1989':    { TU: '12 mars 1989'        },
   'Municipales 1995':    { TU: '11 juin 1995'        },
@@ -52,6 +56,8 @@ const DATES = {
   'Régionales 2010':     { T1: '14 mars 2010',       T2: '21 mars 2010'     },
   'Régionales 2015':     { T1: '6 décembre 2015',    T2: '13 décembre 2015' },
   'Régionales 2021':     { T1: '20 juin 2021',       T2: '27 juin 2021'     },
+  'Cantonales 1973':     { T1: '23 septembre 1973',  T2: '30 septembre 1973'},
+  'Cantonales 1976':     { T1: '7 mars 1976',        T2: '14 mars 1976'     },
   'Cantonales 1979':     { T1: '18 mars 1979',       T2: '25 mars 1979'     },
   'Cantonales 1982':     { T1: '14 mars 1982',       T2: '21 mars 1982'     },
   'Cantonales 1985':     { T1: '10 mars 1985',       T2: '17 mars 1985'     },

@@ -56,7 +56,7 @@
   "mainEntity": {
     "@type": "Dataset",
     "name": "Archives électorales de La Rochelle, 1986-2026",
-    "description": "Résultats par bureau de vote pour 59 élections et 4 référendums organisés à La Rochelle entre 1979 et 2026.",
+    "description": "Résultats par bureau de vote pour 65 élections et 4 référendums organisés à La Rochelle entre 1973 et 2026.",
     "url": "https://larochellevote.fr/",
     "creator": {
       "@type": "Person",
@@ -385,6 +385,10 @@ select.ctrl-sel{width:100%;padding:7px 10px;border:1.5px solid var(--border-moda
 .frise-block:last-child{border-right:none}
 .frise-block span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;text-align:center;width:100%}
 .frise-block.agg{background-image:repeating-linear-gradient(135deg,transparent,transparent 4px,rgba(0,0,0,.08) 4px,rgba(0,0,0,.08) 5px);color:#5A5A5A}
+/* Ère « section » (pré-1979) : données agrégées à la section, pas au bureau.
+   Trait pointillé + fond gris pour signaler la différence de granularité. */
+.frise-block.section{background:linear-gradient(180deg,rgba(0,0,0,.05),rgba(0,0,0,.02));outline:1px dashed rgba(0,0,0,.35);outline-offset:-2px;color:#5A5A5A;font-style:italic}
+[data-theme="dark"] .frise-block.section{background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.03));outline-color:rgba(255,255,255,.35);color:var(--text-chrome-muted)}
 .frise-axis{margin-top:1px}
 .frise-axis .frise-track{border:none;background:none}
 .frise-axis .frise-era{font-size:10px;color:var(--text-chrome-muted);display:flex;align-items:center;gap:2px;padding:0 4px;border-right:1px solid var(--border-modal);min-width:0;overflow:hidden}
@@ -602,7 +606,17 @@ html[data-admin="1"] .rd-add-btn{display:block}
 .rd-add-btn:hover{background:rgba(232,160,32,0.08)}
 /* ─── Modal références ──────────────────────────────────── */
 #ref-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:1000}
-#qcorresp-modal,#ccorresp-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:1000;background:rgba(0,0,0,.45);padding:16px}
+#qcorresp-modal,#ccorresp-modal,#bcorresp-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:1000;background:rgba(0,0,0,.45);padding:16px}
+#bcorresp-dialog{background:var(--bg-modal);border-radius:12px;padding:20px 24px;width:720px;max-width:95vw;max-height:88vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.22)}
+#bcorresp-dialog h3{margin:0 0 14px;font-size:1rem;color:var(--text-modal)}
+#bc-code{background:#0d1117;color:#c9d1d9;padding:10px 12px;border-radius:6px;font-family:monospace;font-size:0.72rem;white-space:pre-wrap;word-break:break-all;max-height:200px;overflow-y:auto;margin-top:10px;display:none}
+#bc-code.show{display:block}
+.bc-row{display:grid;grid-template-columns:32px 1fr 130px 200px;align-items:center;gap:10px;padding:5px 8px;border-bottom:1px solid var(--border-soft);font-size:0.78rem}
+.bc-row.moved{background:#fff8e1}
+.bc-row-num{font-weight:700;color:var(--text-modal-muted);text-align:right}
+.bc-row-den{font-weight:500;color:var(--text-modal);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bc-row-q{font-size:0.72rem;color:var(--text-meta)}
+.bc-row select{width:100%;padding:3px 6px;font-size:0.78rem;border:1px solid var(--border-modal);border-radius:4px;background:var(--bg-modal)}
 #qcorresp-dialog{background:var(--bg-modal);border-radius:12px;padding:20px 24px;width:560px;max-width:95vw;max-height:82vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.22)}
 #ccorresp-dialog{background:var(--bg-modal);border-radius:12px;padding:20px 24px;width:780px;max-width:95vw;max-height:88vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.22)}
 #qcorresp-dialog h3,#ccorresp-dialog h3{margin:0 0 14px;font-size:1rem;color:var(--text-modal)}
@@ -1331,6 +1345,7 @@ input:focus-visible,
   <div class="sb-section" id="sec-bureau" style="display:none">
     <div class="sb-label">Bureau de vote</div>
     <select class="ctrl-sel" id="sel-bureau" onchange="refresh()"></select>
+    <button class="rd-add-btn" onclick="openBCorrespPanel()">🔍 Vérifier les correspondances historiques…</button>
     <button class="rd-add-btn" onclick="openRefForm()">📍 Modifier les références historiques…</button>
     <button class="rd-add-btn" onclick="openRedecoupageForm()">✏️ Annoter un redécoupage…</button>
   </div>
@@ -2385,6 +2400,15 @@ function getQBureauxForEra(quartier, eraYear) {
     for (const cur2026Id of qcEra) {
       const corr = BUREAU_CORRESPONDANCES[cur2026Id] || {};
       const ref = corr[eraYear] !== undefined ? corr[eraYear] : cur2026Id;
+      // Ère « section » (pré-1979) : ref est un nom de section (ex "Fétilly").
+      // On résout en bureaux historiques via getBureauxOfSection.
+      if (typeof ref === 'string'
+          && typeof isSectionEra === 'function' && isSectionEra(eraYear)
+          && typeof getBureauxOfSection === 'function') {
+        const secBids = getBureauxOfSection(ref, eraYear);
+        secBids.forEach(b => { if (histIds.indexOf(b) < 0) histIds.push(b); });
+        continue;
+      }
       if (Array.isArray(ref)) histIds.push(...ref);
       else if (ref) histIds.push(ref);
     }
@@ -2492,7 +2516,20 @@ function getCBureauxForEra(cantonKey, eraB) {
       .map(([id]) => id);
   }
   if (typeof CANTON_CORRESPONDANCES === 'undefined') return [];
-  return ((CANTON_CORRESPONDANCES[cantonKey] || {})[eraB]) || [];
+  const raw = ((CANTON_CORRESPONDANCES[cantonKey] || {})[eraB]) || [];
+  // Ère « section » (pré-1979) : les valeurs de CANTON_CORRESPONDANCES sont des noms
+  // de sections (ex "Fétilly"), pas des bids. On résout chaque section en ses bids
+  // historiques pour que getCantonData puisse agréger via sheet[bid].
+  if (typeof isSectionEra === 'function' && isSectionEra(eraB)
+      && typeof getBureauxOfSection === 'function') {
+    const bids = new Set();
+    raw.forEach(item => {
+      if (/^\d{4}$/.test(item)) { bids.add(item); return; }
+      getBureauxOfSection(item, eraB).forEach(b => bids.add(b));
+    });
+    return [...bids];
+  }
+  return raw;
 }
 
 // Agrégation des résultats par canton, calquée sur getQuartierData.
@@ -2610,7 +2647,18 @@ function getBureauHistData(bureauId, typeFilter) {
     if (!sheet) continue;
     const my = elData.my || CURRENT_ERA;
     const ref = corr[my] !== undefined ? corr[my] : bureauId;
-    const bd = resolveHistRef(ref, sheet, bureauId);
+    // Ère « section » (pré-1979) : le ref est le nom d'une section (ex "Fétilly"),
+    // pas un id de bureau. On agrège tous les bureaux de la section pour reconstituer
+    // la donnée de l'ancêtre commun de ce bureau à cette ère.
+    let bd;
+    if (typeof ref === 'string'
+        && typeof isSectionEra === 'function' && isSectionEra(my)
+        && typeof getBureauxOfSection === 'function') {
+      const secBids = getBureauxOfSection(ref, my);
+      bd = secBids.length ? mergeRefData(secBids, sheet) : null;
+    } else {
+      bd = resolveHistRef(ref, sheet, bureauId);
+    }
     if (!bd) continue;
     const bpLive = computeBP(bd.c, label);
     const totalBp = Object.values(bpLive).reduce((s,v)=>s+v,0);
@@ -3123,6 +3171,17 @@ function _getBoundaryChangesImpl() {
       const e = readEntry(val);
       if (e) addChange(key.split('|')[1], e.text, e.type);
     });
+
+  } else if (niveau === 'ville') {
+    // Clés "ville|<era>" — rares (redécoupages touchant l'ensemble du territoire
+    // communal, ex. annexion d'une partie de Périgny en 1976). Mêmes marqueurs
+    // visuels (ligne pointillée + badge) que pour bureau/quartier/canton.
+    Object.entries(REDECOUPAGES).forEach(([key, val]) => {
+      if (!key.startsWith('ville|')) return;
+      if (val === null) return;
+      const e = readEntry(val);
+      if (e) addChange(key.split('|')[1], e.text, e.type);
+    });
   }
   return result;
 }
@@ -3350,6 +3409,29 @@ function drawChart(data) {
   let html = '';
   let yAxisHtml = '';
   const uncertainElections = getUncertainElections();
+  // Zone « section » (pré-1979) : bandeau gris sur le fond du chart pour signaler
+  // que la portion à gauche utilise des données agrégées à la section (pas au bureau).
+  // Uniquement au niveau Bureau — au niveau Ville / Canton / Quartier, l'agrégation
+  // suit le même chemin que les autres ères (pas de granularité perdue à signaler).
+  if (niveau === 'bureau') {
+    let lastSectionIdx = -1;
+    for (let i = 0; i < data.length; i++) {
+      const my = (ELECTIONS[data[i].label] || {}).my;
+      if (my && typeof isSectionEra === 'function' && isSectionEra(String(my))) {
+        lastSectionIdx = i;
+      }
+    }
+    if (lastSectionIdx >= 0) {
+      // Borne droite = milieu entre dernière élection section et la suivante
+      const rightX = (lastSectionIdx + 1 < data.length)
+        ? (xScale(lastSectionIdx) + xScale(lastSectionIdx + 1)) / 2
+        : xScale(lastSectionIdx) + unitX / 2;
+      const leftX = xScale(0) - unitX / 2;
+      html += '<rect class="chart-section-zone" x="' + leftX.toFixed(2) + '" y="' + PAD.top
+        + '" width="' + Math.max(0, rightX - leftX).toFixed(2) + '" height="' + cH
+        + '" fill="rgba(0,0,0,0.045)" pointer-events="none"><title>Données agrégées à la section (pré-1979)</title></rect>';
+    }
+  }
   // Perf : hoister activeCategories() et getVisibleSet() qui sont pures sur cet
   // appel de drawChart — sinon on les recalcule des dizaines de fois dans les
   // forEach des overlays / lignes / stacked / pickers.
@@ -3454,12 +3536,32 @@ function drawChart(data) {
     }
   });
 
+  // Helper : découpe une série en segments consécutifs. Casse la ligne quand
+  // plus de MAX_GAP élections successives n'ont AUCUNE valeur pour ce bloc/candidat
+  // — autrement on relierait 2 points très éloignés par un trait factice (ex. bloc
+  // Centre : Servan-Schreiber 1978 → Bayrou 2007, avec 6 élections vides au milieu).
+  const MAX_GAP = 4;
+  function _splitSegs(dataArr, getVal) {
+    const segs = []; let cur = []; let lastValidIdx = -1;
+    dataArr.forEach((d, i) => {
+      const v = getVal(d, i);
+      if (v === undefined || v === null) return;
+      if (cur.length > 0 && (i - lastValidIdx - 1) > MAX_GAP) {
+        segs.push(cur); cur = [];
+      }
+      cur.push(`${xScale(i)},${yScale(v)}`);
+      lastValidIdx = i;
+    });
+    if (cur.length) segs.push(cur);
+    return segs;
+  }
+
   // Abstention
   if (showAbst) {
-    let pts = data.map((d,i) => d.a !== null ? `${xScale(i)},${yScale(d.a)}` : null).filter(Boolean);
-    if (pts.length > 1) {
-      html += `<polyline points="${pts.join(' ')}" stroke="${ABST_COLOR}" stroke-width="1.5" fill="none" stroke-dasharray="4,3" opacity="0.7"/>`;
-    }
+    _splitSegs(data, d => d.a).forEach(seg => {
+      if (seg.length > 1)
+        html += `<polyline points="${seg.join(' ')}" stroke="${ABST_COLOR}" stroke-width="1.5" fill="none" stroke-dasharray="4,3" opacity="0.7"/>`;
+    })
     data.forEach((d,i) => {
       if (d.a !== null) html += `<circle cx="${xScale(i)}" cy="${yScale(d.a)}" r="3" fill="${ABST_COLOR}" opacity="0.7"/>`;
     });
@@ -3475,13 +3577,10 @@ function drawChart(data) {
     villeData.forEach(d => { villeByLabel[d.label] = d; });
     _ac.forEach(b => {
       if (!_vs.has(b.key)) return;
-      const pts = data.map((d,i) => {
-        const vd = villeByLabel[d.label];
-        const v = vd ? vd.bp[b.key] : undefined;
-        return v !== undefined ? `${xScale(i)},${yScale(v)}` : null;
-      }).filter(Boolean);
-      if (pts.length > 1)
-        html += `<polyline${darkBlocCls(b.color)} points="${pts.join(' ')}" stroke="${b.color}" stroke-width="2.5" fill="none" stroke-dasharray="6,4" stroke-linecap="round" opacity="0.45"/>`;
+      _splitSegs(data, d => { const vd = villeByLabel[d.label]; return vd ? vd.bp[b.key] : undefined; }).forEach(seg => {
+        if (seg.length > 1)
+          html += `<polyline${darkBlocCls(b.color)} points="${seg.join(' ')}" stroke="${b.color}" stroke-width="2.5" fill="none" stroke-dasharray="6,4" stroke-linecap="round" opacity="0.45"/>`;
+      });
       data.forEach((d,i) => {
         const vd = villeByLabel[d.label];
         const v = vd ? vd.bp[b.key] : undefined;
@@ -3501,13 +3600,10 @@ function drawChart(data) {
     qData.forEach(d => { qByLabel[d.label] = d; });
     _ac.forEach(b => {
       if (!_vs.has(b.key)) return;
-      const pts = data.map((d,i) => {
-        const qd = qByLabel[d.label];
-        const v = qd ? qd.bp[b.key] : undefined;
-        return v !== undefined ? `${xScale(i)},${yScale(v)}` : null;
-      }).filter(Boolean);
-      if (pts.length > 1)
-        html += `<polyline${darkBlocCls(b.color)} points="${pts.join(' ')}" stroke="${b.color}" stroke-width="2.5" fill="none" stroke-dasharray="6,4" stroke-linecap="round" opacity="0.45"/>`;
+      _splitSegs(data, d => { const qd = qByLabel[d.label]; return qd ? qd.bp[b.key] : undefined; }).forEach(seg => {
+        if (seg.length > 1)
+          html += `<polyline${darkBlocCls(b.color)} points="${seg.join(' ')}" stroke="${b.color}" stroke-width="2.5" fill="none" stroke-dasharray="6,4" stroke-linecap="round" opacity="0.45"/>`;
+      });
       data.forEach((d,i) => {
         const qd = qByLabel[d.label];
         const v = qd ? qd.bp[b.key] : undefined;
@@ -3527,10 +3623,10 @@ function drawChart(data) {
     html += `<text class="chart-label" x="${W - PAD.right - 2}" y="${PAD.top + 10}" text-anchor="end" font-size="9" font-family="'Space Grotesk', 'Segoe UI', system-ui, sans-serif" font-style="italic">— ${refLabel} (base 100)</text>`;
     base100Blocks.forEach(b100Block => {
       const blocCfg = _ac.find(b => b.key === b100Block) || {color:'#1A1A1A'};
-      const pts = base100Data.map((d, i) => d.ratios[b100Block] !== null ? `${xScale(i)},${yScale(d.ratios[b100Block])}` : null).filter(Boolean);
-      if (pts.length > 1) {
-        html += `<polyline${darkBlocCls(blocCfg.color)} points="${pts.join(' ')}" stroke="${blocCfg.color}" stroke-width="7" fill="none" stroke-linejoin="round" stroke-linecap="round"/>`;
-      }
+      _splitSegs(base100Data, d => d.ratios[b100Block]).forEach(seg => {
+        if (seg.length > 1)
+          html += `<polyline${darkBlocCls(blocCfg.color)} points="${seg.join(' ')}" stroke="${blocCfg.color}" stroke-width="7" fill="none" stroke-linejoin="round" stroke-linecap="round"/>`;
+      });
       base100Data.forEach((d, i) => {
         const r = d.ratios[b100Block];
         if (r !== null) {
@@ -3542,13 +3638,10 @@ function drawChart(data) {
   // Lignes des blocs (uniquement quand pas en mode base 100)
   if (!base100Data) _ac.forEach(b => {
     if (!_vs.has(b.key)) return;
-    const pts = data.map((d,i) => {
-      const v = d.bp[b.key];
-      return v !== undefined ? `${xScale(i)},${yScale(v)}` : null;
-    }).filter(Boolean);
-    if (pts.length > 1) {
-      html += `<polyline${darkBlocCls(b.color)} points="${pts.join(' ')}" stroke="${b.color}" stroke-width="7" fill="none" stroke-linejoin="round" stroke-linecap="round"/>`;
-    }
+    _splitSegs(data, d => d.bp[b.key]).forEach(seg => {
+      if (seg.length > 1)
+        html += `<polyline${darkBlocCls(b.color)} points="${seg.join(' ')}" stroke="${b.color}" stroke-width="7" fill="none" stroke-linejoin="round" stroke-linecap="round"/>`;
+    });
     data.forEach((d,i) => {
       const v = d.bp[b.key];
       if (v !== undefined) html += `<circle${darkBlocCls(b.color)} cx="${xScale(i)}" cy="${yScale(v)}" r="3.5" fill="#fff" stroke="${b.color}" stroke-width="2.5"/>`;
@@ -3557,11 +3650,10 @@ function drawChart(data) {
 
   // Ligne '?' (non classés) en gris pointillé — uniquement en mode blocs
   if (displayMode === 'blocs' && visibleBlocs.has('?')) {
-    const pts = data.map((d,i) => {
-      const v = d.bp['?'];
-      return v > 0 ? `${xScale(i)},${yScale(v)}` : null;
-    }).filter(Boolean);
-    if (pts.length > 1) html += `<polyline points="${pts.join(' ')}" stroke="#A0E1E2" stroke-width="7" fill="none" stroke-dasharray="8,4" stroke-linecap="round"/>`;
+    _splitSegs(data, d => (d.bp['?'] > 0) ? d.bp['?'] : undefined).forEach(seg => {
+      if (seg.length > 1)
+        html += `<polyline points="${seg.join(' ')}" stroke="#A0E1E2" stroke-width="7" fill="none" stroke-dasharray="8,4" stroke-linecap="round"/>`;
+    });
     data.forEach((d,i) => { if ((d.bp['?']||0) > 0) html += `<circle cx="${xScale(i)}" cy="${yScale(d.bp['?'])}" r="3" fill="#fff" stroke="#A0E1E2" stroke-width="2.5"/>`; });
   }
 
@@ -3961,6 +4053,27 @@ function drawFrise(bid, xScaleOverride, previewWindow) {
     const corr = BUREAU_CORRESPONDANCES[bid] || {};
     ERAS.forEach(era => {
       const raw = corr[era];
+      // Ère « section » (pré-1979) : raw = nom de section (ex "Fétilly").
+      // On affiche les n° des bureaux de la section joints par "+" (comme les
+      // agrégats quartier/canton), et la dénomination de la section en dessous.
+      // Marqueur `section:true` = style visuel pointillé/gris (Étape 5).
+      if (typeof raw === 'string'
+          && typeof isSectionEra === 'function' && isSectionEra(era)
+          && typeof getBureauxOfSection === 'function') {
+        const secBids = getBureauxOfSection(raw, era);
+        const firstBid = secBids[0];
+        const firstInfo = firstBid ? ((BUREAU_INFO[era] || {})[firstBid] || {}) : {};
+        const nums = secBids.map(id => String(parseInt(id))).sort((a,b) => +a - +b);
+        eraInfo[era] = {
+          num: nums.length ? nums.join('+') : '?',
+          den: firstInfo.den || raw,
+          agg: false,
+          section: true,
+          sec: raw,      // nom de la section (pour matcher f.properties.sec en carte)
+          ids: secBids
+        };
+        return;
+      }
       const isAgg = Array.isArray(raw) && raw.length > 1;
       const histIds = isAgg ? raw : [raw || bid];
       const firstId = histIds[0];
@@ -4134,11 +4247,12 @@ function drawFrise(bid, xScaleOverride, previewWindow) {
       const val = getValue(info);
       const tooltipVal = getTooltipValue ? getTooltipValue(info) : val;
       const agg = !!info.agg;
+      const section = !!info.section;
       const pct = eraPct[era].pct;
       const ids = info.ids || [];
-      // Fusionner seulement si même valeur ET même statut d'agrégation.
+      // Fusionner seulement si même valeur ET même statut agrégation ET section.
       // En cas de fusion, on concatène les tooltips des ères fusionnées si différents.
-      if (cur && cur.val === val && cur.agg === agg) {
+      if (cur && cur.val === val && cur.agg === agg && cur.section === section) {
         cur.pct += pct;
         cur.eras.push(era);
         cur.eraPcts.push(pct);
@@ -4147,7 +4261,7 @@ function drawFrise(bid, xScaleOverride, previewWindow) {
         if (tooltipVal !== cur.tooltip) cur.tooltip = tooltipVal;
       } else {
         if (cur) blocks.push(cur);
-        cur = { val, tooltip: tooltipVal, pct, changed: !!cur, agg, eras: [era], eraPcts: [pct], ids,
+        cur = { val, tooltip: tooltipVal, pct, changed: !!cur, agg, section, eras: [era], eraPcts: [pct], ids,
                 alt: eraAlt[era] !== undefined ? eraAlt[era] : 0,
                 isCurrent: currentValue !== null && val === currentValue && agg === currentAgg };
       }
@@ -4163,7 +4277,7 @@ function drawFrise(bid, xScaleOverride, previewWindow) {
       // séquence complète des éras (cf. commentaire détaillé là-bas). Pas de
       // dépendance à la fenêtre visible → pas de saut de couleur au pan.
       const altCls = `alt-${b.alt}`;
-      const cls = ['frise-block', altCls, 'has-tooltip', b.changed ? 'changed' : '', b.agg ? 'agg' : ''].filter(Boolean).join(' ');
+      const cls = ['frise-block', altCls, 'has-tooltip', b.changed ? 'changed' : '', b.agg ? 'agg' : '', b.section ? 'section' : ''].filter(Boolean).join(' ');
       const style = `width:${b.pct.toFixed(3)}%`;
       // Le flag b.isCurrent est calculé dans buildBlocks : true si la valeur du
       // bloc (nom ou numéro) correspond à la valeur de CURRENT_ERA — même si
@@ -4298,6 +4412,7 @@ function _showFrisePanelEra(era) {
   const { eras, niv, sel } = _frisePanelState;
   const info = (window._friseEraInfo || {})[era] || {};
   const idsStr = (info.ids || []).join(',');
+  const secName = info.sec || null;   // ère section : nom du secteur cible
 
   // Barre d'ères (uniquement si plusieurs)
   const eraBar = document.getElementById('frise-panel-eras');
@@ -4362,10 +4477,10 @@ function _showFrisePanelEra(era) {
   if (zi) html += `<div class="fp-uncertain"><strong>⚠ Données incertaines</strong><br>${zi}</div>`;
   document.getElementById('frise-panel-info').innerHTML = html;
 
-  _updateFriseMap(era, idsStr);
+  _updateFriseMap(era, idsStr, secName);
 }
 
-function _updateFriseMap(era, idsStr) {
+function _updateFriseMap(era, idsStr, secName) {
   if (!_friseMap) return;
   const geoData = (era === CURRENT_ERA) ? GEOJSON : (MAPS_DATA[era] || null);
   if (!geoData) return;
@@ -4375,10 +4490,27 @@ function _updateFriseMap(era, idsStr) {
 
   const idSet = new Set(idsStr ? idsStr.split(',').filter(Boolean) : []);
 
-  // Certains numeros 1988 sont compacts ("0017-19", "0035-37") → les expandre
-  // et vérifier si l'un des IDs individuels est dans idSet
-  function isTargetFeature(numero) {
+  // Ère « section » (pré-1979) : les features MAPS_DATA sont indexées par
+  // properties.sec (pas properties.numero) → on matche via les noms de sections.
+  // - `secName` (niveau bureau) : une section explicite passée par le call site.
+  // - Sinon (niveau canton/quartier) : on dérive le set de sections cibles depuis
+  //   les bids historiques présents dans idSet (chaque bid a un .sec dans BUREAU_INFO).
+  const secSet = new Set();
+  if (typeof isSectionEra === 'function' && isSectionEra(era)) {
+    if (secName) secSet.add(secName);
+    const _eraInfo = (BUREAU_INFO || {})[era] || {};
+    idSet.forEach(bid => {
+      const s = (_eraInfo[bid] || {}).sec;
+      if (s) secSet.add(s);
+    });
+  }
+  function isTargetFeature(feat) {
+    const p = feat.properties || {};
+    if (p.sec && secSet.size) return secSet.has(p.sec);
+    const numero = p.numero;
+    if (!numero) return false;
     if (idSet.has(numero)) return true;
+    // Certains numeros 1988 sont compacts ("0017-19", "0035-37") → les expandre
     const m = numero.match(/^(\d{2})(\d{2})-(\d{2})$/);
     if (!m) return false;
     const prefix = m[1], start = parseInt(m[2]), end = parseInt(m[3]);
@@ -4413,7 +4545,7 @@ function _updateFriseMap(era, idsStr) {
   // 3. Bureaux cibles : fond quasi transparent + contour orange vif
   geoData.features.forEach(f => {
     if (!f.geometry) return;
-    const isTarget = isTargetFeature(f.properties.numero);
+    const isTarget = isTargetFeature(f);
     const layer = L.geoJSON(f, {
       style: {
         color:       isTarget ? '#e8611a' : '#aaa',
@@ -5030,11 +5162,43 @@ window.addEventListener('DOMContentLoaded', () => {
       en bandeau orange sous la grille. Une fois terminé, génère le code à copier dans <code>donnees.js</code>.
     </div>
     <div id="ccorresp-body"></div>
-    <pre id="cc-code"></pre>
+    <div id="cc-code-wrap" style="display:none;margin-top:10px;position:relative">
+      <pre id="cc-code" style="margin:0"></pre>
+      <button id="cc-copy-btn" class="rd-copy-btn" onclick="copyCCorrespCode()" style="position:absolute;top:6px;right:6px">📋 Copier</button>
+    </div>
     <div style="text-align:right;margin-top:14px;display:flex;gap:8px;justify-content:flex-end">
       <button onclick="resetCCorrespEdits()" style="padding:6px 14px;border:1px solid #ccc;border-radius:6px;background:#f5f5f5;cursor:pointer;font-size:.8rem">↺ Annuler modifs</button>
       <button onclick="generateCCorrespCode()" style="padding:6px 14px;border:1px solid #2e7d32;border-radius:6px;background:#2e7d32;color:#fff;cursor:pointer;font-size:.8rem;font-weight:600">📋 Générer le code</button>
       <button onclick="closeCCorrespPanel()" style="padding:6px 16px;border:1px solid #ccc;border-radius:6px;background:#f5f5f5;cursor:pointer;font-size:.8rem">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Modal édition mappings bureau_2026 → section (ères pré-1979) ──── -->
+<div id="bcorresp-modal" role="dialog" aria-modal="true" aria-labelledby="bcorresp-title" onclick="if(event.target===this)closeBCorrespPanel()">
+  <div id="bcorresp-dialog">
+    <h3 id="bcorresp-title">Correspondances historiques — Sections (ères pré-1979)</h3>
+    <div class="cc-mini-help">
+      Pour les ères avant 1979 où la carte fonctionne au niveau <strong>section</strong> (et non bureau),
+      il faut indiquer pour chaque bureau 2026 la section historique dont il descend.
+      Cette correspondance permet de reconstruire l'historique long sur le graph d'analyse au niveau bureau.
+      Répartition initiale auto-inférée : à vérifier et corriger.
+    </div>
+    <div style="margin:8px 0">
+      <label style="font-size:.85rem;margin-right:6px">Ère :</label>
+      <select id="bc-era-sel" onchange="renderBCorrespBody()" style="padding:4px 8px;font-size:.85rem">
+        <!-- rempli dynamiquement par openBCorrespPanel -->
+      </select>
+    </div>
+    <div id="bcorresp-body"></div>
+    <div id="bc-code-wrap" style="display:none;margin-top:10px;position:relative">
+      <pre id="bc-code" style="margin:0"></pre>
+      <button id="bc-copy-btn" class="rd-copy-btn" onclick="copyBCorrespCode()" style="position:absolute;top:6px;right:6px">📋 Copier</button>
+    </div>
+    <div style="text-align:right;margin-top:14px;display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="resetBCorrespEdits()" style="padding:6px 14px;border:1px solid #ccc;border-radius:6px;background:#f5f5f5;cursor:pointer;font-size:.8rem">↺ Annuler modifs</button>
+      <button onclick="generateBCorrespCode()" style="padding:6px 14px;border:1px solid #2e7d32;border-radius:6px;background:#2e7d32;color:#fff;cursor:pointer;font-size:.8rem;font-weight:600">📋 Générer le code</button>
+      <button onclick="closeBCorrespPanel()" style="padding:6px 16px;border:1px solid #ccc;border-radius:6px;background:#f5f5f5;cursor:pointer;font-size:.8rem">Fermer</button>
     </div>
   </div>
 </div>
@@ -5227,6 +5391,12 @@ function openCCorrespPanel() {
   }
   // Clone profond pour édition isolée
   _ccEdits = JSON.parse(JSON.stringify(CANTON_CORRESPONDANCES));
+  // Ères section (pré-1979) : initialiser à [] dans chaque canton moderne si absentes,
+  // pour que l'utilisateur puisse y assigner les sections manuellement.
+  const _secEras = (typeof window !== 'undefined' && window.ERAS_SECTION) ? window.ERAS_SECTION : [];
+  Object.keys(_ccEdits).forEach(cKey => {
+    _secEras.forEach(era => { if (!(era in _ccEdits[cKey])) _ccEdits[cKey][era] = []; });
+  });
   // Seed des ères ajoutées après coup (1982 avec Muni 1983/Eu 1984, 1985 avec
   // les Cantonales 1985, 1989 avec Muni 1989/Eu 1989). Pour chaque ère cible,
   // on dérive le placement initial d'une ère source proche :
@@ -5248,6 +5418,8 @@ function openCCorrespPanel() {
   renderCCorrespBody();
   document.getElementById('cc-code').classList.remove('show');
   document.getElementById('cc-code').textContent = '';
+  const _ccw = document.getElementById('cc-code-wrap');
+  if (_ccw) _ccw.style.display = 'none';
   const _cm = document.getElementById('ccorresp-modal');
   _cm.style.display = 'flex';
   if (!_ccorrespTrap && typeof createFocusTrap === 'function') _ccorrespTrap = createFocusTrap(_cm);
@@ -5264,6 +5436,8 @@ function resetCCorrespEdits() {
   _ccEdits = JSON.parse(JSON.stringify(_ccOriginal));
   renderCCorrespBody();
   document.getElementById('cc-code').classList.remove('show');
+  const wrap = document.getElementById('cc-code-wrap');
+  if (wrap) wrap.style.display = 'none';
 }
 
 // Renvoie la liste triée des cantons (clés "2015:N") où un bureau est placé pour une ère.
@@ -5322,7 +5496,15 @@ function renderCCorrespBody() {
       html += '<div class="cc-col">';
       html += '<div class="cc-col-ttl">' + cantonName + ' <span style="font-weight:500;color:var(--text-meta)">· ' + arr.length + '</span></div>';
       arr.forEach(bid => {
-        const info = (BUREAU_INFO[eraB] || {})[bid] || {};
+        // Ère section : bid est un nom de section, on récupère le den du 1er bureau.
+        const _isSecR = typeof isSectionEra === 'function' && isSectionEra(eraB);
+        let info;
+        if (_isSecR && typeof getBureauxOfSection === 'function') {
+          const _bids = getBureauxOfSection(bid, eraB);
+          info = _bids.length ? ((BUREAU_INFO[eraB] || {})[_bids[0]] || {}) : {};
+        } else {
+          info = (BUREAU_INFO[eraB] || {})[bid] || {};
+        }
         const den = (info.den || '').replace(/–/g, '–').slice(0, 22);
         const moved = _ccIsMoved(eraB, bid);
         // Si le bureau est dans plusieurs cantons, on l'indique par un petit "×N"
@@ -5349,13 +5531,29 @@ function renderCCorrespBody() {
     ['1', '2', '3'].forEach(cid => {
       ((_ccEdits['2015:' + cid] || {})[eraB] || []).forEach(b => placed.add(b));
     });
-    const allBur = Object.keys((BUREAU_INFO || {})[eraB] || {}).sort();
+    // Ère section : unités = noms de sections (pas bids). Sinon : bids historiques.
+    const _isSec = typeof isSectionEra === 'function' && isSectionEra(eraB);
+    let allBur;
+    if (_isSec) {
+      const _secSet = new Set();
+      Object.values((BUREAU_INFO || {})[eraB] || {}).forEach(b => { if (b && b.sec) _secSet.add(b.sec); });
+      allBur = [...(_secSet)].sort();
+    } else {
+      allBur = Object.keys((BUREAU_INFO || {})[eraB] || {}).sort();
+    }
     const unplaced = allBur.filter(b => !placed.has(b));
     if (unplaced.length) {
       html += '<div class="cc-unplaced">';
       html += '<div class="cc-col-ttl">⚠️ Non placés · ' + unplaced.length + '</div>';
       unplaced.forEach(bid => {
-        const info = (BUREAU_INFO[eraB] || {})[bid] || {};
+        const _isSecU = typeof isSectionEra === 'function' && isSectionEra(eraB);
+        let info;
+        if (_isSecU && typeof getBureauxOfSection === 'function') {
+          const _bids = getBureauxOfSection(bid, eraB);
+          info = _bids.length ? ((BUREAU_INFO[eraB] || {})[_bids[0]] || {}) : {};
+        } else {
+          info = (BUREAU_INFO[eraB] || {})[bid] || {};
+        }
         const den = (info.den || '').replace(/–/g, '–').slice(0, 22);
         html += '<span class="cc-bv" '
              + 'data-bid="' + bid + '" data-era="' + eraB + '" '
@@ -5381,6 +5579,8 @@ function _ccShowMenu(el) {
   const bid = el.dataset.bid;
   const era = el.dataset.era;
   const current = _ccGetCantonsOf(era, bid, _ccEdits);
+  // Escape apostrophes pour le onchange inline (ère section : "Maison d'accueil").
+  const bidEsc = bid.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
   let menu = '<span class="cc-menu" style="margin-left:6px;display:inline-flex;gap:3px;align-items:center" onclick="event.stopPropagation()">';
   ['1', '2', '3'].forEach(cid => {
     const toKey = '2015:' + cid;
@@ -5389,7 +5589,7 @@ function _ccShowMenu(el) {
          + ';border-radius:4px;background:' + (checked ? '#2e7d32' : '#fff') + ';color:' + (checked ? '#fff' : '#333')
          + ';cursor:pointer;font-size:0.7rem;font-weight:600;user-select:none">'
          + '<input type="checkbox" ' + (checked ? 'checked' : '')
-         + ' onchange="ccToggleBureau(\'' + era + '\',\'' + bid + '\',\'' + toKey + '\')" '
+         + ' onchange="ccToggleBureau(\'' + era + '\',\'' + bidEsc + '\',\'' + toKey + '\')" '
          + 'style="margin:0;cursor:pointer;width:11px;height:11px">'
          + 'C' + cid
          + '</label>';
@@ -5414,8 +5614,199 @@ function generateCCorrespCode() {
   const el = document.getElementById('cc-code');
   el.textContent = code;
   el.classList.add('show');
-  // Copier dans le presse-papiers si possible
-  if (navigator.clipboard) navigator.clipboard.writeText(code).catch(() => {});
+  const wrap = document.getElementById('cc-code-wrap');
+  if (wrap) wrap.style.display = 'block';
+  // Copie automatique + feedback visuel sur le bouton "Copier".
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(code).then(() => {
+      const btn = document.getElementById('cc-copy-btn');
+      if (btn) { const orig = btn.textContent; btn.textContent = '✅ Copié !'; setTimeout(() => btn.textContent = orig, 2000); }
+    }).catch(() => {});
+  }
+}
+
+function copyCCorrespCode() {
+  const code = document.getElementById('cc-code').textContent;
+  if (!code) return;
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = document.getElementById('cc-copy-btn');
+    if (btn) { const orig = btn.textContent; btn.textContent = '✅ Copié !'; setTimeout(() => btn.textContent = orig, 2000); }
+  });
+}
+
+// ─── Modal BCorresp : mapping bureau_2026 → section pour chaque ère section ───
+// Une ère est dite « section » si BUREAU_INFO[era] contient au moins un bureau
+// avec un champ `sec`. Pour ces ères, la carte fonctionne au niveau section
+// (pas bureau), mais l'analyse a besoin d'un mapping bureau_2026 → section
+// pour reconstituer l'historique long sur le graph niveau Bureau.
+let _bcEdits = null;      // { era: { bid26: sec_name } }
+let _bcOriginal = null;
+
+function openBCorrespPanel() {
+  if (typeof BUREAU_CORRESPONDANCES === 'undefined' || typeof BUREAU_INFO === 'undefined') {
+    alert('BUREAU_CORRESPONDANCES / BUREAU_INFO introuvables.');
+    return;
+  }
+  const secEras = (typeof window !== 'undefined' && window.ERAS_SECTION) ? window.ERAS_SECTION : [];
+  if (!secEras.length) {
+    alert('Aucune ère « section » (pré-1979) dans BUREAU_INFO.');
+    return;
+  }
+  // Charger l'état actuel : pour chaque ère section, extraire les mappings existants
+  _bcEdits = {};
+  secEras.forEach(era => {
+    _bcEdits[era] = {};
+    Object.entries(BUREAU_CORRESPONDANCES).forEach(([bid, corr]) => {
+      if (corr && typeof corr[era] === 'string') {
+        _bcEdits[era][bid] = corr[era];
+      }
+    });
+  });
+  // Snapshot des vraies valeurs source AVANT toute déduction : sert de référence
+  // pour marquer les cellules déduites/modifiées en visuel « moved ».
+  _bcOriginal = JSON.parse(JSON.stringify(_bcEdits));
+  // Compléter avec des DÉDUCTIONS pour les bureaux 2026 sans mapping existant.
+  // Priorité 1 : reprendre la section d'une autre ère section (proximité temporelle).
+  // Priorité 2 : trouver dans l'ère cible une section qui partage le même quartier.
+  // Les valeurs déduites apparaîtront comme « moved » (orange) → l'utilisateur voit
+  // d'un coup d'œil ce qui vient d'une source vs ce qui est déduit à vérifier.
+  const b2026 = BUREAU_INFO['2026'] || {};
+  secEras.forEach(era => {
+    const eraInfo = BUREAU_INFO[era] || {};
+    const eraSecSet = new Set();
+    Object.values(eraInfo).forEach(b => { if (b && b.sec) eraSecSet.add(b.sec); });
+    // Index quartier → section pour cette ère (1re section trouvée par quartier)
+    const qToSec = {};
+    Object.values(eraInfo).forEach(b => {
+      if (b && b.sec && b.q && !qToSec[b.q]) qToSec[b.q] = b.sec;
+    });
+    // Autres ères section triées par proximité temporelle
+    const targetY = parseInt(era);
+    const otherEras = secEras.filter(e => e !== era)
+      .sort((a, b) => Math.abs(parseInt(a) - targetY) - Math.abs(parseInt(b) - targetY));
+    Object.entries(b2026).forEach(([bid, b26]) => {
+      if (!b26 || !b26.q || b26.q === 'Nul') return;
+      if (_bcEdits[era][bid]) return; // déjà source
+      // Tenter la continuité depuis une autre ère section
+      let deduced = '';
+      for (const other of otherEras) {
+        const corr = BUREAU_CORRESPONDANCES[bid];
+        if (corr && typeof corr[other] === 'string' && eraSecSet.has(corr[other])) {
+          deduced = corr[other];
+          break;
+        }
+      }
+      // Fallback : quartier moderne → section de l'ère cible
+      if (!deduced) deduced = qToSec[b26.q] || '';
+      if (deduced) _bcEdits[era][bid] = deduced;
+    });
+  });
+  // Peupler le select d'ères
+  const sel = document.getElementById('bc-era-sel');
+  sel.innerHTML = secEras.map(e => '<option value="'+e+'">Ère '+e+'</option>').join('');
+  // Ouvrir + render
+  document.getElementById('bcorresp-modal').style.display = 'flex';
+  document.getElementById('bc-code').classList.remove('show');
+  document.getElementById('bc-code').textContent = '';
+  const wrap = document.getElementById('bc-code-wrap');
+  if (wrap) wrap.style.display = 'none';
+  renderBCorrespBody();
+}
+
+function closeBCorrespPanel() {
+  document.getElementById('bcorresp-modal').style.display = 'none';
+}
+
+function resetBCorrespEdits() {
+  _bcEdits = JSON.parse(JSON.stringify(_bcOriginal));
+  document.getElementById('bc-code').classList.remove('show');
+  const wrap = document.getElementById('bc-code-wrap');
+  if (wrap) wrap.style.display = 'none';
+  renderBCorrespBody();
+}
+
+function renderBCorrespBody() {
+  const era = document.getElementById('bc-era-sel').value;
+  const body = document.getElementById('bcorresp-body');
+  if (!era) { body.innerHTML = ''; return; }
+  // Sections disponibles à cette ère (via BUREAU_INFO[era])
+  const eraInfo = BUREAU_INFO[era] || {};
+  const secSet = new Set();
+  Object.values(eraInfo).forEach(b => { if (b && b.sec) secSet.add(b.sec); });
+  const sections = [...secSet].sort();
+  // Bureaux 2026 (géographiques)
+  const b2026 = BUREAU_INFO['2026'] || {};
+  const orig = _bcOriginal[era] || {};
+  const edits = _bcEdits[era] || {};
+  const rows = Object.entries(b2026)
+    .filter(([bid, b]) => b.q && b.q !== 'Nul')
+    .sort(([a],[b]) => parseInt(a) - parseInt(b));
+  let html = '<div style="display:grid;grid-template-columns:32px 1fr 130px 200px;gap:10px;padding:6px 8px;font-size:0.66rem;font-weight:700;color:var(--text-meta);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border-modal)">'
+    + '<span style="text-align:right">N°</span><span>Bureau 2026 (dénomination)</span><span>Quartier</span><span>Section '+era+'</span></div>';
+  rows.forEach(([bid, b]) => {
+    const cur = edits[bid] || '';
+    const isMoved = cur !== (orig[bid] || '');
+    let optsHtml = '<option value="">— (non renseigné)</option>';
+    sections.forEach(s => {
+      optsHtml += '<option value="'+s.replace(/"/g,'&quot;')+'"'+(s===cur?' selected':'')+'>'+s+'</option>';
+    });
+    html += '<div class="bc-row'+(isMoved?' moved':'')+'">'
+      + '<span class="bc-row-num">'+parseInt(bid)+'</span>'
+      + '<span class="bc-row-den" title="'+(b.den||b.nom||'').replace(/"/g,'&quot;')+'">'+(b.den||b.nom||bid)+'</span>'
+      + '<span class="bc-row-q">'+(b.q||'')+'</span>'
+      + '<select onchange="bcSet(\''+era+'\',\''+bid+'\',this.value)">'+optsHtml+'</select>'
+      + '</div>';
+  });
+  body.innerHTML = html;
+}
+
+function bcSet(era, bid, sec) {
+  if (!_bcEdits[era]) _bcEdits[era] = {};
+  if (sec) _bcEdits[era][bid] = sec;
+  else delete _bcEdits[era][bid];
+  renderBCorrespBody();
+}
+
+function generateBCorrespCode() {
+  // Génère les lignes à copier dans donnees.js : pour chaque bureau_2026,
+  // l'ensemble de ses mappings section sur toutes les ères section, sous la
+  // forme d'un patch console : `BUREAU_CORRESPONDANCES["0016"]["1976"] = "Fétilly";`.
+  // Le user peut copier tel quel ou éditer donnees.js directement.
+  const lines = [];
+  const secEras = window.ERAS_SECTION || [];
+  const b2026 = BUREAU_INFO['2026'] || {};
+  const allBids = Object.keys(b2026)
+    .filter(bid => b2026[bid].q && b2026[bid].q !== 'Nul')
+    .sort((a,b) => parseInt(a) - parseInt(b));
+  allBids.forEach(bid => {
+    secEras.forEach(era => {
+      const sec = (_bcEdits[era] || {})[bid];
+      if (sec) {
+        lines.push('BUREAU_CORRESPONDANCES["'+bid+'"]["'+era+'"] = ' + JSON.stringify(sec) + ';');
+      }
+    });
+  });
+  const code = lines.join('\n');
+  const el = document.getElementById('bc-code');
+  el.textContent = code;
+  el.classList.add('show');
+  const wrap = document.getElementById('bc-code-wrap');
+  if (wrap) wrap.style.display = 'block';
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(code).then(() => {
+      const btn = document.getElementById('bc-copy-btn');
+      if (btn) { const orig = btn.textContent; btn.textContent = '✅ Copié !'; setTimeout(() => btn.textContent = orig, 2000); }
+    }).catch(() => {});
+  }
+}
+
+function copyBCorrespCode() {
+  const code = document.getElementById('bc-code').textContent;
+  if (!code) return;
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = document.getElementById('bc-copy-btn');
+    if (btn) { const orig = btn.textContent; btn.textContent = '✅ Copié !'; setTimeout(() => btn.textContent = orig, 2000); }
+  });
 }
 
 function closeRedecoupageForm() {
@@ -5898,7 +6289,7 @@ function copyRedecoupageCode() {
     },
     {
       title: 'Frise des redécoupages',
-      body: 'Sous le graphique, la frise retrace l\'<strong>histoire géographique</strong> de ce bureau : son nom et son numéro à chaque ère depuis 1979. Les macarons (verts, oranges, jaunes) signalent les redécoupages majeurs ou mineurs — survolez-les pour lire le détail. Voici par exemple le bureau N°41 — Médiathèque–Ville-en-Bois (Les Minimes).<br><br><strong>Cliquez sur la frise pour découvrir les différents tracés du bureau à travers les ères.</strong>',
+      body: 'Sous le graphique, la frise retrace l\'<strong>histoire géographique</strong> de ce bureau : son nom et son numéro à chaque ère depuis 1973. Les macarons (verts, oranges, jaunes) signalent les redécoupages majeurs ou mineurs — survolez-les pour lire le détail. Voici par exemple le bureau N°41 — Médiathèque–Ville-en-Bois (Les Minimes).<br><br><strong>Cliquez sur la frise pour découvrir les différents tracés du bureau à travers les ères.</strong>',
       target: '#frise-area',
       targetPad: { top: 90 },  // Inclut les macarons SVG qui sont juste au-dessus de la frise
       placement: 'top',
@@ -7059,10 +7450,13 @@ function randomDiscover() {
       const currentEra = (sel.value || '').split(':')[0];
       opts = opts.filter(o => (o.value || '').split(':')[0] === currentEra);
     }
+    if (!opts.length) return null;
     const i = opts.findIndex(o => o.value === sel.value);
     if (i < 0) return null;
-    const tgt = opts[i + dir];
-    return tgt ? tgt.value : null;
+    // Boucle avec modulo (comme navigateSel) — arrivé à la fin on repart au
+    // début, et vice-versa, pour que ArrowLeft/ArrowRight tournent en carrousel.
+    const newIdx = (i + dir + opts.length) % opts.length;
+    return opts[newIdx].value;
   }
   document.addEventListener('keydown', (e) => {
     if (isTypingTarget(e.target)) return;

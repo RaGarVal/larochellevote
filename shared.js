@@ -561,6 +561,55 @@ function getCantonOfElection(electionLabel) {
 }
 
 // ───────────────────────────────────────────────────────────────
+//  SECTEURS — ères anciennes (pré-1979) où l'unité cartographiée
+//  la plus fine est la « section/secteur » et non le bureau.
+// ───────────────────────────────────────────────────────────────
+//  Une ère est dite « section » ssi au moins un de ses bureaux
+//  porte un champ `sec` dans BUREAU_INFO. Dans ces ères, la carte
+//  affiche N contours (un par secteur), les résultats bureau
+//  restent stockés mais sont agrégés au niveau secteur pour
+//  l'affichage. Aucune fiche bureau individuelle n'est proposée.
+//
+//  ERAS_SECTION = liste des ères contenant au moins un `sec`
+//  isSectionEra(era) = raccourci booléen
+//  getSectionOfBureau(bid, era) = nom du secteur du bureau, ou null
+//  getBureauxOfSection(sec, era) = [bid…] triés numériquement
+(function () {
+  if (typeof BUREAU_INFO === 'undefined' || !BUREAU_INFO) {
+    window.ERAS_SECTION = [];
+    return;
+  }
+  const eras = Object.keys(BUREAU_INFO).filter(k => /^\d{4}$/.test(k));
+  const secEras = eras.filter(era => {
+    const info = BUREAU_INFO[era] || {};
+    return Object.values(info).some(b => b && typeof b.sec === 'string' && b.sec);
+  });
+  window.ERAS_SECTION = secEras.sort();
+})();
+
+function isSectionEra(era) {
+  if (!era || !window.ERAS_SECTION) return false;
+  return window.ERAS_SECTION.indexOf(String(era)) >= 0;
+}
+
+function getSectionOfBureau(bureau, era_bureau) {
+  if (typeof BUREAU_INFO === 'undefined') return null;
+  const era = era_bureau || window.CURRENT_ERA;
+  const b = (BUREAU_INFO[era] || {})[bureau];
+  return (b && b.sec) ? String(b.sec) : null;
+}
+
+function getBureauxOfSection(sec_name, era_bureau) {
+  if (typeof BUREAU_INFO === 'undefined' || !sec_name) return [];
+  const era = era_bureau || window.CURRENT_ERA;
+  const out = [];
+  Object.entries(BUREAU_INFO[era] || {}).forEach(([bid, b]) => {
+    if (b && b.sec === sec_name) out.push(bid);
+  });
+  return out.sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+}
+
+// ───────────────────────────────────────────────────────────────
 //  VALIDATION DES DONNÉES — warnings console au démarrage
 // ───────────────────────────────────────────────────────────────
 //  Détecte les incohérences silencieuses dans donnees.js qui pourraient

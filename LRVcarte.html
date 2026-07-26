@@ -65,7 +65,7 @@
     "mainEntity": {
       "@type": "Dataset",
       "name": "Archives électorales de La Rochelle, 1986-2026",
-      "description": "Résultats par bureau de vote pour 59 élections et 4 référendums organisés à La Rochelle entre 1979 et 2026.",
+      "description": "Résultats par bureau de vote pour 65 élections et 4 référendums organisés à La Rochelle entre 1973 et 2026.",
       "url": "https://larochellevote.fr/",
       "creator": {
         "@type": "Person",
@@ -3556,6 +3556,7 @@ input:focus-visible,
         <option value="Municipales 1995">Municipales 1995</option>
         <option value="Municipales 1989">Municipales 1989</option>
         <option value="Municipales 1983">Municipales 1983</option>
+        <option value="Municipales 1977">Municipales 1977</option>
       </optgroup>
       <optgroup label="Présidentielles">
         <option value="Présidentielle 2022">Présidentielle 2022</option>
@@ -3566,6 +3567,7 @@ input:focus-visible,
         <option value="Présidentielle 1995">Présidentielle 1995</option>
         <option value="Présidentielle 1988">Présidentielle 1988</option>
         <option value="Présidentielle 1981">Présidentielle 1981</option>
+        <option value="Présidentielle 1974">Présidentielle 1974</option>
       </optgroup>
       <optgroup label="Législatives">
         <option value="Législatives 2024">Législatives 2024</option>
@@ -3579,6 +3581,8 @@ input:focus-visible,
         <option value="Législatives 1988">Législatives 1988</option>
         <option value="Législatives 1986">Législatives 1986</option>
         <option value="Législatives 1981">Législatives 1981</option>
+        <option value="Législatives 1978">Législatives 1978</option>
+        <option value="Législatives 1973">Législatives 1973</option>
       </optgroup>
       <optgroup label="Européennes">
         <option value="Européennes 2024">Européennes 2024</option>
@@ -3617,6 +3621,8 @@ input:focus-visible,
         <option value="Cantonales 1985">Cantonales 1985</option>
         <option value="Cantonales 1982">Cantonales 1982</option>
         <option value="Cantonales 1979">Cantonales 1979</option>
+        <option value="Cantonales 1976">Cantonales 1976</option>
+        <option value="Cantonales 1973">Cantonales 1973</option>
       </optgroup>
       <optgroup label="Référendums">
         <option value="Référendum 2005">Référendum 2005 — TCE</option>
@@ -3749,14 +3755,14 @@ input:focus-visible,
 
 
 
-const HAS_T2 = new Set(['Présidentielle 1981','Présidentielle 1988','Présidentielle 1995','Présidentielle 2002','Présidentielle 2007',
+const HAS_T2 = new Set(['Présidentielle 1974','Présidentielle 1981','Présidentielle 1988','Présidentielle 1995','Présidentielle 2002','Présidentielle 2007',
   'Présidentielle 2012','Présidentielle 2017','Présidentielle 2022',
-  'Législatives 1981','Législatives 1988','Législatives 1993','Législatives 1997','Législatives 2002','Législatives 2007',
+  'Législatives 1973','Législatives 1978','Législatives 1981','Législatives 1988','Législatives 1993','Législatives 1997','Législatives 2002','Législatives 2007',
   'Législatives 2012','Législatives 2017','Législatives 2022','Législatives 2024',
   'Municipales 2014','Municipales 2020','Municipales 2026',
   'Régionales 2004','Régionales 2010','Régionales 2015','Régionales 2021',
-  'Cantonales 1979','Cantonales 1982','Cantonales 1985','Cantonales 1988','Cantonales 1992','Cantonales 1994','Cantonales 1998','Cantonale partielle 1999','Cantonales 2001','Cantonale partielle 2002','Cantonales 2004','Cantonales 2008','Cantonales 2011','Départementales 2015','Départementales 2021']);
-const HAS_TU = new Set(['Législatives 1986','Régionales 1986','Municipales 1983','Municipales 1989','Municipales 1995','Régionales 1992','Régionales 1998','Européennes 1979','Européennes 1984','Européennes 1989','Européennes 1994','Européennes 1999','Européennes 2004','Européennes 2009','Européennes 2014','Européennes 2019','Européennes 2024']);
+  'Cantonales 1973','Cantonales 1976','Cantonales 1979','Cantonales 1982','Cantonales 1985','Cantonales 1988','Cantonales 1992','Cantonales 1994','Cantonales 1998','Cantonale partielle 1999','Cantonales 2001','Cantonale partielle 2002','Cantonales 2004','Cantonales 2008','Cantonales 2011','Départementales 2015','Départementales 2021']);
+const HAS_TU = new Set(['Législatives 1986','Régionales 1986','Municipales 1977','Municipales 1983','Municipales 1989','Municipales 1995','Régionales 1992','Régionales 1998','Européennes 1979','Européennes 1984','Européennes 1989','Européennes 1994','Européennes 1999','Européennes 2004','Européennes 2009','Européennes 2014','Européennes 2019','Européennes 2024']);
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 // Élection initiale : on prend la plus récente parmi les Municipales (la plus
@@ -3795,6 +3801,10 @@ const _HAS_HOVER = !!(window.matchMedia && window.matchMedia('(hover: hover)').m
 
 function numStr(feature) {
   const p = feature.properties;
+  // Ère « section » (pré-1979) : l'id de la feature est le nom du secteur,
+  // pas un numéro de bureau. On expose `sec` directement pour que tout le code
+  // aval (colorisation, tooltip, click) traite le secteur comme un pseudo-bureau.
+  if (p.sec) return p.sec;
   return p.numero || p.num_bureau || String(p.id_bureau || '').padStart(4, '0');
 }
 
@@ -3804,6 +3814,20 @@ function bureauInfo(feature) {
   const b26 = feature.properties.b2026 || ns;
   const el = ELECTIONS[currentElection];
   const mapYear = String(el ? el.my : 2026);
+  // Ère « section » (pré-1979) : les infos viennent des properties de la feature
+  // (sec, denomination, quartier, canton) — la ligne BUREAU_INFO[mapYear][ns] n'existe pas
+  // puisque BUREAU_INFO reste indexé par bureau (0001-0039), pas par nom de secteur.
+  if (feature.properties.sec) {
+    const p = feature.properties;
+    return {
+      numero:       p.sec,
+      num2026:      p.sec,
+      nom:          p.nom || p.sec,
+      denomination: p.denomination || p.sec,
+      quartier:     p.quartier || null,
+      canton:       p.canton || null,
+    };
+  }
   // Look up in the Excel data for the current map era, by native bureau number
   // Fallback to 2026 info for bureaux non présents dans l'ère courante (ex: bureau 57 sur carte 2015)
   const eraInfo = (BUREAU_INFO[mapYear] || {})[ns] || (BUREAU_INFO[CURRENT_ERA] || {})[ns];
@@ -3859,6 +3883,17 @@ function getSheetData() {
 function getBureauData(ns) {
   const sh = getSheetData();
   if (sh[ns]) return sh[ns];
+  // Ère « section » (pré-1979) : `ns` peut être un nom de secteur (ex "Fétilly").
+  // On agrège les voix des bureaux 0001-0039 rattachés à ce secteur via `sec`.
+  const el = ELECTIONS[currentElection];
+  const mapYear = String(el ? el.my : CURRENT_ERA);
+  if (typeof isSectionEra === 'function' && isSectionEra(mapYear) && typeof getBureauxOfSection === 'function') {
+    const bids = getBureauxOfSection(ns, mapYear);
+    if (bids.length) {
+      const datas = bids.map(b => sh[b]).filter(Boolean);
+      if (datas.length) return aggregateBureauData(datas);
+    }
+  }
   // Aggregate key e.g. "0017-19" or "0035-37"
   const aggMatch = ns.match(/^(\d{4})-(\d{2})$/);
   if (aggMatch) {
@@ -3974,13 +4009,42 @@ function getExtremes() {
   if (_extrCache && _extrCacheKey === key) return _extrCache;
   const best = {}, worst = {};
   const NON_GEO = new Set(['0057']);
-  Object.entries(getSheetData()).forEach(([num, d]) => {
-    if (!d || NON_GEO.has(num)) return;
-    Object.entries(d.c || {}).forEach(([k, pct]) => {
-      if (!best[k]  || pct > best[k].pct)  best[k]  = { pct, num };
-      if (!worst[k] || pct < worst[k].pct) worst[k] = { pct, num };
+  const el0 = ELECTIONS[currentElection];
+  const mapYear = String(el0 ? el0.my : CURRENT_ERA);
+  const yearInfo = BUREAU_INFO[mapYear] || BUREAU_INFO[CURRENT_ERA] || {};
+  const _isSec = typeof isSectionEra === 'function' && isSectionEra(mapYear);
+  if (_isSec) {
+    // Ère « section » (pré-1979) : la clé cartographique est le nom de la section
+    // (feature.properties.sec), pas le n° de bureau. On agrège les voix des
+    // bureaux internes puis on calcule le pct pour départager les sections.
+    const secAg = {};
+    Object.entries(getSheetData()).forEach(([num, d]) => {
+      if (!d || NON_GEO.has(num)) return;
+      const sec = (yearInfo[num] || {}).sec;
+      if (!sec) return;
+      if (!secAg[sec]) secAg[sec] = { totE: 0, voix: {} };
+      secAg[sec].totE += d.e || 0;
+      Object.entries(d._voix || {}).forEach(([k, n]) => {
+        secAg[sec].voix[k] = (secAg[sec].voix[k] || 0) + (n || 0);
+      });
     });
-  });
+    Object.entries(secAg).forEach(([sec, ag]) => {
+      if (ag.totE <= 0) return;
+      Object.entries(ag.voix).forEach(([k, n]) => {
+        const pct = +(n / ag.totE * 100).toFixed(1);
+        if (!best[k]  || pct > best[k].pct)  best[k]  = { pct, num: sec };
+        if (!worst[k] || pct < worst[k].pct) worst[k] = { pct, num: sec };
+      });
+    });
+  } else {
+    Object.entries(getSheetData()).forEach(([num, d]) => {
+      if (!d || NON_GEO.has(num)) return;
+      Object.entries(d.c || {}).forEach(([k, pct]) => {
+        if (!best[k]  || pct > best[k].pct)  best[k]  = { pct, num };
+        if (!worst[k] || pct < worst[k].pct) worst[k] = { pct, num };
+      });
+    });
+  }
   _extrCacheKey = key;
   _extrCache = { best, worst };
   return _extrCache;
@@ -5189,7 +5253,13 @@ function featureStyle(feature) {
     const el0 = ELECTIONS[currentElection];
     const mapYear = String(el0 ? el0.my : CURRENT_ERA);
     const yi = BUREAU_INFO[mapYear] || BUREAU_INFO[CURRENT_ERA] || {};
-    if (String((yi[ns] || {}).c || '') !== previewCantonId) {
+    // Ère « section » (pré-1979) : les features sont indexées par nom de section
+    // (properties.sec), pas par n° de bureau → BUREAU_INFO[era][ns] est undefined.
+    // Le canton est stocké directement dans properties.canton (posé lors de la
+    // construction du GeoJSON section).
+    const p = feature.properties || {};
+    const featCanton = p.sec ? String(p.canton || '') : String((yi[ns] || {}).c || '');
+    if (featCanton !== previewCantonId) {
       return { fillColor: '#e8e8e8', fillOpacity: 0.15, color: '#fff', weight: 0.5 };
     }
   }
@@ -5244,7 +5314,7 @@ function featureStyle(feature) {
 function buildTooltipHtml(feature, ns, info) {
   const data = getBureauData(ns);
   const header = '<div style="min-width:150px">'
-    +'<div style="font-size:0.7rem;font-weight:700;color:var(--text-meta);margin-bottom:2px">Bureau n°'+parseInt(ns)+'</div>'
+    +'<div style="font-size:0.7rem;font-weight:700;color:var(--text-meta);margin-bottom:2px">'+((feature.properties && feature.properties.sec) ? 'Section' : 'Bureau n°'+parseInt(ns))+'</div>'
     +'<div style="font-size:0.82rem;font-weight:700;color:var(--text-modal);margin-bottom:7px">'+info.denomination+'</div>';
   if (!data) return header + '</div>';
   let tag = '';
@@ -5434,7 +5504,60 @@ function partiLabel(ci, name) {
 }
 function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
   const _xLab = extrLabel || 'bureau';
+  // Accord féminin pour « section » (ère pré-1979) : « meilleure section »
+  // vs « meilleur bureau / quartier / canton » (tous masculins).
+  const _bestWord = _xLab === 'section' ? 'meilleure' : 'meilleur';
   const cands = Object.entries(data.c || {}).sort((a,b) => b[1]-a[1]);
+  // Cas particulier — candidat unique (typiquement T2 d'une cantonale où
+  // l'opposant se retire, ex. Cantonales 1973 canton 1) : une seule carte
+  // centrée pleine largeur, avec le pct (souvent 100 %), les voix, le nom
+  // et le parti — pas de duel, pas de "VS", pas de perdant fantôme.
+  if (cands.length === 1) {
+    const [name, pct] = cands[0];
+    const ci = candInfo(name) || {};
+    const voix = (data._voix && data._voix[name] != null)
+      ? data._voix[name]
+      : Math.round(pct * (data.e || 0) / 100);
+    const col = colorOfCandidate(name);
+    const txtCol = (typeof pickTextColorForBg === 'function') ? pickTextColorForBg(col) : '#fff';
+    const prenom = ci.p || '';
+    const nom = ci.n || name.replace(/\s*\([^)]*\)\s*$/,'').split(/\s+/).pop();
+    const pa = ci.pa || '';
+    const partiSigle = pa || '';
+    const partiName = pa ? (PARTI_NAMES[pa] || pa) : '';
+    const allies = ci.al || '';
+    const pctHtml = pct.toFixed(1).replace('.',',')+'<span style="font-size:0.5em;margin-left:0.12em">%</span>';
+    // ── Version compact (sidebar) : tailles alignées sur blockWinner(c=true) ──
+    // Pct 2.2rem, nom 1.4rem (nomSizeC), parti 0.68rem SIGLE only. Pas de
+    // prénom, pas de voix, pas d'alliés (le user veut la version minimale).
+    if (compact) {
+      return '<div class="duel-solo duel-solo-c" style="text-align:center;background:'+col+';color:'+txtCol+';padding:10px 12px;border-radius:8px;margin:8px 0">'
+        + '<div style="font-size:2.2rem;font-weight:900;line-height:1">'+pctHtml+'</div>'
+        + '<div style="font-size:1.4rem;font-weight:700;margin-top:8px;line-height:1.2">'+nom+'</div>'
+        + (partiSigle ? '<div style="font-size:0.68rem;opacity:0.7;margin-top:3px">'+partiSigle+'</div>' : '')
+        + '</div>';
+    }
+    // ── Version full (overlay desktop) : tailles duel « full » ──
+    const _isMobileSolo = !!(window.matchMedia && window.matchMedia('(max-width: 1000px)').matches);
+    const sScore  = _isMobileSolo ? '2.2rem'   : '3.5rem';
+    const sVoix   = _isMobileSolo ? '0.78rem'  : '1.0rem';
+    const sPrenom = _isMobileSolo ? '1.0rem'   : '1.5rem';
+    const sNom    = _isMobileSolo ? '1.6rem'   : '2.2rem';
+    const sParti  = _isMobileSolo ? '0.74rem'  : '0.88rem';
+    const sAllie  = _isMobileSolo ? '0.68rem'  : '0.75rem';
+    const sPad    = _isMobileSolo ? '12px 14px': '18px 20px';
+    const sGapPrenom = _isMobileSolo ? '6px' : '14px';
+    const sGapVoix   = _isMobileSolo ? '3px' : '5px';
+    const sGapParti  = _isMobileSolo ? '3px' : '6px';
+    return '<div class="duel-solo" style="text-align:center;background:'+col+';color:'+txtCol+';padding:'+sPad+';border-radius:10px;margin:12px 0">'
+      + '<div style="font-size:'+sScore+';font-weight:900;line-height:1">'+pctHtml+'</div>'
+      + '<div style="font-size:'+sVoix+';opacity:0.75;margin-top:'+sGapVoix+'">'+voix.toLocaleString('fr-FR')+' voix</div>'
+      + (prenom ? '<div style="font-size:'+sPrenom+';opacity:0.85;margin-top:'+sGapPrenom+';line-height:1.2">'+prenom+'</div>' : '')
+      + '<div style="font-size:'+sNom+';font-weight:700;margin-top:'+(prenom?'2px':sGapPrenom)+';line-height:1.2">'+nom+'</div>'
+      + (partiName ? '<div style="font-size:'+sParti+';opacity:0.7;margin-top:'+sGapParti+'">'+partiName+'</div>' : '')
+      + (allies ? '<div style="font-size:'+sAllie+';opacity:0.55;margin-top:2px">'+allies+'</div>' : '')
+      + '</div>';
+  }
   if (cands.length !== 2) return null;
   const [nameW, pctW] = cands[0]; // gagnant (par les voix)
   const [nameLos, pctLos] = cands[1]; // perdant
@@ -5767,7 +5890,7 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
     // pour pouvoir être masqué par la container query quand la cellule est étroite
     // (cf. .duel-block CSS) — la version « ligne » (.extr-row) prend alors le relais.
     return isBest
-      ? ' <span class="extr-inline" style="color:'+colBest+';font-size:0.68rem;font-weight:700">▲ meilleur '+_xLab+'</span>'
+      ? ' <span class="extr-inline" style="color:'+colBest+';font-size:0.68rem;font-weight:700">▲ '+_bestWord+' '+_xLab+'</span>'
       : ' <span class="extr-inline" style="color:'+colWorst+';font-size:0.68rem;font-weight:700">▼ pire '+_xLab+'</span>';
   }
   // Version « ligne » du badge meilleur/pire : div standalone qui s'insère entre
@@ -5782,7 +5905,7 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
       ? 'rgba(255,255,255,0.85)'
       : (isBest ? '#1a7a4a' : '#b91c1c');
     const sym = isBest ? '▲' : '▼';
-    const lbl = (isBest ? 'meilleur ' : 'pire ') + _xLab;
+    const lbl = (isBest ? _bestWord + ' ' : 'pire ') + _xLab;
     return '<div class="extr-row" style="font-size:0.7rem;font-weight:600;margin-top:4px;color:'+col+'">'+sym+'\xa0'+lbl+'</div>';
   }
   const pad = compact ? '10px' : (isMobileDuel ? '8px' : '16px');
@@ -5821,6 +5944,9 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
 
 function renderCandidates(data, ns, cityAvg, extr, compact, extrLabel) {
   const _xLab = extrLabel || 'bureau';
+  // Accord féminin pour « section » (ère pré-1979) : « meilleure section »
+  // vs « meilleur bureau / quartier / canton » (tous masculins).
+  const _bestWord = _xLab === 'section' ? 'meilleure' : 'meilleur';
   const cands = Object.entries(data.c || {}).sort((a, b) => b[1] - a[1]);
   const duel = renderDuel(data, compact, cityAvg, ns, extr, extrLabel); if (duel !== null) return duel;
   const maxP  = cands.length ? cands[0][1] : 1;
@@ -5845,7 +5971,7 @@ function renderCandidates(data, ns, cityAvg, extr, compact, extrLabel) {
       :isWorst?' <span style="color:#b91c1c;font-size:0.7rem;font-weight:900">&#9660;</span>':'';
     // Le suffixe " bureau" / " quartier" est encapsulé dans <span class="extr-suffix">
     // pour pouvoir le masquer via la classe .extr-short de la cascade d'abréviation.
-    const arrowFull=isBest?' <span style="color:#1a7a4a;font-size:0.68rem;font-weight:700">&#9650; meilleur<span class="extr-suffix"> '+_xLab+'</span></span>'
+    const arrowFull=isBest?' <span style="color:#1a7a4a;font-size:0.68rem;font-weight:700">&#9650; '+_bestWord+'<span class="extr-suffix"> '+_xLab+'</span></span>'
       :isWorst?' <span style="color:#b91c1c;font-size:0.68rem;font-weight:700">&#9660; pire<span class="extr-suffix"> '+_xLab+'</span></span>':'';
     const ci=candInfo(name);
     const mCoal=name.match(/\(([^)]+)\)$/);
@@ -6045,7 +6171,7 @@ function buildCantonsPreviewHTML() {
     // Avertissement spécifique aux cantons historiques qui débordaient sur des
     // communes voisines (1985:5/8/9 + 1982:1/6). Version courte uniformisée pour
     // la sidebar étroite ; détails dans la fiche (renderCanton).
-    const _hlrSidebar = new Set(['1985:5','1985:8','1985:9','1982:1','1982:6','1973:2']);
+    const _hlrSidebar = new Set(['1985:5','1985:8','1985:9','1982:1','1982:6','1973:2','1973:4']);
     if (_hlrSidebar.has(String(cantonEra) + ':' + cid)) {
       html += '<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:6px;padding:7px 10px;margin:-4px 0 10px;font-size:0.68rem;color:#7a6000;line-height:1.45">'
         + '<strong>Avertissement</strong> — Partie rochelaise uniquement.'
@@ -6179,8 +6305,10 @@ function _buildBureauPreviewHTMLImpl(feature) {
   const winCol = winnerColor(data);
   const isAgg = isAggNs(ns);
   const aggNums = isAgg ? aggNumList(ns) : null;
-  const sbNum = isAgg ? 'Bureaux n\u00b0 ' + fmtAggNums(aggNums) : 'Bureau n\u00b0 ' + parseInt(ns);
-  const sbName = isAgg ? 'Bureaux agrégés de ' + info.quartier : info.denomination;
+  // Ère « section » (pré-1979) : titraille "Secteur" + nom, pas de numéro.
+  const isSec = !!feature.properties.sec;
+  const sbNum = isSec ? 'Section' : (isAgg ? 'Bureaux n\u00b0 ' + fmtAggNums(aggNums) : 'Bureau n\u00b0 ' + parseInt(ns));
+  const sbName = isSec ? info.denomination : (isAgg ? 'Bureaux agrégés de ' + info.quartier : info.denomination);
   // B8 phase 4 : titraille bureau non-cliquable (la fiche s\'ouvre via clic carte).
   // Border-left bicolore si winner = binôme à 2 vrais partis (cf. titraille canton sidebar).
   const _bdCs = data && data.w && (typeof binomePartiColors === 'function') ? binomePartiColors(data.w) : null;
@@ -6204,7 +6332,10 @@ function _buildBureauPreviewHTMLImpl(feature) {
     h += '<div class="partici-grid" style="grid-template-columns:repeat(2,1fr);gap:5px;margin-bottom:10px">'
       + '<div class="pbox" style="flex-direction:row;align-items:baseline;justify-content:center;gap:6px"><span class="pbox-lbl">Abstention</span><span class="pbox-val">'+(data.a||0).toFixed(1)+' %</span></div>'
       + '<div class="pbox" style="flex-direction:row;align-items:baseline;justify-content:center;gap:6px"><span class="pbox-lbl">Blancs et nuls</span><span class="pbox-val">'+blancsPctS.toFixed(1)+' %</span></div></div>';
-    h += renderCandidates(data, ns, refAverageForBureau(ns), getExtremes(), true);
+    // En ère « section » (pré-1979), les extrêmes s'expriment par section
+    // (chaque feature = une section) → badge "▲ meilleure section / ▼ pire section".
+    const _extrLbl = (typeof isSectionEra === 'function' && isSectionEra(_mapYrSB)) ? 'section' : 'bureau';
+    h += renderCandidates(data, ns, refAverageForBureau(ns), getExtremes(), true, _extrLbl);
   } else {
     h += '<div style="color:#aaa;font-style:italic;padding:10px 0">'+_noDataMsg(ns)+'</div>';
   }
@@ -6321,9 +6452,12 @@ function updateOverlayTabs(){
   const c = document.getElementById('otab-quartiers');
   const tabB = document.getElementById('otab-b');
   if (!c || !tabB) return;
-  // Bouton "Ce bureau"
+  // Bouton "Ce bureau" (ou "Cette section" en ère pré-1979).
   tabB.className = (overlayTab === 'bureau' ? 'otab on' : 'otab');
   tabB.setAttribute('aria-selected', overlayTab === 'bureau' ? 'true' : 'false');
+  tabB.textContent = (currentFeature && currentFeature.properties && currentFeature.properties.sec)
+    ? 'Cette section'
+    : 'Ce bureau';
   // Boutons quartier (1 ou plusieurs si bureau partagé) puis bouton canton.
   // Deux préfixes pour chaque label : version longue desktop / version courte mobile.
   // Le swap se fait en CSS via @media (pas de détection JS, cohérent au resize).
@@ -6343,9 +6477,15 @@ function updateOverlayTabs(){
       html += '<button class="otab' + (isActive?' on':'') + '" role="tab" aria-selected="'+(isActive?'true':'false')+'" onclick="switchTabQ(\'' + safeQ + '\')">' + label + '</button>';
     });
     // Bouton canton : déduit du champ .c du bureau courant pour l'ère de l'élection.
-    const cid = (typeof getCantonOfBureau === 'function')
-      ? getCantonOfBureau(numStr(currentFeature), String(ELECTIONS[currentElection]?.my || CURRENT_ERA))
-      : null;
+    // Ère « section » : le "numStr" est le nom de section (pas un id bureau), donc
+    // getCantonOfBureau échoue → on prend directement le canton stocké dans les
+    // properties de la feature section (rempli à la génération de MAPS_DATA).
+    let cid = null;
+    if (currentFeature.properties && currentFeature.properties.sec) {
+      cid = currentFeature.properties.canton || null;
+    } else if (typeof getCantonOfBureau === 'function') {
+      cid = getCantonOfBureau(numStr(currentFeature), String(ELECTIONS[currentElection]?.my || CURRENT_ERA));
+    }
     if (cid) {
       const cantonEra = (typeof getCantonEraForElection === 'function') ? getCantonEraForElection(currentElection) : CURRENT_ERA_CANTON;
       const cantonsMeta = ((typeof CANTON_INFO !== 'undefined' && CANTON_INFO[cantonEra]) || {}).cantons || {};
@@ -7342,6 +7482,67 @@ function renderBureauList(){
   var mapYear=String(el0?el0.my:2026);
   var eraInfo=BUREAU_INFO[mapYear]||{};
   var curNs=currentFeature?numStr(currentFeature):null;
+  // Ère « section » (pré-1979) : on remplace la liste des bureaux par la liste
+  // des sections (unité cartographiée). Chaque ligne = 1 section = agrégat des
+  // bureaux qui la composent, avec le tag winner calculé sur l'agrégat.
+  var _isSecEra = typeof isSectionEra === 'function' && isSectionEra(mapYear);
+  if (_isSecEra && typeof aggregateBureauData === 'function') {
+    var secMap = {};
+    Object.entries(eraInfo).forEach(function(entry){
+      var bid = entry[0], b = entry[1];
+      if (!b || !b.sec) return;
+      // Filtre : ne conserver que les bureaux effectivement présents dans le
+      // scrutin en cours. Pour une élection ville (Municipales, Législatives…),
+      // tous les bureaux sont là → aucune perte. Pour une cantonale (par_canton),
+      // shData ne contient que le canton actif → la liste ne montre que ses
+      // sections.
+      if (!shData[bid]) return;
+      (secMap[b.sec] = secMap[b.sec] || []).push(bid);
+    });
+    // Trier les bids de chaque section, puis trier les sections par le n° du 1er bureau
+    // (ex. Laleu 0001-0003 avant Fétilly 0016-0018).
+    Object.keys(secMap).forEach(function(s){ secMap[s].sort(); });
+    var curSec = (currentFeature && currentFeature.properties) ? (currentFeature.properties.sec || null) : null;
+    var secs = Object.keys(secMap).sort(function(a,b){ return parseInt(secMap[a][0]) - parseInt(secMap[b][0]); });
+    var h = '<div class="blist-hdr sb-list-toggle"><span>'+secs.length+' sections</span><span class="chevron">▾</span></div><div class="sb-list-body">';
+    secs.forEach(function(secName){
+      var bids = secMap[secName];
+      var datas = bids.map(function(b){ return shData[b]; }).filter(Boolean);
+      var d = datas.length ? aggregateBureauData(datas) : null;
+      var col = d ? winnerColor(d) : '#ccc';
+      // Denom section = celle du 1er bureau (invariant par construction)
+      var first = eraInfo[bids[0]] || {};
+      var denom = first.den || secName;
+      var quartier = first.q || '';
+      var tc = d && d.c ? Object.entries(d.c).sort(function(a,b){return b[1]-a[1];})[0] : null;
+      var ci = tc ? candInfo(tc[0]) : {};
+      var isBin = tc && Array.isArray(ci.binome) && ci.binome.length === 2;
+      var candName = tc ? (isBin ? (binomeShortLabel(tc[0]) || ci.n) : (ci.n || tc[0].replace(/\s*\([^)]*\)\s*$/,'').split(/\s+/).pop() || tc[0])) : '';
+      var pct = tc ? tc[1].toFixed(1)+' %' : '';
+      var tagBg = tc ? ((typeof dotBackground === 'function') ? dotBackground(tc[0]) : col) : col;
+      var tag = tc ? ('<span style="background:'+tagBg+';color:'+pickTextColorForBg(tagBg)+';font-size:0.6rem;font-weight:700;padding:2px 6px;border-radius:3px;white-space:nowrap;flex-shrink:0">'+candName+' '+pct+'</span>') : '';
+      var cur = secName === curSec;
+      // N° = numéro du 1er bureau de la section (identifiant parlant).
+      // Sub row = quartier (comme les rows bureau).
+      var quartier = first.q || '';
+      h += '<div class="blist-row'+(cur?' cur':'')+'" data-ns="'+secName+'">'
+        + '<span class="blist-num">'+parseInt(bids[0])+'</span>'
+        + '<span class="blist-name">'
+          + '<span class="blist-denom" title="'+denom.replace(/"/g,'&quot;')+'">'+denom+'</span>'
+          + (quartier?'<span class="blist-sub">'+quartier+'</span>':'')
+        + '</span>'
+        + tag
+        + '</div>';
+    });
+    h += '</div>';
+    var el2 = document.getElementById('sb-bureau-list');
+    if (el2) {
+      el2.innerHTML = h;
+      var curEl = el2.querySelector('.blist-row.cur');
+      if (curEl) curEl.scrollIntoView({block:'center'});
+    }
+    return;
+  }
   var nums=Object.keys(shData).sort();
   // Bloc AGG_MAP 1988 retiré : on a maintenant les 40 polygones individuels via KML.
   var h='<div class="blist-hdr sb-list-toggle"><span>'+nums.length+' bureaux</span><span class="chevron">▾</span></div><div class="sb-list-body">';
@@ -7349,8 +7550,8 @@ function renderBureauList(){
     var d=getBureauData(ns2)||shData[ns2];
     var inf=eraInfo[ns2]||(BUREAU_INFO[CURRENT_ERA]||{})[ns2]||{};
     var isAgg2=isAggNs(ns2);
-    var denom=isAgg2?('Bureaux agr\u00e9g\u00e9s de '+(inf.q||inf.nom||'')):(inf.den||inf.nom||'Bureau '+parseInt(ns2));
-    var numLabel=isAgg2?(aggNumList(ns2).join('\u2009/\u2009')):String(parseInt(ns2));
+    var denom=isAgg2?('Bureaux agrégés de '+(inf.q||inf.nom||'')):(inf.den||inf.nom||'Bureau '+parseInt(ns2));
+    var numLabel=isAgg2?(aggNumList(ns2).join(' / ')):String(parseInt(ns2));
     var quartier=inf.q||'';
     var col=d?winnerColor(d):'#ccc';
     var tc=d&&d.c?Object.entries(d.c).sort(function(a,b){return b[1]-a[1];})[0]:null;
@@ -7358,10 +7559,10 @@ function renderBureauList(){
     // Binôme paritaire : label court "Nom1 / Nom2" (femme devant)
     var isBin=tc&&Array.isArray(ci.binome)&&ci.binome.length===2;
     var candName=tc?(isBin?(binomeShortLabel(tc[0])||ci.n):(ci.n||tc[0].replace(/\s*\([^)]*\)\s*$/,'').split(/\s+/).pop()||tc[0])):'';
-    var pct=tc?tc[1].toFixed(1)+'\u00a0%':'';
+    var pct=tc?tc[1].toFixed(1)+' %':'';
     // Binôme à partis hétérogènes : background bicolore (split diagonal). Sinon couleur unique.
     var tagBg=tc?((typeof dotBackground==='function')?dotBackground(tc[0]):col):col;
-    var tag=tc?('<span style="background:'+tagBg+';color:'+pickTextColorForBg(tagBg)+';font-size:0.6rem;font-weight:700;padding:2px 6px;border-radius:3px;white-space:nowrap;flex-shrink:0">'+candName+'\u00a0'+pct+'</span>'):'';
+    var tag=tc?('<span style="background:'+tagBg+';color:'+pickTextColorForBg(tagBg)+';font-size:0.6rem;font-weight:700;padding:2px 6px;border-radius:3px;white-space:nowrap;flex-shrink:0">'+candName+' '+pct+'</span>'):'';
     var cur=ns2===curNs;
     h+='<div class="blist-row'+(cur?' cur':'')+'" data-ns="'+ns2+'">'
       +'<span class="blist-num">'+numLabel+'</span>'
@@ -7380,7 +7581,6 @@ function renderBureauList(){
     if(curEl)curEl.scrollIntoView({block:'center'});
   }
 }
-
 // Liste des quartiers (en mode fiche ouverte) — sous la liste des bureaux
 function renderQuartierList(){
   var shData=getSheetData();
@@ -7399,6 +7599,7 @@ function renderQuartierList(){
       var an=Math.round((d.i||0)*(d.a||0)/100);
       qAgg[qp].totI+=d.i||0; qAgg[qp].totE+=d.e||0; qAgg[qp].totAbst+=an; qAgg[qp].totBn+=d.bn||0;
       qAgg[qp].nb++;
+      if (yearInfo[ns].sec) { (qAgg[qp].secs = qAgg[qp].secs || new Set()).add(yearInfo[ns].sec); }
       // Doctrine _voix : voix entières.
       Object.entries(d._voix||{}).forEach(function(kv){
         qAgg[qp].voix[kv[0]]=(qAgg[qp].voix[kv[0]]||0)+kv[1];
@@ -7427,7 +7628,7 @@ function renderQuartierList(){
     h+='<div class="blist-row'+(cur?' cur':'')+'" data-q="'+qp.replace(/"/g,'&quot;')+'">'
       +'<span class="blist-name">'
         +'<span class="blist-denom" title="'+qp.replace(/"/g,'&quot;')+'">'+qp+'</span>'
-        +'<span class="blist-sub">'+ag.nb+' bureau'+(ag.nb>1?'x':'')+'</span>'
+        +'<span class="blist-sub">'+((ag.secs&&ag.secs.size)?(ag.secs.size+' section'+(ag.secs.size>1?'s':'')):(ag.nb+' bureau'+(ag.nb>1?'x':'')))+'</span>'
       +'</span>'
       +tag
       +'</div>';
@@ -7494,7 +7695,7 @@ function renderCantonList(){
     h+='<div class="blist-row'+(cur?' cur':'')+'" data-c="'+cid+'">'
       +'<span class="blist-name">'
         +'<span class="blist-denom" title="'+cantonName.replace(/"/g,'&quot;')+'">'+cantonName+'</span>'
-        +'<span class="blist-sub">'+ag.nb+' bureau'+(ag.nb>1?'x':'')+'</span>'
+        +'<span class="blist-sub">'+((ag.secs&&ag.secs.size)?(ag.secs.size+' section'+(ag.secs.size>1?'s':'')):(ag.nb+' bureau'+(ag.nb>1?'x':'')))+'</span>'
       +'</span>'
       +tag
       +'</div>';
@@ -7521,7 +7722,10 @@ function selectQuartierFromList(qName){
   });
   if(!ns)return;
   var gj=getMapGeoJSON();
-  var feat=gj.features.find(function(f){return numStr(f)===ns;});
+  var _bidSec = (yearInfo[ns]||{}).sec;
+  var feat = _bidSec
+    ? gj.features.find(function(f){ return f.properties && f.properties.sec === _bidSec; })
+    : gj.features.find(function(f){ return numStr(f) === ns; });
   if(!feat)return;
   currentFeature=feat;
   currentQuartier=qName;
@@ -7547,7 +7751,7 @@ function selectBureauFromList(ns) {
   currentQuartier = null;
   overlayTab = 'bureau';
   const info = bureauInfo(feat);
-  document.getElementById('ov-title').textContent = isAggNs(ns) ? 'Bureaux agrégés — ' + info.quartier : 'Fiche bureau — ' + info.denomination;
+  document.getElementById('ov-title').textContent = feat.properties && feat.properties.sec ? 'Fiche section — ' + info.denomination : (isAggNs(ns) ? 'Bureaux agrégés — ' + info.quartier : 'Fiche bureau — ' + info.denomination);
   document.getElementById('ov-tabs').style.display = 'flex';
   setOverlayDisplay('flex');
   showBureauListSidebar();
@@ -7748,6 +7952,45 @@ function _resolveB2026FromHist(bureauId, era) {
   return found;
 }
 
+// Fiche section (ère pré-1979) — tableau des bureaux internes calqué sur le
+// bloc "Bureaux du quartier/canton" (classe .q-brow), mais SANS onclick :
+// les fiches bureau n'existent pas pour ces ères, la ligne est décorative.
+function renderBureauxInSectionHTML(feature, info) {
+  const secName = feature.properties.sec;
+  const el = ELECTIONS[currentElection] || {};
+  const era = String(el.my || CURRENT_ERA);
+  const bids = (typeof getBureauxOfSection === 'function')
+    ? getBureauxOfSection(secName, era) : [];
+  if (!bids.length) return '';
+  const shData = (typeof getSheetData === 'function') ? getSheetData() : {};
+  const eraInfo = (BUREAU_INFO[era] || {});
+  const isRef = typeof isReferendum === 'function' && isReferendum(currentElection);
+  let html = '<div class="fiche-section-bureaux-list" style="margin-bottom:18px">'
+    + '<div class="sec-ttl">Bureaux de la section</div>'
+    + '<div style="display:flex;align-items:center;gap:10px;padding:4px 10px;margin-bottom:2px">'
+    +   '<span style="font-size:0.6rem;font-weight:700;color:var(--text-meta);width:28px;flex-shrink:0">N\u00b0</span>'
+    +   '<span style="font-size:0.6rem;font-weight:700;color:var(--text-meta);flex:1">Nom officiel</span>'
+    +   '<span style="font-size:0.6rem;font-weight:700;color:var(--text-meta);width:68px;text-align:right;flex-shrink:0">Abstention</span>'
+    +   '<span style="font-size:0.6rem;font-weight:700;color:var(--text-meta);flex:2;margin-left:12px">' + (isRef ? 'Oui / Non' : 'Blocs') + '</span>'
+    + '</div>';
+  bids.forEach(bid => {
+    const d = shData[bid];
+    const bInfo = eraInfo[bid] || {};
+    const denom = bInfo.bnom || bInfo.den || bInfo.nom || 'Bureau ' + parseInt(bid);
+    const abst = d ? (d.a || 0) : null;
+    const bar = _blocsBarHTML(d, { height: 14 });
+    html += '<div class="q-brow" style="cursor:default">'
+      + '<span style="font-size:0.63rem;font-weight:700;color:var(--text-meta);width:28px;flex-shrink:0;padding-top:1px">' + parseInt(bid) + '</span>'
+      + '<span style="font-size:0.74rem;font-weight:500;color:var(--text-modal);flex:1;line-height:1.35">' + denom + '</span>'
+      + '<span style="font-size:0.72rem;font-weight:700;color:var(--text-modal-muted);width:68px;text-align:right;flex-shrink:0;padding-top:1px">'
+      +   (abst !== null ? abst.toFixed(1) + ' %' : '\u2014') + '</span>'
+      + '<div style="flex:2;min-width:0;margin-left:12px;padding-top:3px">' + bar + '</div>'
+      + '</div>';
+  });
+  html += '</div>';
+  return html;
+}
+
 function renderFiche(feature) {
   const ns     = numStr(feature);
   const info   = bureauInfo(feature);
@@ -7765,8 +8008,9 @@ function renderFiche(feature) {
   // Header
   const isAgg = isAggNs(ns);
   const aggNums = isAgg ? aggNumList(ns) : null;
-  const ficheNum = isAgg ? 'Bureaux n° ' + fmtAggNums(aggNums) : 'Bureau n° ' + parseInt(ns);
-  const ficheName = isAgg ? 'Bureaux agrégés de ' + info.quartier : info.denomination;
+  const isSec = !!feature.properties.sec;
+  const ficheNum = isSec ? 'Section' : (isAgg ? 'Bureaux n° ' + fmtAggNums(aggNums) : 'Bureau n° ' + parseInt(ns));
+  const ficheName = isSec ? info.denomination : (isAgg ? 'Bureaux agrégés de ' + info.quartier : info.denomination);
   let h = '<div class="fiche-id">'
     + ficheSail(sailColorForWinner(data && data.w), false)
     + '<div class="fiche-text">'
@@ -7775,7 +8019,11 @@ function renderFiche(feature) {
     + '<div class="fiche-meta">'
     + (info.quartier ? '<span><strong>Quartier</strong> ' + (getQuartiersForInfo(info).join(' · ') || info.quartier) + '</span>' : '')
     + (info.canton   ? '<span><strong>Canton</strong> ' + fmtCanton(info.canton) + '</span>' : '')
-    + (!isAgg && info.nom && info.nom !== info.denomination ? '<span><strong>Section</strong> ' + info.nom + '</span>' : '')
+    + (!isAgg && info.nom && info.nom !== info.denomination ? '<span><strong>Section (nom officiel)</strong> ' + info.nom + '</span>' : '')
+    + (isSec ? (function(){
+        var _bids = (typeof getBureauxOfSection === 'function') ? getBureauxOfSection(feature.properties.sec, String((ELECTIONS[currentElection]||{}).my || CURRENT_ERA)) : [];
+        return _bids.length ? '<span><strong>Bureau'+(_bids.length>1?'x':'')+'</strong> '+_bids.length+'</span>' : '';
+      })() : '')
     + '</div>'
     + '</div>'
     + '</div>';
@@ -7796,7 +8044,7 @@ function renderFiche(feature) {
     if (question) {
       sig_r += '<div class="ref-question">' + question + '</div>';
     }
-    sig_r += renderCandidates(data, ns, cityAvg, extr, false);
+    sig_r += renderCandidates(data, ns, cityAvg, extr, false, isSec ? 'section' : 'bureau');
     sig_r += '</div>';
     // Participation (au-dessus du split)
     const abst_nb_r = Math.round((data.i || 0) * (data.a || 0) / 100);
@@ -7826,7 +8074,7 @@ function renderFiche(feature) {
 
   // Results column
   let sig = '<div class="sig-block">';
-  sig += renderCandidates(data, ns, cityAvg, extr, false);
+  sig += renderCandidates(data, ns, cityAvg, extr, false, isSec ? 'section' : 'bureau');
   sig += '</div>';
 
   // Participation
@@ -7846,9 +8094,28 @@ function renderFiche(feature) {
   // Lien LRVanalyse : histoKey (ID 2026 canonique) pour suivre la lignée du
   // bureau à travers les redécoupages successifs. Label avec préposition,
   // numéro affiché et dénomination (ce que le user voit dans la fiche courante).
-  h += isAgg
-     ? renderMoreLinks('bureau', histoKey, 'des ', 'bureaux agrégés')
-     : renderMoreLinks('bureau', histoKey, 'du bureau de vote ', 'n° ' + parseInt(ns) + (info.denomination ? ' · ' + info.denomination : ''));
+  if (isSec) {
+    // Fiche section : tableau des bureaux internes avec leur winner individuel,
+    // puis liens "En savoir plus". L'analyse n'a pas de niveau section → on
+    // pointe vers le PREMIER bureau de la section (résolu vers son bid 2026
+    // canonique, comme pour une fiche bureau normale).
+    h += renderBureauxInSectionHTML(feature, info);
+    const _secName = feature.properties && feature.properties.sec;
+    if (_secName && typeof getBureauxOfSection === 'function') {
+      const _sBids = getBureauxOfSection(_secName, _curEra);
+      const _firstBid = (_sBids && _sBids[0]) || null;
+      if (_firstBid) {
+        // href pointe vers le premier bureau (résolu en bid 2026 canonique),
+        // mais le libellé affiche la SECTION (unité qu'on voit à l'écran).
+        const _b2026Sec = _resolveB2026FromHist(_firstBid, _curEra);
+        h += renderMoreLinks('bureau', _b2026Sec, 'de la section ', _secName);
+      }
+    }
+  } else {
+    h += isAgg
+       ? renderMoreLinks('bureau', histoKey, 'des ', 'bureaux agrégés')
+       : renderMoreLinks('bureau', histoKey, 'du bureau de vote ', 'n° ' + parseInt(ns) + (info.denomination ? ' · ' + info.denomination : ''));
+  }
   document.getElementById('ov-body').innerHTML = h; document.getElementById('ov-body').scrollTop = 0;
 
   // Récupère la géométrie à jour depuis le GeoJSON du scrutin courant
@@ -7961,12 +8228,39 @@ function renderQuartier(){
     h+='<div style="padding:12px;color:var(--text-meta);font-style:italic">Donn\u00e9es non disponibles pour ce scrutin.</div>';
   }
   if(!(mapYear0==='1988'&&q==='Saint-Eloi')){
-  h+='<div class="fiche-section-bureaux-list" style="margin-bottom:18px"><div class="sec-ttl">Bureaux du quartier</div>';
+  const _isSecEra = typeof isSectionEra === 'function' && isSectionEra(mapYear0);
+  const _colLbl = _isSecEra ? 'Nom officiel' : 'D\u00e9nomination';
+  const _nCol   = _isSecEra ? 'Nb' : 'N\u00b0';
+  const _listLbl = _isSecEra ? 'Sections du quartier' : 'Bureaux du quartier';
+  h+='<div class="fiche-section-bureaux-list" style="margin-bottom:18px"><div class="sec-ttl">'+_listLbl+'</div>';
   h+='<div style="display:flex;align-items:center;gap:10px;padding:4px 10px;margin-bottom:2px">'
-    +'<span style="font-size:0.6rem;font-weight:700;color:var(--text-meta);width:28px;flex-shrink:0">N\u00b0</span>'
-    +'<span style="font-size:0.6rem;font-weight:700;color:var(--text-meta);flex:1">D\u00e9nomination</span>'
+    +'<span style="font-size:0.6rem;font-weight:700;color:var(--text-meta);width:28px;flex-shrink:0">'+_nCol+'</span>'
+    +'<span style="font-size:0.6rem;font-weight:700;color:var(--text-meta);flex:1">'+_colLbl+'</span>'
     +'<span style="font-size:0.6rem;font-weight:700;color:var(--text-meta);width:68px;text-align:right;flex-shrink:0">Abstention</span>'
     +'<span style="font-size:0.6rem;font-weight:700;color:var(--text-meta);flex:2;margin-left:12px">'+((typeof isReferendum === 'function' && isReferendum(currentElection)) ? 'Oui / Non' : 'Blocs')+'</span></div>';
+  if (_isSecEra && typeof aggregateBureauData === 'function') {
+    const _secMap = {};
+    bureauNums.forEach(bid => {
+      const s = ((BUREAU_INFO[mapYear0]||{})[bid]||{}).sec;
+      if (!s) return;
+      (_secMap[s] = _secMap[s] || []).push(bid);
+    });
+    const _activeSec = currentFeature && currentFeature.properties && currentFeature.properties.sec;
+    Object.keys(_secMap).sort().forEach(secName => {
+      const bids = _secMap[secName];
+      const datas = bids.map(b => shData[b]).filter(Boolean);
+      const d = datas.length ? aggregateBureauData(datas) : null;
+      const isActive = secName === _activeSec;
+      const abst2 = d ? (d.a||0) : null;
+      const bar = _blocsBarHTML(d, {height:14});
+      h += '<div class="q-brow'+(isActive?' active':'')+'" style="cursor:default">'
+        +'<span style="font-size:0.63rem;font-weight:700;color:var(--text-meta);width:28px;flex-shrink:0;padding-top:1px">'+bids.length+'</span>'
+        +'<span style="font-size:0.74rem;font-weight:500;color:var(--text-modal);flex:1;line-height:1.35">'+secName+'</span>'
+        +'<span style="font-size:0.72rem;font-weight:700;color:var(--text-modal-muted);width:68px;text-align:right;flex-shrink:0;padding-top:1px">'
+        +(abst2!==null?abst2.toFixed(1)+' %':'\u2014')+'</span>'
+        +'<div style="flex:2;min-width:0;margin-left:12px;padding-top:3px">'+bar+'</div></div>';
+    });
+  } else {
   const sortedNums=bureauNums.slice().sort();
   function bureauRow(ns2){
     const d=shData[ns2];const el2=ELECTIONS[currentElection];const mapYear2=String(el2?el2.my:2026);
@@ -7978,7 +8272,7 @@ function renderQuartier(){
       +'<span style="font-size:0.63rem;font-weight:700;color:var(--text-meta);width:28px;flex-shrink:0;padding-top:1px">'+parseInt(ns2)+'</span>'
       +'<span style="font-size:0.74rem;font-weight:500;color:var(--text-modal);flex:1;line-height:1.35">'+denom+'</span>'
       +'<span style="font-size:0.72rem;font-weight:700;color:var(--text-modal-muted);width:68px;text-align:right;flex-shrink:0;padding-top:1px">'
-      +(abst2!==null?abst2.toFixed(1)+' %':'—')+'</span>'
+      +(abst2!==null?abst2.toFixed(1)+' %':'\u2014')+'</span>'
       +'<div style="flex:2;min-width:0;margin-left:12px;padding-top:3px">'+bar+'</div></div>';
   }
   const BFOLD=8;sortedNums.slice(0,BFOLD).forEach(ns2=>{h+=bureauRow(ns2);});
@@ -7987,6 +8281,7 @@ function renderQuartier(){
     const uid2='qb_'+q.replace(/[^a-z0-9]/gi,'_');
     h+='<div id="'+uid2+'" style="display:none">';hiddenNums.forEach(ns2=>{h+=bureauRow(ns2);});h+='</div>';
     h+='<button class="show-more-btn" onclick="var e=document.getElementById(\''+uid2+'\');e.style.display=\'block\';this.remove()">+ '+hiddenNums.length+' autre'+(hiddenNums.length>1?'s':'')+' bureau'+(hiddenNums.length>1?'x':'')+'</button>';
+  }
   }
   h+='</div>';
   } // end if not Saint-Eloi 1988
@@ -7999,7 +8294,18 @@ function renderQuartier(){
       wrap.innerHTML='<div id="mm-inner" style="width:100%;height:100%;min-height:220px;border-radius:8px;overflow:hidden"></div>';
       mmMap=L.map('mm-inner',{zoomControl:false,attributionControl:false,dragging:false,scrollWheelZoom:false,zoomSnap:0});
       L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',{maxZoom:20}).addTo(mmMap);
-      const gj=getMapGeoJSON();const qFeats=gj.features.filter(f=>qNums.has(numStr(f)));
+      const gj=getMapGeoJSON();
+      // Ère « section » (pré-1979) : les features sont indexées par properties.sec,
+      // pas par n° de bureau → on dérive le set des sections cibles depuis les bids.
+      let qFeats;
+      if (typeof isSectionEra === 'function' && isSectionEra(mapYear0)) {
+        const _yi = BUREAU_INFO[mapYear0] || {};
+        const secSet = new Set();
+        bureauNums.forEach(bid => { const s = (_yi[bid]||{}).sec; if (s) secSet.add(s); });
+        qFeats = gj.features.filter(f => f.properties && f.properties.sec && secSet.has(f.properties.sec));
+      } else {
+        qFeats = gj.features.filter(f=>qNums.has(numStr(f)));
+      }
       const allHoles=[];qFeats.forEach(f=>{allHoles.push(...geomToHoles(f.geometry));});
       addInverseMask(mmMap,allHoles,qWinCol);
       if(qFeats.length)mmMap.fitBounds(L.geoJSON({type:'FeatureCollection',features:qFeats}).getBounds().pad(0.06));
@@ -8073,6 +8379,7 @@ function renderCanton(){
     '1982:1': 'Le canton La Rochelle-1 (1982) comprenait aussi les communes de Nieul-sur-Mer, Lagord et L\'Houmeau. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
     '1982:6': 'Le canton La Rochelle-6 (1982) comprenait aussi les communes d\'Aytré, Angoulins et Châtelaillon-Plage. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
     '1973:2': 'Le canton La Rochelle-2 (1973) comprenait aussi les communes de Nieul-sur-Mer, Lagord, Dompierre-sur-Mer, Esnandes, Marsilly, Puilboreau, Saint-Xandre et L\'Houmeau. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
+    '1973:4': 'Le canton La Rochelle-4 (1973) comprenait aussi les communes de Châtelaillon-Plage, Angoulin, Aytré et Périgny. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
   };
   const _alerteKey = String(cantonEra) + ':' + String(cid);
   if (_alertesHorsLR[_alerteKey]) {
@@ -8110,12 +8417,38 @@ function renderCanton(){
     h += '<div style="padding:12px;color:var(--text-meta);font-style:italic">Données non disponibles pour ce scrutin dans ce canton.</div>';
   }
   // Liste des bureaux du canton
-  h += '<div class="fiche-section-bureaux-list" style="margin-bottom:18px"><div class="sec-ttl">Bureaux du canton</div>';
+  h += '<div class="fiche-section-bureaux-list" style="margin-bottom:18px"><div class="sec-ttl">' + (typeof isSectionEra === 'function' && isSectionEra(mapYear) ? 'Sections du canton' : 'Bureaux du canton') + '</div>';
+  const _isSecEra = typeof isSectionEra === 'function' && isSectionEra(mapYear);
+  const _colLbl = _isSecEra ? 'Nom officiel' : 'D\u00e9nomination';
+  const _nCol   = _isSecEra ? 'Nb' : 'N\u00b0';
   h += '<div style="display:flex;align-items:center;gap:10px;padding:4px 10px;margin-bottom:2px">'
-    +'<span style="font-size:0.6rem;font-weight:700;color:var(--text-meta);width:28px;flex-shrink:0">N°</span>'
-    +'<span style="font-size:0.6rem;font-weight:700;color:var(--text-meta);flex:1">Dénomination</span>'
+    +'<span style="font-size:0.6rem;font-weight:700;color:var(--text-meta);width:28px;flex-shrink:0">'+_nCol+'</span>'
+    +'<span style="font-size:0.6rem;font-weight:700;color:var(--text-meta);flex:1">'+_colLbl+'</span>'
     +'<span style="font-size:0.6rem;font-weight:700;color:var(--text-meta);width:68px;text-align:right;flex-shrink:0">Abstention</span>'
     +'<span style="font-size:0.6rem;font-weight:700;color:var(--text-meta);flex:2;margin-left:12px">'+((typeof isReferendum === 'function' && isReferendum(currentElection)) ? 'Oui / Non' : 'Blocs')+'</span></div>';
+  if (_isSecEra && typeof aggregateBureauData === 'function') {
+    const _secMap = {};
+    bureauNums.forEach(bid => {
+      const s = ((BUREAU_INFO[mapYear]||{})[bid]||{}).sec;
+      if (!s) return;
+      (_secMap[s] = _secMap[s] || []).push(bid);
+    });
+    const _activeSec = currentFeature && currentFeature.properties && currentFeature.properties.sec;
+    Object.keys(_secMap).sort().forEach(secName => {
+      const bids = _secMap[secName];
+      const datas = bids.map(b => shData[b]).filter(Boolean);
+      const d = datas.length ? aggregateBureauData(datas) : null;
+      const isActive = secName === _activeSec;
+      const abst2 = d ? (d.a||0) : null;
+      const bar = _blocsBarHTML(d, {height:14});
+      h += '<div class="q-brow'+(isActive?' active':'')+'" style="cursor:default">'
+        +'<span style="font-size:0.63rem;font-weight:700;color:var(--text-meta);width:28px;flex-shrink:0;padding-top:1px">'+bids.length+'</span>'
+        +'<span style="font-size:0.74rem;font-weight:500;color:var(--text-modal);flex:1;line-height:1.35">'+secName+'</span>'
+        +'<span style="font-size:0.72rem;font-weight:700;color:var(--text-modal-muted);width:68px;text-align:right;flex-shrink:0;padding-top:1px">'
+        +(abst2!==null?abst2.toFixed(1)+' %':'\u2014')+'</span>'
+        +'<div style="flex:2;min-width:0;margin-left:12px;padding-top:3px">'+bar+'</div></div>';
+    });
+  } else {
   const sortedNums = bureauNums.slice().sort();
   function bureauRowC(ns2) {
     const d = shData[ns2];
@@ -8128,7 +8461,7 @@ function renderCanton(){
       +'<span style="font-size:0.63rem;font-weight:700;color:var(--text-meta);width:28px;flex-shrink:0;padding-top:1px">'+parseInt(ns2)+'</span>'
       +'<span style="font-size:0.74rem;font-weight:500;color:var(--text-modal);flex:1;line-height:1.35">'+denom+'</span>'
       +'<span style="font-size:0.72rem;font-weight:700;color:var(--text-modal-muted);width:68px;text-align:right;flex-shrink:0;padding-top:1px">'
-      +(abst2!==null?abst2.toFixed(1)+' %':'—')+'</span>'
+      +(abst2!==null?abst2.toFixed(1)+' %':'\u2014')+'</span>'
       +'<div style="flex:2;min-width:0;margin-left:12px;padding-top:3px">'+bar+'</div></div>';
   }
   const BFOLD = 8;
@@ -8140,6 +8473,7 @@ function renderCanton(){
     hiddenNums.forEach(ns2 => { h += bureauRowC(ns2); });
     h += '</div>';
     h += '<button class="show-more-btn" onclick="var e=document.getElementById(\''+uid2+'\');e.style.display=\'block\';this.remove()">+ '+hiddenNums.length+' autre'+(hiddenNums.length>1?'s':'')+' bureau'+(hiddenNums.length>1?'x':'')+'</button>';
+  }
   }
   h += '</div>';
   // LRVanalyse attend un cantonKey au format '<era>:<cid>' (ex. '1985:9' pour
@@ -8159,7 +8493,17 @@ function renderCanton(){
       mmMap = L.map('mm-inner', { zoomControl:false, attributionControl:false, dragging:false, scrollWheelZoom:false, zoomSnap:0 });
       L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', { maxZoom:20 }).addTo(mmMap);
       const gj = getMapGeoJSON();
-      const cFeats = gj.features.filter(f => cNums.has(numStr(f)));
+      // Ère « section » (pré-1979) : features indexées par properties.sec → on
+      // dérive le set des sections cibles depuis les bids du canton.
+      let cFeats;
+      if (typeof isSectionEra === 'function' && isSectionEra(mapYear)) {
+        const _yi = BUREAU_INFO[mapYear] || {};
+        const secSet = new Set();
+        bureauNums.forEach(bid => { const s = (_yi[bid]||{}).sec; if (s) secSet.add(s); });
+        cFeats = gj.features.filter(f => f.properties && f.properties.sec && secSet.has(f.properties.sec));
+      } else {
+        cFeats = gj.features.filter(f => cNums.has(numStr(f)));
+      }
       const allHoles = [];
       cFeats.forEach(f => { allHoles.push(...geomToHoles(f.geometry)); });
       addInverseMask(mmMap, allHoles, cWinCol);
@@ -8181,7 +8525,10 @@ function selectCantonFromList(cid) {
   });
   if (!ns) return;
   const gj = getMapGeoJSON();
-  const feat = gj.features.find(f => numStr(f) === ns);
+  const _bidSec = (yearInfo[ns]||{}).sec;
+  const feat = _bidSec
+    ? gj.features.find(f => f.properties && f.properties.sec === _bidSec)
+    : gj.features.find(f => numStr(f) === ns);
   if (!feat) return;
   currentFeature = feat;
   currentCanton = String(cid);
@@ -8417,8 +8764,28 @@ function renderMapLegend() {
         if (String((yearInfo[ns]||{}).c||'') === legendCantonFilter) filteredShData[ns] = d;
       });
     }
+    // Ère « section » : on agrège d'abord par section (unité cartographiée),
+    // puis on compte les wins section par section — sinon wins["Crépeau"] serait
+    // ~35 (bureaux) au lieu de ~17 (sections) et le tooltip serait erroné.
+    const _isSecEraLg = typeof isSectionEra === 'function' && isSectionEra(String((ELECTIONS[currentElection]||{}).my || CURRENT_ERA));
+    let _iterData = filteredShData;
+    if (_isSecEraLg && typeof aggregateBureauData === 'function') {
+      const _era = String((ELECTIONS[currentElection]||{}).my || CURRENT_ERA);
+      const _bi = BUREAU_INFO[_era] || {};
+      const _bySec = {};
+      Object.entries(filteredShData).forEach(([ns,d]) => {
+        if (!d || ns==='0057') return;
+        const s = (_bi[ns]||{}).sec;
+        if (!s) return;
+        (_bySec[s] = _bySec[s] || []).push(d);
+      });
+      _iterData = {};
+      Object.entries(_bySec).forEach(([s, datas]) => {
+        _iterData[s] = aggregateBureauData(datas);
+      });
+    }
     const wins = {}, ties = {}, totals = {}, counts = {};
-    Object.entries(filteredShData).forEach(([ns,d]) => {
+    Object.entries(_iterData).forEach(([ns,d]) => {
       if (!d || ns==='0057') return;
       // Ex-aequo : tous les candidats à égalité en tête comptent +1 chacun
       // (le bureau "appartient" autant à chacun). Sans ce traitement, seul le
@@ -8453,9 +8820,9 @@ function renderMapLegend() {
       const isSel = currentMapSelection === name;
       // Si ex-aequo : on ajoute un petit ▤ après le compteur, avec tooltip détaillé
       const tieMark = tieN > 0
-        ? '<span style="color:#888;font-size:0.66em;margin-left:3px;letter-spacing:-1px" title="dont '+tieN+' bureau'+(tieN>1?'x':'')+' à égalité (hachures sur la carte)">▤</span>'
+        ? '<span style="color:#888;font-size:0.66em;margin-left:3px;letter-spacing:-1px" title="dont '+tieN+(_isSecEraLg?' section':' bureau')+(tieN>1?'s':'')+' à égalité (hachures sur la carte)">▤</span>'
         : '';
-      const burLabel = nb > 0 ? nb+' bur.'+tieMark : '<span style="color:#ccc">–</span>';
+      const burLabel = nb > 0 ? nb+(_isSecEraLg?' sec.':' bur.')+tieMark : '<span style="color:#ccc">–</span>';
       return '<div class="leg-row leg-row-click'+(isSel?' leg-row-sel':'')+'" onclick="selectMapItem(\''+name.replace(/'/g,"\\'")+'\')" title="Choroplèthe : '+label+'">'
         +'<div class="leg-dot" style="background:'+dotBg+';'+(isSel?'box-shadow:0 0 0 2px #fff,0 0 0 4px '+col:'')+'"></div>'
         +'<span class="leg-label">'+label+(pa?'<span style="color:#aaa;font-size:0.58rem;margin-left:3px">'+pa+'</span>':'')+'</span>'
@@ -8476,8 +8843,26 @@ function renderMapLegend() {
     const _isMobLegOrder = window.matchMedia && window.matchMedia('(max-width: 1000px)').matches;
     el.innerHTML = _isMobLegOrder ? (rows + grad + cantonTabsHtml) : (cantonTabsHtml + rows + grad);
   } else if (currentMapMode === 'bloc') {
+    // Ère « section » : agréger par section avant comptage (cf. mode candidat).
+    const _isSecEraLg = typeof isSectionEra === 'function' && isSectionEra(String((ELECTIONS[currentElection]||{}).my || CURRENT_ERA));
+    let _iterData = shData;
+    if (_isSecEraLg && typeof aggregateBureauData === 'function') {
+      const _era = String((ELECTIONS[currentElection]||{}).my || CURRENT_ERA);
+      const _bi = BUREAU_INFO[_era] || {};
+      const _bySec = {};
+      Object.entries(shData).forEach(([ns,d]) => {
+        if (!d || ns==='0057') return;
+        const s = (_bi[ns]||{}).sec;
+        if (!s) return;
+        (_bySec[s] = _bySec[s] || []).push(d);
+      });
+      _iterData = {};
+      Object.entries(_bySec).forEach(([s, datas]) => {
+        _iterData[s] = aggregateBureauData(datas);
+      });
+    }
     const wins = {}, present = new Set();
-    Object.entries(shData).forEach(([ns,d]) => {
+    Object.entries(_iterData).forEach(([ns,d]) => {
       if (!d || ns==='0057') return;
       const bc = computeBlocs(d);
       Object.keys(bc).forEach(k => present.add(k));
@@ -8488,7 +8873,7 @@ function renderMapLegend() {
       if (!present.has(k)) return '';
       const nb = wins[k]||0;
       const isSel = currentMapSelection === k;
-      const burLabel = nb > 0 ? nb+' bur.' : '<span style="color:#ccc">–</span>';
+      const burLabel = nb > 0 ? nb+(_isSecEraLg?' sec.':' bur.') : '<span style="color:#ccc">–</span>';
       return '<div class="leg-row leg-row-click'+(isSel?' leg-row-sel':'')+'" onclick="selectMapItem(\''+k+'\')" title="Choroplèthe : '+v.label+'">'
         +'<div class="leg-dot" style="background:'+v.color+';'+(isSel?'box-shadow:0 0 0 2px #fff,0 0 0 4px '+v.color:'')+'"></div>'
         +'<span class="leg-label">'+v.label+'</span>'
