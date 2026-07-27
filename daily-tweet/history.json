@@ -962,5 +962,18 @@
     "quartier": "Centre-ville",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-07-27",
+    "signature": "global|Européennes 2004|TU",
+    "niveau": "global",
+    "niveau_publie": "global",
+    "truncation_step": 1,
+    "election": "Européennes 2004",
+    "tour": "TU",
+    "bureau": null,
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
   }
 ]

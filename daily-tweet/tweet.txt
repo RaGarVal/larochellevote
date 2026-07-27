@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🏙️ Le 6 décembre 2015, pour les régionales (1er tour), Alain Rousset (PS) arrive en tête avec 32,9 % dans le Centre-ville.
+🇪🇺 Le 13 juin 2004, pour les européennes, Bernard Poignant (PS) arrive en tête avec 34,9 % à La Rochelle.
 
-Les résultats de ce quartier, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=R%C3%A9gionales+2015&tour=T1&quartier=Centre-ville
+Les résultats de ce scrutin, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Europ%C3%A9ennes+2004&tab=global

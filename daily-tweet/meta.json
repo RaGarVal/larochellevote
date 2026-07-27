@@ -1,15 +1,15 @@
 {
-  "date": "2026-07-26",
-  "niveau": "quartier",
-  "niveau_publie": "quartier",
-  "election": "Régionales 2015",
-  "tour": "T1",
+  "date": "2026-07-27",
+  "niveau": "global",
+  "niveau_publie": "global",
+  "election": "Européennes 2004",
+  "tour": "TU",
   "bureau": null,
-  "quartier": "Centre-ville",
+  "quartier": null,
   "canton": null,
   "subtype": null,
   "candidat": null,
-  "signature": "quartier|Régionales 2015|T1|Centre-ville",
-  "chars": 243,
-  "generated_at": "2026-07-26T06:01:00.107Z"
+  "signature": "global|Européennes 2004|TU",
+  "chars": 226,
+  "generated_at": "2026-07-27T06:01:13.307Z"
 }
