@@ -1,15 +1,15 @@
 {
-  "date": "2026-07-27",
-  "niveau": "global",
-  "niveau_publie": "global",
-  "election": "Européennes 2004",
+  "date": "2026-07-28",
+  "niveau": "carte",
+  "niveau_publie": "carte",
+  "election": "Européennes 1979",
   "tour": "TU",
   "bureau": null,
   "quartier": null,
   "canton": null,
-  "subtype": null,
-  "candidat": null,
-  "signature": "global|Européennes 2004|TU",
-  "chars": 226,
-  "generated_at": "2026-07-27T06:01:13.307Z"
+  "subtype": "candidat",
+  "candidat": "georges-marchais@europeennes-1979",
+  "signature": "carte|Européennes 1979|TU|cand:georges-marchais@europeennes-1979",
+  "chars": 248,
+  "generated_at": "2026-07-28T06:01:26.772Z"
 }

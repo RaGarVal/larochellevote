@@ -975,5 +975,18 @@
     "quartier": null,
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-07-28",
+    "signature": "carte|Européennes 1979|TU|cand:georges-marchais@europeennes-1979",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Européennes 1979",
+    "tour": "TU",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "georges-marchais@europeennes-1979"
   }
 ]
