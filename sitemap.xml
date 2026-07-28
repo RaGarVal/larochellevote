@@ -674,7 +674,25 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://larochellevote.fr/scrutins/municipales-1971.html</loc>
+    <lastmod>2026-07-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://larochellevote.fr/scrutins/municipales-1977.html</loc>
+    <lastmod>2026-07-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://larochellevote.fr/scrutins/legislatives-1967.html</loc>
+    <lastmod>2026-07-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://larochellevote.fr/scrutins/legislatives-1968.html</loc>
     <lastmod>2026-07-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -698,6 +716,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://larochellevote.fr/scrutins/presidentielle-1969.html</loc>
+    <lastmod>2026-07-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://larochellevote.fr/scrutins/presidentielle-1974.html</loc>
     <lastmod>2026-07-26</lastmod>
     <changefreq>monthly</changefreq>
@@ -705,6 +729,12 @@
   </url>
   <url>
     <loc>https://larochellevote.fr/scrutins/presidentielle-1981.html</loc>
+    <lastmod>2026-07-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://larochellevote.fr/scrutins/referendum-1972.html</loc>
     <lastmod>2026-07-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>

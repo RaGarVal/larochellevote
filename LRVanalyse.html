@@ -56,7 +56,7 @@
   "mainEntity": {
     "@type": "Dataset",
     "name": "Archives électorales de La Rochelle, 1986-2026",
-    "description": "Résultats par bureau de vote pour 65 élections et 4 référendums organisés à La Rochelle entre 1973 et 2026.",
+    "description": "Résultats par bureau de vote pour 77 élections et 10 référendums organisés à La Rochelle entre 1958 et 2026.",
     "url": "https://larochellevote.fr/",
     "creator": {
       "@type": "Person",
@@ -4140,20 +4140,27 @@ function drawFrise(bid, xScaleOverride, previewWindow) {
       const nums = ids.length > 0
         ? ids.map(id => String(parseInt(id))).sort((a, b) => +a - +b).join('+')
         : '—';
-      // Détecter si les bureaux appartenaient à un quartier historique composé (ex "Tasdon/Les Minimes")
-      // dont fait partie le quartier moderne cherché. Split explicite sur "/" ici (cas spécifique
-      // aux noms historiques composés, PAS une décomposition multi-quartier générale).
+      // Nom d'époque : si tous les bureaux historiques mappés partagent un même
+      // `q`, on l'affiche à la place du nom moderne — peu importe que celui-ci
+      // apparaisse dans les parts séparées par « / » ou pas. Couvre 2 cas :
+      //  1. Quartier composé historique (ex "Tasdon/Les Minimes") pour un
+      //     moderne « Tasdon » ou « Les Minimes ».
+      //  2. Quartier moderne créé après (ex « Villeneuve-les-Salines » en 1967)
+      //     dont les bureaux étaient dans un autre quartier ancien (« Tasdon/
+      //     Les Minimes » ici) — on affiche ce nom d'époque authentique.
       const eraSheet = BUREAU_INFO[era] || {};
       const sharedQ = ids.length > 0
         ? (() => {
-            const q0 = (eraSheet[ids[0]] || {}).q || '';
-            return (q0 !== qname && q0.includes('/')
-                    && q0.split('/').map(s => s.trim()).includes(qname))
-              ? q0 : null;
+            const qs = ids.map(id => (eraSheet[id] || {}).q).filter(Boolean);
+            if (!qs.length) return null;
+            const q0 = qs[0];
+            if (!qs.every(q => q === q0)) return null;
+            if (q0 === qname) return null;
+            return q0;
           })()
         : null;
-      // Pas de hachures : le nom composé historique (ex "Tasdon/Les Minimes") est une
-      // dénomination d'époque authentique, pas une reconstruction rétroactive.
+      // Pas de hachures : le nom historique est une dénomination d'époque
+      // authentique, pas une reconstruction rétroactive.
       eraInfo[era] = { num: nums, den: sharedQ || qname, agg: false, ids };
     });
   }
@@ -6289,7 +6296,7 @@ function copyRedecoupageCode() {
     },
     {
       title: 'Frise des redécoupages',
-      body: 'Sous le graphique, la frise retrace l\'<strong>histoire géographique</strong> de ce bureau : son nom et son numéro à chaque ère depuis 1973. Les macarons (verts, oranges, jaunes) signalent les redécoupages majeurs ou mineurs — survolez-les pour lire le détail. Voici par exemple le bureau N°41 — Médiathèque–Ville-en-Bois (Les Minimes).<br><br><strong>Cliquez sur la frise pour découvrir les différents tracés du bureau à travers les ères.</strong>',
+      body: 'Sous le graphique, la frise retrace l\'<strong>histoire géographique</strong> de ce bureau : son nom et son numéro à chaque ère depuis 1958. Les macarons (verts, oranges, jaunes) signalent les redécoupages majeurs ou mineurs — survolez-les pour lire le détail. Voici par exemple le bureau N°41 — Médiathèque–Ville-en-Bois (Les Minimes).<br><br><strong>Cliquez sur la frise pour découvrir les différents tracés du bureau à travers les ères.</strong>',
       target: '#frise-area',
       targetPad: { top: 90 },  // Inclut les macarons SVG qui sont juste au-dessus de la frise
       placement: 'top',

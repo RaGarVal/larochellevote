@@ -65,7 +65,7 @@
     "mainEntity": {
       "@type": "Dataset",
       "name": "Archives électorales de La Rochelle, 1986-2026",
-      "description": "Résultats par bureau de vote pour 65 élections et 4 référendums organisés à La Rochelle entre 1973 et 2026.",
+      "description": "Résultats par bureau de vote pour 77 élections et 10 référendums organisés à La Rochelle entre 1958 et 2026.",
       "url": "https://larochellevote.fr/",
       "creator": {
         "@type": "Person",
@@ -3557,6 +3557,8 @@ input:focus-visible,
         <option value="Municipales 1989">Municipales 1989</option>
         <option value="Municipales 1983">Municipales 1983</option>
         <option value="Municipales 1977">Municipales 1977</option>
+        <option value="Municipales 1971">Municipales 1971</option>
+        <option value="Municipales 1965">Municipales 1965</option>
       </optgroup>
       <optgroup label="Présidentielles">
         <option value="Présidentielle 2022">Présidentielle 2022</option>
@@ -3568,6 +3570,8 @@ input:focus-visible,
         <option value="Présidentielle 1988">Présidentielle 1988</option>
         <option value="Présidentielle 1981">Présidentielle 1981</option>
         <option value="Présidentielle 1974">Présidentielle 1974</option>
+        <option value="Présidentielle 1969">Présidentielle 1969</option>
+        <option value="Présidentielle 1965">Présidentielle 1965</option>
       </optgroup>
       <optgroup label="Législatives">
         <option value="Législatives 2024">Législatives 2024</option>
@@ -3583,6 +3587,11 @@ input:focus-visible,
         <option value="Législatives 1981">Législatives 1981</option>
         <option value="Législatives 1978">Législatives 1978</option>
         <option value="Législatives 1973">Législatives 1973</option>
+        <option value="Législatives 1968">Législatives 1968</option>
+        <option value="Législatives 1967">Législatives 1967</option>
+        <option value="Législatives 1962">Législatives 1962</option>
+        <option value="Législative partielle 1959">Législative partielle 1959</option>
+        <option value="Législatives 1958">Législatives 1958</option>
       </optgroup>
       <optgroup label="Européennes">
         <option value="Européennes 2024">Européennes 2024</option>
@@ -3623,12 +3632,21 @@ input:focus-visible,
         <option value="Cantonales 1979">Cantonales 1979</option>
         <option value="Cantonales 1976">Cantonales 1976</option>
         <option value="Cantonales 1973">Cantonales 1973</option>
+        <option value="Cantonales 1970">Cantonales 1970</option>
+        <option value="Cantonales 1967">Cantonales 1967</option>
+        <option value="Cantonales 1964">Cantonales 1964</option>
       </optgroup>
       <optgroup label="Référendums">
         <option value="Référendum 2005">Référendum 2005 — TCE</option>
         <option value="Référendum 2000">Référendum 2000 — quinquennat</option>
         <option value="Référendum 1992">Référendum 1992 — Maastricht</option>
         <option value="Référendum 1988">Référendum 1988 — Nouvelle-Calédonie</option>
+        <option value="Référendum 1972">Référendum 1972 — Élargissement CEE</option>
+        <option value="Référendum 1969">Référendum 1969 — Régions et Sénat</option>
+        <option value="Référendum octobre 1962">Référendum octobre 1962 — Présidentielle SU</option>
+        <option value="Référendum avril 1962">Référendum avril 1962 — Accords d'Évian</option>
+        <option value="Référendum 1961">Référendum 1961 — Algérie</option>
+        <option value="Référendum 1958">Référendum 1958 — Ve République</option>
       </optgroup>
     </select>
     <div class="btn-grp" id="tour-btns" style="flex-shrink:0">
@@ -3755,13 +3773,13 @@ input:focus-visible,
 
 
 
-const HAS_T2 = new Set(['Présidentielle 1974','Présidentielle 1981','Présidentielle 1988','Présidentielle 1995','Présidentielle 2002','Présidentielle 2007',
+const HAS_T2 = new Set(['Présidentielle 1965','Présidentielle 1969','Présidentielle 1974','Présidentielle 1981','Présidentielle 1988','Présidentielle 1995','Présidentielle 2002','Présidentielle 2007',
   'Présidentielle 2012','Présidentielle 2017','Présidentielle 2022',
-  'Législatives 1973','Législatives 1978','Législatives 1981','Législatives 1988','Législatives 1993','Législatives 1997','Législatives 2002','Législatives 2007',
+  'Législatives 1958','Législative partielle 1959','Législatives 1962','Législatives 1967','Législatives 1968','Législatives 1973','Législatives 1978','Législatives 1981','Législatives 1988','Législatives 1993','Législatives 1997','Législatives 2002','Législatives 2007',
   'Législatives 2012','Législatives 2017','Législatives 2022','Législatives 2024',
-  'Municipales 2014','Municipales 2020','Municipales 2026',
+  'Municipales 1965','Municipales 1971','Municipales 2014','Municipales 2020','Municipales 2026',
   'Régionales 2004','Régionales 2010','Régionales 2015','Régionales 2021',
-  'Cantonales 1973','Cantonales 1976','Cantonales 1979','Cantonales 1982','Cantonales 1985','Cantonales 1988','Cantonales 1992','Cantonales 1994','Cantonales 1998','Cantonale partielle 1999','Cantonales 2001','Cantonale partielle 2002','Cantonales 2004','Cantonales 2008','Cantonales 2011','Départementales 2015','Départementales 2021']);
+  'Cantonales 1964','Cantonales 1967','Cantonales 1970','Cantonales 1973','Cantonales 1976','Cantonales 1979','Cantonales 1982','Cantonales 1985','Cantonales 1988','Cantonales 1992','Cantonales 1994','Cantonales 1998','Cantonale partielle 1999','Cantonales 2001','Cantonale partielle 2002','Cantonales 2004','Cantonales 2008','Cantonales 2011','Départementales 2015','Départementales 2021']);
 const HAS_TU = new Set(['Législatives 1986','Régionales 1986','Municipales 1977','Municipales 1983','Municipales 1989','Municipales 1995','Régionales 1992','Régionales 1998','Européennes 1979','Européennes 1984','Européennes 1989','Européennes 1994','Européennes 1999','Européennes 2004','Européennes 2009','Européennes 2014','Européennes 2019','Européennes 2024']);
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
@@ -4179,10 +4197,18 @@ function _candInfoImpl(name) {
   // Référendums : plusieurs call sites utilisent les noms courts "Oui" et "Non"
   // (raccourci historique) ; on dérive le cand_id réel depuis l'élection courante.
   if ((name === 'Oui' || name === 'Non') && typeof isReferendum === 'function' && isReferendum(currentElection)) {
+    // Slug complet de l'élection : "Référendum 1969" → "referendum-1969",
+    // "Référendum avril 1962" → "referendum-avril-1962" (2 réfs même année).
+    const slug = currentElection.toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')  // décomposer les accents
+      .replace(/\s+/g, '-');
+    const cid = name.toLowerCase() + '@' + slug;
+    if (CAND_DATA[cid]) return CAND_DATA[cid];
+    // Fallback année seule (compat avec anciens sites d'appel éventuels)
     const yr = (currentElection.match(/(\d{4})/) || [])[1];
     if (yr) {
-      const cid = name.toLowerCase() + '@referendum-' + yr;
-      if (CAND_DATA[cid]) return CAND_DATA[cid];
+      const cidYr = name.toLowerCase() + '@referendum-' + yr;
+      if (CAND_DATA[cidYr]) return CAND_DATA[cidYr];
     }
   }
   // Post-M5 : le format pipe-key (`Nom|Élection`, `Nom|Élection|Tour`) n'existe plus
@@ -4907,6 +4933,18 @@ function candDisplayName(rawName) {
 }
 
 function fmtCanton(c) { if (!c || c === '') return ''; return 'La Rochelle-' + c; }
+// Label court pour les boutons « Canton … » (légende + tabs mobile).
+// Ex 2015/1985 → "1", 1833 (« La Rochelle-Ouest ») → "Ouest".
+// Convention : si CANTON_INFO expose `.short`, on le prend ; sinon si `.name`
+// commence par « La Rochelle- », on prend le suffixe ; sinon on retombe sur le cid.
+function cantonShortLabel(cid) {
+  if (!cid) return '';
+  const cEra = (typeof getCantonEraForElection === 'function') ? getCantonEraForElection(currentElection) : CURRENT_ERA_CANTON;
+  const meta = (typeof CANTON_INFO !== 'undefined' && CANTON_INFO[cEra] && CANTON_INFO[cEra].cantons && CANTON_INFO[cEra].cantons[cid]) || {};
+  if (meta.short) return String(meta.short);
+  if (meta.name && meta.name.indexOf('La Rochelle-') === 0) return meta.name.slice('La Rochelle-'.length);
+  return String(cid);
+}
 
 
 // ── MAP ───────────────────────────────────────────────────────────────────────
@@ -5167,6 +5205,42 @@ function getSelectionPct(data) {
 }
 function computeSelectionRange() {
   const shData = getSheetData(); let mn = Infinity, mx = 0;
+  // Ère « section » (pré-1979) : la carte affiche des SECTIONS (agrégats), pas
+  // des bureaux individuels. Le range du gradient doit donc être calculé sur les
+  // sections — sinon la légende affiche min/max des bureaux internes, plus
+  // étendus que ce que le user voit à l'écran.
+  const el0 = ELECTIONS[currentElection];
+  const mapYear = String(el0 ? el0.my : CURRENT_ERA);
+  const _isSecEra = typeof isSectionEra === 'function' && isSectionEra(mapYear);
+  if (_isSecEra) {
+    const yearInfo = BUREAU_INFO[mapYear] || {};
+    // Grouper les bureaux par nom de section
+    const secBids = {};
+    Object.keys(yearInfo).forEach(bid => {
+      const s = (yearInfo[bid] || {}).sec;
+      if (!s) return;
+      (secBids[s] = secBids[s] || []).push(bid);
+    });
+    Object.entries(secBids).forEach(([sec, bids]) => {
+      if (typeof aggregateBureauData !== 'function') return;
+      const datas = bids.map(b => shData[b]).filter(Boolean);
+      if (!datas.length) return;
+      const d = aggregateBureauData(datas);
+      // Mêmes filtres qu'en mode bureau (candidat absent = exclu si cantonal ;
+      // bloc sans candidat = exclu).
+      if (currentMapMode === 'candidat' && currentMapSelection) {
+        const _isCantonal = (typeof isCantonalElection === 'function') && isCantonalElection(currentElection);
+        if (_isCantonal && (!d.c || !Object.prototype.hasOwnProperty.call(d.c, currentMapSelection))) return;
+      }
+      if (currentMapMode === 'bloc' && currentMapSelection) {
+        if (!hasBlocCandidates(d, currentMapSelection)) return;
+      }
+      const v = getSelectionPct(d);
+      if (v > mx) mx = v;
+      if (v < mn) mn = v;
+    });
+    return [mn === Infinity ? 0 : mn, mx];
+  }
   Object.entries(shData).forEach(([ns,d]) => {
     if (ns === '0057' || !d) return;
     // Mode candidat : si le candidat n'est pas présent dans data.c sur une élection
@@ -5529,7 +5603,8 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
     const pctHtml = pct.toFixed(1).replace('.',',')+'<span style="font-size:0.5em;margin-left:0.12em">%</span>';
     // ── Version compact (sidebar) : tailles alignées sur blockWinner(c=true) ──
     // Pct 2.2rem, nom 1.4rem (nomSizeC), parti 0.68rem SIGLE only. Pas de
-    // prénom, pas de voix, pas d'alliés (le user veut la version minimale).
+    // prénom, pas de voix, pas d'alliés — cohérent avec le duel compact
+    // dont on retire aussi les voix (place limitée dans la sidebar).
     if (compact) {
       return '<div class="duel-solo duel-solo-c" style="text-align:center;background:'+col+';color:'+txtCol+';padding:10px 12px;border-radius:8px;margin:8px 0">'
         + '<div style="font-size:2.2rem;font-weight:900;line-height:1">'+pctHtml+'</div>'
@@ -5762,7 +5837,6 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
       ? '<div class="duel-block" style="flex:1 1 0;min-width:0;overflow:hidden;background:'+col+';padding:10px 12px;text-align:'+align+'">'
         + '<div style="font-size:2.2rem;font-weight:900;color:'+txtCol+';line-height:1">'+scoreHtml+'</div>'
         + diffLine(name, pct, true, align, c, txtCol)
-        + '<div style="font-size:0.82rem;color:'+_tc(0.75)+';margin-top:3px">'+voix.toLocaleString('fr-FR')+' voix</div>'
         + '<div style="font-size:'+nomSizeC+';font-weight:700;color:'+txtCol+';margin-top:8px">'+(hasBr ? nomInner : nomHtml)+'</div>'
         + (pa ? '<div style="font-size:0.68rem;color:'+_tc(0.7)+';margin-top:3px">'+pa+'</div>' : '')
         + '</div>'
@@ -5847,7 +5921,6 @@ function renderDuel(data, compact, cityAvg, ns, extr, extrLabel) {
       ? '<div class="'+_classes+'" style="flex:1 1 0;min-width:0;overflow:hidden;padding:10px 12px;text-align:'+align+';background:var(--bg-card);'+_borderCss+_bcbVars+'">'
         + '<div style="font-size:2.2rem;font-weight:900;color:'+col+';line-height:1">'+pct.toFixed(1)+'<span style="font-size:0.5em;margin-left:0.12em">%</span></div>'
         + diffLine(name, pct, false, align, c)
-        + '<div style="font-size:0.82rem;color:var(--text-modal-muted);margin-top:3px">'+voix.toLocaleString('fr-FR')+' voix</div>'
         + '<div style="font-size:'+nomSizeC+';font-weight:700;color:var(--text-modal);margin-top:8px">'+(hasBr ? nomInner : nomHtml)+'</div>'
         + (pa ? '<div style="font-size:0.68rem;color:var(--text-modal-muted);margin-top:3px">'+pa+'</div>' : '')
         + '</div>'
@@ -6171,7 +6244,7 @@ function buildCantonsPreviewHTML() {
     // Avertissement spécifique aux cantons historiques qui débordaient sur des
     // communes voisines (1985:5/8/9 + 1982:1/6). Version courte uniformisée pour
     // la sidebar étroite ; détails dans la fiche (renderCanton).
-    const _hlrSidebar = new Set(['1985:5','1985:8','1985:9','1982:1','1982:6','1973:2','1973:4']);
+    const _hlrSidebar = new Set(['1985:5','1985:8','1985:9','1982:1','1982:6','1973:2','1973:4','1833:1','1833:2']);
     if (_hlrSidebar.has(String(cantonEra) + ':' + cid)) {
       html += '<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:6px;padding:7px 10px;margin:-4px 0 10px;font-size:0.68rem;color:#7a6000;line-height:1.45">'
         + '<strong>Avertissement</strong> — Partie rochelaise uniquement.'
@@ -7189,15 +7262,42 @@ function openQuartierFromGlobal(qName) {
   var mapYear = String(el0 ? el0.my : 2026);
   var yearInfo = BUREAU_INFO[mapYear] || BUREAU_INFO[CURRENT_ERA] || {};
   var ns = null;
+  // 1) Matching direct sur .q (couvre les bureaux mono-quartier et les multi
+  //    séparés par «,»).
   Object.keys(yearInfo).forEach(function(num) {
     if (ns) return;
     var q = yearInfo[num].q || '';
     var parts = getQuartierParts(q);
     if (parts.indexOf(qName) >= 0) ns = num;
   });
+  // 2) Fallback QUARTIER_CORRESPONDANCES — nécessaire pour les ères où le
+  //    quartier moderne n'existait pas encore (ex. « Villeneuve-les-Salines »
+  //    en 1967) ou était fusionné avec d'autres (ex. « Tasdon » / « Les Minimes »
+  //    dans « Tasdon/Les Minimes » avant 2004).
+  if (!ns && typeof QUARTIER_CORRESPONDANCES !== 'undefined') {
+    var ov = (QUARTIER_CORRESPONDANCES[qName] || {})[mapYear];
+    if (ov && ov.length) {
+      var b2026 = ov[0];
+      var raw = (BUREAU_CORRESPONDANCES[b2026] || {})[mapYear];
+      if (typeof raw === 'string' && typeof isSectionEra === 'function'
+          && isSectionEra(mapYear) && typeof getBureauxOfSection === 'function') {
+        var secBids = getBureauxOfSection(raw, mapYear);
+        ns = (secBids && secBids[0]) || null;
+      } else if (Array.isArray(raw) && raw.length) {
+        ns = raw[0];
+      } else if (typeof raw === 'string') {
+        ns = raw;
+      }
+    }
+  }
   if (!ns) return;
   var gj = getMapGeoJSON();
-  var feat = gj.features.find(function(f){ return numStr(f) === ns; });
+  // En ère section : la feature est indexée par properties.sec (nom de section) ;
+  // on trouve la section du bureau via BUREAU_INFO[mapYear][ns].sec.
+  var _secName = ((yearInfo[ns] || {}).sec) || null;
+  var feat = _secName
+    ? gj.features.find(function(f){ return f.properties && f.properties.sec === _secName; })
+    : gj.features.find(function(f){ return numStr(f) === ns; });
   if (!feat) return;
   currentFeature = feat;
   openOverlayQuartierNamed(qName);
@@ -8062,9 +8162,23 @@ function renderFiche(feature) {
     // Lien LRVanalyse : utiliser histoKey (ID 2026 canonique de la lignée) pour
     // que la page analyse suive le MÊME bureau à travers les redécoupages.
     // Label avec préposition + numéro affiché + dénomination (UX du contexte courant).
-    h += isAgg
-       ? renderMoreLinks('bureau', histoKey, 'des ', 'bureaux agrégés')
-       : renderMoreLinks('bureau', histoKey, 'du bureau de vote ', 'n° ' + parseInt(ns) + (info.denomination ? ' · ' + info.denomination : ''));
+    // Ère section : pas de "n° X" car ns est un nom de section (parseInt→NaN) ;
+    // on pointe vers le 1er bureau de la section mais on affiche "de la section X".
+    if (isSec) {
+      const _secR = feature.properties && feature.properties.sec;
+      if (_secR && typeof getBureauxOfSection === 'function') {
+        const _sBidsR = getBureauxOfSection(_secR, _curEra);
+        const _firstBidR = (_sBidsR && _sBidsR[0]) || null;
+        if (_firstBidR) {
+          const _b2026SecR = _resolveB2026FromHist(_firstBidR, _curEra);
+          h += renderMoreLinks('bureau', _b2026SecR, 'de la section ', _secR);
+        }
+      }
+    } else {
+      h += isAgg
+         ? renderMoreLinks('bureau', histoKey, 'des ', 'bureaux agrégés')
+         : renderMoreLinks('bureau', histoKey, 'du bureau de vote ', 'n° ' + parseInt(ns) + (info.denomination ? ' · ' + info.denomination : ''));
+    }
     document.getElementById('ov-body').innerHTML = h; document.getElementById('ov-body').scrollTop = 0;
     const gjR = getMapGeoJSON();
     const freshR = gjR.features.find(f => numStr(f) === ns) || feature;
@@ -8380,6 +8494,8 @@ function renderCanton(){
     '1982:6': 'Le canton La Rochelle-6 (1982) comprenait aussi les communes d\'Aytré, Angoulins et Châtelaillon-Plage. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
     '1973:2': 'Le canton La Rochelle-2 (1973) comprenait aussi les communes de Nieul-sur-Mer, Lagord, Dompierre-sur-Mer, Esnandes, Marsilly, Puilboreau, Saint-Xandre et L\'Houmeau. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
     '1973:4': 'Le canton La Rochelle-4 (1973) comprenait aussi les communes de Châtelaillon-Plage, Angoulin, Aytré et Périgny. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
+    '1833:1': 'Le canton La Rochelle-Ouest (1833) comprenait aussi les communes de Nieul-sur-Mer, Esnandes, Marsilly, Saint-Xandre et L\'Houmeau. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
+    '1833:2': 'Le canton La Rochelle-Est (1833) comprenait aussi les communes de Lagord, Dompierre-sur-Mer, Puilboreau, Périgny, Aytré, Angoulins et Châtelaillon-Plage. Cette page ne présente que la totalisation de la partie rochelaise du canton.',
   };
   const _alerteKey = String(cantonEra) + ':' + String(cid);
   if (_alertesHorsLR[_alerteKey]) {
@@ -8752,10 +8868,12 @@ function renderMapLegend() {
         const _click  = disabled ? '' : ' onclick="setLegendCanton(\''+c+'\')"';
         const _tip    = disabled ? ' class="has-tooltip" data-tooltip="Canton pourvu au premier tour"' : '';
         const _dis    = disabled ? ' disabled' : '';
+        // Label court adaptatif via cantonShortLabel (ex 1833 = Canton Ouest/Est).
+        const _clbl = (typeof cantonShortLabel === 'function') ? cantonShortLabel(c) : c;
         cantonTabsHtml += '<button'+_dis+_click+_tip+' '
           + 'style="flex:1 1 0;min-width:0;padding:3px 4px;border:1px solid '+_border+';border-radius:4px;'
           + 'background:'+_bg+';color:'+_fg+';cursor:'+_cursor+';'
-          + 'font-size:0.7rem;font-weight:'+(sel?'700':'500')+';">'+(_shortLabel?('Ct. '+c):('Canton '+c))+'</button>';
+          + 'font-size:0.7rem;font-weight:'+(sel?'700':'500')+';">'+(_shortLabel?('Ct. '+_clbl):('Canton '+_clbl))+'</button>';
       });
       cantonTabsHtml += '</div>';
       // Filtrer shData sur les bureaux du canton sélectionné
@@ -9152,9 +9270,10 @@ function updateTopbar(){
         ? Object.keys(_el.par_canton).sort(function(a, b) { return parseInt(a) - parseInt(b); })
         : ['1', '2', '3'];
       _tabsEl.innerHTML = _cantons.map(function(cid) {
-        return '<button class="canton-tab" type="button" onclick="selectCantonFromList(\'' + cid + '\')" aria-label="Voir le canton La Rochelle-' + cid + '">'
+        var _lbl = (typeof cantonShortLabel === 'function') ? cantonShortLabel(cid) : cid;
+        return '<button class="canton-tab" type="button" onclick="selectCantonFromList(\'' + cid + '\')" aria-label="Voir le canton La Rochelle-' + _lbl + '">'
              + '<span class="gtab-icon" aria-hidden="true">🧩</span>'
-             + '<span class="gtab-label">Canton ' + cid + '</span>'
+             + '<span class="gtab-label">Canton ' + _lbl + '</span>'
              + '</button>';
       }).join('');
     }
@@ -12926,8 +13045,25 @@ function updateAnalyseLink() {
     } else if (m === 'candidat') {
       // Top 5 vainqueurs (Prénom Nom). Comptage cohérent avec renderMapLegend :
       // les candidats à égalité en tête comptent +1 chacun, marqués d'un ▤.
+      // Ère « section » : on agrège d'abord par section pour que le comptage
+      // soit en sections (unité cartographiée) et pas en bureaux, cohérent
+      // avec la légende interactive et avec ce qui est réellement colorié.
+      const _isSecEraCV = typeof isSectionEra === 'function' && isSectionEra(String((ELECTIONS[currentElection]||{}).my || CURRENT_ERA));
+      let _iterData = shData;
+      if (_isSecEraCV && typeof aggregateBureauData === 'function') {
+        const _era = String((ELECTIONS[currentElection]||{}).my || CURRENT_ERA);
+        const _bi = BUREAU_INFO[_era] || {};
+        const _bySec = {};
+        Object.entries(shData).forEach(([ns, d]) => {
+          if (!d || ns==='0057') return;
+          const s = (_bi[ns]||{}).sec; if (!s) return;
+          (_bySec[s] = _bySec[s] || []).push(d);
+        });
+        _iterData = {};
+        Object.entries(_bySec).forEach(([s, datas]) => { _iterData[s] = aggregateBureauData(datas); });
+      }
       const wins = {}, ties = {};
-      Object.entries(shData).forEach(([ns, d]) => {
+      Object.entries(_iterData).forEach(([ns, d]) => {
         if (ns==='0057' || !d) return;
         const tied = (typeof tieCandidatesForBureau === 'function') ? tieCandidatesForBureau(d) : null;
         if (tied) {
@@ -12951,11 +13087,26 @@ function updateAnalyseLink() {
         const paShort = (typeof shortPa === 'function') ? shortPa(paRaw) : paRaw;
         const pa = paShort ? ' (' + paShort + ')' : '';
         const tieMark = (ties[n] || 0) > 0 ? ' ▤' : '';
-        lines.push({ type:'item', color:col, label: prenom + nom + pa, val: nb + ' bur.' + tieMark });
+        lines.push({ type:'item', color:col, label: prenom + nom + pa, val: nb + (_isSecEraCV ? ' sec.' : ' bur.') + tieMark });
       });
     } else if (m === 'bloc') {
+      // Idem : ère section → agréger par section avant de compter les wins.
+      const _isSecEraCV = typeof isSectionEra === 'function' && isSectionEra(String((ELECTIONS[currentElection]||{}).my || CURRENT_ERA));
+      let _iterData = shData;
+      if (_isSecEraCV && typeof aggregateBureauData === 'function') {
+        const _era = String((ELECTIONS[currentElection]||{}).my || CURRENT_ERA);
+        const _bi = BUREAU_INFO[_era] || {};
+        const _bySec = {};
+        Object.entries(shData).forEach(([ns, d]) => {
+          if (!d || ns==='0057') return;
+          const s = (_bi[ns]||{}).sec; if (!s) return;
+          (_bySec[s] = _bySec[s] || []).push(d);
+        });
+        _iterData = {};
+        Object.entries(_bySec).forEach(([s, datas]) => { _iterData[s] = aggregateBureauData(datas); });
+      }
       const wins = {};
-      Object.entries(shData).forEach(([ns, d]) => {
+      Object.entries(_iterData).forEach(([ns, d]) => {
         if (ns==='0057' || !d) return;
         if (typeof computeBlocs !== 'function') return;
         const bc = computeBlocs(d);
@@ -12964,7 +13115,7 @@ function updateAnalyseLink() {
       });
       Object.entries(wins).sort((a,b)=>b[1]-a[1]).slice(0,6).forEach(([k, nb]) => {
         const cfg = (typeof BLOC_CONFIG !== 'undefined' && (BLOC_CONFIG[k] || BLOC_CONFIG['?'])) || { color:'#666', label:k };
-        lines.push({ type:'item', color: cfg.color, label: cfg.label || k, val: nb + ' bur.' });
+        lines.push({ type:'item', color: cfg.color, label: cfg.label || k, val: nb + (_isSecEraCV ? ' sec.' : ' bur.') });
       });
     } else if (m === 'abstention') {
       if (typeof ensureAbstRange === 'function') ensureAbstRange();
@@ -15037,12 +15188,30 @@ function randomDiscover() {
     // ancienne (audit medium #2).
     const era = String((ELECTIONS[currentElection] || {}).my || CURRENT_ERA);
     const erasInfo = BUREAU_INFO[era] || {};
-    const sortedNums = Object.keys(erasInfo)
+    let sortedNums = Object.keys(erasInfo)
       .filter(id => (erasInfo[id].q || '') !== 'Nul')
       .sort((a,b) => parseInt(a) - parseInt(b));
+    // En ère « section » (pré-1979) : on navigue entre SECTIONS (unité cartographique),
+    // pas entre bureaux internes. cur (numStr) est déjà un nom de section pour ces ères.
+    // Ordre : par n° du 1er bureau de chaque section (même logique que la sidebar
+    // renderBureauList) — sinon un tri alphabétique disperse géographiquement.
+    if (typeof isSectionEra === 'function' && isSectionEra(era)) {
+      const secToFirstBid = {};
+      Object.entries(erasInfo).forEach(([bid, b]) => {
+        if (!b || !b.sec) return;
+        if (secToFirstBid[b.sec] === undefined || parseInt(bid) < secToFirstBid[b.sec]) {
+          secToFirstBid[b.sec] = parseInt(bid);
+        }
+      });
+      sortedNums = Object.keys(secToFirstBid).sort((a, b) => secToFirstBid[a] - secToFirstBid[b]);
+    }
+    if (!sortedNums.length) return null;
     const i = sortedNums.indexOf(cur);
-    const tgt = sortedNums[i + dir];
-    if (!tgt) return null;
+    if (i < 0) return null;
+    // Boucle (modulo) : dernier → premier, premier → dernier (cohérent avec LRVanalyse
+    // et navigateSel côté topbar).
+    const newIdx = (i + dir + sortedNums.length) % sortedNums.length;
+    const tgt = sortedNums[newIdx];
     const gj = getMapGeoJSON();
     return gj.features.find(f => numStr(f) === tgt) || null;
   }

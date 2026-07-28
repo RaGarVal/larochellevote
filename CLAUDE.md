@@ -255,6 +255,40 @@ Script Python qui applique :
 - **`index.html`, `LRVcarte.html`, `LRVanalyse.html`** : mettre à jour le nombre d'élections dans la description JSON-LD (`"N élections et 2 référendums organisés..."`).
 - **`methodologie.html`** : retirer de la phrase "Depuis 1988, il manque..." si applicable.
 
+### Étape 5 bis — Nouvelle ère (obligatoire) : audit QUARTIER_CORRESPONDANCES
+Si l'ajout crée une **nouvelle ère cartographique** (`BUREAU_INFO[era]` nouveau), lancer l'audit ci-dessous. Certains quartiers modernes n'existent pas dans les ères anciennes (ex. « Villeneuve-les-Salines » créé après 1967, « Tasdon » et « Les Minimes » indissociables avant 2004 sous le nom « Tasdon/Les Minimes »). Sans override explicite dans `QUARTIER_CORRESPONDANCES`, la page quartier LRVanalyse est vide pour cette ère.
+
+```bash
+node -e "
+const fs = require('fs'); const vm = require('vm');
+global.document = { addEventListener: () => {} }; global.window = {};
+vm.runInThisContext(fs.readFileSync('./donnees.js','utf8'));
+vm.runInThisContext(fs.readFileSync('./shared.js','utf8'));
+const modernQs = new Set();
+Object.values(BUREAU_INFO['2026']||{}).forEach(b => {
+  if (b.q && b.q !== 'Nul') b.q.split(',').map(s => s.trim()).forEach(q => modernQs.add(q));
+});
+const holes = {};
+window.ERAS.filter(e => parseInt(e) < 2004).forEach(era => {
+  const info = BUREAU_INFO[era] || {};
+  modernQs.forEach(q => {
+    let match = false;
+    Object.values(info).forEach(b => {
+      if (!b.q) return;
+      if (b.q.split(',').map(s=>s.trim()).includes(q)) match = true;
+    });
+    if (match) return;
+    const ov = (QUARTIER_CORRESPONDANCES[q] || {})[era];
+    if (ov && ov.length) return;
+    (holes[q] = holes[q] || []).push(era);
+  });
+});
+console.log(Object.keys(holes).length ? holes : 'aucun trou');
+"
+```
+
+Si l'audit retourne des trous, ajouter les entrées manquantes dans `QUARTIER_CORRESPONDANCES` (bids 2026 du quartier moderne, résolution auto via BUREAU_CORRESPONDANCES vers les sections/bureaux historiques).
+
 ### Étape 6 — Sanity checks
 Script Node qui charge donnees.js et vérifie :
 - Top 5 ville cohérent avec ce que l'user attend.
@@ -281,6 +315,11 @@ Le fichier xlsx standard a un bug : les colonnes % (cols 8-26 typiquement) ont �
 ### Bureaux avec écart voix ≠ exprimés
 Pas rare en saisie manuelle. Lister les bureaux concernés et demander à l'user de corriger l'Excel.
 **Cas non résoluble** (ex. Régionales 1992 bureau 0007) : si l'user ne peut pas corriger, convention adoptée → on force `bn=0` et `e = somme(voix)`. Cela garde la cohérence interne (somme c = 100 % par bureau) au prix d'une légère imprécision sur les blancs/nuls de ce bureau. Documenter le cas en commentaire pour qu'une meilleure source puisse corriger plus tard.
+
+**Cas non résolu — Présidentielle 1969 T1 bureaux 0006 & 0028** (juillet 2026) : inversion apparente de 100 voix entre les deux bureaux, aucune source ne permet de trancher pour l'instant.
+- Bureau 0006 : `somme(voix) = 967` mais `e = 1067` (écart −100)
+- Bureau 0028 : `somme(voix) = 767` mais `e = 667` (écart +100)
+- Les totaux ville sont corrects car les écarts se compensent. La colonne candidat exacte à corriger n'est pas identifiable sans PV papier. À revoir si une source additionnelle apparaît.
 
 ### Renommage d'ère cartographique
 Si une élection plus ancienne arrive et qu'elle utilise EXACTEMENT le même découpage qu'une ère existante (mêmes bureaux, noms, quartiers) → renommer l'ère vers l'année la plus ancienne. Ex. l'ère "1993" est devenue "1992" quand on a ajouté les Régionales 1992 (qui utilisaient déjà le découpage 1993). Endroits à patcher :
