@@ -1,15 +1,15 @@
 {
-  "date": "2026-07-26",
-  "niveau": "quartier",
-  "niveau_publie": "quartier",
-  "election": "Régionales 2015",
-  "tour": "T1",
+  "date": "2026-07-28",
+  "niveau": "carte",
+  "niveau_publie": "carte",
+  "election": "Européennes 1979",
+  "tour": "TU",
   "bureau": null,
-  "quartier": "Centre-ville",
+  "quartier": null,
   "canton": null,
-  "subtype": null,
-  "candidat": null,
-  "signature": "quartier|Régionales 2015|T1|Centre-ville",
-  "chars": 243,
-  "generated_at": "2026-07-26T06:01:00.107Z"
+  "subtype": "candidat",
+  "candidat": "georges-marchais@europeennes-1979",
+  "signature": "carte|Européennes 1979|TU|cand:georges-marchais@europeennes-1979",
+  "chars": 248,
+  "generated_at": "2026-07-28T06:01:26.772Z"
 }
