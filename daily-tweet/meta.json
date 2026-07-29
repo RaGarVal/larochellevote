@@ -1,15 +1,15 @@
 {
-  "date": "2026-07-28",
-  "niveau": "carte",
-  "niveau_publie": "carte",
-  "election": "Européennes 1979",
-  "tour": "TU",
+  "date": "2026-07-29",
+  "niveau": "canton",
+  "niveau_publie": "global",
+  "election": "Législatives 1973",
+  "tour": "T1",
   "bureau": null,
   "quartier": null,
-  "canton": null,
-  "subtype": "candidat",
-  "candidat": "georges-marchais@europeennes-1979",
-  "signature": "carte|Européennes 1979|TU|cand:georges-marchais@europeennes-1979",
-  "chars": 248,
-  "generated_at": "2026-07-28T06:01:26.772Z"
+  "canton": "1",
+  "subtype": null,
+  "candidat": null,
+  "signature": "canton|Législatives 1973|T1|1",
+  "chars": 235,
+  "generated_at": "2026-07-29T06:01:10.493Z"
 }

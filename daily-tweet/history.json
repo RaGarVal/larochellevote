@@ -988,5 +988,18 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "georges-marchais@europeennes-1979"
+  },
+  {
+    "date": "2026-07-29",
+    "signature": "canton|Législatives 1973|T1|1",
+    "niveau": "canton",
+    "niveau_publie": "global",
+    "truncation_step": 1,
+    "election": "Législatives 1973",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
   }
 ]

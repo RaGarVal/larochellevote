@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🇪🇺 Le 10 juin 1979, pour les européennes, Georges Marchais (PCF) a obtenu 23,7 % à La Rochelle. 📍 Meilleur score dans le bureau n°12 · Plaine des jeux–Lac à Port-Neuf.
+🏛️ Le 4 mars 1973, pour les législatives (1er tour), Michel Crépeau (MRG) arrive en tête avec 39,6 % à La Rochelle.
 
-Détails sur https://larochellevote.fr/LRVcarte.html#election=Europ%C3%A9ennes+1979&selection=georges-marchais%40europeennes-1979
+Les résultats de ce scrutin, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=L%C3%A9gislatives+1973&tour=T1&tab=global
