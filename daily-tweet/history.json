@@ -1014,5 +1014,18 @@
     "quartier": "La Genette",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-07-31",
+    "signature": "bureau|Cantonales 1982|T1|0006",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Cantonales 1982",
+    "tour": "T1",
+    "bureau": "0006",
+    "quartier": "Saint-Maurice",
+    "subtype": null,
+    "candidat": null
   }
 ]

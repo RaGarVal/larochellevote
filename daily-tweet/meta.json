@@ -1,15 +1,15 @@
 {
-  "date": "2026-07-30",
+  "date": "2026-07-31",
   "niveau": "bureau",
   "niveau_publie": "bureau",
-  "election": "Européennes 2019",
-  "tour": "TU",
-  "bureau": "0027",
-  "quartier": "La Genette",
+  "election": "Cantonales 1982",
+  "tour": "T1",
+  "bureau": "0006",
+  "quartier": "Saint-Maurice",
   "canton": null,
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Européennes 2019|TU|0027",
-  "chars": 262,
-  "generated_at": "2026-07-30T06:01:26.490Z"
+  "signature": "bureau|Cantonales 1982|T1|0006",
+  "chars": 279,
+  "generated_at": "2026-07-31T06:01:05.457Z"
 }
