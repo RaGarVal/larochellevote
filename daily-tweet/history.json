@@ -1027,5 +1027,18 @@
     "quartier": "Saint-Maurice",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-08-01",
+    "signature": "carte|Départementales 2015|T1|cand:elisabeth-delorme-blaizot+julien-janvier@departementales-2015",
+    "niveau": "carte",
+    "niveau_publie": "bureau",
+    "truncation_step": 4,
+    "election": "Départementales 2015",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "elisabeth-delorme-blaizot+julien-janvier@departementales-2015"
   }
 ]
