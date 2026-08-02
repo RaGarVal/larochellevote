@@ -1,2 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
-{site_url}
+
+🇪🇺 Le 25 mai 2014, pour les européennes, Isabelle Thomas (PS) a obtenu 19,8 % à La Rochelle. 📍 Meilleur score dans le bureau n°51 · Fabre-d'Églantine à Villeneuve-les-Salines.
+
+Détails sur https://larochellevote.fr/LRVcarte.html#election=Europ%C3%A9ennes+2014&selection=isabelle-thomas%40europeennes-2014
