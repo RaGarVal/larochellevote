@@ -1053,5 +1053,18 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "isabelle-thomas@europeennes-2014"
+  },
+  {
+    "date": "2026-08-03",
+    "signature": "carte|Présidentielle 2017|T1|cand:philippe-poutou@presidentielle-2017",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Présidentielle 2017",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "philippe-poutou@presidentielle-2017"
   }
 ]

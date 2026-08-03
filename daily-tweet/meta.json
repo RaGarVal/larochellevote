@@ -1,15 +1,15 @@
 {
-  "date": "2026-08-02",
+  "date": "2026-08-03",
   "niveau": "carte",
   "niveau_publie": "carte",
-  "election": "Européennes 2014",
-  "tour": "TU",
+  "election": "Présidentielle 2017",
+  "tour": "T1",
   "bureau": null,
   "quartier": null,
   "canton": null,
   "subtype": "candidat",
-  "candidat": "isabelle-thomas@europeennes-2014",
-  "signature": "carte|Européennes 2014|TU|cand:isabelle-thomas@europeennes-2014",
-  "chars": 256,
-  "generated_at": "2026-08-02T08:35:26.571Z"
+  "candidat": "philippe-poutou@presidentielle-2017",
+  "signature": "carte|Présidentielle 2017|T1|cand:philippe-poutou@presidentielle-2017",
+  "chars": 255,
+  "generated_at": "2026-08-03T10:03:26.408Z"
 }
