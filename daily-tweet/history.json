@@ -1066,5 +1066,18 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "philippe-poutou@presidentielle-2017"
+  },
+  {
+    "date": "2026-08-04",
+    "signature": "bureau|Présidentielle 1969|T1|0016",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Présidentielle 1969",
+    "tour": "T1",
+    "bureau": "0016",
+    "quartier": "Port-Neuf",
+    "subtype": null,
+    "candidat": null
   }
 ]

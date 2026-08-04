@@ -1,15 +1,15 @@
 {
-  "date": "2026-08-03",
-  "niveau": "carte",
-  "niveau_publie": "carte",
-  "election": "Présidentielle 2017",
+  "date": "2026-08-04",
+  "niveau": "bureau",
+  "niveau_publie": "bureau",
+  "election": "Présidentielle 1969",
   "tour": "T1",
-  "bureau": null,
-  "quartier": null,
+  "bureau": "0016",
+  "quartier": "Port-Neuf",
   "canton": null,
-  "subtype": "candidat",
-  "candidat": "philippe-poutou@presidentielle-2017",
-  "signature": "carte|Présidentielle 2017|T1|cand:philippe-poutou@presidentielle-2017",
-  "chars": 255,
-  "generated_at": "2026-08-03T10:03:26.408Z"
+  "subtype": null,
+  "candidat": null,
+  "signature": "bureau|Présidentielle 1969|T1|0016",
+  "chars": 266,
+  "generated_at": "2026-08-04T08:51:40.611Z"
 }
