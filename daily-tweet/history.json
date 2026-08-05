@@ -1079,5 +1079,18 @@
     "quartier": "Port-Neuf",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-08-05",
+    "signature": "carte|Présidentielle 2007|T1|cand:francois-bayrou@presidentielle-2007",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Présidentielle 2007",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "francois-bayrou@presidentielle-2007"
   }
 ]
