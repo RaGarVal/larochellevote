@@ -1092,5 +1092,18 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "francois-bayrou@presidentielle-2007"
+  },
+  {
+    "date": "2026-08-06",
+    "signature": "quartier|Législatives 2017|T1|Laleu/La Pallice",
+    "niveau": "quartier",
+    "niveau_publie": "quartier",
+    "truncation_step": 1,
+    "election": "Législatives 2017",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": "Laleu/La Pallice",
+    "subtype": null,
+    "candidat": null
   }
 ]

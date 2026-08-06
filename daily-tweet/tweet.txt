@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-👤 Le 22 avril 2007, pour la présidentielle (1er tour), François Bayrou (UDF) a obtenu 17,8 % à La Rochelle. 📍 Meilleur score dans le bureau n°21 · Église de La Genette à La Genette.
+🏛️ Le 11 juin 2017, pour les législatives (1er tour), Olivier Falorni (DVG) arrive en tête avec 34,4 % dans le quartier de Laleu / La Pallice.
 
-Détails sur https://larochellevote.fr/LRVcarte.html#election=Pr%C3%A9sidentielle+2007&tour=T1&selection=francois-bayrou%40presidentielle-2007
+Les résultats de ce quartier, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=L%C3%A9gislatives+2017&tour=T1&quartier=Laleu%2FLa+Pallice
