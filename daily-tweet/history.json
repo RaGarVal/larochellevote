@@ -1105,5 +1105,18 @@
     "quartier": "Laleu/La Pallice",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-08-07",
+    "signature": "carte|Régionales 2004|T1",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Régionales 2004",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "gagnants",
+    "candidat": null
   }
 ]

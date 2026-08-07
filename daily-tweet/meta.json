@@ -1,15 +1,15 @@
 {
-  "date": "2026-08-06",
-  "niveau": "quartier",
-  "niveau_publie": "quartier",
-  "election": "Législatives 2017",
+  "date": "2026-08-07",
+  "niveau": "carte",
+  "niveau_publie": "carte",
+  "election": "Régionales 2004",
   "tour": "T1",
   "bureau": null,
-  "quartier": "Laleu/La Pallice",
+  "quartier": null,
   "canton": null,
-  "subtype": null,
+  "subtype": "gagnants",
   "candidat": null,
-  "signature": "quartier|Législatives 2017|T1|Laleu/La Pallice",
-  "chars": 263,
-  "generated_at": "2026-08-06T08:51:00.493Z"
+  "signature": "carte|Régionales 2004|T1",
+  "chars": 268,
+  "generated_at": "2026-08-07T07:38:47.897Z"
 }
