@@ -1,15 +1,15 @@
 {
-  "date": "2026-08-07",
+  "date": "2026-08-08",
   "niveau": "carte",
   "niveau_publie": "carte",
-  "election": "Régionales 2004",
-  "tour": "T1",
+  "election": "Référendum 1988",
+  "tour": "TU",
   "bureau": null,
   "quartier": null,
   "canton": null,
   "subtype": "gagnants",
   "candidat": null,
-  "signature": "carte|Régionales 2004|T1",
-  "chars": 268,
-  "generated_at": "2026-08-07T07:38:47.897Z"
+  "signature": "carte|Référendum 1988|TU",
+  "chars": 258,
+  "generated_at": "2026-08-08T07:11:37.593Z"
 }

@@ -1118,5 +1118,18 @@
     "quartier": null,
     "subtype": "gagnants",
     "candidat": null
+  },
+  {
+    "date": "2026-08-08",
+    "signature": "carte|Référendum 1988|TU",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 1,
+    "election": "Référendum 1988",
+    "tour": "TU",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "gagnants",
+    "candidat": null
   }
 ]
