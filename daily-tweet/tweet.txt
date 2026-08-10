@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🏛️ Le 5 mars 1967, pour les législatives (1er tour), André Salardaine (UNR-UDT) a obtenu 45,3 % à La Rochelle. 📍 Meilleur score dans le bureau n°1 · Centre-ville nord dans le Centre-ville.
+👤 Le 23 avril 1995, pour la présidentielle (1er tour), Jacques Chirac (RPR) a obtenu 17,9 % à La Rochelle. 📍 Meilleur score dans le bureau n°24 · Les Parcs à La Genette.
 
-Détails sur https://larochellevote.fr/LRVcarte.html#election=L%C3%A9gislatives+1967&tour=T1
+Détails sur https://larochellevote.fr/LRVcarte.html#election=Pr%C3%A9sidentielle+1995&tour=T1&selection=jacques-chirac%40presidentielle-1995

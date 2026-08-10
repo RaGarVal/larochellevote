@@ -1144,5 +1144,18 @@
     "quartier": null,
     "subtype": "gagnants",
     "candidat": null
+  },
+  {
+    "date": "2026-08-10",
+    "signature": "carte|Présidentielle 1995|T1|cand:jacques-chirac@presidentielle-1995",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Présidentielle 1995",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "jacques-chirac@presidentielle-1995"
   }
 ]

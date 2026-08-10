@@ -1,15 +1,15 @@
 {
-  "date": "2026-08-09",
+  "date": "2026-08-10",
   "niveau": "carte",
   "niveau_publie": "carte",
-  "election": "Législatives 1967",
+  "election": "Présidentielle 1995",
   "tour": "T1",
   "bureau": null,
   "quartier": null,
   "canton": null,
-  "subtype": "gagnants",
-  "candidat": null,
-  "signature": "carte|Législatives 1967|T1",
-  "chars": 268,
-  "generated_at": "2026-08-09T07:13:54.714Z"
+  "subtype": "candidat",
+  "candidat": "jacques-chirac@presidentielle-1995",
+  "signature": "carte|Présidentielle 1995|T1|cand:jacques-chirac@presidentielle-1995",
+  "chars": 249,
+  "generated_at": "2026-08-10T08:01:57.324Z"
 }
