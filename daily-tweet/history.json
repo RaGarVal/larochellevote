@@ -1157,5 +1157,18 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "jacques-chirac@presidentielle-1995"
+  },
+  {
+    "date": "2026-08-11",
+    "signature": "bureau|Référendum 1988|TU|0003",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Référendum 1988",
+    "tour": "TU",
+    "bureau": "0003",
+    "quartier": "Saint-Maurice",
+    "subtype": null,
+    "candidat": null
   }
 ]

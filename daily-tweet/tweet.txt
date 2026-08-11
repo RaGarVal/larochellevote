@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-👤 Le 23 avril 1995, pour la présidentielle (1er tour), Jacques Chirac (RPR) a obtenu 17,9 % à La Rochelle. 📍 Meilleur score dans le bureau n°24 · Les Parcs à La Genette.
+🗳️ Le 6 novembre 1988, pour le référendum, le Oui est arrivé en tête avec 84,1 % dans le bureau n°3 · Berthelot–Pierre-Loti–Missy à Saint-Maurice.
 
-Détails sur https://larochellevote.fr/LRVcarte.html#election=Pr%C3%A9sidentielle+1995&tour=T1&selection=jacques-chirac%40presidentielle-1995
+Les résultats de ce bureau, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=R%C3%A9f%C3%A9rendum+1988&bureau=0003
