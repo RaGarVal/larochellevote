@@ -1,15 +1,15 @@
 {
-  "date": "2026-08-11",
+  "date": "2026-08-12",
   "niveau": "bureau",
   "niveau_publie": "bureau",
-  "election": "Référendum 1988",
-  "tour": "TU",
-  "bureau": "0003",
-  "quartier": "Saint-Maurice",
+  "election": "Législatives 2017",
+  "tour": "T1",
+  "bureau": "0051",
+  "quartier": "Villeneuve-les-Salines",
   "canton": null,
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Référendum 1988|TU|0003",
-  "chars": 265,
-  "generated_at": "2026-08-11T07:33:39.518Z"
+  "signature": "bureau|Législatives 2017|T1|0051",
+  "chars": 247,
+  "generated_at": "2026-08-12T07:49:02.917Z"
 }

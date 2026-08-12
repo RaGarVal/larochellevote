@@ -1170,5 +1170,18 @@
     "quartier": "Saint-Maurice",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-08-12",
+    "signature": "bureau|Législatives 2017|T1|0051",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 2,
+    "election": "Législatives 2017",
+    "tour": "T1",
+    "bureau": "0051",
+    "quartier": "Villeneuve-les-Salines",
+    "subtype": null,
+    "candidat": null
   }
 ]

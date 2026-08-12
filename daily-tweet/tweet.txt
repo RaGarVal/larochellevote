@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🗳️ Le 6 novembre 1988, pour le référendum, le Oui est arrivé en tête avec 84,1 % dans le bureau n°3 · Berthelot–Pierre-Loti–Missy à Saint-Maurice.
+🏛️ Le 11 juin 2017, pour les législatives (1er tour), Olivier Falorni (DVG) arrive en tête avec 40,3 % dans le bureau n°51 · Fabre-d'Églantine à Villeneuve-les-Salines.
 
-Les résultats de ce bureau, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=R%C3%A9f%C3%A9rendum+1988&bureau=0003
+Détails sur https://larochellevote.fr/LRVcarte.html#election=L%C3%A9gislatives+2017&tour=T1&bureau=0051
