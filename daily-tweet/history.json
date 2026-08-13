@@ -1183,5 +1183,18 @@
     "quartier": "Villeneuve-les-Salines",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-08-13",
+    "signature": "quartier|Européennes 2004|TU|Lafond",
+    "niveau": "quartier",
+    "niveau_publie": "quartier",
+    "truncation_step": 1,
+    "election": "Européennes 2004",
+    "tour": "TU",
+    "bureau": null,
+    "quartier": "Lafond",
+    "subtype": null,
+    "candidat": null
   }
 ]

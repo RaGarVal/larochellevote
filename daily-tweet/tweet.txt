@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🏛️ Le 11 juin 2017, pour les législatives (1er tour), Olivier Falorni (DVG) arrive en tête avec 40,3 % dans le bureau n°51 · Fabre-d'Églantine à Villeneuve-les-Salines.
+🇪🇺 Le 13 juin 2004, pour les européennes, Bernard Poignant (PS) arrive en tête avec 33,3 % dans le quartier de Lafond.
 
-Détails sur https://larochellevote.fr/LRVcarte.html#election=L%C3%A9gislatives+2017&tour=T1&bureau=0051
+Les résultats de ce quartier, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Europ%C3%A9ennes+2004&quartier=Lafond
