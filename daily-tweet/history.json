@@ -1196,5 +1196,18 @@
     "quartier": "Lafond",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-08-14",
+    "signature": "bureau|Municipales 2026|T1|0023",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Municipales 2026",
+    "tour": "T1",
+    "bureau": "0023",
+    "quartier": "La Genette",
+    "subtype": null,
+    "candidat": null
   }
 ]

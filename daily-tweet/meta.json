@@ -1,15 +1,15 @@
 {
-  "date": "2026-08-13",
-  "niveau": "quartier",
-  "niveau_publie": "quartier",
-  "election": "Européennes 2004",
-  "tour": "TU",
-  "bureau": null,
-  "quartier": "Lafond",
+  "date": "2026-08-14",
+  "niveau": "bureau",
+  "niveau_publie": "bureau",
+  "election": "Municipales 2026",
+  "tour": "T1",
+  "bureau": "0023",
+  "quartier": "La Genette",
   "canton": null,
   "subtype": null,
   "candidat": null,
-  "signature": "quartier|Européennes 2004|TU|Lafond",
-  "chars": 240,
-  "generated_at": "2026-08-13T07:50:12.989Z"
+  "signature": "bureau|Municipales 2026|T1|0023",
+  "chars": 264,
+  "generated_at": "2026-08-14T07:47:34.123Z"
 }

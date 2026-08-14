@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🇪🇺 Le 13 juin 2004, pour les européennes, Bernard Poignant (PS) arrive en tête avec 33,3 % dans le quartier de Lafond.
+🏙️ Le 15 mars 2026, pour les municipales (1er tour), Olivier Falorni (DVC) arrive en tête avec 30,0 % dans le bureau n°23 · Coligny à La Genette.
 
-Les résultats de ce quartier, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Europ%C3%A9ennes+2004&quartier=Lafond
+Les résultats de ce bureau, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Municipales+2026&tour=T1&bureau=0023
