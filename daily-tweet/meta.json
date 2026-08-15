@@ -1,15 +1,15 @@
 {
-  "date": "2026-08-14",
-  "niveau": "bureau",
-  "niveau_publie": "bureau",
-  "election": "Municipales 2026",
+  "date": "2026-08-15",
+  "niveau": "carte",
+  "niveau_publie": "carte",
+  "election": "Législatives 1978",
   "tour": "T1",
-  "bureau": "0023",
-  "quartier": "La Genette",
+  "bureau": null,
+  "quartier": null,
   "canton": null,
-  "subtype": null,
-  "candidat": null,
-  "signature": "bureau|Municipales 2026|T1|0023",
-  "chars": 264,
-  "generated_at": "2026-08-14T07:47:34.123Z"
+  "subtype": "candidat",
+  "candidat": "lacouture@legislatives-1978",
+  "signature": "carte|Législatives 1978|T1|cand:lacouture@legislatives-1978",
+  "chars": 252,
+  "generated_at": "2026-08-15T06:55:35.182Z"
 }

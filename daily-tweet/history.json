@@ -1209,5 +1209,18 @@
     "quartier": "La Genette",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-08-15",
+    "signature": "carte|Législatives 1978|T1|cand:lacouture@legislatives-1978",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Législatives 1978",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "lacouture@legislatives-1978"
   }
 ]
