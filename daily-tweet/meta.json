@@ -1,15 +1,15 @@
 {
-  "date": "2026-08-15",
+  "date": "2026-08-16",
   "niveau": "carte",
   "niveau_publie": "carte",
-  "election": "Législatives 1978",
-  "tour": "T1",
+  "election": "Régionales 1992",
+  "tour": "TU",
   "bureau": null,
   "quartier": null,
   "canton": null,
   "subtype": "candidat",
-  "candidat": "lacouture@legislatives-1978",
-  "signature": "carte|Législatives 1978|T1|cand:lacouture@legislatives-1978",
-  "chars": 252,
-  "generated_at": "2026-08-15T06:55:35.182Z"
+  "candidat": "philippe-marchand@regionales-1992",
+  "signature": "carte|Régionales 1992|TU|cand:philippe-marchand@regionales-1992",
+  "chars": 272,
+  "generated_at": "2026-08-16T06:56:27.726Z"
 }

@@ -1222,5 +1222,18 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "lacouture@legislatives-1978"
+  },
+  {
+    "date": "2026-08-16",
+    "signature": "carte|Régionales 1992|TU|cand:philippe-marchand@regionales-1992",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 1,
+    "election": "Régionales 1992",
+    "tour": "TU",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "philippe-marchand@regionales-1992"
   }
 ]
