@@ -1235,5 +1235,18 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "philippe-marchand@regionales-1992"
+  },
+  {
+    "date": "2026-08-17",
+    "signature": "quartier|Municipales 1983|TU|Fétilly",
+    "niveau": "quartier",
+    "niveau_publie": "quartier",
+    "truncation_step": 1,
+    "election": "Municipales 1983",
+    "tour": "TU",
+    "bureau": null,
+    "quartier": "Fétilly",
+    "subtype": null,
+    "candidat": null
   }
 ]

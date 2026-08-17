@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🏙️ Le 22 mars 1992, pour les régionales, Philippe Marchand (PS) a obtenu 23,4 % à La Rochelle. 📍 Meilleur score dans le bureau n°19 · Bel-Air à Fétilly.
+🏙️ Le 6 mars 1983, pour les municipales, Michel Crépeau (MRG) arrive en tête avec 51,8 % dans le quartier de Fétilly.
 
-Les résultats de ce scrutin, bureau par bureau, sur https://larochellevote.fr/LRVcarte.html#election=R%C3%A9gionales+1992&selection=philippe-marchand%40regionales-1992
+Les résultats de ce quartier, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Municipales+1983&quartier=F%C3%A9tilly
