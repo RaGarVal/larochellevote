@@ -1248,5 +1248,18 @@
     "quartier": "Fétilly",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-08-18",
+    "signature": "carte|Présidentielle 1974|T1|cand:francois-mitterrand@presidentielle-1974",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Présidentielle 1974",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "francois-mitterrand@presidentielle-1974"
   }
 ]
