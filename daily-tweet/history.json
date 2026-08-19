@@ -1261,5 +1261,18 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "francois-mitterrand@presidentielle-1974"
+  },
+  {
+    "date": "2026-08-19",
+    "signature": "carte|Présidentielle 2017|T1|cand:francois-fillon@presidentielle-2017",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Présidentielle 2017",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "francois-fillon@presidentielle-2017"
   }
 ]

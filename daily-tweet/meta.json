@@ -1,15 +1,15 @@
 {
-  "date": "2026-08-18",
+  "date": "2026-08-19",
   "niveau": "carte",
   "niveau_publie": "carte",
-  "election": "Présidentielle 1974",
+  "election": "Présidentielle 2017",
   "tour": "T1",
   "bureau": null,
   "quartier": null,
   "canton": null,
   "subtype": "candidat",
-  "candidat": "francois-mitterrand@presidentielle-1974",
-  "signature": "carte|Présidentielle 1974|T1|cand:francois-mitterrand@presidentielle-1974",
-  "chars": 275,
-  "generated_at": "2026-08-18T07:01:29.788Z"
+  "candidat": "francois-fillon@presidentielle-2017",
+  "signature": "carte|Présidentielle 2017|T1|cand:francois-fillon@presidentielle-2017",
+  "chars": 247,
+  "generated_at": "2026-08-19T07:02:58.433Z"
 }
