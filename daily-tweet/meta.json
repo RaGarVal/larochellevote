@@ -1,15 +1,15 @@
 {
-  "date": "2026-08-19",
-  "niveau": "carte",
-  "niveau_publie": "carte",
-  "election": "Présidentielle 2017",
-  "tour": "T1",
+  "date": "2026-08-20",
+  "niveau": "global",
+  "niveau_publie": "global",
+  "election": "Européennes 2014",
+  "tour": "TU",
   "bureau": null,
   "quartier": null,
   "canton": null,
-  "subtype": "candidat",
-  "candidat": "francois-fillon@presidentielle-2017",
-  "signature": "carte|Présidentielle 2017|T1|cand:francois-fillon@presidentielle-2017",
-  "chars": 247,
-  "generated_at": "2026-08-19T07:02:58.433Z"
+  "subtype": null,
+  "candidat": null,
+  "signature": "global|Européennes 2014|TU",
+  "chars": 224,
+  "generated_at": "2026-08-20T07:03:56.930Z"
 }

@@ -1274,5 +1274,18 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "francois-fillon@presidentielle-2017"
+  },
+  {
+    "date": "2026-08-20",
+    "signature": "global|Européennes 2014|TU",
+    "niveau": "global",
+    "niveau_publie": "global",
+    "truncation_step": 1,
+    "election": "Européennes 2014",
+    "tour": "TU",
+    "bureau": null,
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
   }
 ]

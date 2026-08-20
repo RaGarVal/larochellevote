@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-👤 Le 23 avril 2017, pour la présidentielle (1er tour), François Fillon (LR) a obtenu 18,8 % à La Rochelle. 📍 Meilleur score dans le bureau n°22 · Le Mail à La Genette.
+🇪🇺 Le 25 mai 2014, pour les européennes, Isabelle Thomas (PS) arrive en tête avec 19,8 % à La Rochelle.
 
-Détails sur https://larochellevote.fr/LRVcarte.html#election=Pr%C3%A9sidentielle+2017&tour=T1&selection=francois-fillon%40presidentielle-2017
+Les résultats de ce scrutin, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Europ%C3%A9ennes+2014&tab=global
