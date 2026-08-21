@@ -1287,5 +1287,18 @@
     "quartier": null,
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-08-21",
+    "signature": "carte|Législative partielle 1959|T1",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 3,
+    "election": "Législative partielle 1959",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "gagnants",
+    "candidat": null
   }
 ]
