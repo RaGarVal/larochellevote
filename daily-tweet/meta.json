@@ -1,15 +1,15 @@
 {
-  "date": "2026-08-21",
-  "niveau": "carte",
-  "niveau_publie": "carte",
-  "election": "Législative partielle 1959",
-  "tour": "T1",
-  "bureau": null,
-  "quartier": null,
+  "date": "2026-08-22",
+  "niveau": "bureau",
+  "niveau_publie": "bureau",
+  "election": "Européennes 2014",
+  "tour": "TU",
+  "bureau": "0035",
+  "quartier": "Centre-ville",
   "canton": null,
-  "subtype": "gagnants",
+  "subtype": null,
   "candidat": null,
-  "signature": "carte|Législative partielle 1959|T1",
-  "chars": 269,
-  "generated_at": "2026-08-21T07:05:01.363Z"
+  "signature": "bureau|Européennes 2014|TU|0035",
+  "chars": 277,
+  "generated_at": "2026-08-22T06:57:03.090Z"
 }
