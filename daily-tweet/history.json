@@ -1313,5 +1313,18 @@
     "quartier": "Centre-ville",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-08-23",
+    "signature": "quartier|Régionales 2015|T1|Tasdon",
+    "niveau": "quartier",
+    "niveau_publie": "quartier",
+    "truncation_step": 1,
+    "election": "Régionales 2015",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": "Tasdon",
+    "subtype": null,
+    "candidat": null
   }
 ]

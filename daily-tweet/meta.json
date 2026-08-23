@@ -1,15 +1,15 @@
 {
-  "date": "2026-08-22",
-  "niveau": "bureau",
-  "niveau_publie": "bureau",
-  "election": "Européennes 2014",
-  "tour": "TU",
-  "bureau": "0035",
-  "quartier": "Centre-ville",
+  "date": "2026-08-23",
+  "niveau": "quartier",
+  "niveau_publie": "quartier",
+  "election": "Régionales 2015",
+  "tour": "T1",
+  "bureau": null,
+  "quartier": "Tasdon",
   "canton": null,
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Européennes 2014|TU|0035",
-  "chars": 277,
-  "generated_at": "2026-08-22T06:57:03.090Z"
+  "signature": "quartier|Régionales 2015|T1|Tasdon",
+  "chars": 249,
+  "generated_at": "2026-08-23T06:58:34.471Z"
 }

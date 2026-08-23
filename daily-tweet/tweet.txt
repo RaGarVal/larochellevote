@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🇪🇺 Le 25 mai 2014, pour les européennes, Isabelle Thomas (PS) arrive en tête avec 21,6 % dans le bureau n°35 · Gabut–Saint-Nicolas–Gare dans le Centre-ville.
+🏙️ Le 6 décembre 2015, pour les régionales (1er tour), Alain Rousset (PS) arrive en tête avec 33,6 % dans le quartier de Tasdon.
 
-Les résultats de ce bureau, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Europ%C3%A9ennes+2014&bureau=0035
+Les résultats de ce quartier, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=R%C3%A9gionales+2015&tour=T1&quartier=Tasdon
