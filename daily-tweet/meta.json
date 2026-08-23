@@ -1,15 +1,15 @@
 {
   "date": "2026-08-23",
-  "niveau": "quartier",
-  "niveau_publie": "quartier",
-  "election": "Régionales 2015",
+  "niveau": "bureau",
+  "niveau_publie": "bureau",
+  "election": "Municipales 2020",
   "tour": "T1",
-  "bureau": null,
-  "quartier": "Tasdon",
+  "bureau": "0010",
+  "quartier": "Saint-Maurice",
   "canton": null,
   "subtype": null,
   "candidat": null,
-  "signature": "quartier|Régionales 2015|T1|Tasdon",
-  "chars": 249,
-  "generated_at": "2026-08-23T06:58:34.471Z"
+  "signature": "bureau|Municipales 2020|T1|0010",
+  "chars": 241,
+  "generated_at": "2026-08-23T20:01:26.014Z"
 }
