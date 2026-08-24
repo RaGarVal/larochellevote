@@ -1326,5 +1326,18 @@
     "quartier": "Saint-Maurice",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-08-24",
+    "signature": "quartier|Municipales 1995|TU|Centre-ville",
+    "niveau": "quartier",
+    "niveau_publie": "quartier",
+    "truncation_step": 1,
+    "election": "Municipales 1995",
+    "tour": "TU",
+    "bureau": null,
+    "quartier": "Centre-ville",
+    "subtype": null,
+    "candidat": null
   }
 ]
