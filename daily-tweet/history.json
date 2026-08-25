@@ -1339,5 +1339,18 @@
     "quartier": "Centre-ville",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-08-25",
+    "signature": "carte|Régionales 1986|TU|cand:lucien-nauleau@regionales-1986",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Régionales 1986",
+    "tour": "TU",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "lucien-nauleau@regionales-1986"
   }
 ]

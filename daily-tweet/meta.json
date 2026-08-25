@@ -1,15 +1,15 @@
 {
-  "date": "2026-08-24",
-  "niveau": "quartier",
-  "niveau_publie": "quartier",
-  "election": "Municipales 1995",
+  "date": "2026-08-25",
+  "niveau": "carte",
+  "niveau_publie": "carte",
+  "election": "Régionales 1986",
   "tour": "TU",
   "bureau": null,
-  "quartier": "Centre-ville",
+  "quartier": null,
   "canton": null,
-  "subtype": null,
-  "candidat": null,
-  "signature": "quartier|Municipales 1995|TU|Centre-ville",
-  "chars": 236,
-  "generated_at": "2026-08-24T06:01:20.997Z"
+  "subtype": "candidat",
+  "candidat": "lucien-nauleau@regionales-1986",
+  "signature": "carte|Régionales 1986|TU|cand:lucien-nauleau@regionales-1986",
+  "chars": 255,
+  "generated_at": "2026-08-25T06:01:27.611Z"
 }
