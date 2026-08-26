@@ -1352,5 +1352,18 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "lucien-nauleau@regionales-1986"
+  },
+  {
+    "date": "2026-08-26",
+    "signature": "carte|Législatives 2024|T1",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Législatives 2024",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "gagnants",
+    "candidat": null
   }
 ]

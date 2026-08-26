@@ -1,15 +1,15 @@
 {
-  "date": "2026-08-25",
+  "date": "2026-08-26",
   "niveau": "carte",
   "niveau_publie": "carte",
-  "election": "Régionales 1986",
-  "tour": "TU",
+  "election": "Législatives 2024",
+  "tour": "T1",
   "bureau": null,
   "quartier": null,
   "canton": null,
-  "subtype": "candidat",
-  "candidat": "lucien-nauleau@regionales-1986",
-  "signature": "carte|Régionales 1986|TU|cand:lucien-nauleau@regionales-1986",
-  "chars": 255,
-  "generated_at": "2026-08-25T06:01:27.611Z"
+  "subtype": "gagnants",
+  "candidat": null,
+  "signature": "carte|Législatives 2024|T1",
+  "chars": 247,
+  "generated_at": "2026-08-26T06:01:43.639Z"
 }
