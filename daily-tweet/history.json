@@ -1365,5 +1365,18 @@
     "quartier": null,
     "subtype": "gagnants",
     "candidat": null
+  },
+  {
+    "date": "2026-08-27",
+    "signature": "bureau|Présidentielle 2017|T1|0032",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Présidentielle 2017",
+    "tour": "T1",
+    "bureau": "0032",
+    "quartier": "Lafond",
+    "subtype": null,
+    "candidat": null
   }
 ]

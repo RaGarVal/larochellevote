@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🏛️ Le 30 juin 2024, pour les législatives (1er tour), Olivier Falorni (DVC) a obtenu 41,0 % à La Rochelle. 📍 Meilleur score dans le bureau n°23 · Coligny à La Genette.
+👤 Le 23 avril 2017, pour la présidentielle (1er tour), Emmanuel Macron (EM) arrive en tête avec 32,5 % dans le bureau n°32 · Vélodrome–Marius-Lacroix à Lafond.
 
-Détails sur https://larochellevote.fr/LRVcarte.html#election=L%C3%A9gislatives+2024&tour=T1
+Les résultats de ce bureau, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Pr%C3%A9sidentielle+2017&tour=T1&bureau=0032
