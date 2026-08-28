@@ -1378,5 +1378,18 @@
     "quartier": "Lafond",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-08-28",
+    "signature": "carte|Cantonales 2001|T1",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Cantonales 2001",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "gagnants",
+    "candidat": null
   }
 ]
