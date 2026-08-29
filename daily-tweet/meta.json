@@ -1,15 +1,15 @@
 {
-  "date": "2026-08-28",
+  "date": "2026-08-29",
   "niveau": "bureau",
   "niveau_publie": "bureau",
-  "election": "Législatives 2002",
+  "election": "Régionales 2004",
   "tour": "T1",
-  "bureau": "0010",
-  "quartier": "Saint-Maurice",
+  "bureau": "0027",
+  "quartier": "La Genette",
   "canton": null,
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Législatives 2002|T1|0010",
-  "chars": 270,
-  "generated_at": "2026-08-28T13:05:48.809Z"
+  "signature": "bureau|Régionales 2004|T1|0027",
+  "chars": 276,
+  "generated_at": "2026-08-29T06:01:14.836Z"
 }

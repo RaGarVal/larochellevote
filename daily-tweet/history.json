@@ -1391,5 +1391,18 @@
     "quartier": "Saint-Maurice",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-08-29",
+    "signature": "bureau|Régionales 2004|T1|0027",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Régionales 2004",
+    "tour": "T1",
+    "bureau": "0027",
+    "quartier": "La Genette",
+    "subtype": null,
+    "candidat": null
   }
 ]
