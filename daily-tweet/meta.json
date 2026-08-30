@@ -1,15 +1,15 @@
 {
-  "date": "2026-08-29",
-  "niveau": "bureau",
-  "niveau_publie": "bureau",
-  "election": "Régionales 2004",
+  "date": "2026-08-30",
+  "niveau": "carte",
+  "niveau_publie": "carte",
+  "election": "Municipales 2001",
   "tour": "T1",
-  "bureau": "0027",
-  "quartier": "La Genette",
+  "bureau": null,
+  "quartier": null,
   "canton": null,
-  "subtype": null,
+  "subtype": "gagnants",
   "candidat": null,
-  "signature": "bureau|Régionales 2004|T1|0027",
-  "chars": 276,
-  "generated_at": "2026-08-29T06:01:14.836Z"
+  "signature": "carte|Municipales 2001|T1",
+  "chars": 262,
+  "generated_at": "2026-08-30T06:01:14.472Z"
 }
