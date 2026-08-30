@@ -5113,25 +5113,15 @@ let _currentLabelsLayer = null;
 function applyMapTheme(){
   const dark = document.documentElement.getAttribute('data-theme') === 'dark';
   if (_currentTileLayer) { try { map.removeLayer(_currentTileLayer); } catch(_) {} }
-  if (_currentLabelsLayer) { try { map.removeLayer(_currentLabelsLayer); } catch(_) {} }
-  // 1. Base : light_nolabels / dark_nolabels (polygones du fond uniquement)
+  if (_currentLabelsLayer) { try { map.removeLayer(_currentLabelsLayer); } catch(_) {} _currentLabelsLayer = null; }
+  // OSM standard : un seul layer (fond + labels combinés). Le pattern « labels
+  // au-dessus des polygones » (avec 2 layers Carto nolabels + only_labels) n'est
+  // pas possible ici — les étiquettes seront donc SOUS les zones colorées,
+  // trade-off assumé en attendant un retour éventuel vers un provider séparant
+  // fond et labels (Stadia, MapTiler…).
   _currentTileLayer = L.tileLayer(
-    'https://{s}.basemaps.cartocdn.com/' + (dark ? 'dark_nolabels' : 'light_nolabels') + '/{z}/{x}/{y}{r}.png',
-    { attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 19 }
-  ).addTo(map);
-  // 2. Labels overlay : pane custom à zIndex 425. Juste AU-DESSUS de overlayPane
-  //    (400, où vivent les polygones SVG GeoJSON) mais SOUS shadowPane (500),
-  //    markerPane (600), tooltipPane (650) et popupPane (700). Garantit que les
-  //    labels apparaissent sur les polygones mais N'OCCULTENT PAS les tooltips
-  //    et popups Leaflet. pointer-events: none → ne capture pas les clics.
-  if (!map.getPane('labelsPane')) {
-    map.createPane('labelsPane');
-    map.getPane('labelsPane').style.zIndex = 425;
-    map.getPane('labelsPane').style.pointerEvents = 'none';
-  }
-  _currentLabelsLayer = L.tileLayer(
-    'https://{s}.basemaps.cartocdn.com/' + (dark ? 'dark_only_labels' : 'light_only_labels') + '/{z}/{x}/{y}{r}.png',
-    { pane: 'labelsPane', attribution: '', maxZoom: 19 }
+    'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',
+    { attribution: '&copy; OpenStreetMap France &copy; OpenStreetMap contributors', maxZoom: 20 }
   ).addTo(map);
 }
 applyMapTheme();
@@ -5382,7 +5372,10 @@ function featureStyle(feature) {
   } else if (currentMapMode === 'bv') {
     fillColor = bvColor(getBVPct(data));
   }
-  return { fillColor, fillOpacity:0.85, color:'#fff', weight:1 };
+  // fillOpacity 0.65 (au lieu de 0.85) laisse transparaître les labels OSM
+  // en-dessous du polygone. Trade-off : couleurs moins saturées vs. lisibilité
+  // des noms de rues. À ajuster si la palette perd trop de punch.
+  return { fillColor, fillOpacity:0.8, color:'#fff', weight:1 };
 }
 
 function buildTooltipHtml(feature, ns, info) {
@@ -6939,7 +6932,7 @@ function initGlobalMinimap(winCol) {
   mmMap = L.map('mm-inner', { zoomControl:false, attributionControl:false, dragging:false, scrollWheelZoom:false, zoomSnap:0 });
   // Tile adapté au thème (sombre = dark_all CartoCDN)
   var _mmDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/' + (_mmDark ? 'dark_all' : 'light_all') + '/{z}/{x}/{y}{r}.png', { maxZoom:19 }).addTo(mmMap);
+  L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', { maxZoom:19 }).addTo(mmMap);
   var gj = getMapGeoJSON();
   var layer = L.geoJSON(gj, {
     filter: function(feature) { return numStr(feature) !== '0057'; },
@@ -6956,7 +6949,7 @@ function initGlobalMinimap(winCol) {
         var pid = ensureTiePattern(cols);
         if (pid) fillColor = 'url(#' + pid + ')';
       }
-      return { fillColor: fillColor, fillOpacity:0.85, color:'#fff', weight:1 };
+      return { fillColor: fillColor, fillOpacity:0.8, color:'#fff', weight:1 };
     }
   }).addTo(mmMap);
   mmMap.fitBounds(layer.getBounds().pad(0.06));
@@ -11577,8 +11570,8 @@ function updateFooter() {
     function buildTileLayer() {
       const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
       const url = isDark
-        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'
-        : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png';
+        ? 'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png'
+        : 'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png';
       return L.tileLayer(url, { maxZoom: 19, subdomains: 'abcd' });
     }
     m._cmpTileLayer = buildTileLayer().addTo(m);
@@ -14098,7 +14091,7 @@ function updateAnalyseLink() {
     const tilePromises = [];
     for (let tx = tx0; tx <= tx1; tx++) {
       for (let ty = ty0; ty <= ty1; ty++) {
-        const url = 'https://a.basemaps.cartocdn.com/light_all/' + zoom + '/' + tx + '/' + ty + '.png';
+        const url = 'https://a.tile.openstreetmap.fr/osmfr/' + zoom + '/' + tx + '/' + ty + '.png';
         tilePromises.push(_loadTile(url).then(img => ({ img, tx, ty })));
       }
     }
