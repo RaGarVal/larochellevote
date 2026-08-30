@@ -761,12 +761,13 @@ console.log(rdv
       election = forcedElection;
     } else {
       // Filtrer les scrutins qui ont au moins une élection disponible (defensive).
-      // Cas particulier : aux niveaux 'global' (totalisation ville) et 'quartier'
-      // (un quartier peut chevaucher plusieurs cantons), les Cantonales/Départementales
-      // n'ont pas de résultat cohérent — un seul canton vote à la fois. On les exclut.
+      // Cas particulier : aux niveaux 'global' (totalisation ville), 'quartier'
+      // (un quartier peut chevaucher plusieurs cantons) et 'carte' (choroplèthe
+      // ville entière), les Cantonales/Départementales n'ont pas de résultat
+      // cohérent — un seul canton vote à la fois. On les exclut de ces niveaux.
       // electionScrutin() retourne 'departementales' aussi bien pour les Cantonales que
       // pour les Départementales (regroupement historique).
-      const skipDepartementales = (niveau === 'global' || niveau === 'quartier');
+      const skipDepartementales = (niveau === 'global' || niveau === 'quartier' || niveau === 'carte');
       const availableScrutins = Object.keys(scrutinProba).filter(s => {
         if (skipDepartementales && s === 'departementales') return false;
         return elections.some(el => electionScrutin(el) === s && (bureauxParElection[el] || []).length > 0);
@@ -778,6 +779,16 @@ console.log(rdv
         electionScrutin(el) === chosenScrutin && (bureauxParElection[el] || []).length > 0
       );
       election = pickRandom(electionsOfScrutin);
+    }
+
+    // Garde : si l'élection est FORCÉE (schedule.json, anniversaire auto) ET
+    // que c'est une cantonale/départementale ET que le niveau tiré est 'carte',
+    // 'global' ou 'quartier' → on retire un niveau différent au tour suivant.
+    // Sans ça, l'exclusion faite au bloc au-dessus est court-circuitée quand
+    // `forcedElection` est set.
+    if (forcedElection && !forcedNiveau && electionScrutin(election) === 'departementales'
+        && (niveau === 'carte' || niveau === 'global' || niveau === 'quartier')) {
+      continue;
     }
 
     tour     = forcedTour;
