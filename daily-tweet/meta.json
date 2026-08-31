@@ -1,15 +1,15 @@
 {
-  "date": "2026-08-30",
+  "date": "2026-08-31",
   "niveau": "carte",
   "niveau_publie": "carte",
-  "election": "Municipales 2001",
+  "election": "Législatives 1973",
   "tour": "T1",
   "bureau": null,
   "quartier": null,
   "canton": null,
-  "subtype": "gagnants",
-  "candidat": null,
-  "signature": "carte|Municipales 2001|T1",
-  "chars": 262,
-  "generated_at": "2026-08-30T06:01:14.472Z"
+  "subtype": "candidat",
+  "candidat": "michel-crepeau@legislatives-1973",
+  "signature": "carte|Législatives 1973|T1|cand:michel-crepeau@legislatives-1973",
+  "chars": 245,
+  "generated_at": "2026-08-31T06:02:11.688Z"
 }

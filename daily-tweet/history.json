@@ -1417,5 +1417,18 @@
     "quartier": null,
     "subtype": "gagnants",
     "candidat": null
+  },
+  {
+    "date": "2026-08-31",
+    "signature": "carte|Législatives 1973|T1|cand:michel-crepeau@legislatives-1973",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Législatives 1973",
+    "tour": "T1",
+    "bureau": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "michel-crepeau@legislatives-1973"
   }
 ]

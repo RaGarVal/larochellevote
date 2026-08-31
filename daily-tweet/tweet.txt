@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🏙️ Le 11 mars 2001, pour les municipales (1er tour), Maxime Bono (PS) a obtenu 67,4 % à La Rochelle. 📍 Meilleur score dans le bureau n°51 · Marché de La Pallice à Laleu / La Pallice.
+🏛️ Le 4 mars 1973, pour les législatives (1er tour), Michel Crépeau (MRG) a obtenu 39,6 % à La Rochelle. 📍 Meilleur score dans le bureau n°6 · Mireuil-Est à Mireuil.
 
-Détails sur https://larochellevote.fr/LRVcarte.html#election=Municipales+2001&tour=T1
+Détails sur https://larochellevote.fr/LRVcarte.html#election=L%C3%A9gislatives+1973&tour=T1&selection=michel-crepeau%40legislatives-1973
