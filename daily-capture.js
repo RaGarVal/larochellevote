@@ -129,6 +129,32 @@ Les résultats de ce scrutin, bureau par bureau, sur {site_url}`,
 
 Les résultats de ce scrutin, bureau par bureau, sur {site_url}`,
 
+  // ── FICHE SECTION (ères pré-1979) ──────────────────────────────────────────
+  // Ères 1958/1967/1973/1976 : l'unité cartographiée la plus fine est la
+  // section, pas le bureau. Le tweet mentionne « dans la section {denomination} »
+  // (dénomination uniquement — pas de numéro, pas de nom officiel, pas de bureau).
+
+  section_presidentielle:
+`${CHAPEAU}
+
+{emoji} Le {date_election}, pour la {election} {tour}, {prenom_nom} ({parti}) arrive en tête avec {score} % dans la section {denomination}.
+
+Les résultats de cette section, et toutes les autres, sur {site_url}`,
+
+  section_referendum:
+`${CHAPEAU}
+
+{emoji} Le {date_election}, pour le {election}, le {reponse} est arrivé en tête avec {score} % dans la section {denomination}.
+
+Les résultats de cette section, et toutes les autres, sur {site_url}`,
+
+  section_autres:
+`${CHAPEAU}
+
+{emoji} Le {date_election}, pour les {election} {tour}, {prenom_nom} ({parti}) arrive en tête avec {score} % dans la section {denomination}.
+
+Les résultats de cette section, et toutes les autres, sur {site_url}`,
+
   // ── FICHE BUREAU ───────────────────────────────────────────────────────────
   // Vue panneau d'un bureau. Texte : gagnant dans ce bureau.
 
@@ -227,9 +253,13 @@ Les résultats de ce scrutin, et tous les autres, sur {site_url}`,
 };
 
 // Ordre de repli si > 280 chars (du plus spécifique au plus court)
+// section : niveau dérivé du niveau 'bureau' quand l'élection tirée est sur une
+// ère pré-1979 (voir substitution dans le tirage). Fallback vers quartier puis carte
+// — pas de 'global' dans la chaîne pour rester cohérent avec la géographie section.
 const FALLBACK = {
   carte:    ['carte', 'global'],
   bureau:   ['bureau', 'quartier', 'global'],
+  section:  ['section', 'quartier', 'carte'],
   quartier: ['quartier', 'global'],
   canton:   ['canton', 'global'],
   global:   ['global'],
@@ -461,11 +491,12 @@ function getDate(electionLabel, tour) {
 // d'un run à l'autre (par ex. tour='TU' pour les scrutins à tour unique).
 // Pour le niveau 'carte', subCarte ∈ {'gagnants', 'candidat'} permet de distinguer
 // la carte mosaïque classique de la carte heatmap d'un candidat précis (suffixé "|cand:<nom>").
-function computeSignature(niveau, election, tour, bureau, quartier, subCarte, candidatName, canton) {
+function computeSignature(niveau, election, tour, bureau, quartier, subCarte, candidatName, canton, section) {
   // Note historique : un `.split(' ')[0]` était posé ici pour gérer un suffixe
   // "(forcé)" qui n'est plus appliqué côté caller. Retiré en audit low #9.
   const niv = String(niveau || 'global');
   if (niv === 'bureau'   && bureau)   return `bureau|${election}|${tour}|${bureau}`;
+  if (niv === 'section'  && section)  return `section|${election}|${tour}|${section}`;
   if (niv === 'quartier' && quartier) return `quartier|${election}|${tour}|${quartier}`;
   if (niv === 'canton'   && canton)   return `canton|${election}|${tour}|${canton}`;
   if (niv === 'carte') {
@@ -657,7 +688,9 @@ console.log(rdv
       quartiersByEra[era] = {};
       Object.entries(bi).forEach(([num, b]) => {
         if (b && b.q !== 'Nul') {
-          bureauxByEra[era][num] = { denomination: b.den || b.nom || `Bureau ${num}`, quartier: b.q || '' };
+          // `sec` propagé pour les ères pré-1979 : sert à la substitution
+          // bureau→section dans le tirage (unité cartographiée = section).
+          bureauxByEra[era][num] = { denomination: b.den || b.nom || `Bureau ${num}`, quartier: b.q || '', sec: b.sec || null };
           const q = b.q || '';
           if (q) {
             if (!quartiersByEra[era][q]) quartiersByEra[era][q] = [];
@@ -749,8 +782,13 @@ console.log(rdv
   ));
 
   let niveau, election, tour, bureau, quartier, canton, subCarte, candidatPicked;
+  let section = null;
   let era, bureauxInfoEra, quartiersBureauxEra, quartiersEra;
   let signature;
+  // Ères « section » (pré-1979) — issues de shared.js/window.ERAS_SECTION. Hard-codées
+  // ici pour éviter d'avoir à charger shared.js côté Node ; à synchroniser si de
+  // nouvelles ères pré-1979 sont ajoutées.
+  const SECTION_ERAS = new Set(['1958', '1967', '1973', '1976']);
   const MAX_RETRIES = 30;
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     // ── Étape 1 : niveau (rééquilibré)
@@ -817,6 +855,35 @@ console.log(rdv
     quartiersEra = Object.keys(quartiersBureauxEra);
 
     // Sélections aléatoires selon le niveau (en se basant sur l'ère de l'élection)
+    // Substitution bureau → section pour les ères pré-1979 : ces ères n'ont pas
+    // de fiche bureau individuelle (l'unité cartographiée est la section, qui
+    // agrège 1 à 5 bureaux). On promeut donc `niveau` en 'section' et on tire
+    // un nom de section parmi celles présentes dans l'ère.
+    if (niveau === 'bureau' && !bureau && SECTION_ERAS.has(String(era))) {
+      niveau = 'section';
+    }
+    if (niveau === 'section' && !section) {
+      const candidats = (bureauxParElection[election] || []).filter(n => bureauxInfoEra[n]);
+      // Ensemble des sections effectivement peuplées de résultats (via BUREAU_INFO
+      // brut, extrait plus haut avec `sec` dans bureauxByEra à condition qu'on
+      // l'expose — sinon on recharge depuis la page). On lit `bureauxInfoEra[n].sec`
+      // qui n'est peuplé QUE pour les ères section (bureauxByEra propage `sec`).
+      const sectionsAvec = new Set();
+      candidats.forEach(n => {
+        const s = bureauxInfoEra[n] && bureauxInfoEra[n].sec;
+        if (s) sectionsAvec.add(s);
+      });
+      const sectionsList = [...sectionsAvec];
+      if (sectionsList.length) {
+        section = pickRandom(sectionsList);
+        // Quartier dérivé du 1er bureau de la section (utilisé par la cascade
+        // section → quartier de FALLBACK).
+        if (section && !quartier) {
+          const firstB = candidats.find(n => bureauxInfoEra[n] && bureauxInfoEra[n].sec === section);
+          if (firstB) quartier = bureauxInfoEra[firstB]?.quartier || null;
+        }
+      }
+    }
     if (niveau === 'bureau' && !bureau) {
       const candidats = (bureauxParElection[election] || []).filter(n => bureauxInfoEra[n]);
       bureau = pickRandom(candidats);
@@ -924,7 +991,7 @@ console.log(rdv
       }
     }
 
-    signature = computeSignature(niveau, election, tour, bureau, quartier, subCarte, candidatPicked, canton);
+    signature = computeSignature(niveau, election, tour, bureau, quartier, subCarte, candidatPicked, canton, section);
     if (!bannedSignatures.has(signature)) {
       if (attempt > 1) console.log(`✅ Signature libre trouvée à l'essai ${attempt}/${MAX_RETRIES}`);
       break;
@@ -944,7 +1011,7 @@ console.log(rdv
 
   const suffix = electionSuffix(election);
   const isRef  = suffix === 'referendum';
-  console.log(`📌 Niveau : ${niveau}${subCarte ? '/' + subCarte : ''} | ${election} | Tour : ${tour} | Bureau : ${bureau||'—'} | Quartier : ${quartier||'—'} | Canton : ${canton||'—'}${candidatPicked ? ' | Candidat : ' + candidatPicked : ''}`);
+  console.log(`📌 Niveau : ${niveau}${subCarte ? '/' + subCarte : ''} | ${election} | Tour : ${tour} | Bureau : ${bureau||'—'} | Section : ${section||'—'} | Quartier : ${quartier||'—'} | Canton : ${canton||'—'}${candidatPicked ? ' | Candidat : ' + candidatPicked : ''}`);
   console.log(`🔖 Signature : ${signature}`);
 
   // ── 4. Extraire les données électorales ───────────────────────────────────
@@ -965,7 +1032,15 @@ console.log(rdv
     return (CANTON_CORRESPONDANCES['2015:' + cid] || {})[eraB] || [];
   }, canton, era) : null;
 
-  const elecData = await page.evaluate((el, tr, bur, qrt, bureausDuQuartier, bureausDuCanton, isRef, subjectCandidate) => {
+  // Bureaux composant la section choisie (ères pré-1979). Filtre `.sec === section`
+  // dans BUREAU_INFO[era]. Sert à l'agrégat sectionWinner.
+  const sectionBureaux = section ? await page.evaluate((secName, eraB) => {
+    return Object.entries(BUREAU_INFO[eraB] || {})
+      .filter(([, b]) => b && b.sec === secName)
+      .map(([id]) => id);
+  }, section, era) : null;
+
+  const elecData = await page.evaluate((el, tr, bur, qrt, bureausDuQuartier, bureausDuCanton, bureausDuSection, isRef, subjectCandidate) => {
     const sheets = ELECTIONS?.[el]?.sheets || {};
     const sheet  = sheets[tr] || sheets.TU || sheets[Object.keys(sheets)[0]];
     if (!sheet) return null;
@@ -1065,6 +1140,13 @@ console.log(rdv
       cantonWinner = cData.ranked[0] || null;
     }
 
+    // Gagnant dans une section (agrégation des bureaux de la section, ères pré-1979)
+    let sectionWinner = null;
+    if (bureausDuSection?.length) {
+      const sData = aggregate(bureausDuSection.filter(n => sheet[n]));
+      sectionWinner = sData.ranked[0] || null;
+    }
+
     // Cas référendum : remplacer le candidat par Oui/Non.
     // Doctrine _voix : on agrège les voix entières, jamais pct × e / 100.
     function toRef(winner, nums) {
@@ -1081,6 +1163,7 @@ console.log(rdv
       bureauWinner && Object.assign(bureauWinner,  toRef(bureauWinner,  bur ? [bur] : []));
       quartierWinner && Object.assign(quartierWinner, toRef(quartierWinner, bureausDuQuartier || []));
       cantonWinner   && Object.assign(cantonWinner,   toRef(cantonWinner,   bureausDuCanton   || []));
+      sectionWinner  && Object.assign(sectionWinner,  toRef(sectionWinner,  bureausDuSection  || []));
       // Sur référendum, pas de subCarte='candidat' (cf. ligne ~618), donc
       // carteSubject === cityWinner par construction. On le réaligne après
       // mutation par toRef pour éviter toute divergence accidentelle.
@@ -1097,12 +1180,12 @@ console.log(rdv
       }
     }
 
-    return { cityWinner, carteSubject, bestBureau, bestBureauPct, bureauWinner, quartierWinner, cantonWinner };
+    return { cityWinner, carteSubject, bestBureau, bestBureauPct, bureauWinner, quartierWinner, cantonWinner, sectionWinner, sectionBureauxOrdered: bureausDuSection };
 
   // bureausDuQuartier : toujours passer si quartier est connu (incluant niveau=bureau
   // avec quartier déduit ligne 783), pour que la cascade bureau→quartier de FALLBACK
   // puisse calculer un quartierWinner exploitable.
-  }, election, tour, bureau, quartier, (quartiersBureauxEra[quartier] || null), cantonBureaux, isRef, candidatPicked);
+  }, election, tour, bureau, quartier, (quartiersBureauxEra[quartier] || null), cantonBureaux, sectionBureaux, isRef, candidatPicked);
 
   if (!elecData) {
     console.error('❌ Données introuvables. Abandon.');
@@ -1167,15 +1250,16 @@ console.log(rdv
     prep_quartier_long:  prepQuartier(bInfo.quartier || '', 'long'),
   };
 
-  // Construit l'URL profonde vers la vue exacte du tweet (carte/bureau/quartier/canton/global)
+  // Construit l'URL profonde vers la vue exacte du tweet (carte/bureau/section/quartier/canton/global)
   function buildDeepLink(niv) {
     const params = new URLSearchParams();
     params.set('election', election);
-    if (tour && tour !== 'TU')        params.set('tour',     tour);
-    if (niv === 'bureau'   && bureau) params.set('bureau',   bureau);
+    if (tour && tour !== 'TU')          params.set('tour',     tour);
+    if (niv === 'bureau'   && bureau)   params.set('bureau',   bureau);
+    if (niv === 'section'  && section)  params.set('section',  section);
     if (niv === 'quartier' && quartier) params.set('quartier', quartier);
-    if (niv === 'canton'   && canton) params.set('canton',   canton);
-    if (niv === 'global')             params.set('tab',      'global');
+    if (niv === 'canton'   && canton)   params.set('canton',   canton);
+    if (niv === 'global')               params.set('tab',      'global');
     // Carte candidat : précharger la heatmap du bon candidat
     if (niv === 'carte' && subCarte === 'candidat' && candidatPicked) {
       params.set('selection', candidatPicked);
@@ -1218,6 +1302,16 @@ console.log(rdv
     } else if (niv === 'bureau') {
       winner = elecData.bureauWinner;
       extra  = { ...bureauVars };
+    } else if (niv === 'section') {
+      // Section (ère pré-1979) : `denomination` = DÉNOMINATION du 1er bureau
+      // de la section (ex. "Centre-ville nord" pour Oratoire) — pas le nom
+      // officiel de la section. C'est la formulation qui parle le mieux au
+      // lecteur (« dans la section Centre-ville nord » vs « dans la section
+      // Oratoire »).
+      winner = elecData.sectionWinner;
+      const _secBids = elecData.sectionBureauxOrdered || [];
+      const _firstDen = _secBids.length ? (bureauxInfoEra[_secBids[0]] || {}).denomination : null;
+      extra  = { denomination: _firstDen || section || '?' };
     } else if (niv === 'quartier') {
       winner = elecData.quartierWinner;
       const q = quartier || bInfo.quartier || '?';
@@ -1356,6 +1450,7 @@ console.log(rdv
   params.set('election', election);
   if (tour && tour !== 'TU') params.set('tour', tour);
   if (urlNiveau === 'bureau'   && bureau)   params.set('bureau',   bureau);
+  if (urlNiveau === 'section'  && section)  params.set('section',  section);
   if (urlNiveau === 'quartier' && quartier) params.set('quartier', quartier);
   if (urlNiveau === 'canton'   && canton)   params.set('canton',   canton);
   if (urlNiveau === 'global')               params.set('tab',      'global');
@@ -1471,7 +1566,7 @@ console.log(rdv
     date: today,
     niveau,                    // tirage initial (= sert à la signature anti-doublons)
     niveau_publie: niveauPublie, // après cascade éventuelle, normalisé
-    election, tour, bureau, quartier, canton,
+    election, tour, bureau, quartier, canton, section,
     subtype: subCarte || null,
     candidat: candidatPicked || null,
     signature,
@@ -1492,6 +1587,7 @@ console.log(rdv
     election,
     tour,
     bureau:   bureau   || null,
+    section:  section  || null,
     quartier: quartier || null,
     subtype:  subCarte || null,
     candidat: candidatPicked || null,

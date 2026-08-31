@@ -6451,7 +6451,7 @@ function openOverlay() {
   if (!currentFeature) return;
   overlayTab = 'bureau';
   const info = bureauInfo(currentFeature);
-  document.getElementById('ov-title').textContent = 'Fiche bureau — ' + info.denomination;
+  document.getElementById('ov-title').textContent = (currentFeature.properties && currentFeature.properties.sec) ? 'Fiche section — ' + info.denomination : 'Fiche bureau — ' + info.denomination;
   setOverlayDisplay('flex');
   showBureauListSidebar();
   renderFiche(currentFeature);
@@ -6578,7 +6578,7 @@ function switchTabC(cid){
 function switchTab(tab){
   overlayTab=tab;
   if(tab==='bureau'){
-    if(currentFeature){const info=bureauInfo(currentFeature);document.getElementById('ov-title').textContent=isAggNs(numStr(currentFeature))?'Bureaux agrégés — '+info.quartier:'Fiche bureau — '+info.denomination;renderFiche(currentFeature);updateAccentColor();}
+    if(currentFeature){const info=bureauInfo(currentFeature);document.getElementById('ov-title').textContent=(currentFeature.properties&&currentFeature.properties.sec)?'Fiche section — '+info.denomination:(isAggNs(numStr(currentFeature))?'Bureaux agrégés — '+info.quartier:'Fiche bureau — '+info.denomination);renderFiche(currentFeature);updateAccentColor();}
   } else if (tab === 'canton') {
     const cantonEra = (typeof getCantonEraForElection === 'function') ? getCantonEraForElection(currentElection) : CURRENT_ERA_CANTON;
     const cantonsMeta = ((typeof CANTON_INFO !== 'undefined' && CANTON_INFO[cantonEra]) || {}).cantons || {};
@@ -7910,7 +7910,7 @@ function refreshOverlayIfOpen(){
   }
   if(!currentFeature)return;
   if(overlayTab==='quartier'){renderQuartier();}
-  else{const info=bureauInfo(currentFeature);document.getElementById('ov-title').textContent=isAggNs(numStr(currentFeature))?'Bureaux agrégés — '+info.quartier:'Fiche bureau — '+info.denomination;renderFiche(currentFeature);}
+  else{const info=bureauInfo(currentFeature);document.getElementById('ov-title').textContent=(currentFeature.properties&&currentFeature.properties.sec)?'Fiche section — '+info.denomination:(isAggNs(numStr(currentFeature))?'Bureaux agrégés — '+info.quartier:'Fiche bureau — '+info.denomination);renderFiche(currentFeature);}
   updateAccentColor();
   // Rafraîchit la barre d'onglets (apparition/disparition de l'onglet quartier selon
   // que l'élection courante est cantonale ou pas) et la sidebar (display de la liste
@@ -11897,7 +11897,15 @@ function writeURLState() {
     const ovOpen = ov && ov.style.display !== 'none';
     if (ovOpen) {
       if (overlayTab === 'bureau' && currentFeature) {
-        params.set('bureau', numStr(currentFeature));
+        // Ère section (pré-1979) : la feature porte `sec` et pas de numéro de bureau
+        // — on écrit `#section=<nom>` pour respecter la sémantique. Sans ça, on aurait
+        // `#bureau=Oratoire` (numStr renvoie le nom de section), ambigu à la lecture
+        // par les partages externes et par daily-capture.
+        if (currentFeature.properties && currentFeature.properties.sec) {
+          params.set('section', currentFeature.properties.sec);
+        } else {
+          params.set('bureau', numStr(currentFeature));
+        }
       } else if (overlayTab === 'quartier') {
         // Fallback : si currentQuartier null, récupérer depuis le currentFeature
         let q = currentQuartier;
@@ -12038,7 +12046,7 @@ function updateAnalyseLink() {
         currentFeature = feat;
         overlayTab = 'bureau';
         const info = bureauInfo(feat);
-        document.getElementById('ov-title').textContent = isAggNs(numStr(feat)) ? 'Bureaux agrégés — ' + info.quartier : 'Fiche bureau — ' + info.denomination;
+        document.getElementById('ov-title').textContent = (feat.properties && feat.properties.sec) ? 'Fiche section — ' + info.denomination : (isAggNs(numStr(feat)) ? 'Bureaux agrégés — ' + info.quartier : 'Fiche bureau — ' + info.denomination);
         setOverlayDisplay('flex');
         renderFiche(feat);
         // Sidebar en mode "liste de bureaux" (cohérent avec openOverlay() — pas de preview du bureau actuel)
@@ -12077,6 +12085,25 @@ function updateAnalyseLink() {
           currentFeature = feat;
           openOverlayQuartierNamed(qname);
         }
+      }
+    } else if (params.get('section')) {
+      // #section=<nom> — ouvre directement la fiche section (ère pré-1979).
+      // La section est traitée comme un pseudo-bureau côté rendu : `numStr(feat)`
+      // renvoie déjà `p.sec` pour les features section, donc `renderFiche(feat)`
+      // et les onglets fonctionnent sans adaptation supplémentaire.
+      const sname = params.get('section');
+      const gj = getMapGeoJSON();
+      const feat = gj.features.find(f => f.properties && f.properties.sec === sname);
+      if (feat) {
+        currentFeature = feat;
+        overlayTab = 'bureau';
+        const info = (typeof bureauInfo === 'function') ? bureauInfo(feat) : {};
+        document.getElementById('ov-title').textContent = 'Fiche section — ' + (info.denomination || sname);
+        setOverlayDisplay('flex');
+        renderFiche(feat);
+        showBureauListSidebar();
+        updateAccentColor();
+        updateOverlayTabs();
       }
     } else {
       // #canton=X : ouvrir directement la fiche canton via selectCantonFromList.
@@ -13854,18 +13881,24 @@ function updateAnalyseLink() {
       const data = aggData(nums);
       return { type:'canton', title, subtitle:'Canton · ' + cName, quartier:'', data, bureauNums: nums, winnerCol: data.w ? colorOfCandidate(data.w) : '#888' };
     }
-    // bureau
+    // bureau (ou section — même chemin de rendu, currentFeature.properties.sec fait la bascule)
     if (typeof currentFeature === 'undefined' || !currentFeature) return null;
     const ns = numStr(currentFeature);
     const info = (typeof bureauInfo === 'function') ? bureauInfo(currentFeature) : {};
-    const d = sheetData[ns];
+    // getBureauData agrège automatiquement les bureaux d'une section quand `ns`
+    // est un nom de section (ère pré-1979). sheetData[ns] serait undefined dans
+    // ce cas — donc on passe toujours par getBureauData quand disponible.
+    const d = (typeof getBureauData === 'function') ? getBureauData(ns) : sheetData[ns];
     if (!d) return null;
     const denom = info.denomination || info.nom || '';
     const quartier = (info.quartier || '').trim();  // garde le nom complet (ex: "Tasdon/Les Minimes")
+    const isSec = !!(currentFeature.properties && currentFeature.properties.sec);
     return {
-      type: 'bureau',
+      type: isSec ? 'section' : 'bureau',
       title,
-      subtitle: 'Bureau n°' + parseInt(ns) + (denom ? ' · ' + denom : ''),
+      subtitle: isSec
+        ? ('Section · ' + (denom || ns))
+        : ('Bureau n°' + parseInt(ns) + (denom ? ' · ' + denom : '')),
       quartier,
       data: d,
       winnerCol: d.w ? colorOfCandidate(d.w) : '#888'
@@ -13917,8 +13950,8 @@ function updateAnalyseLink() {
       return;
     }
 
-    // Mini-carte à gauche (pour bureau, quartier ou canton)
-    const showMap = (fctx.type === 'bureau' || fctx.type === 'quartier' || fctx.type === 'canton');
+    // Mini-carte à gauche (pour bureau, section, quartier ou canton)
+    const showMap = (fctx.type === 'bureau' || fctx.type === 'section' || fctx.type === 'quartier' || fctx.type === 'canton');
     const mapW = showMap ? 140 : 0;
     const mapGapX = showMap ? 16 : 0;
     if (showMap) await drawFicheMap(ctx, x, y, mapW, h, fctx);
@@ -13988,9 +14021,11 @@ function updateAnalyseLink() {
 
   // ─── Mini-carte d'export : helpers (pickTarget / computeView / tiles / mask / bureaux) ───
 
-  // Sélectionne les features à mettre en couleur (bureau actuel ou bureaux du quartier/canton).
+  // Sélectionne les features à mettre en couleur (bureau/section actuel ou bureaux du quartier/canton).
   function _pickTargetFeatures(fctx, allFeatures) {
-    if (fctx.type === 'bureau') {
+    // 'bureau' et 'section' partagent le même chemin : la feature à highlight est
+    // directement currentFeature (pour une section, c'est le polygone du secteur).
+    if (fctx.type === 'bureau' || fctx.type === 'section') {
       if (typeof currentFeature === 'undefined' || !currentFeature || !currentFeature.geometry) return null;
       return [currentFeature];
     }
@@ -14867,9 +14902,11 @@ function randomDiscover() {
         overlayTab = 'bureau';
         const info = bureauInfo(feat);
         const ns = numStr(feat);
-        document.getElementById('ov-title').textContent = isAggNs(ns)
-          ? 'Bureaux agrégés — ' + info.quartier
-          : 'Fiche bureau — ' + info.denomination;
+        document.getElementById('ov-title').textContent = (feat.properties && feat.properties.sec)
+          ? 'Fiche section — ' + info.denomination
+          : (isAggNs(ns)
+              ? 'Bureaux agrégés — ' + info.quartier
+              : 'Fiche bureau — ' + info.denomination);
         document.getElementById('ov-tabs').style.display = 'flex';
         setOverlayDisplay('flex');
         showBureauListSidebar();   // ← sidebar passe en mode liste (cohérent avec fiche ouverte)
@@ -15214,7 +15251,7 @@ function randomDiscover() {
     currentQuartier = null;
     overlayTab = 'bureau';
     const info = bureauInfo(feat);
-    const t = isAggNs(numStr(feat)) ? 'Bureaux agrégés — ' + info.quartier : 'Fiche bureau — ' + info.denomination;
+    const t = (feat.properties && feat.properties.sec) ? 'Fiche section — ' + info.denomination : (isAggNs(numStr(feat)) ? 'Bureaux agrégés — ' + info.quartier : 'Fiche bureau — ' + info.denomination);
     document.getElementById('ov-title').textContent = t;
     document.getElementById('ov-tabs').style.display = 'flex';
     setOverlayDisplay('flex');
