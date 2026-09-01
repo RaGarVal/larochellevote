@@ -1,15 +1,16 @@
 {
-  "date": "2026-08-31",
-  "niveau": "carte",
-  "niveau_publie": "carte",
-  "election": "Législatives 1973",
+  "date": "2026-09-01",
+  "niveau": "section",
+  "niveau_publie": "section",
+  "election": "Législatives 1978",
   "tour": "T1",
   "bureau": null,
-  "quartier": null,
+  "quartier": "Centre-ville",
   "canton": null,
-  "subtype": "candidat",
-  "candidat": "michel-crepeau@legislatives-1973",
-  "signature": "carte|Législatives 1973|T1|cand:michel-crepeau@legislatives-1973",
-  "chars": 245,
-  "generated_at": "2026-08-31T06:02:11.688Z"
+  "section": "Valin",
+  "subtype": null,
+  "candidat": null,
+  "signature": "section|Législatives 1978|T1|Valin",
+  "chars": 268,
+  "generated_at": "2026-09-01T06:02:39.786Z"
 }

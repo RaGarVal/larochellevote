@@ -1430,5 +1430,19 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "michel-crepeau@legislatives-1973"
+  },
+  {
+    "date": "2026-09-01",
+    "signature": "section|Législatives 1978|T1|Valin",
+    "niveau": "section",
+    "niveau_publie": "section",
+    "truncation_step": 1,
+    "election": "Législatives 1978",
+    "tour": "T1",
+    "bureau": null,
+    "section": "Valin",
+    "quartier": "Centre-ville",
+    "subtype": null,
+    "candidat": null
   }
 ]
