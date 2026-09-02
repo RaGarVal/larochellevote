@@ -1447,16 +1447,16 @@
   },
   {
     "date": "2026-09-02",
-    "signature": "carte|Municipales 1965|T1|cand:dournelle@municipales-1965",
+    "signature": "carte|Législatives 1962|T1|cand:leon-belly@legislatives-1962",
     "niveau": "carte",
     "niveau_publie": "carte",
     "truncation_step": 2,
-    "election": "Municipales 1965",
+    "election": "Législatives 1962",
     "tour": "T1",
     "bureau": null,
     "section": null,
     "quartier": null,
     "subtype": "candidat",
-    "candidat": "dournelle@municipales-1965"
+    "candidat": "leon-belly@legislatives-1962"
   }
 ]
