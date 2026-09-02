@@ -2,15 +2,15 @@
   "date": "2026-09-02",
   "niveau": "carte",
   "niveau_publie": "carte",
-  "election": "Législatives 1962",
+  "election": "Municipales 2008",
   "tour": "T1",
   "bureau": null,
   "quartier": null,
   "canton": null,
   "section": null,
   "subtype": "candidat",
-  "candidat": "leon-belly@legislatives-1962",
-  "signature": "carte|Législatives 1962|T1|cand:leon-belly@legislatives-1962",
-  "chars": 268,
-  "generated_at": "2026-09-02T10:35:26.684Z"
+  "candidat": "dominique-morvant@municipales-2008",
+  "signature": "carte|Municipales 2008|T1|cand:dominique-morvant@municipales-2008",
+  "chars": 256,
+  "generated_at": "2026-09-02T10:38:49.123Z"
 }
