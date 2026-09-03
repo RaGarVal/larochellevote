@@ -1,16 +1,16 @@
 {
-  "date": "2026-09-02",
+  "date": "2026-09-03",
   "niveau": "carte",
   "niveau_publie": "carte",
-  "election": "Municipales 2008",
-  "tour": "T1",
+  "election": "Européennes 1979",
+  "tour": "TU",
   "bureau": null,
   "quartier": null,
   "canton": null,
   "section": null,
   "subtype": "candidat",
-  "candidat": "dominique-morvant@municipales-2008",
-  "signature": "carte|Municipales 2008|T1|cand:dominique-morvant@municipales-2008",
-  "chars": 256,
-  "generated_at": "2026-09-02T10:38:49.123Z"
+  "candidat": "francois-mitterrand@europeennes-1979",
+  "signature": "carte|Européennes 1979|TU|cand:francois-mitterrand@europeennes-1979",
+  "chars": 271,
+  "generated_at": "2026-09-03T06:02:28.097Z"
 }

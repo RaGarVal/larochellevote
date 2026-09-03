@@ -1458,5 +1458,19 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "dominique-morvant@municipales-2008"
+  },
+  {
+    "date": "2026-09-03",
+    "signature": "carte|Européennes 1979|TU|cand:francois-mitterrand@europeennes-1979",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Européennes 1979",
+    "tour": "TU",
+    "bureau": null,
+    "section": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "francois-mitterrand@europeennes-1979"
   }
 ]
