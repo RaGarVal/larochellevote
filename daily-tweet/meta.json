@@ -1,16 +1,16 @@
 {
   "date": "2026-09-04",
-  "niveau": "section",
-  "niveau_publie": "section",
-  "election": "Cantonales 1964",
-  "tour": "T1",
+  "niveau": "carte",
+  "niveau_publie": "carte",
+  "election": "Référendum 1961",
+  "tour": "TU",
   "bureau": null,
-  "quartier": "Saint-Éloi",
+  "quartier": null,
   "canton": null,
-  "section": "Saint-Éloi",
-  "subtype": null,
+  "section": null,
+  "subtype": "gagnants",
   "candidat": null,
-  "signature": "section|Cantonales 1964|T1|Saint-Éloi",
-  "chars": 269,
-  "generated_at": "2026-09-04T06:02:08.815Z"
+  "signature": "carte|Référendum 1961|TU",
+  "chars": 266,
+  "generated_at": "2026-09-04T06:38:57.142Z"
 }
