@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🇪🇺 Le 10 juin 1979, pour les européennes, François Mitterrand (PS) a obtenu 26,8 % à La Rochelle. 📍 Meilleur score dans le bureau n°41 · Condorcet–Fabre-d'Églantine à Villeneuve-les-Salines.
+🧩 Le 8 mars 1964, pour les cantonales (1er tour), Léon Belly (PCF) arrive en tête avec 36,4 % dans la section Petit-Saint-Éloi–Grand-Saint-Éloi.
 
-Détails sur https://larochellevote.fr/LRVcarte.html#election=Europ%C3%A9ennes+1979&selection=francois-mitterrand%40europeennes-1979
+Les résultats de cette section, et toutes les autres, sur https://larochellevote.fr/LRVcarte.html#election=Cantonales+1964&tour=T1&section=Saint-%C3%89loi

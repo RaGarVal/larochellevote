@@ -1,16 +1,16 @@
 {
-  "date": "2026-09-03",
-  "niveau": "carte",
-  "niveau_publie": "carte",
-  "election": "Européennes 1979",
-  "tour": "TU",
+  "date": "2026-09-04",
+  "niveau": "section",
+  "niveau_publie": "section",
+  "election": "Cantonales 1964",
+  "tour": "T1",
   "bureau": null,
-  "quartier": null,
+  "quartier": "Saint-Éloi",
   "canton": null,
-  "section": null,
-  "subtype": "candidat",
-  "candidat": "francois-mitterrand@europeennes-1979",
-  "signature": "carte|Européennes 1979|TU|cand:francois-mitterrand@europeennes-1979",
-  "chars": 271,
-  "generated_at": "2026-09-03T06:02:28.097Z"
+  "section": "Saint-Éloi",
+  "subtype": null,
+  "candidat": null,
+  "signature": "section|Cantonales 1964|T1|Saint-Éloi",
+  "chars": 269,
+  "generated_at": "2026-09-04T06:02:08.815Z"
 }

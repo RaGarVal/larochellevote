@@ -1472,5 +1472,19 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "francois-mitterrand@europeennes-1979"
+  },
+  {
+    "date": "2026-09-04",
+    "signature": "section|Cantonales 1964|T1|Saint-Éloi",
+    "niveau": "section",
+    "niveau_publie": "section",
+    "truncation_step": 1,
+    "election": "Cantonales 1964",
+    "tour": "T1",
+    "bureau": null,
+    "section": "Saint-Éloi",
+    "quartier": "Saint-Éloi",
+    "subtype": null,
+    "candidat": null
   }
 ]
