@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🗳️ Le 8 janvier 1961, pour le référendum, le Oui a obtenu 74,2 % à La Rochelle. 📍 Meilleur score dans le bureau n°6 · Parc Charruyer à La Genette.
+🏛️ Le 22 février 1959, pour les législative partielle (1er tour), Georges Gosnat (PCF) arrive en tête avec 52,3 % dans la section Laleu–La Rossignolette.
 
-Les résultats de ce scrutin, bureau par bureau, sur https://larochellevote.fr/LRVcarte.html#election=R%C3%A9f%C3%A9rendum+1961
+Les résultats de cette section, et toutes les autres, sur https://larochellevote.fr/LRVcarte.html#election=L%C3%A9gislative+partielle+1959&tour=T1&section=Laleu

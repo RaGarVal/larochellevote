@@ -1475,16 +1475,16 @@
   },
   {
     "date": "2026-09-04",
-    "signature": "carte|Référendum 1961|TU",
-    "niveau": "carte",
-    "niveau_publie": "carte",
+    "signature": "section|Législative partielle 1959|T1|Laleu",
+    "niveau": "section",
+    "niveau_publie": "section",
     "truncation_step": 1,
-    "election": "Référendum 1961",
-    "tour": "TU",
+    "election": "Législative partielle 1959",
+    "tour": "T1",
     "bureau": null,
-    "section": null,
-    "quartier": null,
-    "subtype": "gagnants",
+    "section": "Laleu",
+    "quartier": "Laleu/La Pallice",
+    "subtype": null,
     "candidat": null
   }
 ]
