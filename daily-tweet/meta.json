@@ -1,16 +1,16 @@
 {
   "date": "2026-09-04",
-  "niveau": "section",
-  "niveau_publie": "section",
-  "election": "Législative partielle 1959",
-  "tour": "T1",
-  "bureau": null,
-  "quartier": "Laleu/La Pallice",
+  "niveau": "bureau",
+  "niveau_publie": "bureau",
+  "election": "Européennes 1999",
+  "tour": "TU",
+  "bureau": "0026",
+  "quartier": "Fétilly",
   "canton": null,
-  "section": "Laleu",
+  "section": null,
   "subtype": null,
   "candidat": null,
-  "signature": "section|Législative partielle 1959|T1|Laleu",
-  "chars": 278,
-  "generated_at": "2026-09-04T06:42:55.625Z"
+  "signature": "bureau|Européennes 1999|TU|0026",
+  "chars": 268,
+  "generated_at": "2026-09-04T06:48:07.433Z"
 }
