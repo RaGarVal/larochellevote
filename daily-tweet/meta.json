@@ -1,16 +1,16 @@
 {
-  "date": "2026-09-01",
-  "niveau": "section",
-  "niveau_publie": "section",
-  "election": "Législatives 1978",
+  "date": "2026-09-05",
+  "niveau": "bureau",
+  "niveau_publie": "bureau",
+  "election": "Régionales 2021",
   "tour": "T1",
-  "bureau": null,
-  "quartier": "Centre-ville",
+  "bureau": "0004",
+  "quartier": "Port-Neuf, La Genette",
   "canton": null,
-  "section": "Valin",
+  "section": null,
   "subtype": null,
   "candidat": null,
-  "signature": "section|Législatives 1978|T1|Valin",
-  "chars": 268,
-  "generated_at": "2026-09-01T06:02:39.786Z"
+  "signature": "bureau|Régionales 2021|T1|0004",
+  "chars": 278,
+  "generated_at": "2026-09-05T06:01:45.365Z"
 }
