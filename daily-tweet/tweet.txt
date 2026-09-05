@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🇪🇺 Le 13 juin 1999, pour les européennes, François Hollande (PS) arrive en tête avec 24,4 % dans le bureau n°26 · Place du Curé-Crampette à Fétilly.
+🏙️ Le 20 juin 2021, pour les régionales (1er tour), Alain Rousset (PS) arrive en tête avec 26,1 % dans le bureau n°4 · Deflandre–Missy à Port-Neuf, La Genette.
 
-Les résultats de ce bureau, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Europ%C3%A9ennes+1999&bureau=0026
+Les résultats de ce bureau, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=R%C3%A9gionales+2021&tour=T1&bureau=0004

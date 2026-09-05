@@ -1486,5 +1486,19 @@
     "quartier": "Fétilly",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-09-05",
+    "signature": "bureau|Régionales 2021|T1|0004",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Régionales 2021",
+    "tour": "T1",
+    "bureau": "0004",
+    "section": null,
+    "quartier": "Port-Neuf, La Genette",
+    "subtype": null,
+    "candidat": null
   }
 ]
