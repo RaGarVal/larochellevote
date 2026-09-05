@@ -8158,6 +8158,9 @@ function renderFiche(feature) {
     // Ère section : pas de "n° X" car ns est un nom de section (parseInt→NaN) ;
     // on pointe vers le 1er bureau de la section mais on affiche "de la section X".
     if (isSec) {
+      // Fiche section (référendum) : tableau des bureaux internes AVANT les liens.
+      // Cohérent avec le rendu section des autres élections (ligne ~8209).
+      h += renderBureauxInSectionHTML(feature, info);
       const _secR = feature.properties && feature.properties.sec;
       if (_secR && typeof getBureauxOfSection === 'function') {
         const _sBidsR = getBureauxOfSection(_secR, _curEra);
@@ -9751,8 +9754,25 @@ function updateFooter() {
     const dB = nsB ? sheetB[nsB] : null;
     const sA = dA ? scoreOfSelInBureau(dA, _cmpState.A) : { pct: 0, present: false };
     const sB = dB ? scoreOfSelInBureau(dB, _cmpState.B) : { pct: 0, present: false };
-    const infoA = nsA ? ((BUREAU_INFO[eraA] || {})[nsA] || {}) : {};
-    const infoB = nsB ? ((BUREAU_INFO[eraB] || {})[nsB] || {}) : {};
+    // Info bureau OU section (ère pré-1979). En ère section, nsA est un nom de
+    // section : BUREAU_INFO est indexé par bureau → lookup vide. On récupère alors
+    // la dénomination du 1er bureau de la section (même convention que daily-capture).
+    function _infoForNs(ns, era) {
+      if (!ns) return {};
+      const direct = (BUREAU_INFO[era] || {})[ns];
+      if (direct) return direct;
+      if (typeof isSectionEra === 'function' && isSectionEra(era)
+          && typeof getBureauxOfSection === 'function') {
+        const bids = getBureauxOfSection(ns, era);
+        if (bids.length) {
+          const b0 = (BUREAU_INFO[era] || {})[bids[0]] || {};
+          return { den: b0.den || ns, nom: ns };
+        }
+      }
+      return {};
+    }
+    const infoA = _infoForNs(nsA, eraA);
+    const infoB = _infoForNs(nsB, eraB);
     // Helper : pose le texte de denom dans un span inner (pour le marquee mobile).
     // Détecte le débordement après rendu et applique .has-marquee + variable
     // CSS --marquee-d pour le translateX de l'animation.
@@ -9778,29 +9798,40 @@ function updateFooter() {
     }
     // Bureau A : si nsA est null → "Bureau inexistant" (état muted/italic).
     // data-num : utilisé par la CSS mobile pour inliner "23 · " avant le denom (gain de hauteur).
+    // Helpers section-aware : "Section X" au lieu de "Bureau n°NaN" en ère pré-1979.
+    const _isSecA = typeof isSectionEra === 'function' && isSectionEra(eraA);
+    const _isSecB = typeof isSectionEra === 'function' && isSectionEra(eraB);
+    const _lblSideA = (ns, info) => _isSecA
+      ? { num: 'Section', denom: info.den || info.nom || String(ns || ''), dataNum: null }
+      : { num: 'Bureau n°' + parseInt(ns), denom: info.den || info.nom || '', dataNum: parseInt(ns) };
+    const _lblSideB = (ns, info) => _isSecB
+      ? { num: 'Section', denom: info.den || info.nom || String(ns || ''), dataNum: null }
+      : { num: 'Bureau n°' + parseInt(ns), denom: info.den || info.nom || '', dataNum: parseInt(ns) };
     const elBA = bar.querySelector('.cmp-mid-bar-bureau-a');
     if (nsA) {
-      elBA.querySelector('.cmp-mid-bar-bureau-num').textContent  = 'Bureau n°' + parseInt(nsA);
-      elBA.setAttribute('data-num', parseInt(nsA));
-      setDenom(elBA.querySelector('.cmp-mid-bar-bureau-denom'), infoA.den || infoA.nom || '');
+      const l = _lblSideA(nsA, infoA);
+      elBA.querySelector('.cmp-mid-bar-bureau-num').textContent = l.num;
+      if (l.dataNum != null) elBA.setAttribute('data-num', l.dataNum); else elBA.removeAttribute('data-num');
+      setDenom(elBA.querySelector('.cmp-mid-bar-bureau-denom'), l.denom);
       elBA.classList.remove('inexistant');
     } else {
       elBA.querySelector('.cmp-mid-bar-bureau-num').textContent  = '';
       elBA.removeAttribute('data-num');
-      setDenom(elBA.querySelector('.cmp-mid-bar-bureau-denom'), 'Bureau inexistant');
+      setDenom(elBA.querySelector('.cmp-mid-bar-bureau-denom'), _isSecA ? 'Section inexistante' : 'Bureau inexistant');
       elBA.classList.add('inexistant');
     }
     // Bureau B : idem côté droit.
     const elBB = bar.querySelector('.cmp-mid-bar-bureau-b');
     if (nsB) {
-      elBB.querySelector('.cmp-mid-bar-bureau-num').textContent  = 'Bureau n°' + parseInt(nsB);
-      elBB.setAttribute('data-num', parseInt(nsB));
-      setDenom(elBB.querySelector('.cmp-mid-bar-bureau-denom'), infoB.den || infoB.nom || '');
+      const l = _lblSideB(nsB, infoB);
+      elBB.querySelector('.cmp-mid-bar-bureau-num').textContent = l.num;
+      if (l.dataNum != null) elBB.setAttribute('data-num', l.dataNum); else elBB.removeAttribute('data-num');
+      setDenom(elBB.querySelector('.cmp-mid-bar-bureau-denom'), l.denom);
       elBB.classList.remove('inexistant');
     } else {
       elBB.querySelector('.cmp-mid-bar-bureau-num').textContent  = '';
       elBB.removeAttribute('data-num');
-      setDenom(elBB.querySelector('.cmp-mid-bar-bureau-denom'), 'Bureau inexistant');
+      setDenom(elBB.querySelector('.cmp-mid-bar-bureau-denom'), _isSecB ? 'Section inexistante' : 'Bureau inexistant');
       elBB.classList.add('inexistant');
     }
     // Badge "=" ou "≠" : forcé "≠" si un côté manque (frontières objectivement
@@ -10015,7 +10046,33 @@ function updateFooter() {
   function getSheetForSel(sel) {
     const el0 = ELECTIONS[sel.elec];
     if (!el0 || !el0.sheets) return {};
-    return el0.sheets[sel.tour] || {};
+    const raw = el0.sheets[sel.tour] || {};
+    // Ère section (pré-1979) : la carte trace des sections (properties.sec),
+    // pas des bureaux. numStr(feature) renvoie donc le nom de section, mais le
+    // sheet brut est indexé par bureau (0001, 0002…) → sheet["Fétilly"] = undefined.
+    // On construit (avec cache) un sheet section-only : pour chaque section, on
+    // agrège les bureaux qui la composent. computeCityScore/Range itèrent alors sur
+    // les sections (= ce que la carte affiche), et styleOf/tooltipOf trouvent leurs données.
+    const era = String(el0.my || '');
+    if (era && typeof isSectionEra === 'function' && isSectionEra(era)
+        && typeof getBureauxOfSection === 'function'
+        && typeof aggregateBureauData === 'function') {
+      el0._cmpSectionCache = el0._cmpSectionCache || {};
+      if (el0._cmpSectionCache[sel.tour]) return el0._cmpSectionCache[sel.tour];
+      const secNames = new Set();
+      Object.entries(BUREAU_INFO[era] || {}).forEach(([, b]) => {
+        if (b && b.sec) secNames.add(b.sec);
+      });
+      const out = {};
+      secNames.forEach(sec => {
+        const bids = getBureauxOfSection(sec, era);
+        const datas = bids.map(b => raw[b]).filter(Boolean);
+        if (datas.length) out[sec] = aggregateBureauData(datas);
+      });
+      el0._cmpSectionCache[sel.tour] = out;
+      return out;
+    }
+    return raw;
   }
   // Couleur de base d'une sélection (candidat → couleur paritaire, bloc/famille → couleur config).
   function baseColorOfSel(sel) {
@@ -10603,8 +10660,22 @@ function updateFooter() {
     const selSelf = displaySide === 'A' ? selA : selB;
     const selOther = displaySide === 'A' ? selB : selA;
     const yi = BUREAU_INFO[eraSelf] || {};
+    // Ère section : sheetSelf est indexé par section (pas par bureau). Le quartier
+    // se récupère via le 1er bureau de la section (les bureaux d'une même section
+    // ont normalement le même quartier).
+    const _isSecSelf = typeof isSectionEra === 'function' && isSectionEra(eraSelf);
+    const _quartierOfNs = ns => {
+      if (yi[ns]) return (yi[ns].q || '').trim();
+      if (_isSecSelf && typeof getBureauxOfSection === 'function') {
+        const bids = getBureauxOfSection(ns, eraSelf);
+        if (bids.length) return ((yi[bids[0]] || {}).q || '').trim();
+      }
+      return '';
+    };
     const agg = {}; // quartier → { voixA, eA, voixB, eB }
-    Object.keys(yi).forEach(ns => {
+    // On itère depuis le sheet (bureaux OU sections selon l'ère), pas BUREAU_INFO,
+    // pour couvrir aussi les ères section.
+    Object.keys(sheetSelf || {}).forEach(ns => {
       if (ns === '0057') return;
       const dSelf = sheetSelf[ns];
       if (!dSelf) return;
@@ -10614,7 +10685,7 @@ function updateFooter() {
       const sSelf = scoreOfSelInBureau(dSelf, selSelf);
       const sOther = scoreOfSelInBureau(dOther, selOther);
       if (!sSelf.present || !sOther.present) return;
-      const q = (yi[ns].q || '').trim();
+      const q = _quartierOfNs(ns);
       if (!q || q === 'Nul') return;
       if (!agg[q]) agg[q] = { voixA: 0, eA: 0, voixB: 0, eB: 0 };
       // Selon side affiché, dSelf/dOther correspondent à A ou B.
@@ -10651,8 +10722,20 @@ function updateFooter() {
     // renvoyé par computeDiffBureauList est exprimé dans cette ère.
     const displaySideN = _cmpDisplaySide();
     const eraDisplay = String((ELECTIONS[_cmpState[displaySideN].elec] || {}).my || '');
+    const _isSecDisp = typeof isSectionEra === 'function' && isSectionEra(eraDisplay);
     const nameOfBureau = ns => {
-      return ((BUREAU_INFO[eraDisplay] || {})[ns] || {}).den || ('Bureau ' + parseInt(ns));
+      const direct = ((BUREAU_INFO[eraDisplay] || {})[ns] || {}).den;
+      if (direct) return direct;
+      // Ère section : ns = nom de section, on récupère la dénomination via le 1er bureau.
+      if (_isSecDisp && typeof getBureauxOfSection === 'function') {
+        const bids = getBureauxOfSection(ns, eraDisplay);
+        if (bids.length) {
+          const b0 = (BUREAU_INFO[eraDisplay] || {})[bids[0]] || {};
+          return b0.den || String(ns);
+        }
+        return String(ns);
+      }
+      return 'Bureau ' + parseInt(ns);
     };
     // Helper de rendu d'une ligne tornado. Factorisée pour le globalItem
     // (ligne "VILLE" qui ressort) et les items normaux (quartiers ou bureaux).
@@ -11054,18 +11137,38 @@ function updateFooter() {
   // Ex. ère 2026, bureau 0004 : b.q = "Port-Neuf" + QC["La Genette"][2026] inclut 0004
   // → retourne ["Port-Neuf", "La Genette"] → point bicolore.
   function _quartiersForBureauNs(ns, era) {
-    const info = (BUREAU_INFO[era] || {})[ns];
+    let info = (BUREAU_INFO[era] || {})[ns];
     const result = [];
     const seen = Object.create(null);
-    _quartierPartsForEra((info && info.q) || '', era).forEach(qp => {
-      if (!seen[qp]) { seen[qp] = 1; result.push(qp); }
-    });
+    // Ère section : ns = nom de section → on agrège les quartiers de tous les
+    // bureaux de la section (une section peut couvrir plusieurs quartiers).
+    let secBids = null;
+    if (!info && typeof isSectionEra === 'function' && isSectionEra(era)
+        && typeof getBureauxOfSection === 'function') {
+      secBids = getBureauxOfSection(ns, era);
+      secBids.forEach(bid => {
+        const bi = (BUREAU_INFO[era] || {})[bid];
+        _quartierPartsForEra((bi && bi.q) || '', era).forEach(qp => {
+          if (!seen[qp]) { seen[qp] = 1; result.push(qp); }
+        });
+      });
+    } else {
+      _quartierPartsForEra((info && info.q) || '', era).forEach(qp => {
+        if (!seen[qp]) { seen[qp] = 1; result.push(qp); }
+      });
+    }
     if (typeof QUARTIER_CORRESPONDANCES !== 'undefined' && ns) {
       Object.keys(QUARTIER_CORRESPONDANCES).forEach(qName => {
         // Skip les noms composites legacy (slash dans le nom du quartier cible)
         if (qName.indexOf('/') >= 0) return;
         const arr = QUARTIER_CORRESPONDANCES[qName] && QUARTIER_CORRESPONDANCES[qName][era];
-        if (arr && arr.indexOf(ns) >= 0 && !seen[qName]) {
+        if (!arr) return;
+        // Ère section : QUARTIER_CORRESPONDANCES peut lister soit le nom de la
+        // section (rare), soit des bids de la section (le plus courant après
+        // audit) → on cherche match sur `ns` (nom section) ou sur l'un des bids.
+        const hit = arr.indexOf(ns) >= 0
+          || (secBids && secBids.some(b => arr.indexOf(b) >= 0));
+        if (hit && !seen[qName]) {
           seen[qName] = 1;
           result.push(qName);
         }
@@ -11194,7 +11297,18 @@ function updateFooter() {
     }
     function bureauDenom(ns) {
       const info = (BUREAU_INFO[eraB] || {})[ns];
-      return (info && info.den) || ('Bureau ' + parseInt(ns));
+      if (info && info.den) return info.den;
+      // Ère section : ns = nom de section → dénomination via le 1er bureau.
+      if (typeof isSectionEra === 'function' && isSectionEra(eraB)
+          && typeof getBureauxOfSection === 'function') {
+        const bids = getBureauxOfSection(ns, eraB);
+        if (bids.length) {
+          const b0 = (BUREAU_INFO[eraB] || {})[bids[0]] || {};
+          return b0.den || String(ns);
+        }
+        return String(ns);
+      }
+      return 'Bureau ' + parseInt(ns);
     }
     // Génération SVG (markup interne uniquement, sans wrapper <svg>).
     let parts = [];
@@ -11319,7 +11433,10 @@ function updateFooter() {
     const footer = document.getElementById('cmp-nuage-footer');
     if (footer) {
       if (result.items.length < result.totalEra) {
-        footer.textContent = result.items.length + ' bureaux affichés sur ' + result.totalEra;
+        // "bureaux" ou "sections" selon l'ère de la carte affichée (côté B).
+        const _isSecEraFtr = typeof isSectionEra === 'function' && isSectionEra(result.eraB);
+        const _unite = _isSecEraFtr ? 'sections affichées' : 'bureaux affichés';
+        footer.textContent = result.items.length + ' ' + _unite + ' sur ' + result.totalEra;
         footer.classList.add('on');
       } else {
         footer.classList.remove('on');
@@ -11645,13 +11762,22 @@ function updateFooter() {
     function tooltipOf(feature) {
       const ns = numStr(feature);
       const data = sheet[ns];
-      // Dénomination = nom du lieu de vote (ex. "La Rossignolette–Saintonge"),
-      // pas le "nom officiel" du bureau (ex. "Laleu"). On lit BUREAU_INFO[era].den
-      // pour l'ère de la sélection — pas du geojson qui est figé sur l'ère courante.
-      const eraInfo = (BUREAU_INFO[era] || BUREAU_INFO[CURRENT_ERA] || {})[ns] || {};
-      const denom = eraInfo.den || (feature.properties || {}).denomination || ('Bureau ' + parseInt(ns));
+      // Ère section (pré-1979) : ns = nom de section, pas un bureau. Le lookup
+      // BUREAU_INFO[era][ns] est vide → on récupère la dénomination via le 1er
+      // bureau de la section (même convention que daily-capture).
+      const _isSecEra = typeof isSectionEra === 'function' && isSectionEra(era);
+      let eraInfo = (BUREAU_INFO[era] || BUREAU_INFO[CURRENT_ERA] || {})[ns] || {};
+      if (_isSecEra && !eraInfo.den && typeof getBureauxOfSection === 'function') {
+        const _bids = getBureauxOfSection(ns, era);
+        if (_bids.length) {
+          const _b0 = (BUREAU_INFO[era] || {})[_bids[0]] || {};
+          eraInfo = { den: _b0.den || ns, nom: ns };
+        }
+      }
+      const denom = eraInfo.den || (feature.properties || {}).denomination || (_isSecEra ? String(ns) : ('Bureau ' + parseInt(ns)));
+      const headerLabel = _isSecEra ? 'Section' : ('Bureau n°' + parseInt(ns));
       const header = '<div style="min-width:150px">'
-        + '<div style="font-size:0.7rem;font-weight:700;color:var(--text-meta);margin-bottom:2px">Bureau n°' + parseInt(ns) + '</div>'
+        + '<div style="font-size:0.7rem;font-weight:700;color:var(--text-meta);margin-bottom:2px">' + headerLabel + '</div>'
         + '<div style="font-size:0.82rem;font-weight:700;color:var(--text-modal);margin-bottom:7px">' + denom + '</div>';
       // Mode diff (sur la map affichée = la plus récente) : tooltip SIMPLIFIÉ —
       // juste delta + badge "bureau modifié". Les scores A/B détaillés sont dans
@@ -13724,7 +13850,18 @@ function updateAnalyseLink() {
     const elec = (typeof ELECTIONS !== 'undefined') ? ELECTIONS[sel.elec] : null;
     const era = elec ? String(elec.my || '') : '';
     const info = (typeof BUREAU_INFO !== 'undefined') ? (BUREAU_INFO[era] || {})[ns] : null;
-    return (info && info.den) || ('Bureau ' + parseInt(ns));
+    if (info && info.den) return info.den;
+    // Ère section (pré-1979) : ns = nom de section → dénomination via le 1er bureau.
+    if (typeof isSectionEra === 'function' && isSectionEra(era)
+        && typeof getBureauxOfSection === 'function') {
+      const bids = getBureauxOfSection(ns, era);
+      if (bids.length) {
+        const b0 = (BUREAU_INFO[era] || {})[bids[0]] || {};
+        return b0.den || String(ns);
+      }
+      return String(ns);
+    }
+    return 'Bureau ' + parseInt(ns);
   }
 
   // Mode Nuage : reconstruit le SVG aux dimensions exactes de la box d'export
@@ -14003,20 +14140,13 @@ function updateAnalyseLink() {
     }
   }
 
-  // Helpers Mercator/tile
+  // Helpers Mercator/tile (les tuiles OSM ne sont plus chargées, mais on garde
+  // la projection tuile pour _computeMapView qui s'appuie sur des unités pixels
+  // au zoom Slippy Maps).
   function _lng2pX(lng, z) { return (lng + 180) / 360 * Math.pow(2, z); }
   function _lat2pY(lat, z) {
     const r = lat * Math.PI / 180;
     return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * Math.pow(2, z);
-  }
-  function _loadTile(url) {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => resolve(img);
-      img.onerror = () => resolve(null);
-      img.src = url;
-    });
   }
 
   // ─── Mini-carte d'export : helpers (pickTarget / computeView / tiles / mask / bureaux) ───
@@ -14030,8 +14160,23 @@ function updateAnalyseLink() {
       return [currentFeature];
     }
     if (fctx.type === 'quartier' || fctx.type === 'canton') {
-      const numSet = new Set((fctx.bureauNums || []).map(String));
-      return allFeatures.filter(f => f && f.geometry && numSet.has(numStr(f)));
+      const bureauSet = new Set((fctx.bureauNums || []).map(String));
+      // Ère section (pré-1979) : les features de MAPS_DATA sont indexées par nom
+      // de section (properties.sec), pas par numéro de bureau. On dérive les
+      // sections qui contiennent au moins un des bureaux ciblés — sinon
+      // targetFeatures reste vide et la mini-carte ne s'affiche pas.
+      const el = (typeof ELECTIONS !== 'undefined') ? ELECTIONS[currentElection] : null;
+      const era = String(el ? el.my : (typeof CURRENT_ERA !== 'undefined' ? CURRENT_ERA : ''));
+      if (era && typeof isSectionEra === 'function' && isSectionEra(era)) {
+        const yearInfo = (typeof BUREAU_INFO !== 'undefined' && BUREAU_INFO[era]) || {};
+        const secSet = new Set();
+        bureauSet.forEach(bid => {
+          const s = (yearInfo[bid] || {}).sec;
+          if (s) secSet.add(s);
+        });
+        return allFeatures.filter(f => f && f.geometry && secSet.has(numStr(f)));
+      }
+      return allFeatures.filter(f => f && f.geometry && bureauSet.has(numStr(f)));
     }
     return null;
   }
@@ -14116,30 +14261,9 @@ function updateAnalyseLink() {
     return { zoom, TS, minPxX, maxPxX, minPxY, maxPxY, scale, project, x, y, bbox };
   }
 
-  // Charge en parallèle les tiles CartoCDN couvrant la bbox et les dessine.
-  async function _drawMapTiles(ctx, view) {
-    const { zoom, TS, minPxX, maxPxX, minPxY, maxPxY, scale, x, y } = view;
-    const tx0 = Math.floor(minPxX / TS);
-    const tx1 = Math.floor(maxPxX / TS);
-    const ty0 = Math.floor(minPxY / TS);
-    const ty1 = Math.floor(maxPxY / TS);
-    const tilePromises = [];
-    for (let tx = tx0; tx <= tx1; tx++) {
-      for (let ty = ty0; ty <= ty1; ty++) {
-        const url = 'https://a.tile.openstreetmap.fr/osmfr/' + zoom + '/' + tx + '/' + ty + '.png';
-        tilePromises.push(_loadTile(url).then(img => ({ img, tx, ty })));
-      }
-    }
-    const tiles = await Promise.all(tilePromises);
-    tiles.forEach(({ img, tx, ty }) => {
-      if (!img) return;
-      const dx = x + (tx * TS - minPxX) * scale;
-      const dy = y + (ty * TS - minPxY) * scale;
-      ctx.drawImage(img, dx, dy, TS * scale, TS * scale);
-    });
-  }
-
   // Masque grisé hors La Rochelle : rect extérieur + tous les polygones LR avec règle evenodd.
+  // Sans le fond OSM, il donne un peu de relief à la mini-carte en matérialisant
+  // la silhouette de la commune (LR en blanc, extérieur teinté gris/brun).
   function _drawMapMask(ctx, x, y, w, h, view, allFeatures) {
     ctx.beginPath();
     ctx.rect(x, y, w, h);
@@ -14199,7 +14323,8 @@ function updateAnalyseLink() {
   }
 
   // Mini-carte d'export : bureau actuel (ou bureaux du quartier) en couleur winner +
-  // voisins en contour, sur un fond de tiles CartoCDN light_all.
+  // voisins en contour, sur fond blanc pur (sans tuiles OSM — surcharge visuelle
+  // et rendu flou au chargement Puppeteer).
   async function drawFicheMap(ctx, x, y, w, h, fctx) {
     const eraGJ = (typeof getMapGeoJSON === 'function') ? getMapGeoJSON() : (typeof GEOJSON !== 'undefined' ? GEOJSON : { features: [] });
     const allFeatures = (eraGJ && eraGJ.features) || [];
@@ -14213,19 +14338,17 @@ function updateAnalyseLink() {
     const view = _computeMapView(targetFeatures, x, y, w, h);
     if (!view) return;
 
-    // Clip au cadre puis tiles + masque + bureaux dans le même save/restore
+    // Clip au cadre puis masque hors-LR + polygones + repères dans le même save/restore.
     ctx.save();
     ctx.beginPath();
     ctx.rect(x, y, w, h);
     ctx.clip();
-    await _drawMapTiles(ctx, view);
     _drawMapMask(ctx, x, y, w, h, view, allFeatures);
     _drawMapBureaux(ctx, view, allFeatures, targetFeatures, fctx.winnerCol);
     // Repères géographiques : 5 max, priorité aux plus proches du centre, anti-collision activée.
-    // En mode canton, on les omet : la zone est plus large et les repères surchargent la mini-carte.
-    if (fctx.type !== 'canton') {
-      drawReperesOnCarte(ctx, view.project, view.bbox, LR_REPERES.pointsFiche, { x: x, y: y, w: w, h: h }, 5);
-    }
+    // Dessinés pour tous les types de fiche — donnent le contexte spatial que le fond OSM
+    // apportait avant (église, port, remparts…).
+    drawReperesOnCarte(ctx, view.project, view.bbox, LR_REPERES.pointsFiche, { x: x, y: y, w: w, h: h }, 5);
     ctx.restore();
   }
 
