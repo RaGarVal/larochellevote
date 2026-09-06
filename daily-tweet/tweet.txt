@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🏙️ Le 20 juin 2021, pour les régionales (1er tour), Alain Rousset (PS) arrive en tête avec 26,1 % dans le bureau n°4 · Deflandre–Missy à Port-Neuf, La Genette.
+🏙️ Le 14 mars 1971, pour les municipales (1er tour), Michel Crépeau (PR) arrive en tête avec 33,3 % dans le quartier de Saint-Maurice.
 
-Les résultats de ce bureau, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=R%C3%A9gionales+2021&tour=T1&bureau=0004
+Les résultats de ce quartier, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Municipales+1971&tour=T1&quartier=Saint-Maurice

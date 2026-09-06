@@ -1500,5 +1500,19 @@
     "quartier": "Port-Neuf, La Genette",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-09-06",
+    "signature": "quartier|Municipales 1971|T1|Saint-Maurice",
+    "niveau": "quartier",
+    "niveau_publie": "quartier",
+    "truncation_step": 1,
+    "election": "Municipales 1971",
+    "tour": "T1",
+    "bureau": null,
+    "section": null,
+    "quartier": "Saint-Maurice",
+    "subtype": null,
+    "candidat": null
   }
 ]
