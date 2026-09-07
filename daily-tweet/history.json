@@ -1514,5 +1514,19 @@
     "quartier": "Saint-Maurice",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-09-07",
+    "signature": "quartier|Législatives 1988|T1|La Genette",
+    "niveau": "quartier",
+    "niveau_publie": "quartier",
+    "truncation_step": 1,
+    "election": "Législatives 1988",
+    "tour": "T1",
+    "bureau": null,
+    "section": null,
+    "quartier": "La Genette",
+    "subtype": null,
+    "candidat": null
   }
 ]

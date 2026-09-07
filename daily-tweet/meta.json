@@ -1,16 +1,16 @@
 {
-  "date": "2026-09-06",
+  "date": "2026-09-07",
   "niveau": "quartier",
   "niveau_publie": "quartier",
-  "election": "Municipales 1971",
+  "election": "Législatives 1988",
   "tour": "T1",
   "bureau": null,
-  "quartier": "Saint-Maurice",
+  "quartier": "La Genette",
   "canton": null,
   "section": null,
   "subtype": null,
   "candidat": null,
-  "signature": "quartier|Municipales 1971|T1|Saint-Maurice",
-  "chars": 255,
-  "generated_at": "2026-09-06T06:01:45.546Z"
+  "signature": "quartier|Législatives 1988|T1|La Genette",
+  "chars": 249,
+  "generated_at": "2026-09-07T06:02:29.715Z"
 }
