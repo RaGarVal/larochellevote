@@ -1528,5 +1528,19 @@
     "quartier": "La Genette",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-09-08",
+    "signature": "bureau|Régionales 1992|TU|0034",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 2,
+    "election": "Régionales 1992",
+    "tour": "TU",
+    "bureau": "0034",
+    "section": null,
+    "quartier": "Centre-ville",
+    "subtype": null,
+    "candidat": null
   }
 ]

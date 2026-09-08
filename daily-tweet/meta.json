@@ -1,16 +1,16 @@
 {
-  "date": "2026-09-07",
-  "niveau": "quartier",
-  "niveau_publie": "quartier",
-  "election": "Législatives 1988",
-  "tour": "T1",
-  "bureau": null,
-  "quartier": "La Genette",
+  "date": "2026-09-08",
+  "niveau": "bureau",
+  "niveau_publie": "bureau",
+  "election": "Régionales 1992",
+  "tour": "TU",
+  "bureau": "0034",
+  "quartier": "Centre-ville",
   "canton": null,
   "section": null,
   "subtype": null,
   "candidat": null,
-  "signature": "quartier|Législatives 1988|T1|La Genette",
-  "chars": 249,
-  "generated_at": "2026-09-07T06:02:29.715Z"
+  "signature": "bureau|Régionales 1992|TU|0034",
+  "chars": 241,
+  "generated_at": "2026-09-08T06:02:11.676Z"
 }
