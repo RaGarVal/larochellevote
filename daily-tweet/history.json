@@ -1542,5 +1542,19 @@
     "quartier": "Centre-ville",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-09-09",
+    "signature": "section|Municipales 1977|TU|Mireuil-I",
+    "niveau": "section",
+    "niveau_publie": "section",
+    "truncation_step": 1,
+    "election": "Municipales 1977",
+    "tour": "TU",
+    "bureau": null,
+    "section": "Mireuil-I",
+    "quartier": "Mireuil",
+    "subtype": null,
+    "candidat": null
   }
 ]

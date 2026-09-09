@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🏙️ Le 22 mars 1992, pour les régionales, François Blaizot (UPF) arrive en tête avec 42,8 % dans le bureau n°34 · Arsenal–Hôpital Saint-Louis dans le Centre-ville.
+🏙️ Le 13 mars 1977, pour les municipales, Michel Crépeau (MRG) arrive en tête avec 75,4 % dans la section Mireuil-Ouest.
 
-Détails sur https://larochellevote.fr/LRVcarte.html#election=R%C3%A9gionales+1992&bureau=0034
+Les résultats de cette section, et toutes les autres, sur https://larochellevote.fr/LRVcarte.html#election=Municipales+1977&section=Mireuil-I
