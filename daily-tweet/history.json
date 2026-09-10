@@ -1556,5 +1556,19 @@
     "quartier": "Mireuil",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-09-10",
+    "signature": "canton|Législatives 1978|T1|2",
+    "niveau": "canton",
+    "niveau_publie": "global",
+    "truncation_step": 1,
+    "election": "Législatives 1978",
+    "tour": "T1",
+    "bureau": null,
+    "section": null,
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
   }
 ]

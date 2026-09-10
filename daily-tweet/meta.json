@@ -1,16 +1,16 @@
 {
-  "date": "2026-09-09",
-  "niveau": "section",
-  "niveau_publie": "section",
-  "election": "Municipales 1977",
-  "tour": "TU",
+  "date": "2026-09-10",
+  "niveau": "canton",
+  "niveau_publie": "global",
+  "election": "Législatives 1978",
+  "tour": "T1",
   "bureau": null,
-  "quartier": "Mireuil",
-  "canton": null,
-  "section": "Mireuil-I",
+  "quartier": null,
+  "canton": "2",
+  "section": null,
   "subtype": null,
   "candidat": null,
-  "signature": "section|Municipales 1977|TU|Mireuil-I",
-  "chars": 245,
-  "generated_at": "2026-09-09T06:01:59.835Z"
+  "signature": "canton|Législatives 1978|T1|2",
+  "chars": 236,
+  "generated_at": "2026-09-10T06:01:39.524Z"
 }

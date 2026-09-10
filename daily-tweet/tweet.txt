@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🏙️ Le 13 mars 1977, pour les municipales, Michel Crépeau (MRG) arrive en tête avec 75,4 % dans la section Mireuil-Ouest.
+🏛️ Le 12 mars 1978, pour les législatives (1er tour), Michel Crépeau (MRG) arrive en tête avec 37,9 % à La Rochelle.
 
-Les résultats de cette section, et toutes les autres, sur https://larochellevote.fr/LRVcarte.html#election=Municipales+1977&section=Mireuil-I
+Les résultats de ce scrutin, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=L%C3%A9gislatives+1978&tour=T1&tab=global
