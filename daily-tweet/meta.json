@@ -1,16 +1,16 @@
 {
-  "date": "2026-09-10",
-  "niveau": "canton",
-  "niveau_publie": "global",
-  "election": "Législatives 1978",
+  "date": "2026-09-11",
+  "niveau": "quartier",
+  "niveau_publie": "quartier",
+  "election": "Présidentielle 2007",
   "tour": "T1",
   "bureau": null,
-  "quartier": null,
-  "canton": "2",
+  "quartier": "La Genette",
+  "canton": null,
   "section": null,
   "subtype": null,
   "candidat": null,
-  "signature": "canton|Législatives 1978|T1|2",
-  "chars": 236,
-  "generated_at": "2026-09-10T06:01:39.524Z"
+  "signature": "quartier|Présidentielle 2007|T1|La Genette",
+  "chars": 256,
+  "generated_at": "2026-09-11T06:01:46.397Z"
 }

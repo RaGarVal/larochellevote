@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🏛️ Le 12 mars 1978, pour les législatives (1er tour), Michel Crépeau (MRG) arrive en tête avec 37,9 % à La Rochelle.
+👤 Le 22 avril 2007, pour la présidentielle (1er tour), Nicolas Sarkozy (UMP) arrive en tête avec 41,7 % dans le quartier de La Genette.
 
-Les résultats de ce scrutin, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=L%C3%A9gislatives+1978&tour=T1&tab=global
+Les résultats de ce quartier, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Pr%C3%A9sidentielle+2007&tour=T1&quartier=La+Genette
