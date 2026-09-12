@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-👤 Le 22 avril 2007, pour la présidentielle (1er tour), Nicolas Sarkozy (UMP) arrive en tête avec 41,7 % dans le quartier de La Genette.
+🇪🇺 Le 13 juin 1999, pour les européennes, François Hollande (PS) arrive en tête avec 34,0 % dans le bureau n°6 · Place d'Île-de-France à Port-Neuf.
 
-Les résultats de ce quartier, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Pr%C3%A9sidentielle+2007&tour=T1&quartier=La+Genette
+Les résultats de ce bureau, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Europ%C3%A9ennes+1999&bureau=0006

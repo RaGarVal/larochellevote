@@ -1584,5 +1584,19 @@
     "quartier": "La Genette",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-09-12",
+    "signature": "bureau|Européennes 1999|TU|0006",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Européennes 1999",
+    "tour": "TU",
+    "bureau": "0006",
+    "section": null,
+    "quartier": "Port-Neuf",
+    "subtype": null,
+    "candidat": null
   }
 ]

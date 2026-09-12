@@ -1,16 +1,16 @@
 {
-  "date": "2026-09-11",
-  "niveau": "quartier",
-  "niveau_publie": "quartier",
-  "election": "Présidentielle 2007",
-  "tour": "T1",
-  "bureau": null,
-  "quartier": "La Genette",
+  "date": "2026-09-12",
+  "niveau": "bureau",
+  "niveau_publie": "bureau",
+  "election": "Européennes 1999",
+  "tour": "TU",
+  "bureau": "0006",
+  "quartier": "Port-Neuf",
   "canton": null,
   "section": null,
   "subtype": null,
   "candidat": null,
-  "signature": "quartier|Présidentielle 2007|T1|La Genette",
-  "chars": 256,
-  "generated_at": "2026-09-11T06:01:46.397Z"
+  "signature": "bureau|Européennes 1999|TU|0006",
+  "chars": 267,
+  "generated_at": "2026-09-12T06:01:10.307Z"
 }
