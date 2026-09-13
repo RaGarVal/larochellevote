@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🇪🇺 Le 13 juin 1999, pour les européennes, François Hollande (PS) arrive en tête avec 34,0 % dans le bureau n°6 · Place d'Île-de-France à Port-Neuf.
+🏙️ Le 21 mars 2004, pour les régionales (1er tour), Ségolène Royal (PS) arrive en tête avec 58,1 % dans le canton de La Rochelle-3.
 
-Les résultats de ce bureau, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Europ%C3%A9ennes+1999&bureau=0006
+Les résultats de ce canton, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=R%C3%A9gionales+2004&tour=T1&canton=3

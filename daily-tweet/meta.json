@@ -1,16 +1,16 @@
 {
-  "date": "2026-09-12",
-  "niveau": "bureau",
-  "niveau_publie": "bureau",
-  "election": "Européennes 1999",
-  "tour": "TU",
-  "bureau": "0006",
-  "quartier": "Port-Neuf",
-  "canton": null,
+  "date": "2026-09-13",
+  "niveau": "canton",
+  "niveau_publie": "canton",
+  "election": "Régionales 2004",
+  "tour": "T1",
+  "bureau": null,
+  "quartier": null,
+  "canton": "3",
   "section": null,
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Européennes 1999|TU|0006",
-  "chars": 267,
-  "generated_at": "2026-09-12T06:01:10.307Z"
+  "signature": "canton|Régionales 2004|T1|3",
+  "chars": 250,
+  "generated_at": "2026-09-13T06:01:13.015Z"
 }

@@ -1598,5 +1598,19 @@
     "quartier": "Port-Neuf",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-09-13",
+    "signature": "canton|Régionales 2004|T1|3",
+    "niveau": "canton",
+    "niveau_publie": "canton",
+    "truncation_step": 1,
+    "election": "Régionales 2004",
+    "tour": "T1",
+    "bureau": null,
+    "section": null,
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
   }
 ]
