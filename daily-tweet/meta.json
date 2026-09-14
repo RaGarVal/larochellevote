@@ -1,16 +1,16 @@
 {
-  "date": "2026-09-13",
-  "niveau": "canton",
-  "niveau_publie": "canton",
-  "election": "Régionales 2004",
+  "date": "2026-09-14",
+  "niveau": "carte",
+  "niveau_publie": "carte",
+  "election": "Présidentielle 1995",
   "tour": "T1",
   "bureau": null,
   "quartier": null,
-  "canton": "3",
+  "canton": null,
   "section": null,
-  "subtype": null,
-  "candidat": null,
-  "signature": "canton|Régionales 2004|T1|3",
-  "chars": 250,
-  "generated_at": "2026-09-13T06:01:13.015Z"
+  "subtype": "candidat",
+  "candidat": "edouard-balladur@presidentielle-1995",
+  "signature": "carte|Présidentielle 1995|T1|cand:edouard-balladur@presidentielle-1995",
+  "chars": 266,
+  "generated_at": "2026-09-14T06:02:01.387Z"
 }
