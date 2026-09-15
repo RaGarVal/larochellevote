@@ -104,10 +104,15 @@ function setupSailAnimation() {
 //  Exceptions chronologiques :
 //   • Européennes 2024 (juin) précèdent Législatives 2024 (juillet)
 //   • Régionales 2004 (mars) précèdent Européennes 2004 (juin)
+//   • Municipales 1965 (mars) précèdent Présidentielle 1965 (décembre)
 // ───────────────────────────────────────────────────────────────
 function elecTypePriority(label) {
   if (label.startsWith('Européennes 2024')) return 1.5;
   if (label.startsWith('Régionales 2004'))  return 3.5;
+  // Présidentielle 1965 (décembre) après Municipales 1965 (mars) — cas
+  // inverse des exceptions ci-dessus : le scrutin CHRONO plus tard est bumpé
+  // vers un rang supérieur (3.1 = juste après Municipales, avant Cantonales).
+  if (label.startsWith('Présidentielle 1965')) return 3.1;
   // ── EXCEPTIONS "même jour" pour Cantonales/Départementales ──
   // Règle : Cantonales/Départementales sont en général à 3.5 (mars typique, avant
   // Régionales décembre). MAIS quand elles ont eu lieu LE MÊME JOUR qu'une autre
