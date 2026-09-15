@@ -1626,5 +1626,19 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "edouard-balladur@presidentielle-1995"
+  },
+  {
+    "date": "2026-09-15",
+    "signature": "quartier|Législatives 1967|T1|Tasdon/Les Minimes",
+    "niveau": "quartier",
+    "niveau_publie": "quartier",
+    "truncation_step": 1,
+    "election": "Législatives 1967",
+    "tour": "T1",
+    "bureau": null,
+    "section": null,
+    "quartier": "Tasdon/Les Minimes",
+    "subtype": null,
+    "candidat": null
   }
 ]
