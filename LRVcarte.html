@@ -12199,14 +12199,26 @@ function updateAnalyseLink() {
         updateAccentColor();
       }
     } else if (qname) {
-      // Construire un currentFeature « factice » via le 1er bureau du quartier
-      const yearInfo = BUREAU_INFO[CURRENT_ERA] || {};
+      // Construire un currentFeature « factice » via le 1er bureau du quartier.
+      // Ère de l'élection courante (pas CURRENT_ERA qui peut ne pas connaître ce
+      // quartier — ex. "Tasdon/Les Minimes" existait en 1967 mais a été splitté
+      // en 2026 en "Tasdon" + "Les Minimes" → recherche vide → fiche jamais
+      // ouverte → daily-capture publiait la carte globale à la place).
+      const _el = ELECTIONS[currentElection] || {};
+      const _era = String(_el.my || CURRENT_ERA);
+      const yearInfo = BUREAU_INFO[_era] || BUREAU_INFO[CURRENT_ERA] || {};
       const ids = Object.entries(yearInfo)
         .filter(([, b]) => getQuartierParts(b.q || '').includes(qname))
         .map(([id]) => id);
       if (ids.length) {
         const gj = getMapGeoJSON();
-        const feat = gj.features.find(f => numStr(f) === ids[0]);
+        // Ère section : `numStr(feat)` renvoie le nom de section — on match sur
+        // le `sec` du 1er bureau du quartier ; sinon match direct sur l'ID bureau.
+        const _firstBid = ids[0];
+        const _firstSec = (yearInfo[_firstBid] || {}).sec;
+        const feat = _firstSec
+          ? gj.features.find(f => f.properties && f.properties.sec === _firstSec)
+          : gj.features.find(f => numStr(f) === _firstBid);
         if (feat) {
           currentFeature = feat;
           openOverlayQuartierNamed(qname);
