@@ -69,7 +69,7 @@ function loadData() {
   const donneesSuffix = ';Object.assign(globalThis,{' + donneesNames.join(',') + '});';
 
   const sharedNames = [
-    'PARTI_COLORS','elecTypePriority','isReferendum',
+    'PARTI_COLORS','elecTypePriority','compareElections','elecDateKey','isReferendum',
     'getCantonEraForBureauEra','getCantonEraForElection','getCantonOfBureau',
     'getBureauxOfCanton','isCantonEraAlive','isCantonalElection','getCantonOfElection',
     'pickTextColor','pickTextColorForBg'

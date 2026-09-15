@@ -93,4 +93,4 @@ const DATES = {
   'Départementales 2021':{ T1: '20 juin 2021',       T2: '27 juin 2021'     },
 };
 
-module.exports = { DATES };
+if (typeof module !== 'undefined' && module.exports) module.exports = { DATES };

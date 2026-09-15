@@ -102,17 +102,11 @@ function setupSailAnimation() {
 //  TRI DES ÉLECTIONS — priorité par type
 //  Pour départager des élections de la même année.
 //  Exceptions chronologiques :
-//   • Européennes 2024 (juin) précèdent Législatives 2024 (juillet)
-//   • Régionales 2004 (mars) précèdent Européennes 2004 (juin)
-//   • Municipales 1965 (mars) précèdent Présidentielle 1965 (décembre)
+// N'intervient QUE pour départager 2 scrutins tenus LE MÊME JOUR.
+// Le tri principal (compareElections) utilise la date réelle depuis DATES ;
+// elecTypePriority n'est qu'un tiebreaker en cas d'égalité stricte.
 // ───────────────────────────────────────────────────────────────
 function elecTypePriority(label) {
-  if (label.startsWith('Européennes 2024')) return 1.5;
-  if (label.startsWith('Régionales 2004'))  return 3.5;
-  // Présidentielle 1965 (décembre) après Municipales 1965 (mars) — cas
-  // inverse des exceptions ci-dessus : le scrutin CHRONO plus tard est bumpé
-  // vers un rang supérieur (3.1 = juste après Municipales, avant Cantonales).
-  if (label.startsWith('Présidentielle 1965')) return 3.1;
   // ── EXCEPTIONS "même jour" pour Cantonales/Départementales ──
   // Règle : Cantonales/Départementales sont en général à 3.5 (mars typique, avant
   // Régionales décembre). MAIS quand elles ont eu lieu LE MÊME JOUR qu'une autre
@@ -120,10 +114,15 @@ function elecTypePriority(label) {
   // un ordre chronologique cohérent dans l'année.
   //   • Cantonales 1992    = 22 mars 1992 (= Régionales 1992 prio 5)       → 5.2
   //   • Cantonales 1998    = 15 mars 1998 (= Régionales 1998 prio 5)       → 5.2
-  //   • Cantonales 2004    = 21 mars 2004 (= Régionales 2004 prio 3.5)     → 3.7
+  //   • Cantonales 2004    = 21 mars 2004 (= Régionales 2004 bumpée à 3.5) → 3.7
   //   • Cantonales 2008    = 9 mars 2008  (= Municipales 2008 prio 3)      → 3.2
   //   • Départementales 2021 = 20 juin 2021 (= Régionales 2021 prio 5)     → 5.2
   // Cantonales 1988 / 2011 / Départementales 2015 : seules, restent à 3.5.
+  //
+  // Note : Régionales 2004 est bumpée à 3.5 (au lieu de 5 par défaut) car son
+  // tour a lieu LE MÊME JOUR que Cantonales 2004 (21 mars 2004) et la convention
+  // veut Régionales avant Cantonales couplées → sinon Cantonales (3.7) < Régionales (5).
+  if (label.startsWith('Régionales 2004'))      return 3.5;
   if (label.startsWith('Cantonales 1992'))      return 5.2;
   if (label.startsWith('Cantonales 1998'))      return 5.2;
   if (label.startsWith('Cantonales 2004'))      return 3.7;
@@ -145,6 +144,48 @@ function elecTypePriority(label) {
   if (label.startsWith('Régionales'))    return 5;
   if (label.startsWith('Référendum'))    return 6;
   return 9;
+}
+
+// ───────────────────────────────────────────────────────────────
+//  TRI CHRONOLOGIQUE DES ÉLECTIONS
+//  compareElections(a, b) : tri par date réelle (depuis DATES si dispo),
+//  puis elecTypePriority en tiebreaker EXCLUSIVEMENT si même jour.
+//  Fallback année seule si DATES manque pour un des 2 labels.
+// ───────────────────────────────────────────────────────────────
+const _MOIS_FR = {
+  'janvier':1,'février':2,'fevrier':2,'mars':3,'avril':4,'mai':5,'juin':6,
+  'juillet':7,'août':8,'aout':8,'septembre':9,'octobre':10,'novembre':11,'décembre':12,'decembre':12
+};
+function _parseDateFR(s) {
+  if (!s || typeof s !== 'string') return null;
+  // Ex : "5 décembre 1965", "1er mars 1959", "22 février 1959"
+  const m = s.trim().match(/^(\d+)(?:er)?\s+([A-Za-zéèêûôàâîï]+)\s+(\d{4})$/);
+  if (!m) return null;
+  const day = parseInt(m[1], 10);
+  const mon = _MOIS_FR[m[2].toLowerCase()];
+  const year = parseInt(m[3], 10);
+  if (!mon) return null;
+  return [year, mon, day];
+}
+// Retourne la clé de date [y, m, d] pour un label — priorité T1 > TU > T2.
+// Le tour n'est pas passé : on trie les élections entre elles, pas les tours.
+function elecDateKey(label) {
+  const D = (typeof DATES !== 'undefined') ? DATES[label] : null;
+  if (D) {
+    const k = _parseDateFR(D.T1 || D.TU || D.T2);
+    if (k) return k;
+  }
+  // Fallback : année extraite du label seule, mois/jour à 0.
+  const y = label.match(/\d{4}/);
+  return y ? [parseInt(y[0], 10), 0, 0] : [0, 0, 0];
+}
+function compareElections(a, b) {
+  const ka = elecDateKey(a), kb = elecDateKey(b);
+  if (ka[0] !== kb[0]) return ka[0] - kb[0];
+  if (ka[1] !== kb[1]) return ka[1] - kb[1];
+  if (ka[2] !== kb[2]) return ka[2] - kb[2];
+  // Même jour exact → tiebreaker par type.
+  return elecTypePriority(a) - elecTypePriority(b);
 }
 
 // ───────────────────────────────────────────────────────────────

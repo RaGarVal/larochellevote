@@ -1467,6 +1467,7 @@ input:focus-visible,
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="geodata.js"></script>
 <script src="donnees.js"></script>
+<script src="dates.js"></script>
 <script src="shared.js"></script>
 
 <script>
@@ -1729,9 +1730,6 @@ function computeBP(candScores, elecLabel) {
   });
   return out;
 }
-// elecTypePriority(label) : départage les élections de même année. Définie dans shared.js.
-
-
 function aggregateBP(rawBP) {
   const out = {};
   activeBlocs().forEach(b => {
@@ -2379,7 +2377,7 @@ function getVilleData(typeFilter) {
         votants: totalVotants, abs: totalI - totalVotants });
     }
   }
-  const sorted = result.sort((a,b) => a.year !== b.year ? a.year-b.year : elecTypePriority(a.label)-elecTypePriority(b.label));
+  const sorted = result.sort((a, b) => compareElections(a.label, b.label));
   window._memoVille.set(_mk, sorted);
   return sorted;
 }
@@ -2471,7 +2469,7 @@ function getQuartierData(quartier, typeFilter) {
         votants: totalVotants, abs: totalI - totalVotants });
     }
   }
-  const sorted = result.sort((a,b) => a.year !== b.year ? a.year-b.year : elecTypePriority(a.label)-elecTypePriority(b.label));
+  const sorted = result.sort((a, b) => compareElections(a.label, b.label));
   window._memoQuartier.set(_mk, sorted);
   return sorted;
 }
@@ -2598,7 +2596,7 @@ function getCantonData(cantonKey, typeFilter) {
       });
     }
   }
-  const sorted = result.sort((a, b) => a.year !== b.year ? a.year - b.year : elecTypePriority(a.label) - elecTypePriority(b.label));
+  const sorted = result.sort((a, b) => compareElections(a.label, b.label));
   window._memoCanton.set(_mk, sorted);
   return sorted;
 }
@@ -2675,7 +2673,7 @@ function getBureauHistData(bureauId, typeFilter) {
       votants: totalVotants, abs: (bd.i || 0) - totalVotants
     });
   }
-  return result.sort((a,b) => a.year !== b.year ? a.year-b.year : elecTypePriority(a.label)-elecTypePriority(b.label));
+  return result.sort((a, b) => compareElections(a.label, b.label));
 }
 
 // ─── Refresh principal ────────────────────────────────────────────────────
@@ -5349,7 +5347,7 @@ function openQCorrespPanel() {
       .sort((a,b) => {
         const ya = parseInt((a.match(/(\d{4})/) || [0,9999])[1]);
         const yb = parseInt((b.match(/(\d{4})/) || [0,9999])[1]);
-        return ya !== yb ? ya-yb : elecTypePriority(a)-elecTypePriority(b);
+        return compareElections(a, b);
       });
     const headClass = ids.length === 0 ? 'warn' : method === 'override' ? 'override' : 'ok';
     const methodTag = method === 'override' ? ' 🔵 override' : '';
