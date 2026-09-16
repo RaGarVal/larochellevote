@@ -1,16 +1,16 @@
 {
-  "date": "2026-09-15",
-  "niveau": "quartier",
-  "niveau_publie": "quartier",
-  "election": "Législatives 1967",
+  "date": "2026-09-16",
+  "niveau": "bureau",
+  "niveau_publie": "bureau",
+  "election": "Législatives 1981",
   "tour": "T1",
-  "bureau": null,
-  "quartier": "Tasdon/Les Minimes",
+  "bureau": "0023",
+  "quartier": "Centre-ville",
   "canton": null,
   "section": null,
   "subtype": null,
   "candidat": null,
-  "signature": "quartier|Législatives 1967|T1|Tasdon/Les Minimes",
-  "chars": 257,
-  "generated_at": "2026-09-15T06:01:45.634Z"
+  "signature": "bureau|Législatives 1981|T1|0023",
+  "chars": 250,
+  "generated_at": "2026-09-16T06:01:17.113Z"
 }
