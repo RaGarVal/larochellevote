@@ -1,16 +1,16 @@
 {
-  "date": "2026-09-16",
-  "niveau": "bureau",
-  "niveau_publie": "bureau",
-  "election": "Législatives 1981",
-  "tour": "T1",
-  "bureau": "0023",
-  "quartier": "Centre-ville",
+  "date": "2026-09-17",
+  "niveau": "quartier",
+  "niveau_publie": "quartier",
+  "election": "Européennes 1984",
+  "tour": "TU",
+  "bureau": null,
+  "quartier": "Lafond",
   "canton": null,
   "section": null,
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Législatives 1981|T1|0023",
-  "chars": 250,
-  "generated_at": "2026-09-16T06:01:17.113Z"
+  "signature": "quartier|Européennes 1984|TU|Lafond",
+  "chars": 236,
+  "generated_at": "2026-09-17T06:01:14.536Z"
 }

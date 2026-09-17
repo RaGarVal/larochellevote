@@ -1654,5 +1654,19 @@
     "quartier": "Centre-ville",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-09-17",
+    "signature": "quartier|Européennes 1984|TU|Lafond",
+    "niveau": "quartier",
+    "niveau_publie": "quartier",
+    "truncation_step": 1,
+    "election": "Européennes 1984",
+    "tour": "TU",
+    "bureau": null,
+    "section": null,
+    "quartier": "Lafond",
+    "subtype": null,
+    "candidat": null
   }
 ]
