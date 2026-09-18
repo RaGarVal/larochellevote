@@ -1668,5 +1668,19 @@
     "quartier": "Lafond",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-09-18",
+    "signature": "carte|Législatives 1962|T1|cand:salardaine@legislatives-1962",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Législatives 1962",
+    "tour": "T1",
+    "bureau": null,
+    "section": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "salardaine@legislatives-1962"
   }
 ]

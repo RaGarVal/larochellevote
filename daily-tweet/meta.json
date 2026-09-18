@@ -1,16 +1,16 @@
 {
-  "date": "2026-09-17",
-  "niveau": "quartier",
-  "niveau_publie": "quartier",
-  "election": "Européennes 1984",
-  "tour": "TU",
+  "date": "2026-09-18",
+  "niveau": "carte",
+  "niveau_publie": "carte",
+  "election": "Législatives 1962",
+  "tour": "T1",
   "bureau": null,
-  "quartier": "Lafond",
+  "quartier": null,
   "canton": null,
   "section": null,
-  "subtype": null,
-  "candidat": null,
-  "signature": "quartier|Européennes 1984|TU|Lafond",
-  "chars": 236,
-  "generated_at": "2026-09-17T06:01:14.536Z"
+  "subtype": "candidat",
+  "candidat": "salardaine@legislatives-1962",
+  "signature": "carte|Législatives 1962|T1|cand:salardaine@legislatives-1962",
+  "chars": 273,
+  "generated_at": "2026-09-18T06:01:18.007Z"
 }
