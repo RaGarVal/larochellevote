@@ -1682,5 +1682,19 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "salardaine@legislatives-1962"
+  },
+  {
+    "date": "2026-09-19",
+    "signature": "carte|Législatives 2017|T1|cand:otilia-ferreira@legislatives-2017",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Législatives 2017",
+    "tour": "T1",
+    "bureau": null,
+    "section": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "otilia-ferreira@legislatives-2017"
   }
 ]

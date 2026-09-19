@@ -1,16 +1,16 @@
 {
-  "date": "2026-09-18",
+  "date": "2026-09-19",
   "niveau": "carte",
   "niveau_publie": "carte",
-  "election": "Législatives 1962",
+  "election": "Législatives 2017",
   "tour": "T1",
   "bureau": null,
   "quartier": null,
   "canton": null,
   "section": null,
   "subtype": "candidat",
-  "candidat": "salardaine@legislatives-1962",
-  "signature": "carte|Législatives 1962|T1|cand:salardaine@legislatives-1962",
-  "chars": 273,
-  "generated_at": "2026-09-18T06:01:18.007Z"
+  "candidat": "otilia-ferreira@legislatives-2017",
+  "signature": "carte|Législatives 2017|T1|cand:otilia-ferreira@legislatives-2017",
+  "chars": 256,
+  "generated_at": "2026-09-19T06:00:43.365Z"
 }
