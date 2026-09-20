@@ -1696,5 +1696,19 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "otilia-ferreira@legislatives-2017"
+  },
+  {
+    "date": "2026-09-20",
+    "signature": "carte|Référendum 1992|TU",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Référendum 1992",
+    "tour": "TU",
+    "bureau": null,
+    "section": null,
+    "quartier": null,
+    "subtype": "gagnants",
+    "candidat": null
   }
 ]
