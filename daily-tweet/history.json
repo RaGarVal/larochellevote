@@ -1710,5 +1710,19 @@
     "quartier": null,
     "subtype": "gagnants",
     "candidat": null
+  },
+  {
+    "date": "2026-09-21",
+    "signature": "global|Présidentielle 2022|T1",
+    "niveau": "global",
+    "niveau_publie": "global",
+    "truncation_step": 1,
+    "election": "Présidentielle 2022",
+    "tour": "T1",
+    "bureau": null,
+    "section": null,
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
   }
 ]

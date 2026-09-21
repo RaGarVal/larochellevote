@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🎂 Il y a 34 ans aujourd'hui, pour le référendum 1992, le Oui obtenait 58,0 % à La Rochelle. 📍 Meilleur score dans le bureau n°27 · Parc Charruyer–Piscine à La Genette.
+👤 Le 10 avril 2022, pour la présidentielle (1er tour), Emmanuel Macron (LREM) arrive en tête avec 31,7 % à La Rochelle.
 
-Détails sur https://larochellevote.fr/LRVcarte.html#election=R%C3%A9f%C3%A9rendum+1992
+Les résultats de ce scrutin, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Pr%C3%A9sidentielle+2022&tour=T1&tab=global

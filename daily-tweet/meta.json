@@ -1,16 +1,16 @@
 {
-  "date": "2026-09-20",
-  "niveau": "carte",
-  "niveau_publie": "carte",
-  "election": "Référendum 1992",
-  "tour": "TU",
+  "date": "2026-09-21",
+  "niveau": "global",
+  "niveau_publie": "global",
+  "election": "Présidentielle 2022",
+  "tour": "T1",
   "bureau": null,
   "quartier": null,
   "canton": null,
   "section": null,
-  "subtype": "gagnants",
+  "subtype": null,
   "candidat": null,
-  "signature": "carte|Référendum 1992|TU",
-  "chars": 247,
-  "generated_at": "2026-09-20T06:00:46.642Z"
+  "signature": "global|Présidentielle 2022|T1",
+  "chars": 239,
+  "generated_at": "2026-09-21T06:01:00.675Z"
 }
