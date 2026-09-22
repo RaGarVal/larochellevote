@@ -1724,5 +1724,19 @@
     "quartier": null,
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-09-22",
+    "signature": "bureau|Cantonale partielle 2002|T1|0050",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 2,
+    "election": "Cantonale partielle 2002",
+    "tour": "T1",
+    "bureau": "0050",
+    "section": null,
+    "quartier": "Laleu/La Pallice",
+    "subtype": null,
+    "candidat": null
   }
 ]

@@ -1,16 +1,16 @@
 {
-  "date": "2026-09-21",
-  "niveau": "global",
-  "niveau_publie": "global",
-  "election": "Présidentielle 2022",
+  "date": "2026-09-22",
+  "niveau": "bureau",
+  "niveau_publie": "bureau",
+  "election": "Cantonale partielle 2002",
   "tour": "T1",
-  "bureau": null,
-  "quartier": null,
+  "bureau": "0050",
+  "quartier": "Laleu/La Pallice",
   "canton": null,
   "section": null,
   "subtype": null,
   "candidat": null,
-  "signature": "global|Présidentielle 2022|T1",
-  "chars": 239,
-  "generated_at": "2026-09-21T06:01:00.675Z"
+  "signature": "bureau|Cantonale partielle 2002|T1|0050",
+  "chars": 274,
+  "generated_at": "2026-09-22T06:00:53.364Z"
 }
