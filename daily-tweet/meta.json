@@ -1,16 +1,16 @@
 {
-  "date": "2026-09-23",
-  "niveau": "section",
-  "niveau_publie": "section",
-  "election": "Cantonales 1973",
-  "tour": "T1",
+  "date": "2026-09-24",
+  "niveau": "carte",
+  "niveau_publie": "carte",
+  "election": "Référendum 2000",
+  "tour": "TU",
   "bureau": null,
-  "quartier": "La Genette",
+  "quartier": null,
   "canton": null,
-  "section": "Réaumur",
-  "subtype": null,
+  "section": null,
+  "subtype": "gagnants",
   "candidat": null,
-  "signature": "section|Cantonales 1973|T1|Réaumur",
-  "chars": 274,
-  "generated_at": "2026-09-23T06:01:00.478Z"
+  "signature": "carte|Référendum 2000|TU",
+  "chars": 254,
+  "generated_at": "2026-09-24T06:00:52.497Z"
 }

@@ -1752,5 +1752,19 @@
     "quartier": "La Genette",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-09-24",
+    "signature": "carte|Référendum 2000|TU",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Référendum 2000",
+    "tour": "TU",
+    "bureau": null,
+    "section": null,
+    "quartier": null,
+    "subtype": "gagnants",
+    "candidat": null
   }
 ]
