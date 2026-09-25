@@ -1766,5 +1766,19 @@
     "quartier": null,
     "subtype": "gagnants",
     "candidat": null
+  },
+  {
+    "date": "2026-09-25",
+    "signature": "bureau|Cantonales 1988|T1|0038",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 2,
+    "election": "Cantonales 1988",
+    "tour": "T1",
+    "bureau": "0038",
+    "section": null,
+    "quartier": "Villeneuve-les-Salines",
+    "subtype": null,
+    "candidat": null
   }
 ]

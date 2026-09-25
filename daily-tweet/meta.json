@@ -1,16 +1,16 @@
 {
-  "date": "2026-09-24",
-  "niveau": "carte",
-  "niveau_publie": "carte",
-  "election": "Référendum 2000",
-  "tour": "TU",
-  "bureau": null,
-  "quartier": null,
+  "date": "2026-09-25",
+  "niveau": "bureau",
+  "niveau_publie": "bureau",
+  "election": "Cantonales 1988",
+  "tour": "T1",
+  "bureau": "0038",
+  "quartier": "Villeneuve-les-Salines",
   "canton": null,
   "section": null,
-  "subtype": "gagnants",
+  "subtype": null,
   "candidat": null,
-  "signature": "carte|Référendum 2000|TU",
-  "chars": 254,
-  "generated_at": "2026-09-24T06:00:52.497Z"
+  "signature": "bureau|Cantonales 1988|T1|0038",
+  "chars": 275,
+  "generated_at": "2026-09-25T06:01:04.559Z"
 }
