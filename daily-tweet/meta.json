@@ -1,16 +1,16 @@
 {
-  "date": "2026-09-26",
-  "niveau": "bureau",
-  "niveau_publie": "bureau",
-  "election": "Européennes 2014",
+  "date": "2026-09-27",
+  "niveau": "carte",
+  "niveau_publie": "carte",
+  "election": "Référendum 1969",
   "tour": "TU",
-  "bureau": "0021",
-  "quartier": "La Genette",
+  "bureau": null,
+  "quartier": null,
   "canton": null,
   "section": null,
-  "subtype": null,
+  "subtype": "gagnants",
   "candidat": null,
-  "signature": "bureau|Européennes 2014|TU|0021",
-  "chars": 262,
-  "generated_at": "2026-09-26T06:01:01.346Z"
+  "signature": "carte|Référendum 1969|TU",
+  "chars": 242,
+  "generated_at": "2026-09-27T06:00:52.779Z"
 }
