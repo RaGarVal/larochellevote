@@ -1808,5 +1808,19 @@
     "quartier": null,
     "subtype": "gagnants",
     "candidat": null
+  },
+  {
+    "date": "2026-09-28",
+    "signature": "carte|Référendum 1958|TU",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 1,
+    "election": "Référendum 1958",
+    "tour": "TU",
+    "bureau": null,
+    "section": null,
+    "quartier": null,
+    "subtype": "gagnants",
+    "candidat": null
   }
 ]

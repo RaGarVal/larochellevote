@@ -1,8 +1,8 @@
 {
-  "date": "2026-09-27",
+  "date": "2026-09-28",
   "niveau": "carte",
   "niveau_publie": "carte",
-  "election": "Référendum 1969",
+  "election": "Référendum 1958",
   "tour": "TU",
   "bureau": null,
   "quartier": null,
@@ -10,7 +10,7 @@
   "section": null,
   "subtype": "gagnants",
   "candidat": null,
-  "signature": "carte|Référendum 1969|TU",
-  "chars": 242,
-  "generated_at": "2026-09-27T06:00:52.779Z"
+  "signature": "carte|Référendum 1958|TU",
+  "chars": 274,
+  "generated_at": "2026-09-28T06:01:11.891Z"
 }
