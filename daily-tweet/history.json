@@ -1836,5 +1836,19 @@
     "quartier": "Laleu/La Pallice",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-09-30",
+    "signature": "section|Cantonales 1973|T2|La Pallice",
+    "niveau": "section",
+    "niveau_publie": "section",
+    "truncation_step": 1,
+    "election": "Cantonales 1973",
+    "tour": "T2",
+    "bureau": null,
+    "section": "La Pallice",
+    "quartier": "Laleu/La Pallice",
+    "subtype": null,
+    "candidat": null
   }
 ]
