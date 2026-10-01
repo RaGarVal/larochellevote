@@ -1850,5 +1850,19 @@
     "quartier": "Laleu/La Pallice",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-10-01",
+    "signature": "section|Cantonales 1967|T2|La Genette",
+    "niveau": "section",
+    "niveau_publie": "section",
+    "truncation_step": 1,
+    "election": "Cantonales 1967",
+    "tour": "T2",
+    "bureau": null,
+    "section": "La Genette",
+    "quartier": "La Genette",
+    "subtype": null,
+    "candidat": null
   }
 ]

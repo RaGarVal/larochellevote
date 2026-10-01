@@ -1,16 +1,16 @@
 {
-  "date": "2026-09-30",
+  "date": "2026-10-01",
   "niveau": "section",
   "niveau_publie": "section",
-  "election": "Cantonales 1973",
+  "election": "Cantonales 1967",
   "tour": "T2",
   "bureau": null,
-  "quartier": "Laleu/La Pallice",
+  "quartier": "La Genette",
   "canton": null,
-  "section": "La Pallice",
+  "section": "La Genette",
   "subtype": null,
   "candidat": null,
-  "signature": "section|Cantonales 1973|T2|La Pallice",
-  "chars": 270,
-  "generated_at": "2026-09-30T06:00:57.218Z"
+  "signature": "section|Cantonales 1967|T2|La Genette",
+  "chars": 273,
+  "generated_at": "2026-10-01T06:01:13.702Z"
 }
