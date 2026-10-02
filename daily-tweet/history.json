@@ -1864,5 +1864,19 @@
     "quartier": "La Genette",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-10-02",
+    "signature": "bureau|Cantonales 1988|T2|0010",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Cantonales 1988",
+    "tour": "T2",
+    "bureau": "0010",
+    "section": null,
+    "quartier": "Mireuil",
+    "subtype": null,
+    "candidat": null
   }
 ]
