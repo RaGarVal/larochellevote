@@ -1,16 +1,16 @@
 {
-  "date": "2026-10-02",
+  "date": "2026-10-03",
   "niveau": "bureau",
   "niveau_publie": "bureau",
-  "election": "Cantonales 1988",
-  "tour": "T2",
-  "bureau": "0010",
+  "election": "Législatives 2012",
+  "tour": "T1",
+  "bureau": "0016",
   "quartier": "Mireuil",
   "canton": null,
   "section": null,
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Cantonales 1988|T2|0010",
-  "chars": 279,
-  "generated_at": "2026-10-02T06:01:03.319Z"
+  "signature": "bureau|Législatives 2012|T1|0016",
+  "chars": 276,
+  "generated_at": "2026-10-03T06:00:50.069Z"
 }
