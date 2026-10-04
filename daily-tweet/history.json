@@ -1892,5 +1892,19 @@
     "quartier": "Mireuil",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-10-04",
+    "signature": "carte|Présidentielle 1981|T1",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Présidentielle 1981",
+    "tour": "T1",
+    "bureau": null,
+    "section": null,
+    "quartier": null,
+    "subtype": "gagnants",
+    "candidat": null
   }
 ]

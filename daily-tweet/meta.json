@@ -1,16 +1,16 @@
 {
-  "date": "2026-10-03",
-  "niveau": "bureau",
-  "niveau_publie": "bureau",
-  "election": "Législatives 2012",
+  "date": "2026-10-04",
+  "niveau": "carte",
+  "niveau_publie": "carte",
+  "election": "Présidentielle 1981",
   "tour": "T1",
-  "bureau": "0016",
-  "quartier": "Mireuil",
+  "bureau": null,
+  "quartier": null,
   "canton": null,
   "section": null,
-  "subtype": null,
+  "subtype": "gagnants",
   "candidat": null,
-  "signature": "bureau|Législatives 2012|T1|0016",
-  "chars": 276,
-  "generated_at": "2026-10-03T06:00:50.069Z"
+  "signature": "carte|Présidentielle 1981|T1",
+  "chars": 274,
+  "generated_at": "2026-10-04T06:01:01.746Z"
 }
