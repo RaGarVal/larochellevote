@@ -1906,5 +1906,19 @@
     "quartier": null,
     "subtype": "gagnants",
     "candidat": null
+  },
+  {
+    "date": "2026-10-05",
+    "signature": "bureau|Législatives 2007|T1|0017",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Législatives 2007",
+    "tour": "T1",
+    "bureau": "0017",
+    "section": null,
+    "quartier": "Mireuil",
+    "subtype": null,
+    "candidat": null
   }
 ]
