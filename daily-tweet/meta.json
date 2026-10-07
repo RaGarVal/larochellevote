@@ -1,16 +1,16 @@
 {
-  "date": "2026-10-06",
-  "niveau": "bureau",
-  "niveau_publie": "bureau",
-  "election": "Régionales 2015",
-  "tour": "T1",
-  "bureau": "0042",
-  "quartier": "Les Minimes",
+  "date": "2026-10-07",
+  "niveau": "carte",
+  "niveau_publie": "carte",
+  "election": "Municipales 1983",
+  "tour": "TU",
+  "bureau": null,
+  "quartier": null,
   "canton": null,
   "section": null,
-  "subtype": null,
+  "subtype": "gagnants",
   "candidat": null,
-  "signature": "bureau|Régionales 2015|T1|0042",
-  "chars": 276,
-  "generated_at": "2026-10-06T06:01:09.339Z"
+  "signature": "carte|Municipales 1983|TU",
+  "chars": 243,
+  "generated_at": "2026-10-07T06:01:59.761Z"
 }
