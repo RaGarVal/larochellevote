@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🏙️ Le 6 mars 1983, pour les municipales, Michel Crépeau (MRG) a obtenu 56,0 % à La Rochelle. 📍 Meilleur score dans le bureau n°7 · Plaine des jeux–Lac à Port-Neuf.
+👤 Le 22 avril 2012, pour la présidentielle (1er tour), François Hollande (PS) arrive en tête avec 33,4 % dans le bureau n°42 · Conseil général aux Minimes.
 
-Détails sur https://larochellevote.fr/LRVcarte.html#election=Municipales+1983
+Les résultats de ce bureau, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Pr%C3%A9sidentielle+2012&tour=T1&bureau=0042

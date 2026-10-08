@@ -1,16 +1,16 @@
 {
-  "date": "2026-10-07",
-  "niveau": "carte",
-  "niveau_publie": "carte",
-  "election": "Municipales 1983",
-  "tour": "TU",
-  "bureau": null,
-  "quartier": null,
+  "date": "2026-10-08",
+  "niveau": "bureau",
+  "niveau_publie": "bureau",
+  "election": "Présidentielle 2012",
+  "tour": "T1",
+  "bureau": "0042",
+  "quartier": "Les Minimes",
   "canton": null,
   "section": null,
-  "subtype": "gagnants",
+  "subtype": null,
   "candidat": null,
-  "signature": "carte|Municipales 1983|TU",
-  "chars": 243,
-  "generated_at": "2026-10-07T06:01:59.761Z"
+  "signature": "bureau|Présidentielle 2012|T1|0042",
+  "chars": 274,
+  "generated_at": "2026-10-08T06:02:02.331Z"
 }
