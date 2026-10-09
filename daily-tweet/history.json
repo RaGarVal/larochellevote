@@ -1962,5 +1962,19 @@
     "quartier": "Les Minimes",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-10-09",
+    "signature": "bureau|Régionales 1992|TU|0025",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Régionales 1992",
+    "tour": "TU",
+    "bureau": "0025",
+    "section": null,
+    "quartier": "Centre-ville",
+    "subtype": null,
+    "candidat": null
   }
 ]

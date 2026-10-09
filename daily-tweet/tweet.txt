@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-👤 Le 22 avril 2012, pour la présidentielle (1er tour), François Hollande (PS) arrive en tête avec 33,4 % dans le bureau n°42 · Conseil général aux Minimes.
+🏙️ Le 22 mars 1992, pour les régionales, François Blaizot (UPF) arrive en tête avec 45,8 % dans le bureau n°25 · Vieux-port ouest dans le Centre-ville.
 
-Les résultats de ce bureau, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Pr%C3%A9sidentielle+2012&tour=T1&bureau=0042
+Les résultats de ce bureau, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=R%C3%A9gionales+1992&bureau=0025
