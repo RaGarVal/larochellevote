@@ -1,16 +1,16 @@
 {
-  "date": "2026-10-10",
-  "niveau": "carte",
-  "niveau_publie": "carte",
-  "election": "Régionales 1986",
-  "tour": "TU",
+  "date": "2026-10-11",
+  "niveau": "section",
+  "niveau_publie": "section",
+  "election": "Municipales 1965",
+  "tour": "T1",
   "bureau": null,
-  "quartier": null,
+  "quartier": "Lafond",
   "canton": null,
-  "section": null,
-  "subtype": "candidat",
-  "candidat": "francois-blaizot@regionales-1986",
-  "signature": "carte|Régionales 1986|TU|cand:francois-blaizot@regionales-1986",
-  "chars": 250,
-  "generated_at": "2026-10-10T06:01:13.768Z"
+  "section": "Le Prieuré",
+  "subtype": null,
+  "candidat": null,
+  "signature": "section|Municipales 1965|T1|Le Prieuré",
+  "chars": 249,
+  "generated_at": "2026-10-11T06:01:18.344Z"
 }
