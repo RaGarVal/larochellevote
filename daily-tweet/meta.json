@@ -1,16 +1,16 @@
 {
-  "date": "2026-10-11",
-  "niveau": "section",
-  "niveau_publie": "section",
-  "election": "Municipales 1965",
+  "date": "2026-10-12",
+  "niveau": "bureau",
+  "niveau_publie": "bureau",
+  "election": "Régionales 2004",
   "tour": "T1",
-  "bureau": null,
-  "quartier": "Lafond",
+  "bureau": "0041",
+  "quartier": "Les Minimes",
   "canton": null,
-  "section": "Le Prieuré",
+  "section": null,
   "subtype": null,
   "candidat": null,
-  "signature": "section|Municipales 1965|T1|Le Prieuré",
-  "chars": 249,
-  "generated_at": "2026-10-11T06:01:18.344Z"
+  "signature": "bureau|Régionales 2004|T1|0041",
+  "chars": 242,
+  "generated_at": "2026-10-12T06:02:24.495Z"
 }

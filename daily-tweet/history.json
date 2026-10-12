@@ -2004,5 +2004,19 @@
     "quartier": "Lafond",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-10-12",
+    "signature": "bureau|Régionales 2004|T1|0041",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 2,
+    "election": "Régionales 2004",
+    "tour": "T1",
+    "bureau": "0041",
+    "section": null,
+    "quartier": "Les Minimes",
+    "subtype": null,
+    "candidat": null
   }
 ]
