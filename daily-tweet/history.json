@@ -2018,5 +2018,19 @@
     "quartier": "Les Minimes",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-10-13",
+    "signature": "quartier|Régionales 1998|TU|Saint-Maurice",
+    "niveau": "quartier",
+    "niveau_publie": "quartier",
+    "truncation_step": 1,
+    "election": "Régionales 1998",
+    "tour": "TU",
+    "bureau": null,
+    "section": null,
+    "quartier": "Saint-Maurice",
+    "subtype": null,
+    "candidat": null
   }
 ]

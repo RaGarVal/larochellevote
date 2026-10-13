@@ -1,16 +1,16 @@
 {
-  "date": "2026-10-12",
-  "niveau": "bureau",
-  "niveau_publie": "bureau",
-  "election": "Régionales 2004",
-  "tour": "T1",
-  "bureau": "0041",
-  "quartier": "Les Minimes",
+  "date": "2026-10-13",
+  "niveau": "quartier",
+  "niveau_publie": "quartier",
+  "election": "Régionales 1998",
+  "tour": "TU",
+  "bureau": null,
+  "quartier": "Saint-Maurice",
   "canton": null,
   "section": null,
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Régionales 2004|T1|0041",
-  "chars": 242,
-  "generated_at": "2026-10-12T06:02:24.495Z"
+  "signature": "quartier|Régionales 1998|TU|Saint-Maurice",
+  "chars": 246,
+  "generated_at": "2026-10-13T06:02:14.941Z"
 }
