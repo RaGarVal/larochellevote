@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🏙️ Le 15 mars 1998, pour les régionales, Philippe Marchand (PS) arrive en tête avec 47,1 % dans le quartier de Saint-Maurice.
+🇪🇺 Le 7 juin 2009, pour les européennes, Christophe Béchu (UMP) arrive en tête avec 28,6 % dans le bureau n°40 · Port des Minimes aux Minimes.
 
-Les résultats de ce quartier, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=R%C3%A9gionales+1998&quartier=Saint-Maurice
+Les résultats de ce bureau, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Europ%C3%A9ennes+2009&bureau=0040

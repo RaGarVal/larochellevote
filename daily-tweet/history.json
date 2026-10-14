@@ -2032,5 +2032,19 @@
     "quartier": "Saint-Maurice",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-10-14",
+    "signature": "bureau|Européennes 2009|TU|0040",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Européennes 2009",
+    "tour": "TU",
+    "bureau": "0040",
+    "section": null,
+    "quartier": "Les Minimes",
+    "subtype": null,
+    "candidat": null
   }
 ]
