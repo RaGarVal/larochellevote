@@ -2046,5 +2046,19 @@
     "quartier": "Les Minimes",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-10-15",
+    "signature": "bureau|Européennes 2014|TU|0031",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Européennes 2014",
+    "tour": "TU",
+    "bureau": "0031",
+    "section": null,
+    "quartier": "Lafond",
+    "subtype": null,
+    "candidat": null
   }
 ]
