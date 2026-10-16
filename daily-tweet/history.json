@@ -2060,5 +2060,19 @@
     "quartier": "Lafond",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-10-16",
+    "signature": "quartier|Présidentielle 2012|T1|Tasdon",
+    "niveau": "quartier",
+    "niveau_publie": "quartier",
+    "truncation_step": 1,
+    "election": "Présidentielle 2012",
+    "tour": "T1",
+    "bureau": null,
+    "section": null,
+    "quartier": "Tasdon",
+    "subtype": null,
+    "candidat": null
   }
 ]

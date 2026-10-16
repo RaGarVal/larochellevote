@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🇪🇺 Le 25 mai 2014, pour les européennes, Alain Cadec (UMP) arrive en tête avec 20,5 % dans le bureau n°31 · Champs-de-Mars à Lafond.
+👤 Le 22 avril 2012, pour la présidentielle (1er tour), François Hollande (PS) arrive en tête avec 38,5 % dans le quartier de Tasdon.
 
-Les résultats de ce bureau, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Europ%C3%A9ennes+2014&bureau=0031
+Les résultats de ce quartier, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Pr%C3%A9sidentielle+2012&tour=T1&quartier=Tasdon

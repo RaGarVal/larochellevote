@@ -1,16 +1,16 @@
 {
-  "date": "2026-10-15",
-  "niveau": "bureau",
-  "niveau_publie": "bureau",
-  "election": "Européennes 2014",
-  "tour": "TU",
-  "bureau": "0031",
-  "quartier": "Lafond",
+  "date": "2026-10-16",
+  "niveau": "quartier",
+  "niveau_publie": "quartier",
+  "election": "Présidentielle 2012",
+  "tour": "T1",
+  "bureau": null,
+  "quartier": "Tasdon",
   "canton": null,
   "section": null,
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Européennes 2014|TU|0031",
-  "chars": 252,
-  "generated_at": "2026-10-15T06:02:45.356Z"
+  "signature": "quartier|Présidentielle 2012|T1|Tasdon",
+  "chars": 253,
+  "generated_at": "2026-10-16T06:02:26.854Z"
 }
