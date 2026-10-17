@@ -1,16 +1,16 @@
 {
-  "date": "2026-10-16",
-  "niveau": "quartier",
-  "niveau_publie": "quartier",
-  "election": "Présidentielle 2012",
+  "date": "2026-10-17",
+  "niveau": "global",
+  "niveau_publie": "global",
+  "election": "Municipales 1965",
   "tour": "T1",
   "bureau": null,
-  "quartier": "Tasdon",
+  "quartier": null,
   "canton": null,
   "section": null,
   "subtype": null,
   "candidat": null,
-  "signature": "quartier|Présidentielle 2012|T1|Tasdon",
-  "chars": 253,
-  "generated_at": "2026-10-16T06:02:26.854Z"
+  "signature": "global|Municipales 1965|T1",
+  "chars": 241,
+  "generated_at": "2026-10-17T06:01:31.964Z"
 }

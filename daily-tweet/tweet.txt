@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-👤 Le 22 avril 2012, pour la présidentielle (1er tour), François Hollande (PS) arrive en tête avec 38,5 % dans le quartier de Tasdon.
+🏙️ Le 14 mars 1965, pour les municipales (1er tour), André Salardaine (UNR-UDT) arrive en tête avec 43,9 % à La Rochelle.
 
-Les résultats de ce quartier, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Pr%C3%A9sidentielle+2012&tour=T1&quartier=Tasdon
+Les résultats de ce scrutin, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Municipales+1965&tour=T1&tab=global
