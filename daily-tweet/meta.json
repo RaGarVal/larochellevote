@@ -1,16 +1,16 @@
 {
-  "date": "2026-10-17",
-  "niveau": "global",
-  "niveau_publie": "global",
-  "election": "Municipales 1965",
-  "tour": "T1",
+  "date": "2026-10-18",
+  "niveau": "carte",
+  "niveau_publie": "carte",
+  "election": "Municipales 1983",
+  "tour": "TU",
   "bureau": null,
   "quartier": null,
   "canton": null,
   "section": null,
-  "subtype": null,
-  "candidat": null,
-  "signature": "global|Municipales 1965|T1",
-  "chars": 241,
-  "generated_at": "2026-10-17T06:01:31.964Z"
+  "subtype": "candidat",
+  "candidat": "michel-crepeau@municipales-1983",
+  "signature": "carte|Municipales 1983|TU|cand:michel-crepeau@municipales-1983",
+  "chars": 243,
+  "generated_at": "2026-10-18T06:01:25.460Z"
 }

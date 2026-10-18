@@ -2088,5 +2088,19 @@
     "quartier": null,
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-10-18",
+    "signature": "carte|Municipales 1983|TU|cand:michel-crepeau@municipales-1983",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Municipales 1983",
+    "tour": "TU",
+    "bureau": null,
+    "section": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "michel-crepeau@municipales-1983"
   }
 ]
