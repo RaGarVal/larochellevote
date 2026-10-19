@@ -1,16 +1,16 @@
 {
-  "date": "2026-10-18",
-  "niveau": "carte",
-  "niveau_publie": "carte",
-  "election": "Municipales 1983",
-  "tour": "TU",
-  "bureau": null,
-  "quartier": null,
+  "date": "2026-10-19",
+  "niveau": "bureau",
+  "niveau_publie": "bureau",
+  "election": "Municipales 2026",
+  "tour": "T1",
+  "bureau": "0013",
+  "quartier": "Mireuil",
   "canton": null,
   "section": null,
-  "subtype": "candidat",
-  "candidat": "michel-crepeau@municipales-1983",
-  "signature": "carte|Municipales 1983|TU|cand:michel-crepeau@municipales-1983",
-  "chars": 243,
-  "generated_at": "2026-10-18T06:01:25.460Z"
+  "subtype": null,
+  "candidat": null,
+  "signature": "bureau|Municipales 2026|T1|0013",
+  "chars": 270,
+  "generated_at": "2026-10-19T06:02:38.198Z"
 }

@@ -2102,5 +2102,19 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "michel-crepeau@municipales-1983"
+  },
+  {
+    "date": "2026-10-19",
+    "signature": "bureau|Municipales 2026|T1|0013",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Municipales 2026",
+    "tour": "T1",
+    "bureau": "0013",
+    "section": null,
+    "quartier": "Mireuil",
+    "subtype": null,
+    "candidat": null
   }
 ]
