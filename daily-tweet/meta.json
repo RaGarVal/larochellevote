@@ -1,16 +1,16 @@
 {
-  "date": "2026-10-19",
+  "date": "2026-10-20",
   "niveau": "bureau",
   "niveau_publie": "bureau",
-  "election": "Municipales 2026",
+  "election": "Présidentielle 1995",
   "tour": "T1",
-  "bureau": "0013",
-  "quartier": "Mireuil",
+  "bureau": "0049",
+  "quartier": "Villeneuve-les-Salines",
   "canton": null,
   "section": null,
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Municipales 2026|T1|0013",
-  "chars": 270,
-  "generated_at": "2026-10-19T06:02:38.198Z"
+  "signature": "bureau|Présidentielle 1995|T1|0049",
+  "chars": 245,
+  "generated_at": "2026-10-20T06:00:55.746Z"
 }
