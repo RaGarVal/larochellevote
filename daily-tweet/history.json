@@ -2158,5 +2158,19 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "jacques-chirac@presidentielle-2002"
+  },
+  {
+    "date": "2026-10-23",
+    "signature": "bureau|Municipales 1995|TU|0042",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Municipales 1995",
+    "tour": "TU",
+    "bureau": "0042",
+    "section": null,
+    "quartier": "Lafond",
+    "subtype": null,
+    "candidat": null
   }
 ]
