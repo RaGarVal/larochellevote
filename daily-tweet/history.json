@@ -2172,5 +2172,19 @@
     "quartier": "Lafond",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-10-24",
+    "signature": "section|Législatives 1978|T1|Saint-Éloi",
+    "niveau": "section",
+    "niveau_publie": "section",
+    "truncation_step": 1,
+    "election": "Législatives 1978",
+    "tour": "T1",
+    "bureau": null,
+    "section": "Saint-Éloi",
+    "quartier": "Saint-Éloi",
+    "subtype": null,
+    "candidat": null
   }
 ]
