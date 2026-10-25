@@ -2186,5 +2186,19 @@
     "quartier": "Saint-Éloi",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-10-25",
+    "signature": "bureau|Régionales 1992|TU|0020",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Régionales 1992",
+    "tour": "TU",
+    "bureau": "0020",
+    "section": null,
+    "quartier": "Fétilly",
+    "subtype": null,
+    "candidat": null
   }
 ]
