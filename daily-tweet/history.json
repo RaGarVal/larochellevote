@@ -2200,5 +2200,19 @@
     "quartier": "Fétilly",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-10-26",
+    "signature": "quartier|Présidentielle 1981|T1|Centre-ville",
+    "niveau": "quartier",
+    "niveau_publie": "quartier",
+    "truncation_step": 1,
+    "election": "Présidentielle 1981",
+    "tour": "T1",
+    "bureau": null,
+    "section": null,
+    "quartier": "Centre-ville",
+    "subtype": null,
+    "candidat": null
   }
 ]
