@@ -2214,5 +2214,19 @@
     "quartier": "Centre-ville",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-10-27",
+    "signature": "bureau|Présidentielle 1988|T1|0002",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 2,
+    "election": "Présidentielle 1988",
+    "tour": "T1",
+    "bureau": "0002",
+    "section": null,
+    "quartier": "Laleu/La Pallice",
+    "subtype": null,
+    "candidat": null
   }
 ]
