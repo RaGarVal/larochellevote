@@ -1,16 +1,16 @@
 {
-  "date": "2026-10-27",
-  "niveau": "bureau",
-  "niveau_publie": "bureau",
-  "election": "Présidentielle 1988",
-  "tour": "T1",
-  "bureau": "0002",
-  "quartier": "Laleu/La Pallice",
+  "date": "2026-10-28",
+  "niveau": "carte",
+  "niveau_publie": "carte",
+  "election": "Référendum octobre 1962",
+  "tour": "TU",
+  "bureau": null,
+  "quartier": null,
   "canton": null,
   "section": null,
-  "subtype": null,
+  "subtype": "gagnants",
   "candidat": null,
-  "signature": "bureau|Présidentielle 1988|T1|0002",
-  "chars": 241,
-  "generated_at": "2026-10-27T07:02:05.844Z"
+  "signature": "carte|Référendum octobre 1962|TU",
+  "chars": 257,
+  "generated_at": "2026-10-28T07:02:03.340Z"
 }
