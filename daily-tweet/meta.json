@@ -1,16 +1,16 @@
 {
-  "date": "2026-10-28",
-  "niveau": "carte",
-  "niveau_publie": "carte",
-  "election": "Référendum octobre 1962",
-  "tour": "TU",
-  "bureau": null,
-  "quartier": null,
+  "date": "2026-10-29",
+  "niveau": "bureau",
+  "niveau_publie": "bureau",
+  "election": "Législatives 1997",
+  "tour": "T1",
+  "bureau": "0030",
+  "quartier": "Lafond",
   "canton": null,
   "section": null,
-  "subtype": "gagnants",
+  "subtype": null,
   "candidat": null,
-  "signature": "carte|Référendum octobre 1962|TU",
-  "chars": 257,
-  "generated_at": "2026-10-28T07:02:03.340Z"
+  "signature": "bureau|Législatives 1997|T1|0030",
+  "chars": 262,
+  "generated_at": "2026-10-29T07:02:08.648Z"
 }

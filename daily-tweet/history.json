@@ -2242,5 +2242,19 @@
     "quartier": null,
     "subtype": "gagnants",
     "candidat": null
+  },
+  {
+    "date": "2026-10-29",
+    "signature": "bureau|Législatives 1997|T1|0030",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Législatives 1997",
+    "tour": "T1",
+    "bureau": "0030",
+    "section": null,
+    "quartier": "Lafond",
+    "subtype": null,
+    "candidat": null
   }
 ]
