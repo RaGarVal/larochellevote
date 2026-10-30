@@ -2256,5 +2256,19 @@
     "quartier": "Lafond",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-10-30",
+    "signature": "canton|Municipales 1983|TU|2",
+    "niveau": "canton",
+    "niveau_publie": "canton",
+    "truncation_step": 1,
+    "election": "Municipales 1983",
+    "tour": "TU",
+    "bureau": null,
+    "section": null,
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
   }
 ]

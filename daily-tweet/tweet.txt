@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🏛️ Le 25 mai 1997, pour les législatives (1er tour), Michel Crépeau (PRS) arrive en tête avec 47,8 % dans le bureau n°30 · Le Prieuré à Lafond.
+🏙️ Le 6 mars 1983, pour les municipales, Jean Harel (RPR) arrive en tête avec 56,2 % dans le canton de La Rochelle-2.
 
-Les résultats de ce bureau, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=L%C3%A9gislatives+1997&tour=T1&bureau=0030
+Les résultats de ce canton, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=Municipales+1983&canton=2
