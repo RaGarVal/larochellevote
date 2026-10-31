@@ -1,16 +1,16 @@
 {
-  "date": "2026-10-30",
-  "niveau": "canton",
-  "niveau_publie": "canton",
-  "election": "Municipales 1983",
+  "date": "2026-10-31",
+  "niveau": "bureau",
+  "niveau_publie": "bureau",
+  "election": "Européennes 2004",
   "tour": "TU",
-  "bureau": null,
-  "quartier": null,
-  "canton": "2",
+  "bureau": "0033",
+  "quartier": "Centre-ville",
+  "canton": null,
   "section": null,
   "subtype": null,
   "candidat": null,
-  "signature": "canton|Municipales 1983|TU|2",
-  "chars": 236,
-  "generated_at": "2026-10-30T07:01:58.918Z"
+  "signature": "bureau|Européennes 2004|TU|0033",
+  "chars": 243,
+  "generated_at": "2026-10-31T07:01:19.389Z"
 }
