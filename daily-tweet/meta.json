@@ -1,16 +1,16 @@
 {
-  "date": "2026-10-31",
-  "niveau": "bureau",
-  "niveau_publie": "bureau",
-  "election": "Européennes 2004",
-  "tour": "TU",
-  "bureau": "0033",
-  "quartier": "Centre-ville",
+  "date": "2026-11-01",
+  "niveau": "quartier",
+  "niveau_publie": "quartier",
+  "election": "Régionales 2010",
+  "tour": "T1",
+  "bureau": null,
+  "quartier": "Saint-Éloi",
   "canton": null,
   "section": null,
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Européennes 2004|TU|0033",
-  "chars": 243,
-  "generated_at": "2026-10-31T07:01:19.389Z"
+  "signature": "quartier|Régionales 2010|T1|Saint-Éloi",
+  "chars": 251,
+  "generated_at": "2026-11-01T07:00:47.362Z"
 }

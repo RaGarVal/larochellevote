@@ -2284,5 +2284,19 @@
     "quartier": "Centre-ville",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-11-01",
+    "signature": "quartier|Régionales 2010|T1|Saint-Éloi",
+    "niveau": "quartier",
+    "niveau_publie": "quartier",
+    "truncation_step": 1,
+    "election": "Régionales 2010",
+    "tour": "T1",
+    "bureau": null,
+    "section": null,
+    "quartier": "Saint-Éloi",
+    "subtype": null,
+    "candidat": null
   }
 ]

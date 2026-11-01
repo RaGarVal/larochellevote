@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🇪🇺 Le 13 juin 2004, pour les européennes, Bernard Poignant (PS) arrive en tête avec 27,6 % dans le bureau n°33 · Place du marché–Porte-Royale dans le Centre-ville.
+🏙️ Le 14 mars 2010, pour les régionales (1er tour), Ségolène Royal (PS) arrive en tête avec 37,1 % dans le quartier de Saint-Éloi.
 
-Détails sur https://larochellevote.fr/LRVcarte.html#election=Europ%C3%A9ennes+2004&bureau=0033
+Les résultats de ce quartier, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=R%C3%A9gionales+2010&tour=T1&quartier=Saint-%C3%89loi
