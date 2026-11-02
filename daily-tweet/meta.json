@@ -1,16 +1,16 @@
 {
-  "date": "2026-11-01",
-  "niveau": "quartier",
-  "niveau_publie": "quartier",
-  "election": "Régionales 2010",
-  "tour": "T1",
+  "date": "2026-11-02",
+  "niveau": "carte",
+  "niveau_publie": "carte",
+  "election": "Municipales 1977",
+  "tour": "TU",
   "bureau": null,
-  "quartier": "Saint-Éloi",
+  "quartier": null,
   "canton": null,
   "section": null,
-  "subtype": null,
-  "candidat": null,
-  "signature": "quartier|Régionales 2010|T1|Saint-Éloi",
-  "chars": 251,
-  "generated_at": "2026-11-01T07:00:47.362Z"
+  "subtype": "candidat",
+  "candidat": "de-saint-affrique@municipales-1977",
+  "signature": "carte|Municipales 1977|TU|cand:de-saint-affrique@municipales-1977",
+  "chars": 256,
+  "generated_at": "2026-11-02T07:01:19.114Z"
 }

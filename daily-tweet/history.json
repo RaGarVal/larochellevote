@@ -2298,5 +2298,19 @@
     "quartier": "Saint-Éloi",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-11-02",
+    "signature": "carte|Municipales 1977|TU|cand:de-saint-affrique@municipales-1977",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Municipales 1977",
+    "tour": "TU",
+    "bureau": null,
+    "section": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "de-saint-affrique@municipales-1977"
   }
 ]
