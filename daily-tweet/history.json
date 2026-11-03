@@ -2312,5 +2312,19 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "de-saint-affrique@municipales-1977"
+  },
+  {
+    "date": "2026-11-03",
+    "signature": "bureau|Européennes 1984|TU|0009",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Européennes 1984",
+    "tour": "TU",
+    "bureau": "0009",
+    "section": null,
+    "quartier": "Port-Neuf",
+    "subtype": null,
+    "candidat": null
   }
 ]
