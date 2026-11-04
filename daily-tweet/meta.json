@@ -1,16 +1,16 @@
 {
-  "date": "2026-11-03",
+  "date": "2026-11-04",
   "niveau": "bureau",
   "niveau_publie": "bureau",
-  "election": "Européennes 1984",
+  "election": "Européennes 1994",
   "tour": "TU",
-  "bureau": "0009",
-  "quartier": "Port-Neuf",
+  "bureau": "0049",
+  "quartier": "Villeneuve-les-Salines",
   "canton": null,
   "section": null,
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Européennes 1984|TU|0009",
-  "chars": 264,
-  "generated_at": "2026-11-03T07:01:48.638Z"
+  "signature": "bureau|Européennes 1994|TU|0049",
+  "chars": 273,
+  "generated_at": "2026-11-04T07:00:45.734Z"
 }

@@ -2326,5 +2326,19 @@
     "quartier": "Port-Neuf",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-11-04",
+    "signature": "bureau|Européennes 1994|TU|0049",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Européennes 1994",
+    "tour": "TU",
+    "bureau": "0049",
+    "section": null,
+    "quartier": "Villeneuve-les-Salines",
+    "subtype": null,
+    "candidat": null
   }
 ]
