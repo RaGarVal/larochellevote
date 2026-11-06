@@ -1,16 +1,16 @@
 {
-  "date": "2026-11-05",
-  "niveau": "carte",
-  "niveau_publie": "carte",
-  "election": "Européennes 1984",
+  "date": "2026-11-06",
+  "niveau": "canton",
+  "niveau_publie": "canton",
+  "election": "Référendum 1988",
   "tour": "TU",
   "bureau": null,
   "quartier": null,
-  "canton": null,
+  "canton": "1",
   "section": null,
-  "subtype": "gagnants",
+  "subtype": null,
   "candidat": null,
-  "signature": "carte|Européennes 1984|TU",
-  "chars": 260,
-  "generated_at": "2026-11-05T07:00:52.472Z"
+  "signature": "canton|Référendum 1988|TU|1",
+  "chars": 241,
+  "generated_at": "2026-11-06T07:00:43.661Z"
 }
