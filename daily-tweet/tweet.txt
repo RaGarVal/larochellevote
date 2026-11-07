@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🎂 Il y a 38 ans aujourd'hui, pour le référendum 1988, le Oui arrivait en tête avec 84,9 % dans le canton de La Rochelle-1.
+🏙️ Le 6 décembre 2015, pour les régionales (1er tour), Alain Rousset (PS) arrive en tête avec 32,3 % à La Rochelle.
 
-Les résultats de ce canton, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=R%C3%A9f%C3%A9rendum+1988&canton=1
+Les résultats de ce scrutin, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=R%C3%A9gionales+2015&tour=T1&tab=global

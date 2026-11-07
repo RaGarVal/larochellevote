@@ -2368,5 +2368,19 @@
     "quartier": null,
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-11-07",
+    "signature": "global|Régionales 2015|T1",
+    "niveau": "global",
+    "niveau_publie": "global",
+    "truncation_step": 1,
+    "election": "Régionales 2015",
+    "tour": "T1",
+    "bureau": null,
+    "section": null,
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
   }
 ]

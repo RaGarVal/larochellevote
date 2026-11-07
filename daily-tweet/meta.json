@@ -1,16 +1,16 @@
 {
-  "date": "2026-11-06",
-  "niveau": "canton",
-  "niveau_publie": "canton",
-  "election": "Référendum 1988",
-  "tour": "TU",
+  "date": "2026-11-07",
+  "niveau": "global",
+  "niveau_publie": "global",
+  "election": "Régionales 2015",
+  "tour": "T1",
   "bureau": null,
   "quartier": null,
-  "canton": "1",
+  "canton": null,
   "section": null,
   "subtype": null,
   "candidat": null,
-  "signature": "canton|Référendum 1988|TU|1",
-  "chars": 241,
-  "generated_at": "2026-11-06T07:00:43.661Z"
+  "signature": "global|Régionales 2015|T1",
+  "chars": 235,
+  "generated_at": "2026-11-07T07:00:47.581Z"
 }
