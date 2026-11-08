@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🏙️ Le 6 décembre 2015, pour les régionales (1er tour), Alain Rousset (PS) arrive en tête avec 32,3 % à La Rochelle.
+🏙️ Le 21 mars 2004, pour les régionales (1er tour), Ségolène Royal (PS) arrive en tête avec 55,7 % dans le bureau n°11 · Place de l'Europe–Cimetière à Mireuil.
 
-Les résultats de ce scrutin, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=R%C3%A9gionales+2015&tour=T1&tab=global
+Les résultats de ce bureau, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=R%C3%A9gionales+2004&tour=T1&bureau=0011

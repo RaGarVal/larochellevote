@@ -2382,5 +2382,19 @@
     "quartier": null,
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-11-08",
+    "signature": "bureau|Régionales 2004|T1|0011",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Régionales 2004",
+    "tour": "T1",
+    "bureau": "0011",
+    "section": null,
+    "quartier": "Mireuil",
+    "subtype": null,
+    "candidat": null
   }
 ]

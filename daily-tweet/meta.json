@@ -1,16 +1,16 @@
 {
-  "date": "2026-11-07",
-  "niveau": "global",
-  "niveau_publie": "global",
-  "election": "Régionales 2015",
+  "date": "2026-11-08",
+  "niveau": "bureau",
+  "niveau_publie": "bureau",
+  "election": "Régionales 2004",
   "tour": "T1",
-  "bureau": null,
-  "quartier": null,
+  "bureau": "0011",
+  "quartier": "Mireuil",
   "canton": null,
   "section": null,
   "subtype": null,
   "candidat": null,
-  "signature": "global|Régionales 2015|T1",
-  "chars": 235,
-  "generated_at": "2026-11-07T07:00:47.581Z"
+  "signature": "bureau|Régionales 2004|T1|0011",
+  "chars": 278,
+  "generated_at": "2026-11-08T07:00:57.449Z"
 }
