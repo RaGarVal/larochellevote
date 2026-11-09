@@ -1,16 +1,16 @@
 {
-  "date": "2026-11-08",
-  "niveau": "bureau",
-  "niveau_publie": "bureau",
-  "election": "Régionales 2004",
+  "date": "2026-11-09",
+  "niveau": "carte",
+  "niveau_publie": "carte",
+  "election": "Municipales 2026",
   "tour": "T1",
-  "bureau": "0011",
-  "quartier": "Mireuil",
+  "bureau": null,
+  "quartier": null,
   "canton": null,
   "section": null,
-  "subtype": null,
-  "candidat": null,
-  "signature": "bureau|Régionales 2004|T1|0011",
-  "chars": 278,
-  "generated_at": "2026-11-08T07:00:57.449Z"
+  "subtype": "candidat",
+  "candidat": "olivier-falorni@municipales-2026",
+  "signature": "carte|Municipales 2026|T1|cand:olivier-falorni@municipales-2026",
+  "chars": 268,
+  "generated_at": "2026-11-09T07:01:29.207Z"
 }
