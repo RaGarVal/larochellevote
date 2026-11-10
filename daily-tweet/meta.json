@@ -1,16 +1,16 @@
 {
-  "date": "2026-11-09",
-  "niveau": "carte",
-  "niveau_publie": "carte",
-  "election": "Municipales 2026",
+  "date": "2026-11-10",
+  "niveau": "bureau",
+  "niveau_publie": "bureau",
+  "election": "Législatives 2017",
   "tour": "T1",
-  "bureau": null,
-  "quartier": null,
+  "bureau": "0025",
+  "quartier": "Centre-ville",
   "canton": null,
   "section": null,
-  "subtype": "candidat",
-  "candidat": "olivier-falorni@municipales-2026",
-  "signature": "carte|Municipales 2026|T1|cand:olivier-falorni@municipales-2026",
-  "chars": 268,
-  "generated_at": "2026-11-09T07:01:29.207Z"
+  "subtype": null,
+  "candidat": null,
+  "signature": "bureau|Législatives 2017|T1|0025",
+  "chars": 244,
+  "generated_at": "2026-11-10T07:01:05.352Z"
 }
