@@ -1,16 +1,16 @@
 {
-  "date": "2026-11-10",
-  "niveau": "bureau",
-  "niveau_publie": "bureau",
-  "election": "Législatives 2017",
-  "tour": "T1",
-  "bureau": "0025",
-  "quartier": "Centre-ville",
+  "date": "2026-11-11",
+  "niveau": "carte",
+  "niveau_publie": "carte",
+  "election": "Municipales 1989",
+  "tour": "TU",
+  "bureau": null,
+  "quartier": null,
   "canton": null,
   "section": null,
-  "subtype": null,
-  "candidat": null,
-  "signature": "bureau|Législatives 2017|T1|0025",
-  "chars": 244,
-  "generated_at": "2026-11-10T07:01:05.352Z"
+  "subtype": "candidat",
+  "candidat": "michel-crepeau@municipales-1989",
+  "signature": "carte|Municipales 1989|TU|cand:michel-crepeau@municipales-1989",
+  "chars": 249,
+  "generated_at": "2026-11-11T07:01:20.629Z"
 }

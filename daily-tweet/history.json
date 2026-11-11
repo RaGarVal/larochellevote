@@ -2424,5 +2424,19 @@
     "quartier": "Centre-ville",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-11-11",
+    "signature": "carte|Municipales 1989|TU|cand:michel-crepeau@municipales-1989",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Municipales 1989",
+    "tour": "TU",
+    "bureau": null,
+    "section": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "michel-crepeau@municipales-1989"
   }
 ]
