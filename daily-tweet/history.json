@@ -2438,5 +2438,19 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "michel-crepeau@municipales-1989"
+  },
+  {
+    "date": "2026-11-12",
+    "signature": "section|Législatives 1958|T1|Saint-Éloi",
+    "niveau": "section",
+    "niveau_publie": "section",
+    "truncation_step": 2,
+    "election": "Législatives 1958",
+    "tour": "T1",
+    "bureau": null,
+    "section": "Saint-Éloi",
+    "quartier": "Saint-Éloi",
+    "subtype": null,
+    "candidat": null
   }
 ]

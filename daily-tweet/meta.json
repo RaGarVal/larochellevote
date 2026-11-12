@@ -1,16 +1,16 @@
 {
-  "date": "2026-11-11",
-  "niveau": "carte",
-  "niveau_publie": "carte",
-  "election": "Municipales 1989",
-  "tour": "TU",
+  "date": "2026-11-12",
+  "niveau": "section",
+  "niveau_publie": "section",
+  "election": "Législatives 1958",
+  "tour": "T1",
   "bureau": null,
-  "quartier": null,
+  "quartier": "Saint-Éloi",
   "canton": null,
-  "section": null,
-  "subtype": "candidat",
-  "candidat": "michel-crepeau@municipales-1989",
-  "signature": "carte|Municipales 1989|TU|cand:michel-crepeau@municipales-1989",
-  "chars": 249,
-  "generated_at": "2026-11-11T07:01:20.629Z"
+  "section": "Saint-Éloi",
+  "subtype": null,
+  "candidat": null,
+  "signature": "section|Législatives 1958|T1|Saint-Éloi",
+  "chars": 240,
+  "generated_at": "2026-11-12T07:02:25.939Z"
 }

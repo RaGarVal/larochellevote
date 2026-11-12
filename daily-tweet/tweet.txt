@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🏙️ Le 12 mars 1989, pour les municipales, Michel Crépeau (MRG) a obtenu 50,9 % à La Rochelle. 📍 Meilleur score dans le bureau n°11 · Grandes-Varennes–Le Parco à Mireuil.
+🏛️ Le 23 novembre 1958, pour les législatives (1er tour), Michel Noël (UNR) arrive en tête avec 26,2 % dans la section Petit et Grand-Saint-Éloi–Petit-Marseille.
 
-Détails sur https://larochellevote.fr/LRVcarte.html#election=Municipales+1989&selection=michel-crepeau%40municipales-1989
+Détails sur https://larochellevote.fr/LRVcarte.html#election=L%C3%A9gislatives+1958&tour=T1&section=Saint-%C3%89loi
