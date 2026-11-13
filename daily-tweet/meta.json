@@ -1,16 +1,16 @@
 {
-  "date": "2026-11-12",
-  "niveau": "section",
-  "niveau_publie": "section",
-  "election": "Législatives 1958",
-  "tour": "T1",
+  "date": "2026-11-13",
+  "niveau": "carte",
+  "niveau_publie": "carte",
+  "election": "Européennes 1979",
+  "tour": "TU",
   "bureau": null,
-  "quartier": "Saint-Éloi",
+  "quartier": null,
   "canton": null,
-  "section": "Saint-Éloi",
-  "subtype": null,
-  "candidat": null,
-  "signature": "section|Législatives 1958|T1|Saint-Éloi",
-  "chars": 240,
-  "generated_at": "2026-11-12T07:02:25.939Z"
+  "section": null,
+  "subtype": "candidat",
+  "candidat": "georges-marchais@europeennes-1979",
+  "signature": "carte|Européennes 1979|TU|cand:georges-marchais@europeennes-1979",
+  "chars": 248,
+  "generated_at": "2026-11-13T07:02:24.547Z"
 }
