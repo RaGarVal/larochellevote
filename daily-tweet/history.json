@@ -2466,5 +2466,19 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "georges-marchais@europeennes-1979"
+  },
+  {
+    "date": "2026-11-14",
+    "signature": "quartier|Législatives 1968|T1|Saint-Éloi",
+    "niveau": "quartier",
+    "niveau_publie": "quartier",
+    "truncation_step": 1,
+    "election": "Législatives 1968",
+    "tour": "T1",
+    "bureau": null,
+    "section": null,
+    "quartier": "Saint-Éloi",
+    "subtype": null,
+    "candidat": null
   }
 ]

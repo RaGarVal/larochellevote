@@ -1,16 +1,16 @@
 {
-  "date": "2026-11-13",
-  "niveau": "carte",
-  "niveau_publie": "carte",
-  "election": "Européennes 1979",
-  "tour": "TU",
+  "date": "2026-11-14",
+  "niveau": "quartier",
+  "niveau_publie": "quartier",
+  "election": "Législatives 1968",
+  "tour": "T1",
   "bureau": null,
-  "quartier": null,
+  "quartier": "Saint-Éloi",
   "canton": null,
   "section": null,
-  "subtype": "candidat",
-  "candidat": "georges-marchais@europeennes-1979",
-  "signature": "carte|Européennes 1979|TU|cand:georges-marchais@europeennes-1979",
-  "chars": 248,
-  "generated_at": "2026-11-13T07:02:24.547Z"
+  "subtype": null,
+  "candidat": null,
+  "signature": "quartier|Législatives 1968|T1|Saint-Éloi",
+  "chars": 258,
+  "generated_at": "2026-11-14T07:01:32.888Z"
 }
