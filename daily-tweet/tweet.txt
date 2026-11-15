@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-🏛️ Le 23 juin 1968, pour les législatives (1er tour), Philippe Dechartre (UDR) arrive en tête avec 45,4 % dans le quartier de Saint-Éloi.
+🏛️ Le 25 mai 1997, pour les législatives (1er tour), Michel Crépeau (PRS) arrive en tête avec 46,8 % dans le bureau n°42 · Sautel–Mangin à Lafond.
 
-Les résultats de ce quartier, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=L%C3%A9gislatives+1968&tour=T1&quartier=Saint-%C3%89loi
+Les résultats de ce bureau, et tous les autres, sur https://larochellevote.fr/LRVcarte.html#election=L%C3%A9gislatives+1997&tour=T1&bureau=0042

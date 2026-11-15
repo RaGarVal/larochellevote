@@ -2480,5 +2480,19 @@
     "quartier": "Saint-Éloi",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-11-15",
+    "signature": "bureau|Législatives 1997|T1|0042",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Législatives 1997",
+    "tour": "T1",
+    "bureau": "0042",
+    "section": null,
+    "quartier": "Lafond",
+    "subtype": null,
+    "candidat": null
   }
 ]
