@@ -1,16 +1,16 @@
 {
-  "date": "2026-11-15",
+  "date": "2026-11-16",
   "niveau": "bureau",
   "niveau_publie": "bureau",
-  "election": "Législatives 1997",
+  "election": "Municipales 2026",
   "tour": "T1",
-  "bureau": "0042",
-  "quartier": "Lafond",
+  "bureau": "0001",
+  "quartier": "Laleu/La Pallice",
   "canton": null,
   "section": null,
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Législatives 1997|T1|0042",
-  "chars": 265,
-  "generated_at": "2026-11-15T07:01:35.128Z"
+  "signature": "bureau|Municipales 2026|T1|0001",
+  "chars": 250,
+  "generated_at": "2026-11-16T07:02:34.723Z"
 }
