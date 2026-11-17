@@ -2508,5 +2508,19 @@
     "quartier": "Laleu/La Pallice",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-11-17",
+    "signature": "bureau|Législatives 2017|T1|0013",
+    "niveau": "bureau",
+    "niveau_publie": "bureau",
+    "truncation_step": 1,
+    "election": "Législatives 2017",
+    "tour": "T1",
+    "bureau": "0013",
+    "section": null,
+    "quartier": "Mireuil",
+    "subtype": null,
+    "candidat": null
   }
 ]
