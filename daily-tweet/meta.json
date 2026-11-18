@@ -1,16 +1,16 @@
 {
-  "date": "2026-11-17",
-  "niveau": "bureau",
-  "niveau_publie": "bureau",
-  "election": "Législatives 2017",
+  "date": "2026-11-18",
+  "niveau": "quartier",
+  "niveau_publie": "quartier",
+  "election": "Législatives 1962",
   "tour": "T1",
-  "bureau": "0013",
-  "quartier": "Mireuil",
+  "bureau": null,
+  "quartier": "Lafond",
   "canton": null,
   "section": null,
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Législatives 2017|T1|0013",
-  "chars": 271,
-  "generated_at": "2026-11-17T07:02:09.496Z"
+  "signature": "quartier|Législatives 1962|T1|Lafond",
+  "chars": 272,
+  "generated_at": "2026-11-18T07:02:01.699Z"
 }

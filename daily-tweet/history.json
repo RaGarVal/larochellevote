@@ -2522,5 +2522,19 @@
     "quartier": "Mireuil",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-11-18",
+    "signature": "quartier|Législatives 1962|T1|Lafond",
+    "niveau": "quartier",
+    "niveau_publie": "quartier",
+    "truncation_step": 1,
+    "election": "Législatives 1962",
+    "tour": "T1",
+    "bureau": null,
+    "section": null,
+    "quartier": "Lafond",
+    "subtype": null,
+    "candidat": null
   }
 ]
