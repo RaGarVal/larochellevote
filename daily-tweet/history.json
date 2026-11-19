@@ -2536,5 +2536,19 @@
     "quartier": "Lafond",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-11-19",
+    "signature": "quartier|Municipales 1995|TU|Tasdon/Les Minimes",
+    "niveau": "quartier",
+    "niveau_publie": "quartier",
+    "truncation_step": 1,
+    "election": "Municipales 1995",
+    "tour": "TU",
+    "bureau": null,
+    "section": null,
+    "quartier": "Tasdon/Les Minimes",
+    "subtype": null,
+    "candidat": null
   }
 ]

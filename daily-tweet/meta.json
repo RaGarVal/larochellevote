@@ -1,16 +1,16 @@
 {
-  "date": "2026-11-18",
+  "date": "2026-11-19",
   "niveau": "quartier",
   "niveau_publie": "quartier",
-  "election": "Législatives 1962",
-  "tour": "T1",
+  "election": "Municipales 1995",
+  "tour": "TU",
   "bureau": null,
-  "quartier": "Lafond",
+  "quartier": "Tasdon/Les Minimes",
   "canton": null,
   "section": null,
   "subtype": null,
   "candidat": null,
-  "signature": "quartier|Législatives 1962|T1|Lafond",
-  "chars": 272,
-  "generated_at": "2026-11-18T07:02:01.699Z"
+  "signature": "quartier|Municipales 1995|TU|Tasdon/Les Minimes",
+  "chars": 254,
+  "generated_at": "2026-11-19T06:58:32.239Z"
 }
