@@ -1,16 +1,16 @@
 {
-  "date": "2026-11-19",
-  "niveau": "quartier",
-  "niveau_publie": "quartier",
-  "election": "Municipales 1995",
+  "date": "2026-11-20",
+  "niveau": "canton",
+  "niveau_publie": "canton",
+  "election": "Européennes 1979",
   "tour": "TU",
   "bureau": null,
-  "quartier": "Tasdon/Les Minimes",
-  "canton": null,
+  "quartier": null,
+  "canton": "2",
   "section": null,
   "subtype": null,
   "candidat": null,
-  "signature": "quartier|Municipales 1995|TU|Tasdon/Les Minimes",
-  "chars": 254,
-  "generated_at": "2026-11-19T06:58:32.239Z"
+  "signature": "canton|Européennes 1979|TU|2",
+  "chars": 239,
+  "generated_at": "2026-11-20T06:58:28.855Z"
 }

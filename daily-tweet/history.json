@@ -2550,5 +2550,19 @@
     "quartier": "Tasdon/Les Minimes",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-11-20",
+    "signature": "canton|Européennes 1979|TU|2",
+    "niveau": "canton",
+    "niveau_publie": "canton",
+    "truncation_step": 1,
+    "election": "Européennes 1979",
+    "tour": "TU",
+    "bureau": null,
+    "section": null,
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
   }
 ]
