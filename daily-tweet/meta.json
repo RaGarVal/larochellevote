@@ -1,16 +1,16 @@
 {
-  "date": "2026-11-20",
-  "niveau": "canton",
-  "niveau_publie": "canton",
-  "election": "Européennes 1979",
-  "tour": "TU",
+  "date": "2026-11-21",
+  "niveau": "section",
+  "niveau_publie": "section",
+  "election": "Législatives 1973",
+  "tour": "T1",
   "bureau": null,
-  "quartier": null,
-  "canton": "2",
-  "section": null,
+  "quartier": "La Genette",
+  "canton": null,
+  "section": "Réaumur",
   "subtype": null,
   "candidat": null,
-  "signature": "canton|Européennes 1979|TU|2",
-  "chars": 239,
-  "generated_at": "2026-11-20T06:58:28.855Z"
+  "signature": "section|Législatives 1973|T1|Réaumur",
+  "chars": 259,
+  "generated_at": "2026-11-21T14:34:40.995Z"
 }

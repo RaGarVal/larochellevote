@@ -2564,5 +2564,19 @@
     "quartier": null,
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-11-21",
+    "signature": "section|Législatives 1973|T1|Réaumur",
+    "niveau": "section",
+    "niveau_publie": "section",
+    "truncation_step": 1,
+    "election": "Législatives 1973",
+    "tour": "T1",
+    "bureau": null,
+    "section": "Réaumur",
+    "quartier": "La Genette",
+    "subtype": null,
+    "candidat": null
   }
 ]
