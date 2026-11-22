@@ -1,16 +1,16 @@
 {
-  "date": "2026-11-21",
-  "niveau": "section",
-  "niveau_publie": "section",
-  "election": "Législatives 1973",
+  "date": "2026-11-22",
+  "niveau": "carte",
+  "niveau_publie": "carte",
+  "election": "Municipales 2001",
   "tour": "T1",
   "bureau": null,
-  "quartier": "La Genette",
+  "quartier": null,
   "canton": null,
-  "section": "Réaumur",
-  "subtype": null,
-  "candidat": null,
-  "signature": "section|Législatives 1973|T1|Réaumur",
-  "chars": 259,
-  "generated_at": "2026-11-21T14:34:40.995Z"
+  "section": null,
+  "subtype": "candidat",
+  "candidat": "maxime-bono@municipales-2001",
+  "signature": "carte|Municipales 2001|T1|cand:maxime-bono@municipales-2001",
+  "chars": 262,
+  "generated_at": "2026-11-22T14:29:23.015Z"
 }
