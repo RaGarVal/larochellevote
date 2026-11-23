@@ -1,16 +1,16 @@
 {
-  "date": "2026-11-22",
+  "date": "2026-11-23",
   "niveau": "carte",
   "niveau_publie": "carte",
-  "election": "Municipales 2001",
+  "election": "Législatives 1958",
   "tour": "T1",
   "bureau": null,
   "quartier": null,
   "canton": null,
   "section": null,
   "subtype": "candidat",
-  "candidat": "maxime-bono@municipales-2001",
-  "signature": "carte|Municipales 2001|T1|cand:maxime-bono@municipales-2001",
-  "chars": 262,
-  "generated_at": "2026-11-22T14:29:23.015Z"
+  "candidat": "gosnat@legislatives-1958",
+  "signature": "carte|Législatives 1958|T1|cand:gosnat@legislatives-1958",
+  "chars": 261,
+  "generated_at": "2026-11-23T17:58:05.638Z"
 }
