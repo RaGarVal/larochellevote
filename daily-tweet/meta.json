@@ -1,16 +1,16 @@
 {
-  "date": "2026-11-23",
+  "date": "2026-11-24",
   "niveau": "carte",
   "niveau_publie": "carte",
-  "election": "Législatives 1958",
+  "election": "Législatives 2002",
   "tour": "T1",
   "bureau": null,
   "quartier": null,
   "canton": null,
   "section": null,
-  "subtype": "candidat",
-  "candidat": "gosnat@legislatives-1958",
-  "signature": "carte|Législatives 1958|T1|cand:gosnat@legislatives-1958",
-  "chars": 261,
-  "generated_at": "2026-11-23T17:58:05.638Z"
+  "subtype": "gagnants",
+  "candidat": null,
+  "signature": "carte|Législatives 2002|T1",
+  "chars": 253,
+  "generated_at": "2026-11-24T17:35:55.877Z"
 }
