@@ -2634,5 +2634,19 @@
     "quartier": null,
     "subtype": "candidat",
     "candidat": "leon-belly@legislatives-1962"
+  },
+  {
+    "date": "2026-11-26",
+    "signature": "quartier|Législatives 1958|T1|Saint-Maurice",
+    "niveau": "quartier",
+    "niveau_publie": "quartier",
+    "truncation_step": 1,
+    "election": "Législatives 1958",
+    "tour": "T1",
+    "bureau": null,
+    "section": null,
+    "quartier": "Saint-Maurice",
+    "subtype": null,
+    "candidat": null
   }
 ]

@@ -1,16 +1,16 @@
 {
-  "date": "2026-11-25",
-  "niveau": "carte",
-  "niveau_publie": "carte",
-  "election": "Législatives 1962",
-  "tour": "T2",
+  "date": "2026-11-26",
+  "niveau": "quartier",
+  "niveau_publie": "quartier",
+  "election": "Législatives 1958",
+  "tour": "T1",
   "bureau": null,
-  "quartier": null,
+  "quartier": "Saint-Maurice",
   "canton": null,
   "section": null,
-  "subtype": "candidat",
-  "candidat": "leon-belly@legislatives-1962",
-  "signature": "carte|Législatives 1962|T2|cand:leon-belly@legislatives-1962",
-  "chars": 276,
-  "generated_at": "2026-11-25T17:07:25.590Z"
+  "subtype": null,
+  "candidat": null,
+  "signature": "quartier|Législatives 1958|T1|Saint-Maurice",
+  "chars": 261,
+  "generated_at": "2026-11-26T16:48:00.002Z"
 }
