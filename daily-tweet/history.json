@@ -2648,5 +2648,19 @@
     "quartier": "Saint-Maurice",
     "subtype": null,
     "candidat": null
+  },
+  {
+    "date": "2026-11-27",
+    "signature": "global|Présidentielle 1988|T1",
+    "niveau": "global",
+    "niveau_publie": "global",
+    "truncation_step": 1,
+    "election": "Présidentielle 1988",
+    "tour": "T1",
+    "bureau": null,
+    "section": null,
+    "quartier": null,
+    "subtype": null,
+    "candidat": null
   }
 ]

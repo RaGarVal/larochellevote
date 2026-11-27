@@ -1,16 +1,16 @@
 {
-  "date": "2026-11-26",
-  "niveau": "quartier",
-  "niveau_publie": "quartier",
-  "election": "Législatives 1958",
+  "date": "2026-11-27",
+  "niveau": "global",
+  "niveau_publie": "global",
+  "election": "Présidentielle 1988",
   "tour": "T1",
   "bureau": null,
-  "quartier": "Saint-Maurice",
+  "quartier": null,
   "canton": null,
   "section": null,
   "subtype": null,
   "candidat": null,
-  "signature": "quartier|Législatives 1958|T1|Saint-Maurice",
-  "chars": 261,
-  "generated_at": "2026-11-26T16:48:00.002Z"
+  "signature": "global|Présidentielle 1988|T1",
+  "chars": 241,
+  "generated_at": "2026-11-27T16:33:27.269Z"
 }
