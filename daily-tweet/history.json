@@ -2665,16 +2665,16 @@
   },
   {
     "date": "2026-11-28",
-    "signature": "carte|Présidentielle 2022|T1",
+    "signature": "carte|Régionales 2015|T1|cand:william-douet@regionales-2015",
     "niveau": "carte",
     "niveau_publie": "carte",
     "truncation_step": 2,
-    "election": "Présidentielle 2022",
+    "election": "Régionales 2015",
     "tour": "T1",
     "bureau": null,
     "section": null,
     "quartier": null,
-    "subtype": "gagnants",
-    "candidat": null
+    "subtype": "candidat",
+    "candidat": "william-douet@regionales-2015"
   }
 ]

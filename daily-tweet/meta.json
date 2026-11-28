@@ -2,15 +2,15 @@
   "date": "2026-11-28",
   "niveau": "carte",
   "niveau_publie": "carte",
-  "election": "Présidentielle 2022",
+  "election": "Régionales 2015",
   "tour": "T1",
   "bureau": null,
   "quartier": null,
   "canton": null,
   "section": null,
-  "subtype": "gagnants",
-  "candidat": null,
-  "signature": "carte|Présidentielle 2022|T1",
-  "chars": 249,
-  "generated_at": "2026-11-28T14:52:23.182Z"
+  "subtype": "candidat",
+  "candidat": "william-douet@regionales-2015",
+  "signature": "carte|Régionales 2015|T1|cand:william-douet@regionales-2015",
+  "chars": 245,
+  "generated_at": "2026-11-28T15:16:38.173Z"
 }

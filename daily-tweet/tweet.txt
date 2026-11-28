@@ -1,5 +1,5 @@
 📊 La Rochelle Vote — La donnée du jour
 
-👤 Le 10 avril 2022, pour la présidentielle (1er tour), Emmanuel Macron (LREM) a obtenu 31,7 % à La Rochelle. 📍 Meilleur score dans le bureau n°22 · Le Mail à La Genette.
+🏙️ Le 6 décembre 2015, pour les régionales (1er tour), William Douet (UPR) a obtenu 0,9 % à La Rochelle. 📍 Meilleur score dans le bureau n°47 · Rompsay à Saint-Éloi.
 
-Détails sur https://larochellevote.fr/LRVcarte.html#election=Pr%C3%A9sidentielle+2022&tour=T1
+Détails sur https://larochellevote.fr/LRVcarte.html#election=R%C3%A9gionales+2015&tour=T1&selection=william-douet%40regionales-2015
