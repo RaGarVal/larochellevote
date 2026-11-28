@@ -1,16 +1,16 @@
 {
   "date": "2026-11-28",
-  "niveau": "bureau",
-  "niveau_publie": "bureau",
-  "election": "Législatives 2022",
+  "niveau": "section",
+  "niveau_publie": "section",
+  "election": "Présidentielle 1969",
   "tour": "T1",
-  "bureau": "0018",
-  "quartier": "Mireuil",
+  "bureau": null,
+  "quartier": "Fétilly",
   "canton": null,
-  "section": null,
+  "section": "Fétilly",
   "subtype": null,
   "candidat": null,
-  "signature": "bureau|Législatives 2022|T1|0018",
-  "chars": 243,
-  "generated_at": "2026-11-28T14:36:15.875Z"
+  "signature": "section|Présidentielle 1969|T1|Fétilly",
+  "chars": 275,
+  "generated_at": "2026-11-28T14:48:47.031Z"
 }
