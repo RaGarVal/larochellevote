@@ -15,15 +15,17 @@ name: 📊 Tweet Quotidien — LaRochelleVote
 
 on:
   schedule:
-    # 06h13 UTC = 08h13 Paris (heure d'été). Minutes "rondes" évitées pour fiabilité.
+    # 07h13 UTC = 08h13 Paris (heure d'hiver UTC+1). Minutes "rondes" évitées pour fiabilité.
     # On programme 3 crons rapprochés : si le premier est skippé par GitHub
     # (ce qui arrive régulièrement), le suivant tentera. Le script lui-même est
     # idempotent : si daily-tweet/ a déjà été commité aujourd'hui, le second
     # passage ne change rien (ou regénère un autre tweet — au pire on a deux
     # contenus pour la même journée).
-    - cron: '13 6 * * *'  # 8h13 Paris (heure d'été)
-    - cron: '23 6 * * *'  # 8h23 — secours #1
-    - cron: '37 6 * * *'  # 8h37 — secours #2
+    # ⚠️ En heure d'été (UTC+2, de fin mars à fin octobre) :
+    #     remplacer  "13 7 * * *"  par  "13 6 * * *" (etc. pour les secours)
+    - cron: '13 7 * * *'  # 8h13 Paris (heure d'hiver)
+    - cron: '23 7 * * *'  # 8h23 — secours #1
+    - cron: '37 7 * * *'  # 8h37 — secours #2
 
   # Permet de déclencher manuellement depuis l'onglet "Actions" de GitHub
   # pour tester ou rejouer un jour précis
@@ -134,3 +136,20 @@ jobs:
         env:
           BSKY_HANDLE: ${{ secrets.BSKY_HANDLE }}
           BSKY_APP_PASSWORD: ${{ secrets.BSKY_APP_PASSWORD }}
+
+      # 9. Envoyer sur Telegram (remplace l'ancien scénario Make.com)
+      #    Upload multipart natif : pas de dépendance jsDelivr pour cette étape,
+      #    l'image est postée dans la foulée du commit, bien plus fiable.
+      - name: 📱 Envoyer sur Telegram
+        if: steps.idempotence.outputs.skip == 'false' && steps.check_image.outputs.image_exists == 'true'
+        env:
+          TG_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TG_CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          caption=$(cat daily-tweet/tweet.txt)
+          curl -sS -X POST "https://api.telegram.org/bot${TG_TOKEN}/sendPhoto" \
+            -F chat_id="${TG_CHAT}" \
+            --form-string caption="${caption}" \
+            -F photo="@daily-tweet/image.png" \
+            --fail-with-body
+          echo "✅ Image envoyée sur Telegram"
