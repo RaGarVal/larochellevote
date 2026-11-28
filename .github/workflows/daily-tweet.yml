@@ -140,6 +140,9 @@ jobs:
       # 9. Envoyer sur Telegram (remplace l'ancien scénario Make.com)
       #    Upload multipart natif : pas de dépendance jsDelivr pour cette étape,
       #    l'image est postée dans la foulée du commit, bien plus fiable.
+      #    On envoie en DEUX messages distincts (comme l'ancien scénario Make) :
+      #      1. le texte seul  → facile à copier/coller
+      #      2. la photo seule → affichée en grand sous le texte
       - name: 📱 Envoyer sur Telegram
         if: steps.idempotence.outputs.skip == 'false' && steps.check_image.outputs.image_exists == 'true'
         env:
@@ -147,9 +150,16 @@ jobs:
           TG_CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           caption=$(cat daily-tweet/tweet.txt)
+          # 1. Texte seul (copiable)
+          curl -sS -X POST "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
+            -F chat_id="${TG_CHAT}" \
+            --form-string text="${caption}" \
+            -F disable_web_page_preview=true \
+            --fail-with-body
+          echo "✅ Texte envoyé sur Telegram"
+          # 2. Photo seule (sans caption, pour qu'elle apparaisse en grand sous le texte)
           curl -sS -X POST "https://api.telegram.org/bot${TG_TOKEN}/sendPhoto" \
             -F chat_id="${TG_CHAT}" \
-            --form-string caption="${caption}" \
             -F photo="@daily-tweet/image.png" \
             --fail-with-body
           echo "✅ Image envoyée sur Telegram"
