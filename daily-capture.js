@@ -76,13 +76,13 @@ const SUB_CARTE = {
 // ⚠ À AJUSTER quand un nouveau type de scrutin est ajouté, ou quand des élections
 // supplémentaires sont saisies — la somme doit rester à 100 %.
 const SCRUTIN_TARGETS = {
-  legislatives:    0.25,
-  presidentielle:  0.18,
+  legislatives:    0.22,
+  presidentielle:  0.19,
   europeennes:     0.17,
-  municipales:     0.16,
-  regionales:      0.15,
+  municipales:     0.18,
+  regionales:      0.12,
   departementales: 0.05,  // inclut Cantonales (electionScrutin() les groupe)
-  referendum:      0.04,
+  referendum:      0.07,
 };
 
 // Cooldown anti-doublons (en jours) : une combinaison niveau/élection/tour/bureau/quartier
