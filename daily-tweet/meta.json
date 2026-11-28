@@ -1,16 +1,16 @@
 {
-  "date": "2026-09-19",
-  "niveau": "carte",
-  "niveau_publie": "carte",
-  "election": "Législatives 2017",
+  "date": "2026-11-28",
+  "niveau": "bureau",
+  "niveau_publie": "bureau",
+  "election": "Législatives 2022",
   "tour": "T1",
-  "bureau": null,
-  "quartier": null,
+  "bureau": "0018",
+  "quartier": "Mireuil",
   "canton": null,
   "section": null,
-  "subtype": "candidat",
-  "candidat": "otilia-ferreira@legislatives-2017",
-  "signature": "carte|Législatives 2017|T1|cand:otilia-ferreira@legislatives-2017",
-  "chars": 256,
-  "generated_at": "2026-09-19T06:00:43.365Z"
+  "subtype": null,
+  "candidat": null,
+  "signature": "bureau|Législatives 2022|T1|0018",
+  "chars": 243,
+  "generated_at": "2026-11-28T14:36:15.875Z"
 }
