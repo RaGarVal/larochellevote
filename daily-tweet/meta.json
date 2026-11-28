@@ -1,16 +1,16 @@
 {
   "date": "2026-11-28",
-  "niveau": "section",
-  "niveau_publie": "section",
-  "election": "Présidentielle 1969",
+  "niveau": "carte",
+  "niveau_publie": "carte",
+  "election": "Présidentielle 2022",
   "tour": "T1",
   "bureau": null,
-  "quartier": "Fétilly",
+  "quartier": null,
   "canton": null,
-  "section": "Fétilly",
-  "subtype": null,
+  "section": null,
+  "subtype": "gagnants",
   "candidat": null,
-  "signature": "section|Présidentielle 1969|T1|Fétilly",
-  "chars": 275,
-  "generated_at": "2026-11-28T14:48:47.031Z"
+  "signature": "carte|Présidentielle 2022|T1",
+  "chars": 249,
+  "generated_at": "2026-11-28T14:52:23.182Z"
 }
