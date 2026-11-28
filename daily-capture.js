@@ -63,8 +63,8 @@ const PROBA = {
 //   gagnants → carte mosaïque classique, sujet = gagnant ville
 //   candidat → carte heatmap d'un seul candidat (tiré pondéré par son score ville)
 const SUB_CARTE = {
-  gagnants: 0.25,
-  candidat: 0.75,
+  gagnants: 0.15,
+  candidat: 0.85,
 };
 
 // ── Cibles MANUELLES par scrutin ──────────────────────────────────────────────
