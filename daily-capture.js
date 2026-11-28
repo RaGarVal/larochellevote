@@ -52,8 +52,8 @@ const CHAPEAU  = '📊 La Rochelle Vote — La donnée du jour';
 // probabilités utilisées à chaque tirage sont ajustées dynamiquement par
 // rebalanceProba() pour corriger les déséquilibres récents.
 const PROBA = {
-  carte:    0.40,
-  bureau:   0.40,
+  carte:    0.35,
+  bureau:   0.45,
   quartier: 0.10,
   canton:   0.05,
   global:   0.05,
