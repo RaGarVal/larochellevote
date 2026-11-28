@@ -2665,16 +2665,16 @@
   },
   {
     "date": "2026-11-28",
-    "signature": "section|Présidentielle 1969|T1|Fétilly",
-    "niveau": "section",
-    "niveau_publie": "section",
-    "truncation_step": 1,
-    "election": "Présidentielle 1969",
+    "signature": "carte|Régionales 2015|T1|cand:william-douet@regionales-2015",
+    "niveau": "carte",
+    "niveau_publie": "carte",
+    "truncation_step": 2,
+    "election": "Régionales 2015",
     "tour": "T1",
     "bureau": null,
-    "section": "Fétilly",
-    "quartier": "Fétilly",
-    "subtype": null,
-    "candidat": null
+    "section": null,
+    "quartier": null,
+    "subtype": "candidat",
+    "candidat": "william-douet@regionales-2015"
   }
 ]
