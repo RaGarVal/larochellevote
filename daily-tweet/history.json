@@ -2665,15 +2665,15 @@
   },
   {
     "date": "2026-11-28",
-    "signature": "bureau|Législatives 2022|T1|0018",
-    "niveau": "bureau",
-    "niveau_publie": "bureau",
-    "truncation_step": 2,
-    "election": "Législatives 2022",
+    "signature": "section|Présidentielle 1969|T1|Fétilly",
+    "niveau": "section",
+    "niveau_publie": "section",
+    "truncation_step": 1,
+    "election": "Présidentielle 1969",
     "tour": "T1",
-    "bureau": "0018",
-    "section": null,
-    "quartier": "Mireuil",
+    "bureau": null,
+    "section": "Fétilly",
+    "quartier": "Fétilly",
     "subtype": null,
     "candidat": null
   }
